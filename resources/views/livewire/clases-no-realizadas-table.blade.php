@@ -609,7 +609,6 @@ document.addEventListener('DOMContentLoaded', function() {
     Livewire.on('show-reagendar-modal', (data) => {
         const clase = data[0];
         
-        console.log('Datos completos recibidos:', clase);
         
         // Variable global para almacenar módulos
         let modulosDisponibles = [];
@@ -699,7 +698,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     const response = await fetch('/api/modulos');
                     modulosDisponibles = await response.json();
-                    console.log('Módulos cargados:', modulosDisponibles);
                     
                     // Llenar select de módulos iniciales inicialmente vacío
                     const selectModuloInicio = document.getElementById('swal-nuevo-modulo-inicio');
@@ -799,7 +797,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             return;
                         }
 
-                        console.log('Espacios disponibles:', data);
 
                         if (data.espacios.length === 0) {
                             selectEspacios.innerHTML = '<option value="">No hay espacios disponibles para esta fecha y módulos</option>';

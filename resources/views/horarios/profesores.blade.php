@@ -293,12 +293,6 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Datos recibidos:', {
-                        horario: data.horario,
-                        asignaturas: data.asignaturas,
-                        periodo: data.periodo,
-                        total_planificaciones: data.horario ? data.horario.planificaciones.length : 0
-                    });
 
                     // Verificar si hay un mensaje de error
                     if (data.mensaje) {

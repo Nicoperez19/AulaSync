@@ -143,7 +143,6 @@
         document.addEventListener('livewire:init', () => {
             Livewire.on('modalClosed', () => {
                 // El modal se cerró, limpiar cualquier estado adicional si es necesario
-                console.log('Modal cerrado');
             });
             
             // Agregar funcionalidad adicional para cerrar el modal con la tecla Escape

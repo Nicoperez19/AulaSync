@@ -476,7 +476,6 @@
         // [NUEVO] Escuchar cambios en localStorage para sincronizar entre pestañas
         window.addEventListener('storage', (e) => {
             if (e.key === 'reserva_cambiada' || e.key === 'espacio_cambiado') {
-                console.log('🔄 Cambio detectado en localStorage, actualizando tablero...');
                 @this.actualizarDatos();
             }
         });

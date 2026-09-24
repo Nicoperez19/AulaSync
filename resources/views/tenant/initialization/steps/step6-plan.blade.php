@@ -559,7 +559,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Pisos cargados:', data);
                     if (Array.isArray(data) && data.length > 0) {
                         data.forEach(piso => {
                             const option = document.createElement('option');
@@ -601,7 +600,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Espacios cargados:', data);
                     initElements.espaciosList.innerHTML = '';
                     initElements.emptySpacesMessage.classList.add('hidden');
 

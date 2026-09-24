@@ -1041,7 +1041,6 @@
                 });
 
                 resultsDiv.classList.remove('hidden');
-                console.log('✅ Mostrando', asignaturas.length, 'asignaturas');
             }
 
             // Seleccionar asignatura del autocompletado
@@ -1056,7 +1055,6 @@
 
                 document.getElementById('autocomplete-asignaturas').classList.add('hidden');
 
-                console.log('✅ Asignatura seleccionada:', asignatura);
             }
 
             // Configurar búsqueda de asignaturas para colaboradores
@@ -1114,7 +1112,6 @@
                                 return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}${pisoStr}${capacidadStr}${estadoTag}</option>`;
                             }).join('');
 
-                        console.log('✅ Espacios cargados:', data.data.length);
                     } else {
                         espacioSelect.innerHTML = '<option value="">No hay espacios disponibles</option>';
                         console.warn('⚠️ No se encontraron espacios');
@@ -1129,12 +1126,10 @@
             function actualizarModulosDisponibles() {
                 cargarModulosParaSeleccion();
                 verificarConflictosReserva();
-                console.log('🔄 Módulos actualizados para el espacio seleccionado');
             }
 
             // Función para actualizar módulos finales
             function actualizarModulosFinales() {
-                console.log('🔄 Actualizando módulos finales...');
                 const moduloInicialSelect = document.getElementById('modulo-inicial');
                 const moduloFinalSelect = document.getElementById('modulo-final');
                 if (!moduloInicialSelect || !moduloFinalSelect) return;
@@ -1432,11 +1427,9 @@
 
             // Inicializar al cargar la página
             document.addEventListener('DOMContentLoaded', function () {
-                console.log('🚀 Iniciando carga de datos...');
 
                 // Verificar que SweetAlert esté disponible
                 if (typeof Swal !== 'undefined') {
-                    console.log('✅ SweetAlert2 cargado correctamente');
                 } else {
                     console.error('❌ SweetAlert2 no está disponible');
                 }
@@ -1480,7 +1473,6 @@
                     }
                 }, 30000);
 
-                console.log('🔍 Autocompletado y verificación de conflictos configurados');
             });
         </script>
     @endpush

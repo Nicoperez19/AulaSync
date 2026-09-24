@@ -295,7 +295,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
     function abrirVistaPreviaPlantilla(plantillaId, nombrePlantilla) {
-        console.log('Abriendo vista previa de plantilla:', plantillaId, nombrePlantilla);
         
         const modal = document.getElementById('modalVistaPreviaPlantilla');
         const titulo = document.getElementById('modalVistaPreviaTitulo');

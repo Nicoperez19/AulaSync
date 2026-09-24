@@ -112,47 +112,8 @@
             </div>
 
             <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
-                <div class="w-full mt-6">
-                    <div class="p-4 text-white bg-red-700 rounded ">
-                        <div class="flex items-center justify-between pb-4">
-                            <div
-                                class="flex items-center gap-1 bg-red-700 rounded">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
-                            </div>
-                        </div>
-
-                        <div class="py-1">
-                            <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span class="text-xs">Módulo: <span id="modulo-actual">No hay módulo
-                                        programado</span></span>
-                            </div>
-                        </div>
-
-                        <div class="pt-1">
-                            <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span class="text-xs">Horario: <span id="horario-actual">--:-- - --:--</span></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Tarjeta de QR y Usuario -->
-                <div class="w-full mt-20">
+                <div class="w-full mt-4">
                     <div class="mt-4 mb-4 text-white bg-light-cloud-blue">
                         <div class="flex items-center gap-3 p-3 mb-3 rounded-md bg-red-500/80">
 
@@ -305,6 +266,35 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal flotante de reloj digital y módulo actual con opción de minimizar -->
+    <div id="modal-reloj"
+        class="fixed bottom-4 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-300 ease-out group">
+        <!-- Estado Expandido -->
+        <div id="reloj-expandido"
+            class="bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-2xl shadow-red-950/20 rounded-2xl border border-white/20 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center gap-3 sm:gap-4 transition-all duration-300">
+            <div class="p-2 sm:p-2.5 bg-white/15 text-white rounded-xl transition-all duration-300 shrink-0">
+                <i class="fa-solid fa-clock text-base sm:text-xl"></i>
+            </div>
+            <div class="flex flex-col select-none">
+                <span class="font-mono text-xl sm:text-2xl font-black text-white leading-none tracking-tight my-0.5" id="modal-hora-actual">--:--:--</span>
+                <span class="text-xs sm:text-sm font-bold text-red-100" id="modal-modulo-actual">Módulo actual: -</span>
+            </div>
+            <button onclick="toggleModalReloj(true)" title="Minimizar reloj" class="ml-1 text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors duration-150 shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+        </div>
+
+        <!-- Estado Minimizado -->
+        <div id="reloj-minimizado" 
+            onclick="toggleModalReloj(false)"
+            title="Mostrar reloj y módulo actual"
+            class="hidden cursor-pointer bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-xl hover:shadow-2xl rounded-full border border-white/20 px-3.5 py-2 flex items-center gap-2 text-white hover:scale-105 transition-all duration-200">
+            <i class="fa-solid fa-clock text-xs sm:text-sm"></i>
+            <span class="font-mono text-xs sm:text-sm font-bold" id="modal-hora-minimizada">--:--:--</span>
+            <svg class="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"/></svg>
         </div>
     </div>
 
@@ -942,10 +932,8 @@
                     throw new Error('No se pudo cargar el archivo de horarios');
                 }
                 horariosModulos = await response.json();
-                console.log('✅ Horarios de módulos cargados correctamente');
             } catch (error) {
                 console.error('❌ Error al cargar horarios de módulos:', error);
-                console.log('⚠️ Usando horarios de fallback');
             }
         }
 
@@ -1217,7 +1205,6 @@
             detenerWatchdog();
             watchdogTimer = setTimeout(() => {
                 if (ordenEscaneo === 'espacio') {
-                    console.log('Watchdog: Reiniciando flujo por inactividad');
                     limpiarEstadoLectura('Tiempo de espera agotado');
                 }
             }, 60000); // 60 segundos de espera para el espacio
@@ -1712,14 +1699,12 @@
             // Debounce cliente: ignorar escaneo idéntico dentro de 3 segundos (evita lecturas dobles de escáneres físicos)
             const now = Date.now();
             if (lastScannedBuffer === bufferQR.trim() && (now - lastScannedTime) < 3000) {
-                console.log('Escaneo idéntico ignorado por debounce de escáner (3s):', bufferQR);
                 bufferQR = '';
                 return;
             }
 
             // Evitar procesamiento múltiple si ya hay uno en curso
             if (isProcessingQR) {
-                console.log('Procesamiento en curso, ignorando escaneo actual');
                 return;
             }
 
@@ -2843,21 +2828,16 @@
         }
 
         async function mostrarModalEspacio(indicator) {
-            console.log('🔍 DEBUG - mostrarModalEspacio llamada para:', indicator.id);
-            console.log('🔍 Estado del indicator:', indicator.estado);
-            console.log('🔍 Indicator completo:', indicator);
 
             // Verificar si está en mantención
             const estadoLower = (indicator.estado || '').toLowerCase();
             if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
-                console.log('⚠️ El espacio está en mantención - Mostrando modal de advertencia');
                 mostrarModalMantención(indicator);
                 return;
             }
 
             // Verificar si es una Sala de Estudio
             if (indicator.tipo && (indicator.tipo.toLowerCase() === 'sala de estudio' || indicator.tipo.toLowerCase() === 'sala estudio')) {
-                console.log('📚 Es una Sala de Estudio - Abriendo modal especial');
                 mostrarModalSalaEstudio(indicator);
                 return;
             }
@@ -2874,10 +2854,8 @@
             if (qrInput) {
                 qrInput.style.pointerEvents = 'none';
                 qrInput.blur(); // Remover el focus del input
-                console.log('🔒 Input QR bloqueado - pointer-events: none');
             }
             
-            console.log('✅ Modal mostrado correctamente');
         } else {
             console.error('❌ No se encontró el modal de espacio');
             return;
@@ -2929,10 +2907,8 @@
 
         try {
             const data = await Promise.race([dataPromise, timeoutPromise]);
-            console.log('🔍 DEBUG - Datos recibidos de la API:', data);
 
             if (data.success) {
-                console.log('✅ API respondió correctamente, llamando renderizarInformacionOcupante');
                 // Renderizar información optimizada, pasando también el estado del indicator
                 renderizarInformacionOcupante(elements, data, indicator);
             } else {
@@ -3092,7 +3068,6 @@
             }
 
             const data = await response.json();
-            console.log('📦 Datos recibidos del servidor:', data);
 
             // Guardar en cache según el tipo de ocupación
             if (data.success && data.tipo_ocupacion === 'solicitante') {
@@ -3130,10 +3105,6 @@
         // Función para renderizar información del ocupante optimizada
         function renderizarInformacionOcupante(elements, data, indicator) {
             // Debug: Log de los datos recibidos
-            console.log('🔍 DEBUG - renderizarInformacionOcupante llamada');
-            console.log('🔍 Estado del indicator:', indicator?.estado);
-            console.log('🔍 Datos recibidos:', data);
-            console.log('🔍 Tipo de ocupación:', data.tipo_ocupacion);
 
             // Verificar si el espacio está disponible PRIMERO, sin importar el tipo_ocupacion
             const espacioDisponible = indicator && (
@@ -3143,17 +3114,14 @@
                 indicator.estado === '#10b981'
             );
 
-            console.log('🔍 ¿Espacio disponible?:', espacioDisponible);
 
             // Si el espacio está disponible, forzar renderizado como libre
             if (espacioDisponible) {
-                console.log('🟢 Espacio disponible - Forzando renderizado libre');
                 renderizarInformacionLibre(elements, data, indicator);
                 return;
             }
 
             // Solo si el espacio NO está disponible, mostrar según tipo de ocupación
-            console.log('🔴 Espacio no disponible - Renderizando según tipo');
 
             // SOLO mostrar botón desocupar si el estado es EXACTAMENTE "Ocupado"
             const espacioOcupado = indicator && (
@@ -3166,15 +3134,12 @@
             // Controlar visibilidad del footer con el botón Desocupar
             const modalFooter = document.getElementById('modal-footer-actions');
             
-            console.log('🔍 ¿Espacio realmente ocupado?:', espacioOcupado);
             
             if (modalFooter) {
                 if (espacioOcupado) {
                     modalFooter.classList.remove('hidden');
-                    console.log('🔧 Footer del modal MOSTRADO - Espacio Ocupado');
                 } else {
                     modalFooter.classList.add('hidden');
-                    console.log('🔧 Footer del modal OCULTO - Espacio NO es Ocupado');
                 }
             }
 
@@ -3184,10 +3149,8 @@
             // Si no tenemos RUN específico, usar el ID del espacio para desocupación forzosa
             if (!runParaDesocupar && indicator?.id) {
                 runParaDesocupar = `FORCE_${indicator.id}`;
-                console.log('⚠️ Usando desocupación forzosa para espacio:', indicator.id);
             }
 
-            console.log('🔍 RUN para desocupar:', runParaDesocupar);
 
             // Guardar en el state como fuente de verdad principal
             state.currentOccupantRun = runParaDesocupar || null;
@@ -3197,16 +3160,12 @@
 
             // Mostrar información según el tipo de ocupación
             if (data.tipo_ocupacion === 'profesor') {
-                console.log('📚 Renderizando como profesor');
                 renderizarInformacionProfesor(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'solicitante') {
-                console.log('👤 Renderizando como solicitante');
                 renderizarInformacionSolicitante(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'ocupado_sin_info') {
-                console.log('❓ Renderizando como ocupado sin info');
                 renderizarInformacionOcupadoSinInfo(elements, data, indicator);
             } else {
-                console.log('🆓 Renderizando como libre');
                 renderizarInformacionLibre(elements, data, indicator);
             }
         }
@@ -3368,8 +3327,6 @@
         function mostrarVistaPasos(elements, data, indicator) {
             if (!elements.pasoClasesContainer) return;
             
-            console.log('📊 mostrarVistaPasos - Datos recibidos:', data);
-            console.log('📊 Indicator:', indicator);
             
             // MOSTRAR la cronología
             elements.pasoClasesContainer.style.display = 'block';
@@ -3415,31 +3372,18 @@
                     // O si ya debería haber comenzado (hasta 90 minutos de margen para cubrir el módulo)
                     reservaEstaAhora = diferencia <= 15 && diferencia > -90;
                     
-                    console.log('⏰ Análisis de hora:', {
-                        hora_actual: horaActual,
-                        hora_proxima: data.proxima_clase.hora_inicio,
-                        minutos_diferencia: diferencia,
-                        esta_ahora: reservaEstaAhora
-                    });
                 }
             }
             
-            console.log('🟡 ¿Tiene reserva pendiente?:', tieneReservaPendiente, {
-                proxima_clase: data.proxima_clase?.asignatura,
-                asignatura_actual: data.asignatura,
-                esta_en_ahora: reservaEstaAhora
-            });
             
             // Actualizar icono y etiqueta del paso "Ahora" según estado
             if (elements.pasoAhoraIcono) {
                 if (tieneReservaPendiente && reservaEstaAhora) {
                     // Amarillo para reserva pendiente que ESTÁ AHORA (próximos 10 min)
                     elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-yellow-500 rounded-full';
-                    console.log('🟡 Icono "Ahora" cambiado a AMARILLO - Reserva pendiente EN AHORA (próximos 10 min)');
                 } else {
                     // Azul por defecto
                     elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full';
-                    console.log('🔵 Icono "Ahora" mantenido en AZUL - Sin reserva en los próximos 10 minutos');
                 }
             }
             
@@ -3454,7 +3398,6 @@
             // Clase Anterior
             if (elements.pasoClaseAnterior) {
                 const anterior = data.clase_anterior;
-                console.log('📊 Clase anterior:', anterior);
                 if (anterior && anterior.asignatura) {
                     const horarioAnterior = anterior.hora_inicio && anterior.hora_termino ? 
                         `${anterior.hora_inicio.substring(0, 5)} - ${anterior.hora_termino.substring(0, 5)}` : 
@@ -3473,7 +3416,6 @@
             
             // Estado Actual (Ahora)
             if (elements.pasoEstadoActual) {
-                console.log('📊 Estado actual - asignatura:', data.asignatura, 'nombre:', data.nombre);
                 
                 // Actualizar clases del contenedor según estado
                 if (tieneReservaPendiente && reservaEstaAhora) {
@@ -3562,7 +3504,6 @@
             // Próxima Clase
             if (elements.pasoClaseProxima) {
                 const proxima = data.proxima_clase;
-                console.log('📊 Próxima clase:', proxima, 'reservaEstaAhora:', reservaEstaAhora);
                 
                 // Mostrar próxima clase solo si:
                 // 1. Existe próxima clase Y
@@ -3839,7 +3780,6 @@
             const tituloEl = document.getElementById('ocupanteTitulo');
 
             // PRIMERO: Mostrar la cronología (SIEMPRE se debe mostrar)
-            console.log('📊 Espacio disponible - Mostrando cronología');
             mostrarVistaPasos(elements, data, indicator);
 
             // Determinar si el espacio está realmente disponible según el indicator
@@ -3850,7 +3790,6 @@
                 indicator.estado === '#10b981'
             );
 
-            console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
 
             // NUNCA mostrar botón desocupar para espacios no ocupados
             // SOLO mostrar si el estado es EXACTAMENTE "Ocupado"
@@ -3865,10 +3804,8 @@
             btnsDesocupar.forEach(btn => {
                 if (espacioOcupado) {
                     btn.classList.remove('hidden');
-                    console.log('🔧 Botón desocupar visible - Espacio Ocupado');
                 } else {
                     btn.classList.add('hidden');
-                    console.log('🔧 Botón desocupar oculto - Espacio NO es Ocupado (estado: ' + indicator?.estado + ')');
                 }
             });
 
@@ -3876,7 +3813,6 @@
             if (espacioOcupado) {
                 const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
                 state.currentOccupantRun = runValue;
-                console.log('🔍 RUN para desocupación configurado:', runValue);
                 
                 // Mostrar información del último ocupante
                 if (tituloEl) tituloEl.textContent = 'Último Ocupante';
@@ -3922,7 +3858,6 @@
 
             // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
             if (espacioDisponible) {
-                console.log('🟢 Espacio disponible - Ocultando ocupante, mostrando próxima clase');
                 if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
 
                 // Ocultar completamente el contenedor de ocupante
@@ -3936,7 +3871,6 @@
 
                 // SIEMPRE intentar mostrar próxima clase/reserva si existe
                 if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
-                    console.log('📅 Mostrando próxima clase:', data.proxima_clase);
                     // NO mostrar - ahora se usa la cronología
                     // elements.proximaClaseContainer.style.display = 'block';
                     elements.proximaClaseInfo.innerHTML = `
@@ -3977,7 +3911,6 @@
                     `;
                 } else {
                     // No hay próxima clase - ocultar el contenedor
-                    console.log('❌ No hay próxima clase para mostrar');
                     if (elements.proximaClaseContainer) {
                         elements.proximaClaseContainer.style.display = 'none';
                     }
@@ -4067,11 +4000,9 @@
 
             // Solo ocultar botón desocupar si el espacio está realmente disponible
             if (espacioDisponible) {
-                console.log('🔍 Espacio realmente disponible - Ocultando botón desocupar');
                 const btnsDesocupar = document.querySelectorAll('.btn-desocupar');
                 btnsDesocupar.forEach(btn => btn.classList.add('hidden'));
             } else {
-                console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
             }
         }
 
@@ -4083,7 +4014,6 @@
                 return;
             }
 
-            console.log('🎯 Mostrando modal de asistentes', { infoClase, idReserva, idEspacio });
 
             // Llenar información en el modal
             document.getElementById('asistentes-espacio').textContent = idEspacio;
@@ -4160,7 +4090,6 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    console.log('✅ Asistencia registrada correctamente');
                     // Actualizar estado del espacio si es necesario
                     await actualizarColoresEspacios(true);
                 } else {
@@ -4176,7 +4105,6 @@
         // ============================================================================
 
         function mostrarModalMantención(indicator) {
-            console.log('⚠️ Mostrando modal de mantención para:', indicator.id);
             
             // Crear modal dinámicamente
             const modalHTML = `
@@ -4229,7 +4157,6 @@
             const modal = document.getElementById('modal-mantenimiento');
             if (modal) {
                 modal.remove();
-                console.log('✅ Modal de mantención cerrado');
             }
         }
 
@@ -4245,7 +4172,6 @@
         };
 
         async function mostrarModalSalaEstudio(indicator) {
-            console.log('📚 Abriendo modal de Sala de Estudio para:', indicator.id);
             
             // Guardar datos de la sala actual
             salaEstudioActual.id = indicator.id;
@@ -4271,7 +4197,6 @@
                 salaEstudioActual.modalAbierto = true;
                 bufferSalaEstudio = '';
                 
-                console.log('📚 Modal abierto - captura de teclado activada');
                 
                 // IMPORTANTE: Desactivar COMPLETAMENTE el input principal
                 const inputPrincipal = document.getElementById('qr-input');
@@ -4291,7 +4216,6 @@
                     inputQR.disabled = false;
                     setTimeout(() => {
                         inputQR.focus();
-                        console.log('📚 Input invisible enfocado');
                     }, 100);
                 }
             }
@@ -4310,7 +4234,6 @@
             salaEstudioActual.modalAbierto = false;
             bufferSalaEstudio = '';
             
-            console.log('📚 Modal cerrado - captura de teclado desactivada');
             
             // Limpiar el input
             const inputQR = document.getElementById('qr-input-sala-estudio');
@@ -4355,12 +4278,10 @@
             const timeSinceLastKey = now - lastKeySalaEstudio;
             lastKeySalaEstudio = now;
 
-            console.log('📚 Tecla capturada en modal:', event.key, 'Buffer actual:', bufferSalaEstudio.substring(0, 20) + '...');
 
             // Si es Enter, procesar el buffer
             if (event.key === 'Enter') {
                 event.preventDefault();
-                console.log('📚 Enter detectado - procesando buffer');
                 if (bufferSalaEstudio.length > 0) {
                     await procesarQRSalaEstudio();
                 }
@@ -4370,7 +4291,6 @@
             // Si pasó más de 100ms desde la última tecla, resetear buffer (nuevo escaneo)
             if (timeSinceLastKey > 100) {
                 bufferSalaEstudio = '';
-                console.log('📚 Nuevo escaneo detectado - buffer reseteado');
             }
 
             // Acumular caracteres imprimibles
@@ -4386,7 +4306,6 @@
                 // Auto-procesar después de 300ms sin nuevas teclas
                 processingTimeoutSala = setTimeout(async () => {
                     if (bufferSalaEstudio.length > 10) {
-                        console.log('📚 Timeout - procesando buffer automáticamente');
                         await procesarQRSalaEstudio();
                     }
                 }, 300);
@@ -4405,7 +4324,6 @@
                 return;
             }
 
-            console.log('📚 Procesando QR de Sala de Estudio:', bufferSalaEstudio);
 
             // Extraer RUN del QR
             const runMatch = bufferSalaEstudio.match(/RUN[^0-9]*(\d+)/);
@@ -4424,15 +4342,12 @@
                 run = runMatch[1];
             }
 
-            console.log('📚 RUN extraído:', run);
 
             // El backend manejará si es entrada o salida
             // No verificamos localmente si ya está registrado
 
-            console.log('✅ Llamando a registrarAccesoSalaEstudio...', salaEstudioActual.id, run);
             // Registrar acceso del alumno (entrada o salida)
             const resultado = await registrarAccesoSalaEstudio(salaEstudioActual.id, run);
-            console.log('📨 Resultado del registro:', resultado);
             
             if (resultado.success) {
                 if (resultado.accion === 'salida') {
@@ -4466,7 +4381,6 @@
             } else {
                 // Verificar si es un veto
                 if (resultado.vetado) {
-                    console.log('🚫 Usuario vetado:', resultado.veto);
                     
                     // Mostrar modal con información del veto con z-index superior
                     const tipoVeto = resultado.veto.tipo === 'grupal' ? 'Grupal' : 'Individual';
@@ -4539,8 +4453,6 @@
                     
                 } else if (resultado.mensaje && resultado.mensaje.includes('Usuario no encontrado')) {
                     // Si el usuario no está registrado, el backend intentará crearlo desde solicitantes
-                    console.log('⚠️ Usuario no encontrado - el backend no pudo crearlo desde solicitantes');
-                    console.log('📝 Abriendo modal de registro para nuevo usuario');
                     
                     // Cerrar modal de sala de estudio
                     cerrarModalSalaEstudio();
@@ -4603,7 +4515,6 @@
 
         async function cargarAlumnosRegistradosSalaEstudio(espacioId) {
             try {
-                console.log('📚 Cargando alumnos registrados para:', espacioId);
                 
                 const response = await fetch(`/api/sala-estudio/${espacioId}/alumnos-registrados`, {
                     method: 'GET',
@@ -4616,12 +4527,10 @@
                 const data = await response.json();
                 
                 if (data.success && data.alumnos) {
-                    console.log('📚 Alumnos cargados:', data.alumnos.length);
                     salaEstudioActual.alumnosRegistrados = data.alumnos;
                     actualizarListaAlumnosSalaEstudio();
                     actualizarContadoresSalaEstudio();
                 } else {
-                    console.log('📚 No hay alumnos registrados');
                     salaEstudioActual.alumnosRegistrados = [];
                     // Si no hay alumnos, mostrar mensaje vacío
                     const lista = document.getElementById('listaSalaEstudioAlumnos');
@@ -4740,7 +4649,6 @@
 
         // Función para abrir modal de registro desde sala de estudio
         function abrirModalRegistroConRun(run) {
-            console.log('📝 Abriendo modal de registro para RUN:', run);
             
             // Guardar el RUN pendiente
             runSolicitantePendiente = run;
@@ -4759,7 +4667,6 @@
                 detail: 'registro-solicitante'
             }));
             
-            console.log('📝 Modal de registro abierto');
         }
 
         // ============================================================================
@@ -4776,7 +4683,6 @@
             const qrInput = document.getElementById('qr-input');
             if (qrInput) {
                 qrInput.style.pointerEvents = 'auto';
-                console.log('🔓 Input QR desbloqueado - pointer-events: auto');
             }
             
             // Restaurar el input QR activo usando el gestor
@@ -4833,7 +4739,6 @@
                 data.bloques.forEach(nuevoBloque => {
                     const bloqueExistente = state.indicators.find(b => b.id === nuevoBloque.id);
                     if (bloqueExistente && bloqueExistente.estado !== nuevoBloque.estado) {
-                        console.log(`Actualizando espacio ${nuevoBloque.id}: ${bloqueExistente.estado} → ${nuevoBloque.estado}`);
                         bloqueExistente.estado = nuevoBloque.estado;
                         bloqueExistente.color = nuevoBloque.color || bloqueExistente.color;
                         cambiosDetectados.push({
@@ -5025,6 +4930,11 @@
 
             setInterval(actualizarModuloYColores, 5000);
             actualizarModuloYColores();
+
+            // Restaurar estado minimizado del reloj si el usuario lo guardó
+            if (localStorage.getItem('plano_reloj_minimizado') === '1') {
+                toggleModalReloj(true);
+            }
 
             // Iniciar Watchdog Anti-Bloqueo (cada 10s) y Keep-Alive (cada 5min)
             setInterval(ejecutarWatchdogAntiBloqueo, 10000);
@@ -5587,6 +5497,23 @@
             return 1;
         }
 
+        function toggleModalReloj(minimizar) {
+            const expandido = document.getElementById('reloj-expandido');
+            const minimizado = document.getElementById('reloj-minimizado');
+            if (!expandido || !minimizado) return;
+
+            if (minimizar) {
+                expandido.classList.add('hidden');
+                minimizado.classList.remove('hidden');
+                localStorage.setItem('plano_reloj_minimizado', '1');
+            } else {
+                expandido.classList.remove('hidden');
+                minimizado.classList.add('hidden');
+                localStorage.setItem('plano_reloj_minimizado', '0');
+            }
+        }
+        window.toggleModalReloj = toggleModalReloj;
+
         function actualizarHora() {
             const ahora = new Date();
             const horaActual = ahora.toLocaleTimeString('es-ES', {
@@ -5598,6 +5525,14 @@
             const horaActualElement = document.getElementById('hora-actual');
             if (horaActualElement) {
                 horaActualElement.textContent = horaActual;
+            }
+            const modalHoraActual = document.getElementById('modal-hora-actual');
+            if (modalHoraActual) {
+                modalHoraActual.textContent = horaActual;
+            }
+            const modalHoraMinimizada = document.getElementById('modal-hora-minimizada');
+            if (modalHoraMinimizada) {
+                modalHoraMinimizada.textContent = horaActual;
             }
         }
 
@@ -5642,7 +5577,6 @@
 
             if (!hayModalesAbiertos) {
                 if (ordenEscaneo === 'espacio' && tiempoInactivo > 35000) {
-                    console.log('Watchdog: Timeout de espera de espacio por inactividad (35s). Regresando a usuario.');
                     limpiarEstadoCompleto();
                 }
 
@@ -5660,7 +5594,6 @@
 
             // 4. Si el sistema lleva más de 20 minutos en inactividad total y sin modales abiertos, recargar suavemente la página
             if (!hayModalesAbiertos && !isProcessingQR && ordenEscaneo === 'usuario' && tiempoInactivo > 20 * 60 * 1000) {
-                console.log('Auto-Refresco: Recarga preventiva por inactividad prolongada (20 min)');
                 window.location.reload();
             }
         }
@@ -5698,6 +5631,7 @@
             const moduloParaReserva = obtenerModuloParaReserva(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual');
             const moduloHorarioElement = document.getElementById('horario-actual');
+            const modalModuloElement = document.getElementById('modal-modulo-actual');
 
             // Detectar cambio de módulo para sincronizar espacios inmediatamente
             if (moduloActual !== ultimoModuloDetectado) {
@@ -5707,17 +5641,29 @@
                 }
             }
 
+            if (modalModuloElement) {
+                if (moduloActual) {
+                    modalModuloElement.textContent = `Módulo actual: ${moduloActual}`;
+                } else if (moduloParaReserva) {
+                    modalModuloElement.textContent = `Break (Próx. Mód: ${moduloParaReserva})`;
+                } else {
+                    modalModuloElement.textContent = 'Módulo actual: -';
+                }
+            }
+
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
                 const prefijo = obtenerPrefijoDiaActual();
                 moduloActualElement.textContent = `${prefijo}.${moduloActual}`;
 
                 // Obtener el horario del módulo actual
                 const diaActual = obtenerDiaActual();
-                const horarioModulo = horariosModulos[diaActual][moduloActual];
+                const horarioModulo = horariosModulos[diaActual] ? horariosModulos[diaActual][moduloActual] : null;
 
-                // Mostrar solo horas y minutos
-                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
-                moduloHorarioElement.textContent = horarioTexto;
+                if (horarioModulo) {
+                    // Mostrar solo horas y minutos
+                    const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
+                    moduloHorarioElement.textContent = horarioTexto;
+                }
             } else {
                 // Estamos en un break entre módulos
                 if (moduloActualElement) {
@@ -5797,7 +5743,6 @@
                 console.error('Error procesando evento storage reserva_eliminada', err);
             }
         } else if (event.key === 'reserva_cambiada' || event.key === 'espacio_cambiado') {
-            console.log('🔄 Cambio detectado en localStorage, actualizando mapa...');
             if (typeof actualizarColoresEspacios === 'function') {
                 actualizarColoresEspacios(true); // forzar
             }

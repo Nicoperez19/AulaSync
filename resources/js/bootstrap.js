@@ -41,7 +41,6 @@ window.Echo = new Echo({
 // Logging para desarrollo (opcional)
 if (import.meta.env.DEV) {
     window.Echo.connector.pusher.connection.bind('state_change', (states) => {
-        console.log('Reverb Connection State:', states.current);
     });
     
     window.Echo.connector.pusher.connection.bind('error', (error) => {

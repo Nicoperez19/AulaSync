@@ -7,15 +7,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
-    <!-- Supresión de logs en consola del navegador -->
-    <script>
-        (function() {
-            var noop = function() {};
-            window.console.log = noop;
-            window.console.debug = noop;
-            window.console.info = noop;
-        })();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 

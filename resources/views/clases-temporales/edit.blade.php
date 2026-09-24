@@ -727,9 +727,6 @@
                 id_espacio: item.id_espacio
             }));
 
-            console.log('Planificaciones a guardar:', planificaciones);
-            console.log('Nombre asignatura:', document.getElementById('nombre_asignatura').value);
-            console.log('Profesor:', document.getElementById('run_profesor_colaborador').value);
             
             document.getElementById('planificaciones-input').value = JSON.stringify(planificaciones);
         });

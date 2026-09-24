@@ -218,9 +218,7 @@
         }
 
         initializeTable() {
-            console.log('Inicializando tabla de permisos...');
             this.setupDeleteButtons();
-            console.log('Tabla de permisos inicializada correctamente');
         }
 
         setupDeleteButtons() {
@@ -243,11 +241,9 @@
                 btn.addEventListener('click', deleteHandler);
             });
 
-            console.log(`Botones de eliminación configurados: ${buttons.length}`);
         }
 
         async handleDelete(permissionId, permissionName) {
-            console.log(`Intentando eliminar permiso: ${permissionId} - ${permissionName}`);
             
             if (typeof Swal !== 'undefined') {
                 const result = await Swal.fire({

@@ -713,11 +713,9 @@
                 body: JSON.stringify({ modulos: Array.from(selectedModulos) })
             })
             .then(function(response) { 
-                console.log('Response status:', response.status);
                 return response.json(); 
             })
             .then(function(data) {
-                console.log('Salas data:', data);
                 window.salasData = data.salas || [];
                 window.salasDescartadas = data.salas_descartadas || [];
                 renderSalas();

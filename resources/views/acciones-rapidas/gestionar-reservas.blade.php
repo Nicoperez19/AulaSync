@@ -434,7 +434,6 @@ let ordenActual = {campo: 'fecha', direccion: 'desc'};
 
 // Función para editar reserva - Definida al inicio para estar disponible
 window.editarReserva = async function(idReserva) {
-    console.log('🟢 Abriendo modal de edición para reserva:', idReserva);
     
     // Buscar la reserva en los datos originales
     const reserva = reservasOriginales.find(r => r.id == idReserva);
@@ -578,7 +577,6 @@ async function cargarModulosParaModal() {
             throw new Error('Ruta /api/modulos no encontrada');
         }
     } catch (error) {
-        console.log('ℹ️ Usando módulos por defecto para el modal');
         // Fallback: crear módulos por defecto si la API no existe o falla
         modulosCargados = [];
         @php
@@ -813,9 +811,6 @@ window.guardarEdicionReserva = async function(event) {
 
 // Funciones globales para ordenamiento (necesarias para onclick en HTML)
 function ordenarPor(campo) {
-    console.log('🔄 CLICK EN COLUMNA - Ordenando por:', campo);
-    console.log('🔄 Estado actual:', ordenActual);
-    console.log('🔄 Reservas disponibles:', reservasOriginales?.length || 0);
     
     if (!reservasOriginales || reservasOriginales.length === 0) {
         console.warn('⚠️ No hay reservas para ordenar');
@@ -842,7 +837,6 @@ function ordenarPor(campo) {
         }
     }
 
-    console.log('🔄 Nuevo estado:', ordenActual);
     actualizarIconosOrden();
     filtrarReservas();
 }
@@ -897,7 +891,6 @@ function procesarReservas() {
     const moduloFiltro = document.getElementById('filtro-modulo-reserva').value;
     const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('🔍 Procesando reservas con filtros:', { solicitanteFiltro, estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
 
     // 1. Aplicar filtros
     let reservasProcesadas = [...reservasOriginales];

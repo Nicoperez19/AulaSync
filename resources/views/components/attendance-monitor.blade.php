@@ -212,7 +212,6 @@ function attendanceMonitorComponent(roomId, autoRefresh) {
         echoChannel: null,
         
         init() {
-            console.log(`Inicializando monitor de asistencia para sala: ${this.roomId}`);
             
             // Suscribirse al canal de Echo
             this.subscribeToChannel();
@@ -231,14 +230,12 @@ function attendanceMonitorComponent(roomId, autoRefresh) {
             
             this.echoChannel = window.Echo.private(`room.${this.roomId}`)
                 .listen('.attendance.registered', (event) => {
-                    console.log('Evento de asistencia recibido:', event);
                     this.handleAttendanceRegistered(event);
                 })
                 .error((error) => {
                     console.error('Error en la suscripción al canal:', error);
                 });
             
-            console.log(`Suscrito al canal: private-room.${this.roomId}`);
         },
         
         handleAttendanceRegistered(event) {
@@ -350,7 +347,7 @@ function attendanceMonitorComponent(roomId, autoRefresh) {
             try {
                 const audio = new Audio('/sounds/notification.mp3');
                 audio.volume = 0.5;
-                audio.play().catch(e => console.log('No se pudo reproducir el sonido:', e));
+                audio.play().catch(e => );
             } catch (e) {
                 // Ignorar errores de audio
             }

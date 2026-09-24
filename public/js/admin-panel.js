@@ -15,7 +15,6 @@ window.modulosHorarios = window.modulosHorarios || {};
 
 // Inicializar el panel de administración cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando Panel de Administración...');
     
     // Verificar que las funciones principales existan
     // En vistas donde no se usa el lector de código QR, qrInputManager es opcional
@@ -32,10 +31,8 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         // Usar los horarios del archivo principal si están disponibles
         modulosHorarios = horariosModulos;
-        console.log('✅ Horarios de módulos importados correctamente');
     }
     
-    console.log('✅ Panel de Administración inicializado');
 });
 
 /**
@@ -58,7 +55,6 @@ function abrirModalAgregarReserva() {
         // Configurar event listeners para el modal
         configurarEventListenersModal();
         
-        console.log('✅ Modal agregar reserva abierto');
     }
 }
 
@@ -97,7 +93,6 @@ function abrirModalEditar() {
         modal.classList.remove('hidden');
         if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
-        console.log('✅ Modal editar abierto');
     }
 }
 
@@ -143,7 +138,6 @@ async function buscarPorRun() {
     const resultadoDiv = document.getElementById('resultado-busqueda');
     const run = runInput.value.trim();
 
-    console.log('🔍 Buscando usuario con RUN:', run);
 
     if (!run) {
         resultadoDiv.innerHTML = '<span class="text-red-600">Por favor ingrese un RUN</span>';
@@ -154,14 +148,12 @@ async function buscarPorRun() {
         resultadoDiv.innerHTML = '<span class="text-blue-600">Buscando...</span>';
         
         const response = await fetch(`/api/buscar-usuario/${run}`);
-        console.log('📡 Response status búsqueda:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('📦 Data búsqueda recibida:', data);
 
         if (data.success && data.usuario) {
             const usuario = data.usuario;
@@ -174,10 +166,8 @@ async function buscarPorRun() {
             document.getElementById('tipo-responsable').value = usuario.tipo_usuario || '';
 
             resultadoDiv.innerHTML = `<span class="text-green-600">✅ Usuario encontrado: ${usuario.nombre}</span>`;
-            console.log('✅ Usuario encontrado y campos rellenados');
         } else {
             resultadoDiv.innerHTML = '<span class="text-orange-600">⚠️ Usuario no encontrado. Complete los datos manualmente.</span>';
-            console.log('⚠️ Usuario no encontrado');
         }
     } catch (error) {
         console.error('❌ Error al buscar usuario:', error);
@@ -187,18 +177,15 @@ async function buscarPorRun() {
 
 // Cargar espacios disponibles para el select
 async function cargarEspaciosDisponibles() {
-    console.log('🔄 Cargando espacios disponibles...');
     
     try {
         const response = await fetch('/api/espacios/disponibles');
-        console.log('📡 Response status:', response.status);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        console.log('📦 Data recibida:', data);
         
         const select = document.getElementById('espacio-reserva');
         if (select) {
@@ -213,7 +200,6 @@ async function cargarEspaciosDisponibles() {
                 });
                 
                 espaciosDisponibles = data.espacios;
-                console.log(`✅ Cargados ${data.espacios.length} espacios`);
             } else {
                 select.innerHTML = '<option value="">Error: No se pudieron cargar los espacios</option>';
                 console.error('❌ Error en la respuesta:', data.mensaje || 'Estructura de datos incorrecta');
@@ -403,7 +389,6 @@ function abrirModalEditarReservas() {
         if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         cargarReservas();
-        console.log('✅ Modal editar reservas abierto');
     }
 }
 
@@ -544,7 +529,6 @@ function abrirModalEditarEspacios() {
         if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         cargarEspacios();
-        console.log('✅ Modal editar espacios abierto');
     }
 }
 
@@ -719,7 +703,6 @@ async function vaciarTodasLasReservas() {
 // Función para actualizar módulos disponibles (placeholder)
 function actualizarModulosDisponibles() {
     // Esta función se puede expandir para verificar disponibilidad real
-    console.log('Actualizando módulos disponibles...');
 }
 
 // ========================================
@@ -728,12 +711,9 @@ function actualizarModulosDisponibles() {
 
 // Función para testear la API de espacios (debug)
 async function testearAPIEspacios() {
-    console.log('🧪 Testeando API de espacios...');
     try {
         const response = await fetch('/api/espacios/disponibles');
-        console.log('📡 Response:', response);
         const data = await response.json();
-        console.log('📦 Data:', data);
         return data;
     } catch (error) {
         console.error('❌ Error:', error);
@@ -743,12 +723,9 @@ async function testearAPIEspacios() {
 
 // Función para testear la API de búsqueda de usuario (debug)
 async function testearAPIBusqueda(run = '12345678') {
-    console.log('🧪 Testeando API de búsqueda con RUN:', run);
     try {
         const response = await fetch(`/api/buscar-usuario/${run}`);
-        console.log('📡 Response:', response);
         const data = await response.json();
-        console.log('📦 Data:', data);
         return data;
     } catch (error) {
         console.error('❌ Error:', error);

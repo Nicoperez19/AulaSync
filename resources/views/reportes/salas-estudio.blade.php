@@ -568,13 +568,10 @@
         async function cargarVetados(estado = '', containerId = 'listaVetados') {
             try {
                 const url = estado ? `/api/sala-estudio/vetos?estado=${estado}` : '/api/sala-estudio/vetos';
-                console.log('Cargando vetos desde:', url);
                 
                 const response = await fetch(url);
-                console.log('Response status:', response.status);
                 
                 const data = await response.json();
-                console.log('Data recibida:', data);
 
                 const container = document.getElementById(containerId);
                 

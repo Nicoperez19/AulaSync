@@ -1119,7 +1119,6 @@
                         }
                     }
                 });
-                console.log('✓ Chart clases no realizadas initialized');
             } catch (error) {
                 console.error('Error initializing chart:', error);
             }
