@@ -8,6 +8,14 @@
     </x-sidebar.link>
     @endrole
 
+    @auth
+        <x-sidebar.link title="Dashboard Soporte" href="{{ route('soporte.dashboard') }}" :isActive="request()->routeIs('soporte.dashboard')">
+            <x-slot name="icon">
+                <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            </x-slot>
+        </x-sidebar.link>
+    @endauth
+
     <!-- Monitoreo de Espacios - Todos los roles -->
     @can('monitoreo de espacios')
         <x-sidebar.link title="Monitoreo de Espacios"

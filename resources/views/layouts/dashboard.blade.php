@@ -241,4 +241,6 @@
 
     <!-- Cargar script externo del dashboard -->
     @vite(['resources/js/dashboard.js'])
+
+
 </x-app-layout>

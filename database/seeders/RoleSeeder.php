@@ -18,6 +18,7 @@ class RoleSeeder extends Seeder
         $roleUsuario = Role::firstOrCreate(['name' => 'Usuario']);
         $roleProfesor = Role::firstOrCreate(['name' => 'Profesor']);
         $roleControlDocente = Role::firstOrCreate(['name' => 'Control Docente']);
+        $roleSoporte = Role::firstOrCreate(['name' => 'Soporte']);
 
         $permission1 = Permission::firstOrCreate(['name' => 'dashboard']);
         $permission2 = Permission::firstOrCreate(['name' => 'mantenedor de roles']);
@@ -47,6 +48,7 @@ class RoleSeeder extends Seeder
         $permission26 = Permission::firstOrCreate(['name' => 'gestionar licencias profesores']);
         $permission27 = Permission::firstOrCreate(['name' => 'gestionar recuperacion clases']);
         $permission28 = Permission::firstOrCreate(['name' => 'mantenedor de feriados']);
+        $permissionSoporte = Permission::firstOrCreate(['name' => 'gestionar tickets de soporte']);
 
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
@@ -74,5 +76,7 @@ class RoleSeeder extends Seeder
         $roleControlDocente->syncPermissions([
             $permission10, $permission12, $permission15, $permission22,
         ]);
+
+        $roleSoporte->syncPermissions([$permissionSoporte]);
     }
 }

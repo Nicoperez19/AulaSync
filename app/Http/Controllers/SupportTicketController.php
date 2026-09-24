@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
+use App\Models\Sede;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,10 +20,14 @@ class SupportTicketController extends Controller
     {
         return $user->is_superuser
             || (string)$user->run === '19716146'
-            || $user->hasRole('Técnico')
-            || $user->hasRole('Administrador')
-            || $user->hasRole('Super Admin')
-            || $user->hasRole('Supervisor');
+            || $this->hasAnyRole($user, ['Técnico', 'Soporte'])
+            || $user->can('gestionar tickets de soporte')
+            || $this->hasAnyRole($user, ['Administrador', 'Super Admin', 'Supervisor']);
+    }
+
+    private function hasAnyRole(User $user, array $roles): bool
+    {
+        return $user->roles()->whereIn('name', $roles)->exists();
     }
 
     /**
@@ -32,7 +37,7 @@ class SupportTicketController extends Controller
      */
     private function scopeBySede($query, User $user): void
     {
-        $isGlobalAdmin = $user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador');
+        $isGlobalAdmin = $user->is_superuser || (string)$user->run === '19716146' || $this->hasAnyRole($user, ['Super Admin', 'Administrador', 'Soporte']);
         if (!$isGlobalAdmin && $user->id_sede) {
             $query->where('id_sede', $user->id_sede);
         }
@@ -41,6 +46,40 @@ class SupportTicketController extends Controller
     // ─────────────────────────────────────────────────────────────────────────
     // VISTAS
     // ─────────────────────────────────────────────────────────────────────────
+
+    /** Dashboard de gestión para el equipo de soporte. */
+    public function dashboard(Request $request)
+    {
+        $user = Auth::user();
+        $isStaff = $this->isStaff($user);
+
+        $baseQuery = SupportTicket::query();
+        if ($isStaff) {
+            $this->scopeBySede($baseQuery, $user);
+        } else {
+            // Vista previa visual para usuarios sin rol de soporte: sólo sus propios tickets.
+            $baseQuery->where('user_id', $user->run);
+        }
+        if ($request->filled('id_sede')) {
+            $baseQuery->where('id_sede', $request->input('id_sede'));
+        }
+
+        $stats = [
+            'open' => (clone $baseQuery)->where('status', 'open')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'closed' => (clone $baseQuery)->where('status', 'closed')->count(),
+            'total' => (clone $baseQuery)->count(),
+        ];
+
+        $tickets = (clone $baseQuery)->whereIn('status', ['open', 'in_progress'])->with(['user', 'assignedTo'])
+            ->orderByRaw("FIELD(status, 'open', 'in_progress', 'closed')")
+            ->orderByDesc('created_at')->limit(8)->get();
+        $sedes = $isStaff
+            ? Sede::orderBy('nombre_sede')->get()
+            : Sede::where('id_sede', $user->id_sede)->orderBy('nombre_sede')->get();
+
+        return view('soporte.dashboard', compact('stats', 'tickets', 'sedes'));
+    }
 
     /**
      * Listado de tickets.
@@ -66,6 +105,9 @@ class SupportTicketController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
+        if ($isTecnico && $request->filled('id_sede')) {
+            $query->where('id_sede', $request->input('id_sede'));
+        }
         if ($request->filled('priority')) {
             $query->where('priority', $request->priority);
         }
@@ -83,6 +125,9 @@ class SupportTicketController extends Controller
         if ($isTecnico) {
             $baseStats = SupportTicket::query();
             $this->scopeBySede($baseStats, $user);
+            if ($request->filled('id_sede')) {
+                $baseStats->where('id_sede', $request->input('id_sede'));
+            }
             $stats = [
                 'open'        => (clone $baseStats)->where('status', 'open')->count(),
                 'in_progress' => (clone $baseStats)->where('status', 'in_progress')->count(),
@@ -90,7 +135,9 @@ class SupportTicketController extends Controller
             ];
         }
 
-        return view('soporte.index', compact('tickets', 'isTecnico', 'stats'));
+        $sedes = $isTecnico ? Sede::orderBy('nombre_sede')->get() : collect();
+
+        return view('soporte.index', compact('tickets', 'isTecnico', 'stats', 'sedes'));
     }
 
     /**
@@ -141,7 +188,7 @@ class SupportTicketController extends Controller
 
         $canView = $ticket->user_id === $user->run
             || $user->is_superuser
-            || ($isTecnico && ($user->id_sede === $ticket->id_sede || !$user->id_sede));
+            || ($isTecnico && ($this->hasAnyRole($user, ['Soporte']) || $user->can('gestionar tickets de soporte') || $user->id_sede === $ticket->id_sede || !$user->id_sede));
 
         if (!$canView) {
             abort(403, 'No tienes permiso para ver este ticket.');
@@ -151,8 +198,10 @@ class SupportTicketController extends Controller
 
         $tecnicos = collect();
         if ($isTecnico) {
-            $tecnicoQuery = User::role(['Técnico', 'Administrador'])->orderBy('name');
-            if (!$user->is_superuser && $user->id_sede) {
+            $tecnicoQuery = User::whereHas('roles', function ($query) {
+                $query->whereIn('name', ['Técnico', 'Soporte', 'Administrador']);
+            })->orderBy('name');
+            if (!$user->is_superuser && !$this->hasAnyRole($user, ['Soporte']) && !$user->can('gestionar tickets de soporte') && $user->id_sede) {
                 $tecnicoQuery->where('id_sede', $user->id_sede);
             }
             $tecnicos = $tecnicoQuery->get();

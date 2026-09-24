@@ -113,6 +113,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Soporte Técnico (sistema de tickets)
 Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')->group(function () {
+    Route::get('/dashboard', [SupportTicketController::class, 'dashboard'])->name('dashboard');
     Route::get('/', [SupportTicketController::class, 'index'])->name('index');
     Route::get('/nuevo', [SupportTicketController::class, 'create'])->name('create');
     Route::post('/', [SupportTicketController::class, 'store'])->name('store');

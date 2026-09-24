@@ -80,6 +80,17 @@
                            placeholder="Título o descripción..."
                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
+                @if($isTecnico)
+                <div class="min-w-[180px]">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Sede</label>
+                    <select name="id_sede" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todas las sedes</option>
+                        @foreach($sedes as $sede)
+                            <option value="{{ $sede->id_sede }}" {{ request('id_sede') === $sede->id_sede ? 'selected' : '' }}>{{ $sede->nombre_sede }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
                 <div class="min-w-[140px]">
                     <label class="block text-xs font-medium text-gray-600 mb-1">Estado</label>
                     <select name="status" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
@@ -103,7 +114,7 @@
                             class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
                         <i class="fas fa-search mr-1"></i> Filtrar
                     </button>
-                    @if(request()->hasAny(['search','status','priority']))
+                    @if(request()->hasAny(['search','status','priority','id_sede']))
                         <a href="{{ route('soporte.index') }}"
                            class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
                             Limpiar
@@ -133,6 +144,7 @@
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Título</th>
                                 @if($isTecnico)
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solicitante</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sede</th>
                                 @endif
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Prioridad</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
@@ -156,6 +168,7 @@
                                 </td>
                                 @if($isTecnico)
                                 <td class="px-4 py-3 text-gray-600 text-xs">{{ $ticket->user?->name ?? '—' }}</td>
+                                <td class="px-4 py-3 text-gray-600 text-xs">{{ $sedes->firstWhere('id_sede', $ticket->id_sede)?->nombre_sede ?? '—' }}</td>
                                 @endif
                                 <td class="px-4 py-3">
                                     @php $pc = $ticket->priorityColor(); @endphp

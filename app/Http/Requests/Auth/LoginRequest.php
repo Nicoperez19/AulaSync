@@ -50,6 +50,14 @@ class LoginRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'run.required' => 'Ingresa tu RUN.',
+            'password.required' => 'Ingresa tu contraseña.',
+        ];
+    }
+
     /**
      * Attempt to authenticate the request's credentials.
      *
@@ -63,7 +71,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'run' => trans('auth.failed'),
+                'run' => 'El RUN o la contraseña ingresados no son correctos.',
             ]);
         }
 
