@@ -182,9 +182,23 @@ class LicenciasProfesoresTable extends Component
     {
         $query = LicenciaProfesor::with(['profesor', 'creador', 'recuperaciones'])
             ->when($this->search, function ($q) {
-                $q->whereHas('profesor', function ($query) {
-                    $query->where('name', 'like', '%' . $this->search . '%')
-                          ->orWhere('run_profesor', 'like', '%' . $this->search . '%');
+                $rawSearch = trim($this->search);
+                $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+
+                $q->where(function ($subQ) use ($words, $cleanRun) {
+                    if (!empty($words)) {
+                        $subQ->whereHas('profesor', function ($query) use ($words) {
+                            foreach ($words as $word) {
+                                $query->where('name', 'like', '%' . $word . '%');
+                            }
+                        });
+                    }
+                    if (!empty($cleanRun)) {
+                        $subQ->orWhereHas('profesor', function ($query) use ($cleanRun) {
+                            $query->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                        });
+                    }
                 });
             })
             ->when($this->estado, function ($q) {
