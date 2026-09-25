@@ -504,11 +504,12 @@ class PlanoDigitalController extends Controller
             ];
         } elseif ($planificacion) {
             if ($planificacion instanceof PlanificacionProfesorColaborador) {
+                $asigColab = $planificacion->profesorColaborador?->asignatura;
                 $detalles['planificacion'] = [
                     'asignatura' => $planificacion->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
-                    'codigo_asignatura' => '-',
+                    'codigo_asignatura' => $asigColab->codigo_asignatura ?? '-',
                     'profesor' => ucwords($planificacion->profesorColaborador->profesor->name ?? 'No asignado'),
-                    'carrera' => '-',
+                    'carrera' => $asigColab->carrera->nombre ?? '-',
                     'es_reserva_activa' => false,
                     'modulos' => [
                         [

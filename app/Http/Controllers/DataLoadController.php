@@ -280,6 +280,8 @@ class DataLoadController extends Controller
 
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
 
+            $colaboradoresAsignados = []; // [id_asignatura => [id_modulo => [id_espacio => true]]]
+
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
                     continue;  // Saltar encabezados
@@ -428,7 +430,7 @@ class DataLoadController extends Controller
                                     'codigo_asignatura' => $codigoAsignaturaColab,
                                     'nombre_asignatura' => $nombreAsignaturaColaborador,
                                     'seccion'           => $numeroSeccionColab,
-                                    'run_profesor'      => $run,
+                                    'run_profesor'      => null, // El titular asignará su RUN al procesar su fila
                                     'id_carrera'        => !empty($idCarrera) ? $idCarrera : null
                                 ]);
                             } elseif (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
@@ -527,6 +529,17 @@ class DataLoadController extends Controller
                                         'id_modulo'               => $slotC['id_modulo'],
                                         'id_espacio'              => $slotC['id_espacio'],
                                     ]);
+
+                                    // Registrar en el mapa en memoria para evitar que el titular lo tome si su fila se procesa después
+                                    if (!empty($idAsignaturaColaborador)) {
+                                        $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
+
+                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura, eliminar el duplicado
+                                        Planificacion_Asignatura::where('id_asignatura', $idAsignaturaColaborador)
+                                            ->where('id_modulo', $slotC['id_modulo'])
+                                            ->where('id_espacio', $slotC['id_espacio'])
+                                            ->delete();
+                                    }
                                 }
                             }
                         } catch (\Exception $e) {
@@ -718,9 +731,15 @@ class DataLoadController extends Controller
 
                                 $espacioIdFinal = $espacioModel->id_espacio;
 
-                                // CREAR planificación (verificando duplicados exactos)
                                 $idModulo = $dia . '.' . $modulo;
 
+                                // Si este módulo y espacio ya fue asignado a un profesor colaborador de esta asignatura, omitir para el titular
+                                if (isset($colaboradoresAsignados[$idAsignatura][$idModulo][$espacioIdFinal])) {
+                                    Log::info("ℹ Fila $index: Omitiendo asignación de espacio {$espacioIdFinal} ({$idModulo}) para el titular RUN={$run} porque pertenece a un docente colaborador de la asignatura {$idAsignatura}.");
+                                    continue;
+                                }
+
+                                // CREAR planificación (verificando duplicados exactos)
                                 try {
                                     $existePlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
