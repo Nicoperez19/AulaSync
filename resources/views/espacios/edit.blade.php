@@ -325,7 +325,13 @@
                         data.forEach(piso => {
                             const option = document.createElement("option");
                             option.value = piso.id;
-                            option.textContent = piso.nombre_piso ? piso.nombre_piso : `Piso ${piso.numero_piso}`;
+                            let nombrePiso = piso.nombre_piso;
+                            if (facultadId === 'IT_LA') {
+                                if (piso.numero_piso == 1 && (!nombrePiso || nombrePiso === 'Piso 1' || nombrePiso.includes('1er'))) nombrePiso = 'CAUPOLICÁN 276';
+                                else if (piso.numero_piso == 2 && (!nombrePiso || nombrePiso === 'Piso 2')) nombrePiso = 'VILLAGRÁN 220';
+                                else if (piso.numero_piso == 3 || !nombrePiso || nombrePiso === 'Piso 3' || !nombrePiso.includes('251')) nombrePiso = 'VILLAGRÁN 251';
+                            }
+                            option.textContent = nombrePiso ? nombrePiso : `Piso ${piso.numero_piso}`;
                             pisoSelect.appendChild(option);
                         });
                         pisoSelect.disabled = false;

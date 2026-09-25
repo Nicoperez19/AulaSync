@@ -76,12 +76,10 @@
                 <label for="tipo_espacio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo de Espacio</label>
                 <select id="tipo_espacio_filtro" wire:model.live="tipoEspacio"
                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    <option value="">Todos los espacios</option>
+                    <option value="">Todos (Auditorio, Salas de Estudio, Laboratorios)</option>
                     <option value="Auditorio">Auditorio</option>
                     <option value="Sala de Estudio">Salas de Estudio</option>
-                    <option value="Laboratorios">Laboratorios (Todos)</option>
-                    <option value="Sala de Clases">Salas de Clases</option>
-                    <option value="Sala de Reuniones">Salas de Reuniones</option>
+                    <option value="Laboratorios">Laboratorios</option>
                 </select>
             </div>
 

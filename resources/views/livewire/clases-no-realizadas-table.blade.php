@@ -312,6 +312,11 @@
                                         <div class="break-words">
                                             <div class="font-medium">{{ $clase['asignatura'] ?? 'N/A' }}</div>
                                             <div class="text-xs text-gray-500">{{ $clase['codigo_asignatura'] ?? '' }}</div>
+                                            @if(!empty($clase['ua']) && $clase['ua'] !== 'N/A')
+                                                <div class="text-xs font-semibold text-gray-700 mt-0.5">
+                                                    UA: {{ $clase['ua'] }}
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -548,6 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="bg-gray-50 p-3 rounded-lg mb-4">
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
                         <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio}</p>
                     </div>
@@ -638,6 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <h4 class="font-semibold text-blue-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
                         <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha_original}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio_original}</p>
                         <p><strong>Módulo:</strong> ${clase.modulo_original}</p>

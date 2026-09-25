@@ -16,7 +16,7 @@ use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\PermisionController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorColaboradorController;
@@ -90,8 +90,8 @@ Route::get('/', function () {
 
 // Rutas públicas de módulos actuales (sin autenticación)
 Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
-    Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
-    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+    Route::get('/modulos-actuales', [\App\Http\Controllers\ModuloActualController::class, 'index'])->name('modulos.actuales');
+    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\ModuloActualController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
 
 // Ruta Keep-Alive de sesión y refresco de CSRF token
@@ -215,11 +215,11 @@ Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
 });
 
 Route::group(['middleware' => ['permission:mantenedor de permisos']], function () {
-    Route::get('/permission/permission_index', [PermisionController::class, 'index'])->name('permissions.index');
-    Route::delete('/permission/permission_delete/{id}', [PermisionController::class, 'destroy'])->name('permission.delete');
-    Route::get('/permission/permission_edit/{id}', [PermisionController::class, 'edit'])->name('permissions.edit');
-    Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
-    Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
+    Route::get('/permission/permission_index', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::delete('/permission/permission_delete/{id}', [PermissionController::class, 'destroy'])->name('permission.delete');
+    Route::get('/permission/permission_edit/{id}', [PermissionController::class, 'edit'])->name('permissions.edit');
+    Route::put('/permission/permission_update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::post('/permission/permission_store', [PermissionController::class, 'store'])->name('permission.add');
 });
 
 // Control Docente - Vista combinada Ausencias + Recuperación
@@ -352,7 +352,8 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
 
 Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
-    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::get('/mapas/create', [MapasController::class, 'create'])->name('mapas.create');
+    Route::get('/mapas/add', [MapasController::class, 'create'])->name('mapas.add');
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/mapas/{id}/edit', [MapasController::class, 'edit'])->name('mapas.edit');
     Route::put('/mapas/{id}', [MapasController::class, 'update'])->name('mapas.update');
