@@ -327,7 +327,37 @@ class EspacioController extends Controller
      */
     public function getPisos($facultadId)
     {
-        return Piso::where('id_facultad', $facultadId)->get();
+        // Auto-curación para Los Ángeles: asegurar que los edificios tengan sus nombres oficiales
+        if ($facultadId === 'IT_LA') {
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 1')->orWhere('nombre_piso', 'LIKE', '%1er%');
+            })->update(['nombre_piso' => 'CAUPOLICÁN 276']);
+
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 2');
+            })->update(['nombre_piso' => 'VILLAGRÁN 220']);
+
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
+            })->update(['nombre_piso' => 'VILLAGRÁN 251']);
+        }
+
+        $pisos = Piso::where('id_facultad', $facultadId)->orderBy('numero_piso')->get();
+
+        if ($facultadId === 'IT_LA') {
+            $pisos->transform(function ($piso) {
+                if ($piso->numero_piso == 1 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 1')) {
+                    $piso->nombre_piso = 'CAUPOLICÁN 276';
+                } elseif ($piso->numero_piso == 2 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 2')) {
+                    $piso->nombre_piso = 'VILLAGRÁN 220';
+                } elseif ($piso->numero_piso == 3 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 3' || !str_contains($piso->nombre_piso, '251'))) {
+                    $piso->nombre_piso = 'VILLAGRÁN 251';
+                }
+                return $piso;
+            });
+        }
+
+        return response()->json($pisos);
     }
 
     /**
