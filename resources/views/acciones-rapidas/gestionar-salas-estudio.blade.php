@@ -379,7 +379,6 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
     let reservasGlobales = [];
     let salasEstudioGlobales = [];
@@ -716,8 +715,6 @@
                 }
             } else if (r.estado === 'finalizada') {
                 badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Finalizada</span>`;
-            } else if (r.estado === 'programada') {
-                badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-blue-100 text-blue-800"><i class="fas fa-calendar-check mr-1"></i> Programada</span>`;
             } else {
                 badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-50 text-red-600">Cancelada</span>`;
             }
@@ -772,7 +769,7 @@
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-gray-900 text-base">${r.id_espacio}</span>
-                        ${r.estado === 'activa' && r.vencida ? '<span class="px-2.5 py-0.5 text-xs font-bold bg-red-100 text-red-800 rounded-full animate-pulse">Vencida</span>' : r.estado === 'activa' && r.proxima_vencer ? '<span class="px-2.5 py-0.5 text-xs font-bold bg-yellow-100 text-yellow-800 rounded-full">Por vencer</span>' : r.estado === 'activa' ? '<span class="px-2.5 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded-full">Activa</span>' : r.estado === 'programada' ? '<span class="px-2.5 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Programada</span>' : r.estado === 'finalizada' ? '<span class="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">Finalizada</span>' : '<span class="px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-600 rounded-full">Cancelada</span>'}
+                        ${r.estado === 'activa' ? '<span class="px-2.5 py-0.5 text-xs font-bold bg-green-100 text-green-800 rounded-full">Activa</span>' : '<span class="px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-full">Finalizada</span>'}
                     </div>
                     <div class="text-sm font-semibold text-gray-800">${r.nombre_responsable}</div>
                     <div class="text-xs text-gray-500">RUN: ${r.run_responsable} • ${r.fecha_reserva}</div>
@@ -1099,6 +1096,4 @@
         }
     }
 </script>
-@endpush
 </x-app-layout>
-
