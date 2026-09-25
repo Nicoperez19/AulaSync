@@ -310,6 +310,26 @@ class MapasController extends Controller
                 Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
                     $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
                 })->update(['nombre_piso' => 'VILLAGRÁN 251']);
+
+                // Auto-poblar espacios de Villagrán 251 si no existen en la base de datos
+                $piso251 = Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->first();
+                if ($piso251 && Espacio::where('id_espacio', 'LIKE', 'LA-4%')->count() === 0) {
+                    $file = database_path('seeders/Data/Espacios/LA.php');
+                    if (file_exists($file)) {
+                        $todos = require $file;
+                        foreach ($todos as $e) {
+                            if (!Espacio::where('id_espacio', $e['id_espacio'])->exists()) {
+                                if (str_starts_with($e['id_espacio'], 'LA-4') || in_array($e['piso_id'] ?? null, [12, 13])) {
+                                    $e['piso_id'] = $piso251->id;
+                                }
+                                $e['capacidad_maxima'] = $e['capacidad_maxima'] ?? $e['puestos_disponibles'] ?? 0;
+                                $e['created_at'] = now();
+                                $e['updated_at'] = now();
+                                Espacio::insert($e);
+                            }
+                        }
+                    }
+                }
             }
 
             $pisos = Piso::where('id_facultad', $facultadId)->orderBy('numero_piso')->get();
