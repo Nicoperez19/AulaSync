@@ -59,6 +59,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             'Período',
             'Profesor',
             'RUN Profesor',
+            'UA (UNIDAD ACADÉMICA)',
             'Asignatura',
             'Código Asignatura',
             'Espacio',
@@ -89,6 +90,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             $clase['periodo'],
             $clase['profesor'],
             $clase['run_profesor'],
+            $clase['ua'] ?? 'N/A',
             $clase['asignatura'],
             $clase['codigo_asignatura'],
             $clase['espacio'],
@@ -109,7 +111,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         
         // Aplicar colores según el estado
         for ($row = 2; $row <= $lastRow; $row++) {
-            $estado = $sheet->getCell('L' . $row)->getValue(); // Columna Estado
+            $estado = $sheet->getCell('M' . $row)->getValue(); // Columna Estado (M tras añadir UA)
             
             $fillColor = match($estado) {
                 'Realizada'           => 'D1FAE5', // Verde claro
@@ -120,7 +122,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 default               => 'FFFFFF', // Blanco
             };
             
-            $sheet->getStyle('L' . $row)->applyFromArray([
+            $sheet->getStyle('M' . $row)->applyFromArray([
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],
@@ -153,7 +155,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:P' . $lastRow => [
+            'A2:Q' . $lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -176,17 +178,18 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             'C' => 12,  // Período
             'D' => 30,  // Profesor
             'E' => 12,  // RUN Profesor
-            'F' => 35,  // Asignatura
-            'G' => 18,  // Código Asignatura
-            'H' => 12,  // Espacio
-            'I' => 10,  // Módulo
-            'J' => 12,  // Hora Inicio
-            'K' => 12,  // Hora Fin
-            'L' => 15,  // Estado
-            'M' => 12,  // Hora Entrada
-            'N' => 12,  // Hora Salida
-            'O' => 30,  // Motivo
-            'P' => 35,  // Observaciones
+            'F' => 25,  // UA (UNIDAD ACADÉMICA)
+            'G' => 35,  // Asignatura
+            'H' => 18,  // Código Asignatura
+            'I' => 12,  // Espacio
+            'J' => 10,  // Módulo
+            'K' => 12,  // Hora Inicio
+            'L' => 12,  // Hora Fin
+            'M' => 15,  // Estado
+            'N' => 12,  // Hora Entrada
+            'O' => 12,  // Hora Salida
+            'P' => 30,  // Motivo
+            'Q' => 35,  // Observaciones
         ];
     }
 

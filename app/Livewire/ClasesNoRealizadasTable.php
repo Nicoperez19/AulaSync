@@ -456,15 +456,68 @@ class ClasesNoRealizadasTable extends Component
             }
         }
         
-        // Aplicar filtro de búsqueda en memoria
-        if ($this->search) {
-            $searchTerm = strtolower($this->search);
-            $todasLasClases = $todasLasClases->filter(function($item) use ($searchTerm) {
-                return str_contains(strtolower($item['profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['codigo_asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['run_profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['espacio'] ?? ''), $searchTerm);
+        // Aplicar filtro de búsqueda en memoria con soporte multi-palabra (orden independiente de nombre y apellido)
+        if (!empty(trim($this->search ?? ''))) {
+            $searchNorm = $this->normalizarTexto($this->search);
+            $palabras = array_values(array_filter(explode(' ', $searchNorm)));
+            $cleanRunSearch = preg_replace('/[^0-9kK]/', '', $this->search);
+
+            $todasLasClases = $todasLasClases->filter(function($item) use ($palabras, $cleanRunSearch) {
+                // 1. Coincidencia por RUN si tiene al menos 3 caracteres
+                if (!empty($cleanRunSearch) && strlen($cleanRunSearch) >= 3) {
+                    $itemRun = preg_replace('/[^0-9kK]/', '', $item['run_profesor'] ?? '');
+                    if (str_contains($itemRun, $cleanRunSearch)) {
+                        return true;
+                    }
+                }
+
+                if (empty($palabras)) {
+                    return true;
+                }
+
+                // 2. Coincidencia en el nombre del profesor: TODAS las palabras deben coincidir (sin importar el orden)
+                $profesorNorm = $this->normalizarTexto($item['profesor'] ?? '');
+                $todasEnProfesor = true;
+                foreach ($palabras as $p) {
+                    if (!str_contains($profesorNorm, $p)) {
+                        $todasEnProfesor = false;
+                        break;
+                    }
+                }
+                if ($todasEnProfesor) {
+                    return true;
+                }
+
+                // 3. Coincidencia en la asignatura o código: TODAS las palabras deben coincidir
+                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? ''));
+                $todasEnAsignatura = true;
+                foreach ($palabras as $p) {
+                    if (!str_contains($asigNorm, $p)) {
+                        $todasEnAsignatura = false;
+                        break;
+                    }
+                }
+                if ($todasEnAsignatura) {
+                    return true;
+                }
+
+                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, profesor, asignatura)
+                $espacioRaw = $item['espacio'] ?? '';
+                $textoFila = $this->normalizarTexto(
+                    ($item['profesor'] ?? '') . ' ' .
+                    ($item['asignatura'] ?? '') . ' ' .
+                    ($item['codigo_asignatura'] ?? '') . ' ' .
+                    $espacioRaw . ' ' .
+                    str_replace('-', '', $espacioRaw) . ' ' .
+                    ($item['ua'] ?? '') . ' ' .
+                    ($item['run_profesor'] ?? '')
+                );
+                foreach ($palabras as $p) {
+                    if (!str_contains($textoFila, $p)) {
+                        return false;
+                    }
+                }
+                return true;
             });
         }
 
@@ -823,5 +876,26 @@ class ClasesNoRealizadasTable extends Component
             'totalNoRealizadasFiltradas' => $totalNoRealizadasFiltradas,
             'currentPageNoRealizadasKeys' => $currentPageNoRealizadasKeys,
         ]);
+    }
+
+    /**
+     * Normalizar texto para búsquedas (minúsculas, sin acentos/tildes y sin puntuación)
+     */
+    protected function normalizarTexto(?string $texto): string
+    {
+        if (empty($texto)) {
+            return '';
+        }
+
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+
+        $buscar = ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', 'à', 'è', 'ì', 'ò', 'ù'];
+        $reemplazar = ['a', 'e', 'i', 'o', 'u', 'u', 'n', 'a', 'e', 'i', 'o', 'u'];
+        $texto = str_replace($buscar, $reemplazar, $texto);
+
+        // Remover caracteres que no sean alfanuméricos ni espacios
+        $texto = preg_replace('/[^a-z0-9\s]/', ' ', $texto);
+
+        return preg_replace('/\s+/', ' ', trim($texto));
     }
 }

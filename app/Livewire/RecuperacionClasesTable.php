@@ -163,13 +163,26 @@ class RecuperacionClasesTable extends Component
     {
         $query = RecuperacionClase::with(['profesor', 'asignatura', 'licencia', 'moduloOriginal', 'espacioReagendado'])
             ->when($this->search, function ($q) {
-                $q->where(function ($sub) {
-                    $sub->whereHas('profesor', function ($query) {
-                        $query->where('name', 'like', '%' . $this->search . '%')
-                              ->orWhere('run_profesor', 'like', '%' . $this->search . '%');
-                    })->orWhereHas('asignatura', function ($query) {
-                        $query->where('nombre_asignatura', 'like', '%' . $this->search . '%');
+                $rawSearch = trim($this->search);
+                $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+
+                $q->where(function ($sub) use ($rawSearch, $words, $cleanRun) {
+                    if (!empty($words)) {
+                        $sub->whereHas('profesor', function ($query) use ($words) {
+                            foreach ($words as $word) {
+                                $query->where('name', 'like', '%' . $word . '%');
+                            }
+                        });
+                    }
+                    $sub->orWhereHas('asignatura', function ($query) use ($rawSearch) {
+                        $query->where('nombre_asignatura', 'like', '%' . $rawSearch . '%');
                     });
+                    if (!empty($cleanRun)) {
+                        $sub->orWhereHas('profesor', function ($query) use ($cleanRun) {
+                            $query->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                        });
+                    }
                 });
             })
             ->when($this->estado, function ($q) {

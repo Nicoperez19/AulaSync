@@ -133,6 +133,7 @@ class ReservaService
         return [
             'success' => true,
             'reservas' => $reservas->values()->all(),
+            'data' => $reservas->values()->all(),
             'total' => $reservas->count(),
         ];
     }
