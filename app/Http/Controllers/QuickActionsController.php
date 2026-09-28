@@ -221,6 +221,9 @@ class QuickActionsController extends Controller
     {
         try {
             $resultado = $this->reservaService->getReservas($request->all());
+            if (isset($resultado['reservas']) && !isset($resultado['data'])) {
+                $resultado['data'] = $resultado['reservas'];
+            }
 
             return response()->json($resultado);
         } catch (\Exception $e) {
@@ -230,6 +233,7 @@ class QuickActionsController extends Controller
                 'success' => false,
                 'message' => 'Error al obtener reservas: ' . $e->getMessage(),
                 'reservas' => [],
+                'data' => [],
                 'total' => 0,
             ], 500);
         }

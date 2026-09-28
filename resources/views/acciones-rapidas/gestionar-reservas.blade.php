@@ -544,8 +544,9 @@ async function cargarEspaciosParaModal() {
         const response = await fetch('/quick-actions/api/espacios');
         const data = await response.json();
         
-        if (data.success && data.data) {
-            espaciosCargados = data.data;
+        const espacios = data.data || data.espacios;
+        if (data.success && espacios) {
+            espaciosCargados = espacios;
             const select = document.getElementById('edit-codigo-espacio');
             select.innerHTML = '<option value="">Seleccione un espacio</option>' +
                 espaciosCargados.map(espacio => {
@@ -1350,10 +1351,11 @@ async function cargarEspaciosParaFiltro() {
         const response = await fetch('/quick-actions/api/espacios');
         const data = await response.json();
         
-        if (data.success && data.data) {
+        const espacios = data.data || data.espacios;
+        if (data.success && espacios) {
             const select = document.getElementById('filtro-espacio-reserva');
             if (select) {
-                const opcionesHtml = data.data.map(espacio => {
+                const opcionesHtml = espacios.map(espacio => {
                     const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
                     return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
                 }).join('');
@@ -1422,9 +1424,10 @@ async function cargarReservas() {
 
         const data = await response.json();
 
+        const listaReservas = data.data || data.reservas;
 
-        if (data.success && data.data) {
-            reservasOriginales = data.data;
+        if (data.success && Array.isArray(listaReservas)) {
+            reservasOriginales = listaReservas;
 
             procesarReservas();
         } else {
