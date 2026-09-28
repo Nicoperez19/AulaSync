@@ -19,7 +19,7 @@ class TodasClasesService
     /**
      * Obtener todas las clases (planificadas, realizadas y no realizadas)
      */
-    public function obtenerTodasLasClases($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null)
+    public function obtenerTodasLasClases($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null)
     {
         $fechaInicio = $fechaInicio ? Carbon::parse($fechaInicio) : null;
         $fechaFin = $fechaFin ? Carbon::parse($fechaFin) : null;
@@ -267,6 +267,7 @@ class TodasClasesService
                                 'profesor'          => $planificacion->horario->profesor->name,
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
+                                'carrera'           => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                                 'id_asignatura'     => $planificacion->id_asignatura,
@@ -402,6 +403,7 @@ class TodasClasesService
                             'profesor' => $planificacion->horario->profesor->name,
                             'run_profesor' => $runProfesor,
                             'ua' => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
+                            'carrera' => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                             'id_asignatura' => $planificacion->id_asignatura,
@@ -531,6 +533,7 @@ class TodasClasesService
                                 'profesor'          => $profesorModel->name,
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
+                                'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                                 'asignatura'        => $asignaturaNombre,
                                 'codigo_asignatura' => $asignaturaCodigo,
                                 'id_asignatura'     => $idAsignatura,
@@ -659,6 +662,7 @@ class TodasClasesService
                             'profesor'          => $profesorModel->name,
                             'run_profesor'      => $runProfesor,
                             'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
+                            'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                             'asignatura'        => $asignaturaNombre,
                             'codigo_asignatura' => $asignaturaCodigo,
                             'id_asignatura'     => $idAsignatura,
@@ -806,6 +810,13 @@ class TodasClasesService
 
         $clasesData = $clasesProcesadas;
 
+        if ($ua) {
+            $uaStr = (string)$ua;
+            $clasesData = $clasesData->filter(function($item) use ($uaStr) {
+                return (string)($item['ua'] ?? '') === $uaStr;
+            });
+        }
+
         return $clasesData->sortBy([
             ['fecha', 'desc'],
             ['espacio', 'asc'],
@@ -856,5 +867,25 @@ class TodasClasesService
             return (string) $profesor->carrera->id_carrera;
         }
         return 'N/A';
+    }
+
+    /**
+     * Resolver el nombre de la Unidad Académica / Carrera
+     */
+    private function resolverNombreUa($asignatura, $profesor = null): string
+    {
+        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
+            return (string) $asignatura->carrera->nombre;
+        }
+        if ($profesor && $profesor->carrera && !empty($profesor->carrera->nombre)) {
+            return (string) $profesor->carrera->nombre;
+        }
+        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
+            return (string) $asignatura->carrera->areaAcademica->nombre_area_academica;
+        }
+        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->nombre_area_academica)) {
+            return (string) $profesor->areaAcademica->nombre_area_academica;
+        }
+        return '';
     }
 }

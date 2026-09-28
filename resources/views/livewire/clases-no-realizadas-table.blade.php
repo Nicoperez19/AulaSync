@@ -92,7 +92,7 @@
             </h3>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             <!-- Semestre -->
             <div>
                 <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Semestre</label>
@@ -119,6 +119,23 @@
                            placeholder="Profesor, asignatura, RUN o espacio...">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
+            </div>
+
+            <!-- Unidad Académica (UA) -->
+            <div>
+                <label for="ua_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Unidad Académica</label>
+                <select wire:model.live="ua" 
+                        id="ua_filtro"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">Todas las UAs</option>
+                    @if(isset($unidadesAcademicas) && count($unidadesAcademicas) > 0)
+                        @foreach($unidadesAcademicas as $u)
+                            <option value="{{ $u->id_carrera }}">
+                                {{ $u->id_carrera }} - {{ $u->nombre }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
             </div>
 
             <!-- Estado -->
@@ -169,7 +186,7 @@
 
     <!-- Botón Exportar -->
     <div class="flex justify-end mb-4">
-        <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search])) }}"
+        <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
            class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las clases</span>
@@ -313,8 +330,11 @@
                                             <div class="font-medium">{{ $clase['asignatura'] ?? 'N/A' }}</div>
                                             <div class="text-xs text-gray-500">{{ $clase['codigo_asignatura'] ?? '' }}</div>
                                             @if(!empty($clase['ua']) && $clase['ua'] !== 'N/A')
-                                                <div class="text-xs font-semibold text-gray-700 mt-0.5">
+                                                <div class="text-xs font-semibold text-gray-700 mt-0.5" title="{{ $clase['carrera'] ?? '' }}">
                                                     UA: {{ $clase['ua'] }}
+                                                    @if(!empty($clase['carrera']))
+                                                        <span class="font-normal text-gray-500">· {{ Str::limit($clase['carrera'], 24) }}</span>
+                                                    @endif
                                                 </div>
                                             @endif
                                         </div>

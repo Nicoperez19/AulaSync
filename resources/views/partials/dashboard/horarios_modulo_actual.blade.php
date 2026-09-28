@@ -36,7 +36,7 @@ $coloresTipo = [
 
         <span class="hidden sm:inline border-l border-gray-300 h-4 mx-2"></span>
 
-        <span class="font-semibold text-gray-500 mr-1 sm:ml-2">Presencia Docente:</span>
+        <span class="font-semibold text-gray-500 mr-1 sm:ml-2">Presencia / Estado:</span>
         <span class="flex items-center gap-1.5 mr-4">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
             <span class="text-emerald-700 font-bold">En Sala</span>
@@ -47,11 +47,15 @@ $coloresTipo = [
         </span>
         <span class="flex items-center gap-1.5 mr-4">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-            <span class="text-amber-700 font-bold">En Espera</span>
+            <span class="text-amber-700 font-bold">En Espera / Próxima</span>
         </span>
-        <span class="flex items-center gap-1.5">
+        <span class="flex items-center gap-1.5 mr-4">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500"></span>
             <span class="text-rose-700 font-bold">Ausente</span>
+        </span>
+        <span class="flex items-center gap-1.5">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+            <span class="text-teal-700 font-bold">Disponible</span>
         </span>
     </div>
     
@@ -107,7 +111,7 @@ $coloresTipo = [
                                                 $color = 'bg-gray-400';
                                             }
 
-                                            // Definir colores de borde y fondo de tarjeta según presencia del docente
+                                            // Definir colores de borde y fondo de tarjeta según presencia del docente o estado
                                             $estadoPres = $asig->estado_presencia ?? ($asig->profesor_presente ? 'en_sala' : 'ausente');
                                             if ($estadoPres === 'en_sala') {
                                                 $cardStyles = 'border-emerald-200 bg-emerald-50/20 hover:border-emerald-400 hover:shadow-emerald-100/40';
@@ -115,6 +119,12 @@ $coloresTipo = [
                                                 $cardStyles = 'border-blue-200 bg-blue-50/25 hover:border-blue-400 hover:shadow-blue-100/40';
                                             } elseif ($estadoPres === 'espera') {
                                                 $cardStyles = 'border-amber-200 bg-amber-50/20 hover:border-amber-400 hover:shadow-amber-100/40';
+                                            } elseif ($estadoPres === 'proxima') {
+                                                $cardStyles = 'border-amber-300 bg-amber-50/30 hover:border-amber-400 hover:shadow-amber-100/40';
+                                            } elseif ($estadoPres === 'disponible') {
+                                                $cardStyles = 'border-slate-200 bg-slate-50/40 hover:border-teal-300 hover:bg-teal-50/15 hover:shadow-teal-100/30';
+                                            } elseif ($estadoPres === 'mantencion') {
+                                                $cardStyles = 'border-gray-200 bg-gray-50/60 opacity-75';
                                             } else {
                                                 $cardStyles = 'border-rose-200 bg-rose-50/20 hover:border-rose-400 hover:shadow-rose-100/40';
                                             }
@@ -142,6 +152,21 @@ $coloresTipo = [
                                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                                             En Espera
                                                         </span>
+                                                    @elseif($estadoPres === 'proxima')
+                                                        <span class="text-[10px] font-bold text-amber-800 bg-amber-100/90 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0" title="Próxima clase programada">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                                            Próxima{{ !empty($asig->hora_inicio_proxima) ? ' (' . $asig->hora_inicio_proxima . ')' : '' }}
+                                                        </span>
+                                                    @elseif($estadoPres === 'disponible')
+                                                        <span class="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                                                            Disponible
+                                                        </span>
+                                                    @elseif($estadoPres === 'mantencion')
+                                                        <span class="text-[10px] font-bold text-gray-600 bg-gray-100 border border-gray-300 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                                            Mantención
+                                                        </span>
                                                     @else
                                                         <span class="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
@@ -149,14 +174,20 @@ $coloresTipo = [
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <div class="font-semibold text-sm text-gray-800 line-clamp-2" title="{{ $asig->nombre_asignatura }}">
+                                                <div class="font-semibold text-sm {{ $estadoPres === 'disponible' ? 'text-teal-800 font-bold' : ($estadoPres === 'mantencion' ? 'text-gray-500 font-medium' : 'text-gray-800') }} line-clamp-2" title="{{ $asig->nombre_asignatura }}">
                                                     {{ $asig->nombre_asignatura }}
                                                 </div>
                                             </div>
                                             <div class="border-t border-gray-100 pt-2 shrink-0">
-                                                <div class="text-xs text-gray-700 font-bold truncate" title="{{ $asig->profesor_name }}">{{ $asig->profesor_name }}</div>
+                                                <div class="text-xs {{ $estadoPres === 'disponible' ? 'text-gray-500 font-medium' : ($estadoPres === 'mantencion' ? 'text-gray-400 italic' : 'text-gray-700 font-bold') }} truncate" title="{{ $asig->profesor_name }}">{{ $asig->profesor_name }}</div>
                                                 <div class="flex items-center gap-1 text-[11px] text-gray-400 mt-0.5 truncate" title="{{ $asig->profesor_email }}">
-                                                    <i class="fas fa-envelope text-gray-300 shrink-0"></i>
+                                                    @if($estadoPres === 'disponible')
+                                                        <i class="fas fa-check-circle text-teal-500 shrink-0"></i>
+                                                    @elseif($estadoPres === 'mantencion')
+                                                        <i class="fas fa-tools text-gray-400 shrink-0"></i>
+                                                    @else
+                                                        <i class="fas fa-envelope text-gray-300 shrink-0"></i>
+                                                    @endif
                                                     <span>{{ $asig->profesor_email }}</span>
                                                 </div>
                                             </div>

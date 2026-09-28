@@ -104,11 +104,19 @@ class PlanoDigitalController extends Controller
             });
 
             $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+            $horaActual = Carbon::now()->format('H:i:s');
+            $moduloActualNumero = ModulosHelper::obtenerModuloActual($horaActual, $diaActualNormalizado);
+            $codigoDia = $this->obtenerCodigoDia($diaActualNormalizado);
+
+            $clasesModuloActual = $this->obtenerClasesModuloActual($moduloActualNumero, $codigoDia);
+
             return view('plano-digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
                 'pisos' => $pisosFormateados,
-                'horariosModulos' => ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? []
+                'horariosModulos' => ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [],
+                'clasesModuloActual' => $clasesModuloActual,
+                'moduloActualNumero' => $moduloActualNumero,
             ]);
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
@@ -128,10 +136,75 @@ class PlanoDigitalController extends Controller
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
+            $clasesModuloActual = $this->obtenerClasesModuloActual();
 
-            return response()->json(['bloques' => $bloques]);
+            return response()->json([
+                'bloques' => $bloques,
+                'clasesModuloActual' => $clasesModuloActual,
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al obtener los bloques'], 500);
+        }
+    }
+
+    private function obtenerClasesModuloActual(?int $moduloActualNumero = null, ?string $codigoDia = null): array
+    {
+        try {
+            if ($moduloActualNumero === null || $codigoDia === null) {
+                $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+                $horaActual = Carbon::now()->format('H:i:s');
+                $moduloActualNumero = ModulosHelper::obtenerModuloActual($horaActual, $diaActualNormalizado);
+                $codigoDia = $this->obtenerCodigoDia($diaActualNormalizado);
+            }
+
+            if (!$moduloActualNumero || !$codigoDia) {
+                return [];
+            }
+
+            $idModuloActual = $codigoDia . '.' . $moduloActualNumero;
+
+            $planificaciones = Planificacion_Asignatura::with(['horario.profesor', 'espacio', 'modulo'])
+                ->where('id_modulo', $idModuloActual)
+                ->whereHas('horario', function ($query) {
+                    $query->where('periodo', SemesterHelper::getCurrentPeriod());
+                })
+                ->get()
+                ->map(function ($planificacion) {
+                    $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
+                    $nombreDocente = $planificacion->horario?->profesor?->name ?? 'Docente no asignado';
+                    return [
+                        'codigo' => strtoupper($codigo),
+                        'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
+                        'asignatura' => trim($planificacion->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
+                        'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
+                        'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
+                    ];
+                });
+
+            $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'espacio', 'modulo'])
+                ->where('id_modulo', $idModuloActual)
+                ->whereHas('profesorColaborador', function ($query) {
+                    $query->where('estado', 'activo');
+                })
+                ->get()
+                ->map(function ($planificacion) {
+                    $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
+                    $nombreDocente = $planificacion->profesorColaborador?->profesor?->name ?? 'Docente no asignado';
+                    return [
+                        'codigo' => strtoupper($codigo),
+                        'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
+                        'asignatura' => trim($planificacion->profesorColaborador?->nombre_asignatura ?? $planificacion->profesorColaborador?->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
+                        'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
+                        'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
+                    ];
+                });
+
+            return $planificaciones->merge($profesoresColaboradores)
+                ->sortBy(fn ($clase) => [$clase['id_espacio'] ?? 'zz', $clase['docente'] ?? 'zz'])
+                ->values()
+                ->all();
+        } catch (\Exception $e) {
+            return [];
         }
     }
 
@@ -941,8 +1014,6 @@ class PlanoDigitalController extends Controller
             }
 
             if (!$reservaActiva) {
-                \Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}");
-
                 // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
                 if ($espacio->estado === 'Disponible') {
                     return response()->json([
@@ -965,7 +1036,6 @@ class PlanoDigitalController extends Controller
             // Protección contra escaneo doble rápido (debounce de 45 segundos)
             $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
             if ($tipoDesocupacion !== 'forzosa' && $segundosDesdeActivacion < 45) {
-                \Log::warning("Devolución bloqueada por escaneo doble rápido en devolverEspacio - Usuario: {$runUsuario}, Espacio: {$idEspacio} (hace {$segundosDesdeActivacion}s)");
                 return response()->json([
                     'success' => true,
                     'devolucion_bloqueada' => true,
@@ -1160,8 +1230,6 @@ class PlanoDigitalController extends Controller
 
             return response()->json($respuesta);
         } catch (\Exception $e) {
-            \Log::error('Error al devolver espacio: ' . $e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al procesar la devolución: ' . $e->getMessage()
@@ -1266,7 +1334,6 @@ class PlanoDigitalController extends Controller
 
                     }
                 } catch (\Exception $e) {
-                    \Log::error("Error al registrar clase no realizada: " . $e->getMessage());
                 }
             }
 
@@ -1276,8 +1343,6 @@ class PlanoDigitalController extends Controller
                 'hubo_asistentes' => $huboAsistentes
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al registrar asistencia de clase: ' . $e->getMessage());
-
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al registrar asistencia: ' . $e->getMessage()
@@ -1485,7 +1550,6 @@ class PlanoDigitalController extends Controller
                     'id_reserva' => $nuevaReservaId
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Error en forzarCierreYTomarEspacio: ' . $e->getMessage());
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Error al procesar el cierre forzado: ' . $e->getMessage()
@@ -1505,17 +1569,6 @@ class PlanoDigitalController extends Controller
 
             // Registro de diagnóstico: confirmar que la función fue invocada (opcional)
 
-            // Log raw request payload before validating, to capture malformed scans
-            try {
-                \Log::info('verificarEstadoEspacioYReserva raw payload', [
-                    'raw_run' => $request->input('run'),
-                    'raw_id_espacio' => $request->input('id_espacio'),
-                    'content_type' => $request->header('Content-Type')
-                ]);
-            } catch (\Exception $e) {
-                \Log::warning('Error logging raw payload in verificarEstadoEspacioYReserva: ' . $e->getMessage());
-            }
-
             $request->validate([
                 'run' => 'required|numeric',
                 'id_espacio' => 'required|string'
@@ -1524,29 +1577,9 @@ class PlanoDigitalController extends Controller
             $runUsuario = $this->normalizeRun($request->input('run'));
             $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
 
-            // Diagnostic logging for Chillán issue: log raw input, normalized id and tenant info
-            try {
-                $rawId = $request->input('id_espacio');
-                $tenantCur = Tenant::current();
-                \Log::info('verificarEstadoEspacioYReserva diagnostic', [
-                    'raw_id_espacio' => $rawId,
-                    'normalized_id_espacio' => $idEspacio,
-                    'tenant_id' => $tenantCur?->id ?? null,
-                    'tenant_domain' => $tenantCur?->domain ?? null,
-                    'connection_db' => \DB::connection('tenant')->getDatabaseName()
-                ]);
-            } catch (\Exception $e) {
-                \Log::warning('Error logging diagnostic in verificarEstadoEspacioYReserva: ' . $e->getMessage());
-            }
-
-
             // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
             $espacio = Espacio::withoutGlobalScopes()->where('id_espacio', $idEspacio)->first();
             if (!$espacio) {
-                \Log::warning('Espacio no encontrado en verificarEstadoEspacioYReserva', [
-                    'id_espacio' => $idEspacio,
-                    'database' => \DB::connection('tenant')->getDatabaseName()
-                ]);
                 return response()->json([
                     'tipo' => 'error',
                     'mensaje' => 'Espacio no encontrado: ' . $idEspacio
@@ -1611,7 +1644,6 @@ class PlanoDigitalController extends Controller
                 $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
 
                 if ($segundosDesdeActivacion < 45) {
-                    \Log::info("Escaneo doble prevenido en verificarEstadoEspacioYReserva para la reserva activa {$reservaActiva->id_reserva} (activada hace {$segundosDesdeActivacion}s)");
                     return response()->json([
                         'tipo' => 'activacion_reciente',
                         'success' => true,
@@ -2045,7 +2077,6 @@ class PlanoDigitalController extends Controller
                 'errores' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error al verificar estado del espacio y reserva: ' . $e->getMessage());
             return response()->json([
                 'tipo' => 'error',
                 'mensaje' => 'Error al verificar estado del espacio y reserva: ' . $e->getMessage()
@@ -2123,7 +2154,6 @@ class PlanoDigitalController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('Error en procesarPrimeraLectura: ' . $e->getMessage());
             return response()->json([
                 'verificado' => false,
                 'mensaje' => 'Error al procesar la lectura: ' . $e->getMessage()
@@ -2191,7 +2221,6 @@ class PlanoDigitalController extends Controller
                 'requiere_registro' => true
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al verificar usuario: ' . $e->getMessage());
             return response()->json([
                 'verificado' => false,
                 'mensaje' => 'Error al verificar usuario: ' . $e->getMessage()
@@ -2238,7 +2267,6 @@ class PlanoDigitalController extends Controller
                 'mensaje' => $disponible ? 'Espacio disponible' : 'Espacio no disponible'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al verificar espacio: ' . $e->getMessage());
             return response()->json([
                 'verificado' => false,
                 'mensaje' => 'Error al verificar espacio: ' . $e->getMessage()
@@ -2407,7 +2435,6 @@ class PlanoDigitalController extends Controller
                 'secuencias_modulos' => $clasesConModulosConsecutivos
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al verificar clases programadas: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al verificar clases: ' . $e->getMessage()
@@ -2453,7 +2480,6 @@ class PlanoDigitalController extends Controller
                 'message' => 'Usuario no encontrado'
             ], 404);
         } catch (\Exception $e) {
-            \Log::error('Error al buscar usuario por QR: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al buscar usuario'
@@ -2670,10 +2696,6 @@ class PlanoDigitalController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error al registrar asistencia en sala de estudio: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar asistencia: ' . $e->getMessage()
@@ -2735,7 +2757,6 @@ class PlanoDigitalController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error en obtenerInfoEspacioParaDesocupar: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al obtener información del espacio'
@@ -2755,9 +2776,6 @@ class PlanoDigitalController extends Controller
                 Mail::to($email)->send(new ConfirmacionReserva($reserva));
             }
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de reserva: ' . $e->getMessage(), [
-                'id_reserva' => $reserva->id_reserva,
-            ]);
         }
     }
 
@@ -2773,9 +2791,6 @@ class PlanoDigitalController extends Controller
                 Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
             }
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de devolución: ' . $e->getMessage(), [
-                'id_reserva' => $reserva->id_reserva,
-            ]);
         }
     }
 
@@ -2828,9 +2843,7 @@ class PlanoDigitalController extends Controller
         try {
             $tenantId = Tenant::current()?->id ?? 'default';
             \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
-            Log::info("Caché de estados de espacios limpiado para tenant: {$tenantId}");
         } catch (\Exception $e) {
-            Log::error('Error al limpiar caché de estados: ' . $e->getMessage());
         }
     }
 

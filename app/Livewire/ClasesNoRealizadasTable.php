@@ -8,6 +8,7 @@ use App\Models\PeriodoAcademico;
 use App\Models\ClaseNoRealizada;
 use App\Models\Asignatura;
 use App\Models\Profesor;
+use App\Models\Carrera;
 use App\Helpers\SemesterHelper;
 use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
@@ -22,6 +23,7 @@ class ClasesNoRealizadasTable extends Component
 
     public $search = '';
     public $estado = '';
+    public $ua = '';
     public $fecha_inicio = '';
     public $fecha_fin = '';
     public $periodo = '';
@@ -43,6 +45,7 @@ class ClasesNoRealizadasTable extends Component
     protected $queryString = [
         'search' => ['except' => ''],
         'estado' => ['except' => ''],
+        'ua' => ['except' => ''],
         'fecha_inicio' => ['except' => ''],
         'fecha_fin' => ['except' => ''],
         'periodo' => ['except' => ''],
@@ -84,6 +87,14 @@ class ClasesNoRealizadasTable extends Component
     }
 
     public function updatingEstado()
+    {
+        $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
+        $this->resetPage();
+    }
+
+    public function updatingUa()
     {
         $this->cachedEstadisticas = null;
         $this->todasLasClasesFiltradasCache = null;
@@ -179,6 +190,7 @@ class ClasesNoRealizadasTable extends Component
     {
         $this->search = '';
         $this->estado = '';
+        $this->ua = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
         $this->fecha_fin = Carbon::today()->format('Y-m-d');
         
@@ -429,7 +441,8 @@ class ClasesNoRealizadasTable extends Component
             $this->fecha_fin,
             $this->periodo,
             null,
-            null
+            null,
+            $this->ua
         );
 
         // Asignar clave única a cada clase
@@ -437,6 +450,16 @@ class ClasesNoRealizadasTable extends Component
             $item['unique_key'] = $this->generarUniqueKey($item);
             return $item;
         });
+
+        // Aplicar filtro de UA en memoria si está establecido (por ID o por nombre de carrera)
+        if (!empty($this->ua)) {
+            $uaNorm = mb_strtolower(trim($this->ua), 'UTF-8');
+            $todasLasClases = $todasLasClases->filter(function($item) use ($uaNorm) {
+                $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
+                $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
+            })->values();
+        }
 
         // Aplicar filtro de estado en memoria
         if ($this->estado) {
@@ -501,7 +524,7 @@ class ClasesNoRealizadasTable extends Component
                     return true;
                 }
 
-                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, profesor, asignatura)
+                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, carrera, profesor, asignatura)
                 $espacioRaw = $item['espacio'] ?? '';
                 $textoFila = $this->normalizarTexto(
                     ($item['profesor'] ?? '') . ' ' .
@@ -510,6 +533,7 @@ class ClasesNoRealizadasTable extends Component
                     $espacioRaw . ' ' .
                     str_replace('-', '', $espacioRaw) . ' ' .
                     ($item['ua'] ?? '') . ' ' .
+                    ($item['carrera'] ?? '') . ' ' .
                     ($item['run_profesor'] ?? '')
                 );
                 foreach ($palabras as $p) {
@@ -548,6 +572,7 @@ class ClasesNoRealizadasTable extends Component
 
         return !empty(trim($this->search ?? ''))
             || !empty($this->estado)
+            || !empty($this->ua)
             || ($this->fecha_inicio && $this->fecha_inicio !== $fechaInicioDefecto)
             || ($this->fecha_fin && $this->fecha_fin !== $fechaFinDefecto);
     }
@@ -800,6 +825,12 @@ class ClasesNoRealizadasTable extends Component
     {        
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
+        try {
+            $unidadesAcademicas = Carrera::orderBy('nombre')->get(['id_carrera', 'nombre']);
+        } catch (\Exception $e) {
+            $unidadesAcademicas = collect();
+        }
+
         $periodoModel = null;
         if ($this->periodo) {
             $partes = explode('-', $this->periodo);
@@ -827,6 +858,7 @@ class ClasesNoRealizadasTable extends Component
                 'periodoNoIniciado' => true,
                 'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
                 'periodosDisponibles' => $periodosDisponibles,
+                'unidadesAcademicas' => $unidadesAcademicas,
                 'totalNoRealizadasFiltradas' => 0,
                 'currentPageNoRealizadasKeys' => [],
             ]);
@@ -873,6 +905,7 @@ class ClasesNoRealizadasTable extends Component
             'periodoNoIniciado' => false,
             'nombrePeriodo' => '',
             'periodosDisponibles' => $periodosDisponibles,
+            'unidadesAcademicas' => $unidadesAcademicas,
             'totalNoRealizadasFiltradas' => $totalNoRealizadasFiltradas,
             'currentPageNoRealizadasKeys' => $currentPageNoRealizadasKeys,
         ]);

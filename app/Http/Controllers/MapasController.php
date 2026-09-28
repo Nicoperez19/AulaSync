@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Universidad;
@@ -19,17 +20,15 @@ class MapasController extends Controller
     public function edit($id)
     {
         $mapa = Mapa::withoutGlobalScopes()->with('bloques.espacio')->findOrFail($id);
-        $pisos = Piso::all();
 
         // Obtener sede y facultad del tenant actual
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
-        
-
-
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
-        
 
+        $pisos = $facultad
+            ? Piso::where('id_facultad', $facultad->id_facultad)->orderBy('numero_piso')->get()
+            : Piso::orderBy('numero_piso')->get();
 
         return view('mapas.edit', compact('mapa', 'pisos', 'sede', 'facultad'));
     }
@@ -37,7 +36,7 @@ class MapasController extends Controller
     {
         try {
 
-            
+
             $mapa = Mapa::withoutGlobalScopes()->findOrFail($id);
             $request->validate([
                 'nombre_mapa' => 'required|string|max:255',
@@ -45,7 +44,7 @@ class MapasController extends Controller
                 'bloques' => 'required|string',
                 'archivo' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:10240'
             ]);
-            
+
             // Validar manualmente que el piso exista en la base de datos tenant
             if (!Piso::where('id', $request->piso_id)->exists()) {
                 return back()->withErrors(['piso_id' => 'El piso seleccionado no existe.'])->withInput();
@@ -66,7 +65,7 @@ class MapasController extends Controller
             }
 
             $mapa->save();
-            
+
 
 
             $bloques = json_decode($request->bloques, true);
@@ -76,7 +75,7 @@ class MapasController extends Controller
 
             $mapa->bloques()->delete();
 
-            
+
             foreach ($bloques as $index => $bloque) {
                 try {
                     Bloque::create([
@@ -95,7 +94,7 @@ class MapasController extends Controller
                     throw $bloqueError;
                 }
             }
-            
+
 
 
             return redirect()->route('mapas.index')
@@ -118,18 +117,18 @@ class MapasController extends Controller
         return view('mapas.index', compact('mapas'));
     }
 
-        public function add()
+    public function add()
     {
         $universidades = Universidad::all();
 
         // Obtener sede y facultad del tenant actual
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
-        
+
 
 
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
-        
+
 
 
         return view('mapas.create', compact('universidades', 'sede', 'facultad'));
@@ -151,7 +150,7 @@ class MapasController extends Controller
                 'piso_id' => 'required|integer',
                 'bloques' => 'required|string'
             ]);
-            
+
             // Validar manualmente que el piso exista en la base de datos tenant
             if (!Piso::where('id', $request->piso_id)->exists()) {
                 return back()->withErrors(['piso_id' => 'El piso seleccionado no existe.'])->withInput();
@@ -180,21 +179,19 @@ class MapasController extends Controller
             $extension = $file->getClientOriginalExtension();
 
             $fileName = "{$nombreMapaSlug}.{$extension}";
-            
 
-            
+
+
             // Guardar el archivo
             try {
                 $content = file_get_contents($file->getRealPath());
                 $filePath = 'mapas_subidos/' . $fileName;
-                
+
                 Storage::disk('public')->put($filePath, $content);
-                
+
                 // Verificar si el archivo se guardó correctamente
                 if (Storage::disk('public')->exists($filePath)) {
                     $path = $filePath;
-
-
                 } else {
                     $path = false;
                     Log::error('Archivo no existe después de guardarlo', ['path' => $filePath]);
@@ -209,9 +206,9 @@ class MapasController extends Controller
             // Generar ID único basado en slug + timestamp para evitar duplicados
             $slugBase = Str::slug($request->nombre_mapa);
             $idMapa = $slugBase . '-' . time();
-            
 
-            
+
+
             // Crear mapa sin global scopes para evitar conflictos
             $mapa = Mapa::withoutGlobalScopes()->create([
                 'id_mapa' => $idMapa,
@@ -220,13 +217,13 @@ class MapasController extends Controller
                 'ruta_canvas' => $path,
                 'piso_id' => $request->piso_id
             ]);
-            
+
 
 
             foreach ($bloques as $index => $bloque) {
                 try {
 
-                    
+
                     Bloque::create([
                         'id_bloque' => Str::uuid(),
                         'id_mapa' => $mapa->id_mapa,
@@ -235,8 +232,6 @@ class MapasController extends Controller
                         'posicion_y' => $bloque['posicion_y'],
                         'estado' => $bloque['estado']
                     ]);
-                    
-
                 } catch (\Exception $bloqueError) {
                     Log::error("Error al crear bloque #{$index}:", [
                         'error' => $bloqueError->getMessage(),
@@ -254,7 +249,6 @@ class MapasController extends Controller
 
             return redirect()->route('mapas.index')
                 ->with('success', 'Mapa guardado exitosamente.');
-
         } catch (\Exception $e) {
             Log::error('Error al guardar mapa: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
@@ -299,15 +293,15 @@ class MapasController extends Controller
         try {
             // Auto-curación para Los Ángeles: asegurar que los edificios tengan sus nombres oficiales
             if ($facultadId === 'IT_LA') {
-                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function($q) {
+                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function ($q) {
                     $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 1')->orWhere('nombre_piso', 'LIKE', '%1er%');
                 })->update(['nombre_piso' => 'CAUPOLICÁN 276']);
 
-                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function($q) {
+                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function ($q) {
                     $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 2');
                 })->update(['nombre_piso' => 'VILLAGRÁN 220']);
 
-                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
+                Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function ($q) {
                     $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
                 })->update(['nombre_piso' => 'VILLAGRÁN 251']);
 
@@ -363,45 +357,32 @@ class MapasController extends Controller
     {
         try {
             $piso = Piso::withoutGlobalScopes()->find($pisoId);
-            $nombrePiso = strtoupper($piso->nombre_piso ?? '');
-            $numeroPiso = $piso->numero_piso ?? null;
-            $idFacultad = $piso->id_facultad ?? null;
-
-            $query = Espacio::withoutGlobalScopes()
-                ->select('id_espacio', 'nombre_espacio');
-
-            if (str_contains($nombrePiso, '251') || ($idFacultad === 'IT_LA' && $numeroPiso == 3) || $pisoId == 12 || $pisoId == 13) {
-                $query->where(function ($q) use ($pisoId) {
-                    $q->where('piso_id', $pisoId)
-                      ->orWhere('id_espacio', 'LIKE', 'LA-4%');
-                });
-            } elseif (str_contains($nombrePiso, '220') || ($idFacultad === 'IT_LA' && $numeroPiso == 2) || $pisoId == 10 || $pisoId == 11) {
-                $query->where(function ($q) use ($pisoId) {
-                    $q->where('piso_id', $pisoId)
-                      ->orWhere('id_espacio', 'LIKE', 'LA-2%')
-                      ->orWhere('id_espacio', 'LIKE', 'LA-C%');
-                });
-            } elseif (str_contains($nombrePiso, 'CAUPOLICÁN') || str_contains($nombrePiso, 'CAUPOLICAN') || ($idFacultad === 'IT_LA' && $numeroPiso == 1) || $pisoId == 8 || $pisoId == 9) {
-                $query->where(function ($q) use ($pisoId) {
-                    $q->where('piso_id', $pisoId)
-                      ->orWhere('id_espacio', 'LIKE', 'LA-0%')
-                      ->orWhere('id_espacio', 'LIKE', 'LA-1%')
-                      ->orWhere('id_espacio', 'LA-LAB');
-                });
-            } else {
-                $pisoIds = [$pisoId];
-                if ($pisoId == 8) $pisoIds = [8, 9];
-                elseif ($pisoId == 10) $pisoIds = [10, 11];
-                elseif ($pisoId == 12) $pisoIds = [12, 13];
-
-                $query->whereIn('piso_id', $pisoIds);
-            }
-
-            $espacios = $query->orderBy('nombre_espacio')->get();
-
-            if ($espacios->isEmpty()) {
+            if (!$piso) {
                 return response()->json([]);
             }
+
+            $pisoIds = [$pisoId];
+            $idsDeLaFacultad = Piso::withoutGlobalScopes()
+                ->where('id_facultad', $piso->id_facultad)
+                ->pluck('id')
+                ->toArray();
+
+            if ($piso->id_facultad === 'IT_LA') {
+                $relacion = [
+                    8 => [8, 9],
+                    10 => [10, 11],
+                    12 => [12, 13],
+                ];
+                $pisoIds = $relacion[$pisoId] ?? [$pisoId];
+            }
+
+            $pisoIds = array_values(array_intersect($pisoIds, $idsDeLaFacultad));
+
+            $espacios = Espacio::withoutGlobalScopes()
+                ->select('id_espacio', 'nombre_espacio')
+                ->whereIn('piso_id', $pisoIds)
+                ->orderBy('nombre_espacio')
+                ->get();
 
             return response()->json($espacios);
         } catch (\Exception $e) {
@@ -509,4 +490,3 @@ class MapasController extends Controller
         }
     }
 }
-
