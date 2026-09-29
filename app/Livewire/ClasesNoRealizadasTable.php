@@ -880,7 +880,6 @@ class ClasesNoRealizadasTable extends Component
         $totalClases          = 0;
         $totalNoRealizadas    = 0;
         $totalPendientes      = 0;
-        $totalJustificados    = 0;
         $totalRealizadas      = 0;
 
         foreach ($clasesAgrupadas as $bloqueItems) {
@@ -891,19 +890,19 @@ class ClasesNoRealizadasTable extends Component
                 $totalNoRealizadas++;
             } elseif (in_array('Pendiente de Recuperación', $estados)) {
                 $totalPendientes++;
-            } elseif (in_array('Justificada', $estados)) {
-                $totalJustificados++;
             } else {
+                // Justificada, Realizada, Recuperada, Feriado → todas cuentan como realizadas
                 $totalRealizadas++;
             }
         }
 
         // Calcular estadísticas a partir de clases agrupadas (no módulos individuales)
+        // Las Justificadas están incluidas dentro de $totalRealizadas
         $estadisticas = [
             'total'        => $totalClases,
             'no_realizadas' => $totalNoRealizadas,
             'pendientes'   => $totalPendientes,
-            'justificados' => $totalJustificados,
+            'justificados' => $todasLasClases->where('estado', 'Justificada')->count(), // para la tarjeta KPI individual
             'realizadas'   => $totalRealizadas,
         ];
 

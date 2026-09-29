@@ -962,28 +962,30 @@ class DashboardController extends Controller
             $justificadas = $cnrBloquesJustificadas;
         }
 
-        $totalImpartidas = $realizadas + $recuperadas;
-        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas + $justificadas;
+        $totalImpartidas = $realizadas + $recuperadas + $justificadas;
+        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
 
-        $pctImpartidas = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
-        $pctRealizadas = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
-        $pctRecuperadas = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctImpartidas    = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRealizadas    = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRecuperadas   = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctJustificadas  = $totalClasesEvaluadas > 0 ? round(($justificadas / $totalClasesEvaluadas) * 100, 1) : 0;
         $pctNoRegistradas = $totalClasesEvaluadas > 0 ? round(($noRegistradas / $totalClasesEvaluadas) * 100, 1) : 0;
 
         return [
-            'rango' => $rango,
-            'fecha_inicio' => $fechaInicioYmd,
-            'fecha_fin' => $fechaFinYmd,
-            'total_clases' => $totalClasesEvaluadas,
-            'total_impartidas' => $totalImpartidas,
-            'realizadas' => $realizadas,
-            'recuperadas' => $recuperadas,
-            'no_registradas' => $noRegistradas,
-            'justificadas' => $justificadas,
+            'rango'              => $rango,
+            'fecha_inicio'       => $fechaInicioYmd,
+            'fecha_fin'          => $fechaFinYmd,
+            'total_clases'       => $totalClasesEvaluadas,
+            'total_impartidas'   => $totalImpartidas,
+            'realizadas'         => $realizadas,
+            'recuperadas'        => $recuperadas,
+            'justificadas'       => $justificadas,
+            'no_registradas'     => $noRegistradas,
             'futuras_pendientes' => $futurasPendientes,
-            'pct_impartidas' => $pctImpartidas,
-            'pct_realizadas' => $pctRealizadas,
-            'pct_recuperadas' => $pctRecuperadas,
+            'pct_impartidas'     => $pctImpartidas,
+            'pct_realizadas'     => $pctRealizadas,
+            'pct_recuperadas'    => $pctRecuperadas,
+            'pct_justificadas'   => $pctJustificadas,
             'pct_no_registradas' => $pctNoRegistradas,
         ];
         });
