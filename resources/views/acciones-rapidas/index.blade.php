@@ -12,7 +12,15 @@
                 </div>
             </div>
 
-         
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('dashboard') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
+                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    <span>Volver vista principal</span>
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -168,47 +176,6 @@
             </div>
         </div>
 
-    </div>
-
-    <!-- Accesos Rápidos a Otras Secciones -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-4 sm:p-6">
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <i class="fas fa-external-link-alt mr-2 text-gray-600"></i>
-                Accesos Rápidos
-            </h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-tachometer-alt text-gray-600 mr-3"></i>
-                    <span class="text-sm font-medium text-gray-700">Dashboard Principal</span>
-                </a>
-                
-                @can('monitoreo de espacios')
-                <a href="{{ route('plano.index') }}" 
-                   class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-map text-gray-600 mr-3"></i>
-                    <span class="text-sm font-medium text-gray-700">Plano Digital</span>
-                </a>
-                @endcan
-                
-                @can('reportes')
-                <a href="{{ route('reportes.accesos') }}" 
-                   class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-chart-bar text-gray-600 mr-3"></i>
-                    <span class="text-sm font-medium text-gray-700">Reportes</span>
-                </a>
-                @endcan
-                
-                @can('mantenedor de usuarios')
-                <a href="{{ route('users.index') }}" 
-                   class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <i class="fas fa-users text-gray-600 mr-3"></i>
-                    <span class="text-sm font-medium text-gray-700">Usuarios</span>
-                </a>
-                @endcan
-            </div>
-        </div>
     </div>
 </div>
 

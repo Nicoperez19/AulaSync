@@ -108,12 +108,17 @@ class ReconciliarHorariosDocentesCommand extends Command
             'horario' => 19,
             'horario_profesor' => 20,
         ];
+        $tieneColumnaHorarioProfesor = false;
 
         foreach ($headers as $colIdx => $headerName) {
             if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
             if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
             if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
-            if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIO_DOCENTE', 'HORARIOPROFESOR', 'HORARIODOCENTE', 'HORARIO_PROF'])) $colMap['horario_profesor'] = $colIdx;
+            if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIOPROFESOR', 'HORARIO_PROF', 'HORARIO_DOCENTE', 'HORARIODOCENTE', 'HORARIO_DOCENTES', 'HORARIODOCENTES', 'HORARIO_PROFESORES', 'HORARIOPROFESORES', 'HORARIO_POR_DOCENTE', 'HORARIOPORDOCENTE', 'HORARIO_POR_PROFESOR', 'HORARIOPORPROFESOR'])) {
+                $colMap['horario_profesor'] = $colIdx;
+                $tieneColumnaHorarioProfesor = true;
+            }
+            if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) $colMap['tipo_profesor'] = $colIdx;
             if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
         }
 
@@ -184,9 +189,10 @@ class ReconciliarHorariosDocentesCommand extends Command
             }
 
             // Horario específico del docente (prioridad) o horario general
-            $hProfRaw = trim($row[$colMap['horario_profesor']] ?? '');
-            $hGenRaw = trim($row[$colMap['horario']] ?? '');
-            $hUsar = !empty($hProfRaw) ? $hProfRaw : $hGenRaw;
+            $hUsar = trim($row[$colMap['horario_profesor']] ?? '');
+            if (!$tieneColumnaHorarioProfesor && empty($hUsar)) {
+                $hUsar = trim($row[$colMap['horario']] ?? '');
+            }
 
             if (empty($hUsar)) continue;
 
@@ -225,7 +231,11 @@ class ReconciliarHorariosDocentesCommand extends Command
                 }
             }
 
-            if (stripos($tipoProfesor, 'colaborador') !== false) {
+            $tipoProfesorNormalizado = mb_strtolower($tipoProfesor, 'UTF-8');
+            $esProfesorColaborador = str_contains($tipoProfesorNormalizado, 'colaborador')
+                || str_contains($tipoProfesorNormalizado, 'ayudante');
+
+            if ($esProfesorColaborador) {
                 $colaboradoresList[] = [
                     'run' => $run,
                     'id_asignatura' => $idAsig,
