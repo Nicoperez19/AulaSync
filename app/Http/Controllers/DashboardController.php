@@ -735,7 +735,9 @@ class DashboardController extends Controller
         $fechaFinYmd = $fechaFin->format('Y-m-d');
 
         $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
-        $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}";
+        $ultimaActualizacionCnr = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
+            ->max('updated_at') ?? 'sin-cambios';
+        $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}_{$ultimaActualizacionCnr}";
 
         $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use (
             $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
@@ -877,6 +879,8 @@ class DashboardController extends Controller
                         $recuperadas++;
                     } elseif ($registroCNR->estado === 'justificado') {
                         $justificadas++;
+                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
+                        $realizadas++;
                     } else {
                         $noRegistradas++;
                     }
@@ -938,6 +942,7 @@ class DashboardController extends Controller
         $cnrBloquesNoRegistradas = 0;
         $cnrBloquesRecuperadas = 0;
         $cnrBloquesJustificadas = 0;
+        $cnrBloquesRealizadas = 0;
 
         foreach ($cnrsBloques as $bloqueKey => $items) {
             $primerItem = $items->first();
@@ -945,6 +950,8 @@ class DashboardController extends Controller
                 $cnrBloquesRecuperadas++;
             } elseif ($primerItem->estado === 'justificado') {
                 $cnrBloquesJustificadas++;
+            } elseif (in_array($primerItem->estado, ['realizada', 'registrada'], true)) {
+                $cnrBloquesRealizadas++;
             } else {
                 $cnrBloquesNoRegistradas++;
             }
@@ -960,6 +967,9 @@ class DashboardController extends Controller
         }
         if ($cnrBloquesJustificadas > $justificadas) {
             $justificadas = $cnrBloquesJustificadas;
+        }
+        if ($cnrBloquesRealizadas > $realizadas) {
+            $realizadas = $cnrBloquesRealizadas;
         }
 
         $totalImpartidas = $realizadas + $recuperadas + $justificadas;
