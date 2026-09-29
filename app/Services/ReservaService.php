@@ -546,12 +546,24 @@ class ReservaService
             'status' => 200,
             'mensaje' => $mensajeExito,
             'total_creadas' => $totalCreadas,
+            'id_reserva' => $primera->id_reserva,
+            'url_comprobante' => route('reservas.comprobante', $primera->id_reserva),
             'reserva' => [
                 'id' => $primera->id_reserva,
                 'espacio' => $data['espacio'],
                 'fecha' => $primera->fecha_reserva,
                 'modulos' => $duracionModulos,
                 'estado' => $primera->estado,
+            ],
+            'datos' => [
+                'responsable' => $data['nombre'],
+                'espacio' => $espacio->nombre_espacio ?? $data['espacio'],
+                'id_espacio' => $data['espacio'],
+                'fecha' => $primera->fecha_reserva,
+                'modulos' => $duracionModulos,
+                'hora' => $primera->hora,
+                'tipo' => ($primera->tipo_reserva ?? '') === 'clase' ? 'Académica' : 'Directa',
+                'creado_por' => $primera->creado_por,
             ],
         ];
     }
@@ -790,9 +802,9 @@ class ReservaService
                 return;
             }
 
-            Mail::to($destinatario)->queue(new \App\Mail\ComprobanteReservaMailable($reserva));
+            Mail::to($destinatario)->queue(new \App\Mail\ConfirmacionReserva($reserva));
             Log::info("📧 Comprobante de reserva {$reserva->id_reserva} encolado para {$destinatario}");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
         }
     }

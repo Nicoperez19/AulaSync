@@ -3,13 +3,13 @@
     'title' => ''
 ])
 
-<div class="relative" x-data="{ open: @json($active) }">
+<div class="relative" x-data="{ open: @json($active), active: @json($active) }">
     <x-sidebar.link
         collapsible
         :isActive="$active"
         title="{{ $title }}"
         x-on:click="open = !open"
-        x-bind:class="{ 'bg-white/20 text-white font-semibold': open && !@json($active) }"
+        x-bind:class="{ 'bg-white/20 text-white font-semibold': open && !active }"
     >
         @if ($icon ?? false)
             <x-slot name="icon">

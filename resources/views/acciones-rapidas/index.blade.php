@@ -12,16 +12,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    <i class="fas fa-clock mr-1"></i>
-                    {{ date('d/m/Y H:i') }}
-                </div>
-                <div class="flex items-center px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 rounded-full text-sm font-medium">
-                    <i class="fas fa-circle mr-2 text-green-500 text-[8px]"></i>
-                    Sistema Activo
-                </div>
-            </div>
+         
         </div>
     </x-slot>
 

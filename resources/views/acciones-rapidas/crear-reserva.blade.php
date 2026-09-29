@@ -564,7 +564,14 @@
                         body: JSON.stringify(formData)
                     });
 
-                    const result = await response.json();
+                    const responseText = await response.text();
+                    let result;
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        throw new Error(`El servidor respondió con HTTP ${response.status}.`);
+                    }
 
                     if (response.ok && result.success) {
                         Swal.fire({
@@ -640,7 +647,7 @@
                             icon: 'success',
                             confirmButtonText: 'Ir a Gestión de Reservas',
                             showDenyButton: true,
-                            denyButtonText: '📄 Descargar Comprobante',
+                            denyButtonText: 'Descargar Comprobante',
                             denyButtonColor: '#2563EB',
                             showCancelButton: true,
                             cancelButtonText: 'Crear otra reserva',
@@ -649,7 +656,14 @@
                             width: '600px'
                         }).then((dialogResult) => {
                             if (dialogResult.isDenied) {
-                                const comprobanteUrl = result.url_comprobante || ('/reservas/' + result.id_reserva + '/comprobante');
+                                const idReserva = result.id_reserva || result.reserva?.id;
+                                const comprobanteUrl = result.url_comprobante || (idReserva ? `/reservas/${idReserva}/comprobante` : null);
+
+                                if (!comprobanteUrl) {
+                                    Swal.fire('Error', 'No se encontró el ID de la reserva para generar el comprobante.', 'error');
+                                    return;
+                                }
+
                                 window.open(comprobanteUrl, '_blank');
                             } else if (dialogResult.isConfirmed) {
                                 window.location.href = "{{ route('quick-actions.gestionar-reservas') }}";
@@ -686,7 +700,10 @@
                             await enviarCreacionReserva(formData);
                         }
                     } else {
-                        Swal.fire('Error', result.mensaje || 'Error al crear la reserva', 'error');
+                        const erroresValidacion = result.errors
+                            ? Object.values(result.errors).flat().join('<br>')
+                            : '';
+                        Swal.fire('Error', erroresValidacion || result.mensaje || result.message || 'Error al crear la reserva', 'error');
                     }
                 } catch (error) {
                     console.error('Error al enviar creación de reserva:', error);

@@ -95,7 +95,7 @@
                                     </svg>
                                     Control de Clases
                                     <span class="ml-2 text-sm font-normal text-gray-500"
-                                        x-text="'(' + diaSeleccionado.clases_no_realizadas_detalle.length + ')'}"></span>
+                                        x-text="'(' + diaSeleccionado.clases_no_realizadas_detalle.length + ')' "></span>
                                 </h4>
                                 <div class="space-y-3">
                                     <template x-for="(clase, index) in diaSeleccionado.clases_no_realizadas_detalle"

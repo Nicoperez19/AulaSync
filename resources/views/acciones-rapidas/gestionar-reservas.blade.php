@@ -9,13 +9,7 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <h2 class="text-2xl font-bold leading-tight">Gestión de Reservas</h2>
-                        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full dark:bg-green-900/30 dark:border-green-700">
-                            <i class="fa-solid fa-circle-check text-green-600 dark:text-green-400 text-sm"></i>
-                            <div class="flex items-center gap-1">
-                                <span class="text-xs font-medium text-green-700 dark:text-green-300">Vigentes:</span>
-                                <span class="text-sm font-bold text-green-900 dark:text-green-100" id="stats-activas-header">0</span>
-                            </div>
-                        </div>
+                    
                     </div>
                     <p class="text-sm text-gray-500">Administrar estados de reservas activas y finalizadas</p>
                 </div>

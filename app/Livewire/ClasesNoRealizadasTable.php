@@ -866,13 +866,45 @@ class ClasesNoRealizadasTable extends Component
         
         $todasLasClases = $this->getClasesFiltradasCollection();
 
-        // Calcular estadísticas a partir de la colección ya filtrada
+        // Agrupar por bloque de clase (fecha + espacio + run_profesor + asignatura) para
+        // contar clases reales en lugar de módulos individuales, igual que hace el Dashboard.
+        $clasesAgrupadas = $todasLasClases->groupBy(function ($item) {
+            $fecha = ($item['fecha'] instanceof \Carbon\Carbon)
+                ? $item['fecha']->format('Y-m-d')
+                : \Carbon\Carbon::parse($item['fecha'])->format('Y-m-d');
+            return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+        });
+
+        // Para cada bloque, determinar el estado predominante siguiendo la misma prioridad
+        // que usa el dashboard: no_realizada > pendiente > justificada > realizada/recuperada.
+        $totalClases          = 0;
+        $totalNoRealizadas    = 0;
+        $totalPendientes      = 0;
+        $totalJustificados    = 0;
+        $totalRealizadas      = 0;
+
+        foreach ($clasesAgrupadas as $bloqueItems) {
+            $totalClases++;
+            $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+
+            if (in_array('No Registrada', $estados)) {
+                $totalNoRealizadas++;
+            } elseif (in_array('Pendiente de Recuperación', $estados)) {
+                $totalPendientes++;
+            } elseif (in_array('Justificada', $estados)) {
+                $totalJustificados++;
+            } else {
+                $totalRealizadas++;
+            }
+        }
+
+        // Calcular estadísticas a partir de clases agrupadas (no módulos individuales)
         $estadisticas = [
-            'total' => $todasLasClases->count(),
-            'no_realizadas' => $todasLasClases->where('estado', 'No Registrada')->count(),
-            'pendientes' => $todasLasClases->where('estado', 'Pendiente de Recuperación')->count(),
-            'justificados' => $todasLasClases->where('estado', 'Justificada')->count(),
-            'realizadas' => $todasLasClases->whereIn('estado', ['Realizada', 'Feriado/Justificado', 'Recuperada'])->count(),
+            'total'        => $totalClases,
+            'no_realizadas' => $totalNoRealizadas,
+            'pendientes'   => $totalPendientes,
+            'justificados' => $totalJustificados,
+            'realizadas'   => $totalRealizadas,
         ];
 
         // Paginación manual

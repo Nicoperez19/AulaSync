@@ -203,21 +203,21 @@
 
             {{-- Barra de Acciones Masivas --}}
             @if(count($selectedClases) > 0 || $selectAllFiltered)
-                <div class="mb-4 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white px-5 py-3.5 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3 border border-blue-700/60 transition-all duration-300">
+                <div class="mb-4 bg-[#EFF6FF] text-[#1E3A8A] px-5 py-3.5 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3 border border-[#BFDBFE] transition-all duration-300">
                     <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-blue-600/40 rounded-lg text-amber-400 border border-amber-400/30">
+                        <div class="p-2.5 bg-[#2563EB]/10 rounded-lg text-[#2563EB] border border-[#2563EB]/20">
                             <i class="fas fa-check-double text-xl"></i>
                         </div>
                         <div>
-                            <p class="font-bold text-base text-white flex items-center gap-2">
+                            <p class="font-bold text-base text-[#1E3A8A] flex items-center gap-2">
                                 @if($selectAllFiltered)
                                     <span>{{ $totalNoRealizadasFiltradas }} clases seleccionadas</span>
-                                    <span class="text-xs px-2.5 py-0.5 bg-amber-400 text-gray-950 rounded-full font-extrabold uppercase tracking-wide">Filtro completo</span>
+                                    <span class="text-xs px-2.5 py-0.5 bg-[#BFDBFE] text-[#1E3A8A] rounded-full font-extrabold uppercase tracking-wide">Filtro completo</span>
                                 @else
                                     <span>{{ count($selectedClases) }} {{ count($selectedClases) === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
                                 @endif
                             </p>
-                            <p class="text-xs text-blue-200">
+                            <p class="text-xs text-[#1E3A8A]/80">
                                 Aplica una justificación en lote a todas las clases seleccionadas con un único motivo y detalle.
                             </p>
                         </div>
@@ -225,11 +225,11 @@
 
                     <div class="flex items-center gap-2.5">
                         <button type="button" wire:click="limpiarSeleccion" 
-                                class="px-3.5 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+                                class="px-3.5 py-2 text-xs font-semibold text-[#1E3A8A] hover:text-[#1E3A8A] bg-white/70 hover:bg-[#BFDBFE]/60 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
                             <i class="fas fa-times"></i> Cancelar
                         </button>
                         <button type="button" wire:click="abrirModalJustificarMasivo" 
-                                class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 text-xs sm:text-sm font-black rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
+                                class="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs sm:text-sm font-black rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
                             <i class="fas fa-shield-alt text-base"></i>
                             <span>Justificar Seleccionadas</span>
                         </button>
