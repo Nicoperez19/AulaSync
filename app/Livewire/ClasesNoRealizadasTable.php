@@ -826,8 +826,7 @@ class ClasesNoRealizadasTable extends Component
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
         try {
-            $unidadesAcademicas = Carrera::withoutGlobalScopes()
-                ->orderByRaw('CAST(id_carrera AS UNSIGNED) ASC')
+            $unidadesAcademicas = Carrera::orderByRaw('CAST(id_carrera AS UNSIGNED) ASC')
                 ->orderBy('id_carrera', 'ASC')
                 ->get(['id_carrera', 'nombre']);
         } catch (\Exception $e) {

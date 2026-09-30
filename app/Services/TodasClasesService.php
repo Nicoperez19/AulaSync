@@ -811,10 +811,30 @@ class TodasClasesService
         $clasesData = $clasesProcesadas;
 
         if ($ua) {
-            $uaStr = (string)$ua;
-            $clasesData = $clasesData->filter(function($item) use ($uaStr) {
-                return (string)($item['ua'] ?? '') === $uaStr;
+            $uaStr = trim((string)$ua);
+            $uaNorm = mb_strtolower($uaStr, 'UTF-8');
+
+            // Log para debug: muestra los valores únicos de 'ua' antes de filtrar
+            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
+                'ua_buscada' => $uaStr,
+                'total_antes_filtro' => $clasesData->count(),
+                'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
+            ]);
+
+            $clasesData = $clasesData->filter(function($item) use ($uaStr, $uaNorm) {
+                $itemUa = trim((string)($item['ua'] ?? ''));
+                // Comparar por id_carrera exacto (trim incluido)
+                if ($itemUa === $uaStr) {
+                    return true;
+                }
+                // Fallback: comparar por nombre de carrera
+                $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                return str_contains($carreraNombre, $uaNorm);
             });
+
+            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
+                'total_despues_filtro' => $clasesData->count(),
+            ]);
         }
 
         return $clasesData->sortBy([
