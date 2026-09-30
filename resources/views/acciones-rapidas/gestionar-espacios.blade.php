@@ -12,34 +12,111 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <x-button variant="add" href="{{ route('quick-actions.crear-reserva') }}" class="inline-flex items-center gap-2">
-                    <x-icons.add class="w-5 h-5" aria-hidden="true" />
-                    Nueva Reserva
-                </x-button>
-                <x-button href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('quick-actions.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
+                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Volver
-                </x-button>
+                    <span>Volver</span>
+                </a>
             </div>
         </div>
     </x-slot>
 
     <div class="space-y-6">
 
-    <!-- Filtros -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <!-- 1. KPIs / Estadísticas -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
+            <div class="p-4 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-emerald-600"></i>
+                    </div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-slate-500">Disponibles</div>
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900" id="stats-disponibles">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
+            <div class="p-4 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-lock text-2xl sm:text-3xl text-rose-600"></i>
+                    </div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-slate-500">Ocupados</div>
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900" id="stats-ocupados">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
+            <div class="p-4 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-wrench text-2xl sm:text-3xl text-amber-500"></i>
+                    </div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-slate-500">Mantenimiento</div>
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900" id="stats-mantenimiento">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
+            <div class="p-4 sm:p-6">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-building text-2xl sm:text-3xl text-blue-600"></i>
+                    </div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-slate-500">Total Espacios</div>
+                        <div class="text-xl sm:text-2xl font-bold text-slate-900" id="stats-total">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Acciones Rápidas -->
+    <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
+        <div class="p-4 sm:p-6">
+            <h3 class="text-base sm:text-lg font-semibold text-slate-900 mb-4">Acciones Rápidas</h3>
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <button 
+                    onclick="liberarTodosLosEspacios()"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-xl hover:bg-emerald-700 transition-colors shadow-xs">
+                    <i class="fa-solid fa-unlock w-4 h-4 mr-2"></i>
+                    Liberar Todos los Espacios
+                </button>
+                
+                <button 
+                    onclick="ponerEnMantenimiento()"
+                    class="inline-flex items-center justify-center px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-xl hover:bg-amber-600 transition-colors shadow-xs">
+                    <i class="fa-solid fa-wrench w-4 h-4 mr-2"></i>
+                    Mantenimiento Masivo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Filtros -->
+    <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
         <div class="p-4 sm:p-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
                     <select 
                         id="filtro-estado-espacio"
                         onchange="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base">
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="">Todos los estados</option>
                         <option value="Disponible">Disponibles</option>
                         <option value="Ocupado">Ocupados</option>
@@ -48,11 +125,11 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Piso</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Piso</label>
                     <select 
                         id="filtro-piso-espacio"
                         onchange="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base">
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="">Todos los pisos</option>
                         <option value="1">Piso 1</option>
                         <option value="2">Piso 2</option>
@@ -61,20 +138,20 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Búsqueda</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Búsqueda</label>
                     <input 
                         type="text"
                         id="filtro-busqueda-espacio"
                         placeholder="Buscar por código o nombre..."
                         onkeyup="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
+                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                     />
                 </div>
                 
                 <div class="flex items-end">
                     <button 
                         onclick="cargarEspacios()"
-                        class="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors text-sm sm:text-base">
+                        class="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors text-sm sm:text-base shadow-xs flex items-center justify-center">
                         <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
                         Actualizar
                     </button>
@@ -83,30 +160,29 @@
         </div>
     </div>
 
-    <!-- Tabla de espacios -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+    <!-- 4. Tabla de espacios -->
+    <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
         <div class="p-4 sm:p-6">
             <div class="overflow-x-auto -mx-4 sm:mx-0">
                 <div class="inline-block min-w-full align-middle">
                     <div class="overflow-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
                                 <tr>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Código</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Nombre</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Tipo</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Piso</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Capacidad</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Estado</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Acciones</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Código</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Nombre</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Tipo</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Piso</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Capacidad</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Estado</th>
+                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="tabla-espacios-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="tabla-espacios-body" class="bg-white divide-y divide-slate-200">
                                 <tr>
-                                    <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                    <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-slate-500">
                                         <div class="flex flex-col items-center">
-                                            <!-- <x-heroicon-o-office-building class="w-12 h-12 text-gray-300 mb-4" /> -->
-                                            <i class="fa-solid fa-building text-6xl text-gray-300 mb-4"></i>
+                                            <i class="fa-solid fa-building text-6xl text-slate-300 mb-4"></i>
                                             <p>Cargando espacios...</p>
                                         </div>
                                     </td>
@@ -115,87 +191,6 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-green-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Disponibles</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-disponibles">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-lock text-2xl sm:text-3xl text-red-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Ocupados</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-ocupados">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-wrench text-2xl sm:text-3xl text-yellow-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Mantenimiento</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-mantenimiento">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-building text-2xl sm:text-3xl text-blue-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Total Espacios</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-total">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Acciones Masivas -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-4 sm:p-6">
-            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Acciones Masivas</h3>
-            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <button 
-                    onclick="liberarTodosLosEspacios()"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
-                    <i class="fa-solid fa-unlock w-4 h-4 mr-2"></i>
-                    Liberar Todos los Espacios
-                </button>
-                
-                <button 
-                    onclick="ponerEnMantenimiento()"
-                    class="inline-flex items-center justify-center px-4 py-2 bg-yellow-600 text-white text-sm rounded-lg hover:bg-yellow-700 transition-colors">
-                    <i class="fa-solid fa-wrench w-4 h-4 mr-2"></i>
-                    Mantenimiento Masivo
-                </button>
             </div>
         </div>
     </div>

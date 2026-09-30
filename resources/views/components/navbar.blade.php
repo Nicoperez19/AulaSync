@@ -109,24 +109,6 @@
     </div>
 </nav>
 
-<div
-    class="fixed inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 bg-light-cloud-blue sm:px-6 md:hidden dark:bg-dark-eval-1">
-    <x-button type="button" icon-only variant="secondary" sr-text="Search">
-        <x-heroicon-o-search aria-hidden="true" class="w-6 h-6" />
-    </x-button>
-
-    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}">
-        <x-application-logo-navbar-bot aria-hidden="true" class="w-10 h-10" />
-        <span class="sr-only">Dashboard</span>
-    </a>
-
-    <x-button type="button" icon-only variant="secondary" sr-text="Open main menu"
-        x-on:click="isSidebarOpen = !isSidebarOpen">
-        <x-heroicon-o-menu x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
-        <x-heroicon-o-x x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
-    </x-button>
-</div>
-
 <script>
     // Horarios de módulos copiados de show.blade.php
     const horariosModulos = @json(\App\Helpers\ModulosHelper::getHorariosModulos());

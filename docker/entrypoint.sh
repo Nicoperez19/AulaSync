@@ -5,6 +5,7 @@ echo "Entry point: waiting for database..."
 
 # Fix permissions for storage and bootstrap/cache before anything else
 echo "Setting correct permissions on storage and bootstrap/cache"
+mkdir -p /var/www/bootstrap/cache
 chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
