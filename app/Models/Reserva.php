@@ -188,6 +188,59 @@ class Reserva extends Model
     }
 
     /**
+     * Scope: reservas activas de un docente específico en un espacio dado.
+     *
+     * Uso: Reserva::activasProfesor($run, $idEspacio)->orderBy('created_at', 'desc')->first()
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $runProfesor  RUN normalizado del docente.
+     * @param string|null $idEspacio  ID del espacio (opcional; si se omite filtra en todos los espacios).
+     */
+    public function scopeActivasProfesor($query, string $runProfesor, ?string $idEspacio = null)
+    {
+        $query->where('estado', 'activa')
+              ->where(function ($q) use ($runProfesor) {
+                  $q->where('run_profesor', $runProfesor)
+                    ->orWhere('run_solicitante', $runProfesor);
+              });
+
+        if ($idEspacio !== null) {
+            $query->where('id_espacio', $idEspacio);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Scope: reservas activas en un espacio que NO pertenecen al docente indicado.
+     * Útil para detectar si otro usuario ocupa el espacio antes de liberarlo.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $runProfesor  RUN normalizado del docente que NO debe aparecer.
+     * @param string $idEspacio    ID del espacio a verificar.
+     */
+    public function scopeActivasOtrosDocentes($query, string $runProfesor, string $idEspacio)
+    {
+        return $query->where('id_espacio', $idEspacio)
+                     ->where('estado', 'activa')
+                     ->where(function ($q) use ($runProfesor) {
+                         $q->where('run_profesor', '!=', $runProfesor)
+                           ->orWhereNull('run_profesor');
+                     });
+    }
+
+    /**
+     * Verifica si el RUN proporcionado es el dueño de esta reserva.
+     *
+     * @param string $run  RUN normalizado a comparar.
+     * @return bool
+     */
+    public function esDueño(string $run): bool
+    {
+        return $this->run_profesor === $run || $this->run_solicitante === $run;
+    }
+
+    /**
      * Verificar si la reserva corresponde al módulo/hora actual y debe activarse
      */
     public function debeActivarse(): bool
