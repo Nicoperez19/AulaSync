@@ -827,7 +827,7 @@ class ClasesNoRealizadasTable extends Component
 
         try {
             $tenant = \App\Models\Tenant::current();
-            $unidadesAcademicas = Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            $unidadesAcademicas = DB::connection('tenant')->table('carreras')
                 ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
                 ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
                 ->when($tenant && $tenant->sede_id, fn ($query) => $query->where('f.id_sede', $tenant->sede_id))
