@@ -826,10 +826,15 @@ class ClasesNoRealizadasTable extends Component
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
         try {
+            $tenant = \App\Models\Tenant::current();
             $unidadesAcademicas = Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
-                ->orderByRaw('CAST(id_carrera AS UNSIGNED) ASC')
-                ->orderBy('id_carrera', 'ASC')
-                ->get(['id_carrera', 'nombre']);
+                ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
+                ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
+                ->when($tenant && $tenant->sede_id, fn ($query) => $query->where('f.id_sede', $tenant->sede_id))
+                ->select('carreras.id_carrera', 'carreras.nombre')
+                ->orderByRaw('CAST(carreras.id_carrera AS UNSIGNED) ASC')
+                ->orderBy('carreras.id_carrera', 'ASC')
+                ->get();
         } catch (\Exception $e) {
             $unidadesAcademicas = collect();
         }
