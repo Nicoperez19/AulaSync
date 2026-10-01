@@ -330,7 +330,9 @@ class DataLoadController extends Controller
                     $idCarrera = isset($row[$colMap['id_carrera']]) ? trim($row[$colMap['id_carrera']]) : '';
 
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
-                    $carrera = !empty($idCarrera) ? Carrera::withoutGlobalScope('tenant')->find($idCarrera) : null;
+                    $carrera = !empty($idCarrera)
+                        ? Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($idCarrera)
+                        : null;
                     if (!$carrera && !empty($idCarrera)) {
                         // Intentar crear una carrera genérica para esta sede
                         $nombreCarrera = (isset($colMap['nombre_carrera']) && isset($row[$colMap['nombre_carrera']]) && !empty($row[$colMap['nombre_carrera']]))
