@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 use App\Models\Tenant;
 
-class TableController extends Controller
+class ModuloActualController extends Controller
 {
     public function index()
     {

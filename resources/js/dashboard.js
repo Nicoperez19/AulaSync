@@ -136,7 +136,7 @@ function updateCarouselState(container, current, total) {
             if (i === current) {
                 ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
             } else {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-gray-300 w-2 hover:bg-gray-400';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-slate-200 w-2 hover:bg-slate-300';
             }
         }
     }

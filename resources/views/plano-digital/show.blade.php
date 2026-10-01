@@ -99,61 +99,45 @@
             );
             pointer-events: none;
         }
+
+        /* Ocultar barra de scroll visualmente en clases actuales pero manteniendo desplazamiento */
+        #sidebar-modulo-list {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+        #sidebar-modulo-list::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+        }
     </style>
     <div class="flex h-screen overflow-hidden">
         <aside
-            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
+            class="fixed top-0 left-0 z-40 flex flex-col w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs overflow-hidden">
 
-            <div class="flex flex-col items-center gap-2 md:gap-1">
+            <div class="flex-shrink-0 flex flex-col items-center gap-2 md:gap-1">
                 <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
                     <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
                 </a>
-                
             </div>
 
-            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
+            <div class="flex flex-col flex-1 min-h-0 w-full max-w-md p-1 mx-auto pb-2">
                 <div class="w-full mt-6">
-                    <div class="p-4 text-white bg-red-700 rounded ">
-                        <div class="flex items-center justify-between pb-4">
-                            <div
-                                class="flex items-center gap-1 bg-red-700 rounded">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
-                            </div>
-                        </div>
-
-                        <div class="py-1">
-                            <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span class="text-xs">Módulo: <span id="modulo-actual">No hay módulo
-                                        programado</span></span>
-                            </div>
-                        </div>
-
-                        <div class="pt-1">
-                            <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                <span class="text-xs">Horario: <span id="horario-actual">--:-- - --:--</span></span>
-                            </div>
+                    <div class="mt-3 text-sm text-white bg-red-700/90 rounded-xl px-3 py-2 hidden">
+                        <div class="flex items-center gap-2 text-red-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-xs font-medium">Horario:</span>
+                            <span id="horario-actual" class="text-xs font-semibold">--:-- - --:--</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tarjeta de QR y Usuario -->
-                <div class="w-full mt-20">
-                    <div class="mt-4 mb-4 text-white bg-light-cloud-blue">
+                <div class="w-full mt-auto mb-2">
+                    <div class="mt-2 mb-2 text-white bg-light-cloud-blue">
                         <div class="flex items-center gap-3 p-3 mb-3 rounded-md bg-red-500/80">
 
                             <div class="bg-red-400 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
@@ -169,8 +153,7 @@
                             </div>
                         </div>
 
-                        <hr class="pb-4 my-2 border-white/30">
-
+                        <hr class="my-2 border-white/30">
 
                         <!-- Información del usuario (oculta inicialmente) -->
                         <div id="info-usuario" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
@@ -188,20 +171,23 @@
                             </div>
                         </div>
 
-                        <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 opacity-0 focus:outline-none focus:border-0 focus:ring-0"
-                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-
-
+                       <input type="text" id="qr-input" class="absolute w-px h-px p-0 m-0 opacity-0" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
 
                     </div>
                 </div>
-            </div>
 
-            <!-- Leyenda abajo del todo -->
-            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto">
-                <div class="w-full mt-6">
-                    <div class="p-4 text-white bg-red-700 rounded">
+                <!-- Lista de clases del módulo actual -->
+                <div class="w-full mt-3 mb-2 flex-1 min-h-0">
+                    <div class="flex h-full flex-col rounded-xl bg-red-700 rounded px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                       
+                        <div id="sidebar-modulo-list" class="space-y-2 overflow-y-auto min-h-0 max-h-[25vh] select-none" style="-ms-overflow-style: none; scrollbar-width: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Leyenda abajo del todo -->
+                <div class="flex flex-col items-center justify-end w-full max-w-md mx-auto mt-2">
+                    <div class="w-full">
+                        <div class="p-4 text-white bg-red-700 rounded">
                         <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2">
@@ -230,10 +216,6 @@
                             <div class="flex items-center w-full gap-1">
                                 <div class="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Próximo</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-gray-700 rounded-full shadow-sm"></div>
-                                <span class="flex-1 text-xs text-white">Clase no realizada (20+ min)</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
                                 <div class="w-3 h-3 bg-gray-400 rounded-full shadow-sm"></div>
@@ -298,6 +280,42 @@
                                 <!-- Canvas para los indicadores -->
                                 <canvas id="indicatorsCanvas"
                                     class="absolute inset-0 w-full h-full pointer-events-auto"></canvas>
+
+                                <!-- Reloj digital y módulo actual (flotante sobre el canvas) -->
+                                <div id="modal-reloj"
+                                    class="absolute bottom-4 right-4 sm:bottom-6 sm:right-8 z-50 pointer-events-auto transition-all duration-300 ease-out group"
+                                    style="position: absolute; bottom: 1.5rem; right: 2rem; z-index: 50;">
+                                    <!-- Estado Expandido -->
+                                    <div id="reloj-expandido"
+                                        class="bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-2xl shadow-red-950/20 rounded-2xl border border-white/20 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center gap-3 sm:gap-4 transition-all duration-300 relative z-50"
+                                        style="z-index: 50;">
+                                        <div class="p-2 sm:p-2.5 bg-white/15 text-white rounded-xl transition-all duration-300 shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex flex-col select-none">
+                                            <span id="hora-actual" class="font-mono text-xl sm:text-2xl font-black text-white leading-none tracking-tight my-0.5">--:--:--</span>
+                                            <span id="modulo-actual" class="text-xs sm:text-sm font-bold text-red-100">Módulo actual: -</span>
+                                        </div>
+                                        <button type="button" onclick="toggleModalReloj(true)" title="Minimizar reloj" class="ml-1 text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors duration-150 shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Estado Minimizado -->
+                                    <div id="reloj-minimizado"
+                                        onclick="toggleModalReloj(false)"
+                                        title="Mostrar reloj y módulo actual"
+                                        class="hidden cursor-pointer bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-xl hover:shadow-2xl rounded-full border border-white/20 px-3.5 py-2 flex items-center gap-2 text-white hover:scale-105 transition-all duration-200 relative z-50"
+                                        style="z-index: 50;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="font-mono text-xs sm:text-sm font-bold" id="modal-hora-minimizada">--:--:--</span>
+                                        <svg class="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
+                                    </div>
+                                </div>
 
 
                             </div>
@@ -885,6 +903,7 @@
 
     <script>
         window.tenantPrefix = '{{ strtoupper(tenant_prefijo() ?: tenant_domain() ?: "") }}';
+        window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
 
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
         document.addEventListener('open-modal', (event) => {
@@ -2805,23 +2824,23 @@
                 const estadoLower = indicator.estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
                 if (estadoLower === 'mantencion' || estadoLower === 'mantenimiento') {
-                    color = '#9ca3af'; // Gris 400 - Mantenimiento
+                    color = '#6b7280'; // Gris más intenso - Mantenimiento
                 } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
-                    color = '#10b981'; // Esmeralda 500 - Disponible
+                    color = '#10b981'; // Verde vivo - Disponible
                 } else if (estadoLower === 'ocupado' || estadoLower === 'reserva espontanea') {
-                    color = '#ef4444'; // Rojo 500 - Ocupado / Espontánea
+                    color = '#ef233c'; // Rojo más intenso - Ocupado / Espontánea
                 } else if (estadoLower === 'programado' || estadoLower === 'reservado') {
-                    color = '#f59e0b'; // Amber 500 - Programado / Reservado
+                    color = '#f59e0b'; // Ámbar más intenso - Programado / Reservado
                 } else if (estadoLower === 'clase registrada') {
-                    color = '#ef4444'; // Rojo 500 - Clase Registrada
+                    color = '#dc2626'; // Rojo fuerte - Clase Registrada
                 } else if (estadoLower === 'clase programada') {
-                    color = '#f59e0b'; // Amber 500 - Clase Programada (por iniciar)
+                    color = '#fbbf24'; // Ámbar brillante - Clase Programada
                 } else if (estadoLower === 'proximo') {
-                    color = '#3b82f6'; // Azul 500 - Próximo
+                    color = '#3b82f6'; // Azul más vivo - Próximo
                 } else if (estadoLower === 'clasesinasistentes' || estadoLower === 'clase no registrada') {
-                    color = '#374151'; // Gris 700 - Clase no registrada
+                    color = '#4b5563'; // Gris oscuro - Clase no registrada
                 } else {
-                    color = '#10b981'; // Esmeralda por defecto
+                    color = '#34d399'; // Verde más intenso por defecto
                 }
 
                 // Verificar si este indicador está siendo hover
@@ -4848,6 +4867,16 @@
                     state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                     drawIndicators();
                 }
+
+                // Sincronizar automáticamente las clases del módulo actual sin recargar la página
+                if (data.clasesModuloActual && Array.isArray(data.clasesModuloActual)) {
+                    const nuevoContenidoJson = JSON.stringify(data.clasesModuloActual);
+                    const actualJson = JSON.stringify(window.sidebarModuloActualData || []);
+                    if (nuevoContenidoJson !== actualJson || forzarActualizacion) {
+                        window.sidebarModuloActualData = data.clasesModuloActual;
+                        renderSidebarModuloList();
+                    }
+                }
             } catch (error) {
                 // Error silencioso para no saturar la consola
             }
@@ -4883,6 +4912,8 @@
                 document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR';
                 // Asegurar que la interfaz esté en estado inicial
                 limpiarEstadoCompleto();
+                renderSidebarModuloList();
+                setInterval(renderSidebarModuloList, 60000);
 
                 // Sistema QR inicializado
             }
@@ -5021,10 +5052,16 @@
 
             // Configurar intervalos para actualizar hora y módulo
             setInterval(actualizarHora, 1000);
+            setInterval(actualizarModalReloj, 1000);
             actualizarHora();
+            actualizarModalReloj();
 
             setInterval(actualizarModuloYColores, 5000);
             actualizarModuloYColores();
+
+            if (localStorage.getItem('dashboard_reloj_minimizado') === '1') {
+                toggleModalReloj(true);
+            }
 
             // Iniciar Watchdog Anti-Bloqueo (cada 10s) y Keep-Alive (cada 5min)
             setInterval(ejecutarWatchdogAntiBloqueo, 10000);
@@ -5587,12 +5624,156 @@
             return 1;
         }
 
-        function actualizarHora() {
+        function toggleModalReloj(minimizar) {
+            const expandido = document.getElementById('reloj-expandido');
+            const minimizado = document.getElementById('reloj-minimizado');
+            if (!expandido || !minimizado) return;
+
+            if (minimizar) {
+                expandido.classList.add('hidden');
+                minimizado.classList.remove('hidden');
+                localStorage.setItem('dashboard_reloj_minimizado', '1');
+            } else {
+                expandido.classList.remove('hidden');
+                minimizado.classList.add('hidden');
+                localStorage.setItem('dashboard_reloj_minimizado', '0');
+            }
+        }
+
+        function formatearNombreDocente(nombre) {
+            if (!nombre || nombre === 'Docente no asignado' || nombre === 'Sin docente') {
+                return 'Docente no asignado';
+            }
+            return nombre.toLowerCase().replace(/(?:^|\s|-|,)[a-záéíóúüñ]/g, (match) => match.toUpperCase());
+        }
+
+        function renderSidebarModuloList() {
+            const list = document.getElementById('sidebar-modulo-list');
+            if (!list) return;
+
+            // Limpiar cualquier intervalo anterior de auto-scroll
+            if (list._autoScrollInterval) {
+                clearInterval(list._autoScrollInterval);
+                list._autoScrollInterval = null;
+            }
+
+            const clases = Array.isArray(window.sidebarModuloActualData) && window.sidebarModuloActualData.length
+                ? window.sidebarModuloActualData
+                : [];
+
+            if (!clases.length) {
+                list.innerHTML = `
+                    <div class="rounded-xl border border-white/10 bg-white/5 px-2.5 py-3 text-center text-xs text-red-100/90 font-medium">
+                        No hay clases activas en este módulo.
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = clases.map((clase) => {
+                const espacioId = clase.id_espacio || clase.espacio_id || clase.sala || '—';
+                const docenteNombre = formatearNombreDocente(clase.docente || 'Docente no asignado');
+
+                return `
+                    <div class="flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-2 py-1.5 text-white shadow-xs transition-colors hover:bg-white/20">
+                        <span class="inline-flex shrink-0 items-center justify-center rounded bg-white/20 px-2 py-0.5 text-xs font-black tracking-wide text-white border border-white/20 shadow-xs">
+                            ${espacioId}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-xs font-bold text-white leading-tight" title="${docenteNombre}">
+                                ${docenteNombre}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Manejo de hover para pausar si el usuario interactúa
+            if (!list._hoverListenersAttached) {
+                list.addEventListener('mouseenter', () => { list._isPausedByHover = true; });
+                list.addEventListener('mouseleave', () => { list._isPausedByHover = false; });
+                list._hoverListenersAttached = true;
+            }
+
+            // Iniciar en la parte superior
+            list.scrollTop = 0;
+
+            // Gestión del auto-scroll bidireccional fluido (baja y regresa)
+            setTimeout(() => {
+                const initialMax = list.scrollHeight - list.clientHeight;
+                if (initialMax <= 4) return; // Si entra todo en pantalla, no se requiere scroll
+
+                let currentScroll = 0;
+                let direction = 1; // 1 = bajando, -1 = subiendo
+                let isPaused = false;
+                const speed = 0.75; // Velocidad suave en píxeles
+
+                list._autoScrollInterval = setInterval(() => {
+                    if (isPaused || list._isPausedByHover) return;
+
+                    const effectiveMax = Math.max(0, list.scrollHeight - list.clientHeight);
+                    if (effectiveMax <= 4) return;
+
+                    currentScroll += direction * speed;
+
+                    // Al llegar abajo
+                    if (direction === 1 && currentScroll >= effectiveMax) {
+                        currentScroll = effectiveMax;
+                        list.scrollTop = effectiveMax;
+                        direction = -1;
+                        isPaused = true;
+                        setTimeout(() => { isPaused = false; }, 2200); // Pausa de 2.2s para leer al fondo
+                        return;
+                    }
+
+                    // Al llegar arriba
+                    if (direction === -1 && currentScroll <= 0) {
+                        currentScroll = 0;
+                        list.scrollTop = 0;
+                        direction = 1;
+                        isPaused = true;
+                        setTimeout(() => { isPaused = false; }, 2200); // Pausa de 2.2s al volver al inicio
+                        return;
+                    }
+
+                    list.scrollTop = Math.round(currentScroll);
+                }, 30);
+            }, 800);
+        }
+
+        function actualizarModalReloj() {
             const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit'
+                second: '2-digit',
+                hour12: false
+            });
+
+            const horaActualElement = document.getElementById('hora-actual') || document.getElementById('modal-hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = horaActual;
+            }
+
+            const horaMinimizadaElement = document.getElementById('modal-hora-minimizada');
+            if (horaMinimizadaElement) {
+                horaMinimizadaElement.textContent = horaActual;
+            }
+
+            const moduloActual = moduloActualNum(horaActual);
+            const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
+            if (moduloActualElement) {
+                moduloActualElement.textContent = moduloActual ? `Módulo actual: ${moduloActual}` : 'Módulo actual: N/A';
+            }
+        }
+
+        function actualizarHora() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
             });
 
             const horaActualElement = document.getElementById('hora-actual');
@@ -5602,7 +5783,7 @@
         }
 
         function formatearHora(horaCompleta) {
-            return horaCompleta.slice(0, 5);
+            return horaCompleta ? horaCompleta.slice(0, 5) : '--:--';
         }
 
         let ultimaInteraccionUsuario = Date.now();
@@ -5687,16 +5868,17 @@
 
         function actualizarModuloYColores() {
             const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit'
+                second: '2-digit',
+                hour12: false
             });
 
             // Determinar el módulo actual
             const moduloActual = moduloActualNum(horaActual);
             const moduloParaReserva = obtenerModuloParaReserva(horaActual);
-            const moduloActualElement = document.getElementById('modulo-actual');
+            const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
             const moduloHorarioElement = document.getElementById('horario-actual');
 
             // Detectar cambio de módulo para sincronizar espacios inmediatamente
@@ -5708,24 +5890,18 @@
             }
 
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
-                const prefijo = obtenerPrefijoDiaActual();
-                moduloActualElement.textContent = `${prefijo}.${moduloActual}`;
+                moduloActualElement.textContent = `Módulo actual: ${moduloActual}`;
 
-                // Obtener el horario del módulo actual
                 const diaActual = obtenerDiaActual();
                 const horarioModulo = horariosModulos[diaActual][moduloActual];
-
-                // Mostrar solo horas y minutos
                 const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
                 moduloHorarioElement.textContent = horarioTexto;
             } else {
-                // Estamos en un break entre módulos
                 if (moduloActualElement) {
                     if (moduloParaReserva) {
-                        const prefijo = obtenerPrefijoDiaActual();
-                        moduloActualElement.textContent = `Break (Próximo: ${prefijo}.${moduloParaReserva})`;
+                        moduloActualElement.textContent = `Módulo actual: ${moduloParaReserva} (próximo)`;
                     } else {
-                        moduloActualElement.textContent = 'Break entre módulos';
+                        moduloActualElement.textContent = 'Módulo actual: N/A';
                     }
                 }
                 if (moduloHorarioElement) {

@@ -80,6 +80,10 @@ class ReservationsTable extends Component
         $searchTerm = trim($this->search);
 
         $baseQuery = Reserva::query()
+            ->whereHas('espacio', function ($eq) {
+                $eq->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
+                   ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
+            })
             ->when($this->fechaInicio, function ($q) {
                 $q->whereDate('fecha_reserva', '>=', $this->fechaInicio);
             })

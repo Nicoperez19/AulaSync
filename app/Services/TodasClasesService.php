@@ -19,7 +19,7 @@ class TodasClasesService
     /**
      * Obtener todas las clases (planificadas, realizadas y no realizadas)
      */
-    public function obtenerTodasLasClases($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null)
+    public function obtenerTodasLasClases($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null)
     {
         $fechaInicio = $fechaInicio ? Carbon::parse($fechaInicio) : null;
         $fechaFin = $fechaFin ? Carbon::parse($fechaFin) : null;
@@ -98,17 +98,31 @@ class TodasClasesService
             ->whereBetween('fecha_clase', [$fechaInicio, $fechaFin]);
         
         if ($search) {
-            $searchTerm = '%' . $search . '%';
-            $clasesNoRealizadasQuery->where(function($q) use ($searchTerm) {
-                $q->whereHas('profesor', function($pq) use ($searchTerm) {
-                    $pq->where('name', 'like', $searchTerm);
-                })
-                ->orWhereHas('asignatura', function($aq) use ($searchTerm) {
+            $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
+            $searchTerm = '%' . trim($search) . '%';
+            $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
+
+            $clasesNoRealizadasQuery->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
+                $q->whereHas('asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
                        ->orWhere('codigo_asignatura', 'like', $searchTerm);
                 })
-                ->orWhere('id_espacio', 'like', $searchTerm)
-                ->orWhere('run_profesor', 'like', $searchTerm);
+                ->orWhere('id_espacio', 'like', $searchTerm);
+
+                if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
+                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
+                      ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                }
+
+                if (!empty($palabras)) {
+                    $q->orWhereHas('profesor', function($pq) use ($palabras) {
+                        $pq->where(function($nameQ) use ($palabras) {
+                            foreach ($palabras as $p) {
+                                $nameQ->where('name', 'like', '%' . $p . '%');
+                            }
+                        });
+                    });
+                }
             });
         }
         
@@ -154,11 +168,17 @@ class TodasClasesService
                 'id_horario'
             ])
             ->with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera',
+                'asignatura.carrera:id_carrera,nombre,id_area_academica',
+                'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
                 'horario' => function($query) {
                     $query->select('id_horario', 'run_profesor', 'periodo')
-                        ->with('profesor:run_profesor,name');
+                        ->with([
+                            'profesor:run_profesor,name,id_carrera,id_area_academica',
+                            'profesor.carrera:id_carrera,nombre',
+                            'profesor.areaAcademica:id_area_academica,nombre_area_academica',
+                        ]);
                 }
             ])
             ->whereHas('modulo')
@@ -171,17 +191,33 @@ class TodasClasesService
         }
 
         if ($search) {
-            $searchTerm = '%' . $search . '%';
-            $query->where(function($q) use ($searchTerm) {
+            $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
+            $searchTerm = '%' . trim($search) . '%';
+            $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
+
+            $query->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
                 $q->whereHas('asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
                        ->orWhere('codigo_asignatura', 'like', $searchTerm);
                 })
-                ->orWhereHas('horario.profesor', function($pq) use ($searchTerm) {
-                    $pq->where('name', 'like', $searchTerm)
-                       ->orWhere('run_profesor', 'like', $searchTerm);
-                })
                 ->orWhere('id_espacio', 'like', $searchTerm);
+
+                if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
+                    $q->orWhereHas('horario.profesor', function($pq) use ($cleanRun) {
+                        $pq->where('run_profesor', 'like', '%' . $cleanRun . '%')
+                           ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                    });
+                }
+
+                if (!empty($palabras)) {
+                    $q->orWhereHas('horario.profesor', function($pq) use ($palabras) {
+                        $pq->where(function($nameQ) use ($palabras) {
+                            foreach ($palabras as $p) {
+                                $nameQ->where('name', 'like', '%' . $p . '%');
+                            }
+                        });
+                    });
+                }
             });
         }
 
@@ -230,6 +266,8 @@ class TodasClasesService
                                 'periodo'           => $periodo ?? $planificacion->horario->periodo ?? 'N/A',
                                 'profesor'          => $planificacion->horario->profesor->name,
                                 'run_profesor'      => $runProfesor,
+                                'ua'                => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
+                                'carrera'           => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                                 'id_asignatura'     => $planificacion->id_asignatura,
@@ -364,6 +402,8 @@ class TodasClasesService
                             'periodo' => $periodo ?? $planificacion->horario->periodo ?? 'N/A',
                             'profesor' => $planificacion->horario->profesor->name,
                             'run_profesor' => $runProfesor,
+                            'ua' => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
+                            'carrera' => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                             'id_asignatura' => $planificacion->id_asignatura,
@@ -398,8 +438,12 @@ class TodasClasesService
                 'profesorColaborador' => function($q) {
                     $q->select('id', 'run_profesor_colaborador', 'id_asignatura', 'nombre_asignatura_temporal')
                       ->with([
-                          'profesor:run_profesor,name',
-                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura'
+                          'profesor:run_profesor,name,id_carrera,id_area_academica',
+                          'profesor.carrera:id_carrera,nombre',
+                          'profesor.areaAcademica:id_area_academica,nombre_area_academica',
+                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera',
+                          'asignatura.carrera:id_carrera,nombre,id_area_academica',
+                          'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                       ]);
                 }
             ])
@@ -407,17 +451,33 @@ class TodasClasesService
             ->whereHas('profesorColaborador.profesor');
 
         if ($search) {
-            $searchTerm = '%' . $search . '%';
-            $queryColab->where(function($q) use ($searchTerm) {
+            $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
+            $searchTerm = '%' . trim($search) . '%';
+            $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
+
+            $queryColab->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
                 $q->whereHas('profesorColaborador.asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
                        ->orWhere('codigo_asignatura', 'like', $searchTerm);
                 })
-                ->orWhereHas('profesorColaborador.profesor', function($pq) use ($searchTerm) {
-                    $pq->where('name', 'like', $searchTerm)
-                       ->orWhere('run_profesor', 'like', $searchTerm);
-                })
                 ->orWhere('id_espacio', 'like', $searchTerm);
+
+                if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
+                    $q->orWhereHas('profesorColaborador.profesor', function($pq) use ($cleanRun) {
+                        $pq->where('run_profesor', 'like', '%' . $cleanRun . '%')
+                           ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                    });
+                }
+
+                if (!empty($palabras)) {
+                    $q->orWhereHas('profesorColaborador.profesor', function($pq) use ($palabras) {
+                        $pq->where(function($nameQ) use ($palabras) {
+                            foreach ($palabras as $p) {
+                                $nameQ->where('name', 'like', '%' . $p . '%');
+                            }
+                        });
+                    });
+                }
             });
         }
 
@@ -472,6 +532,8 @@ class TodasClasesService
                                 'periodo'           => $periodo ?? ($fecha->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
                                 'profesor'          => $profesorModel->name,
                                 'run_profesor'      => $runProfesor,
+                                'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
+                                'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                                 'asignatura'        => $asignaturaNombre,
                                 'codigo_asignatura' => $asignaturaCodigo,
                                 'id_asignatura'     => $idAsignatura,
@@ -599,6 +661,8 @@ class TodasClasesService
                             'periodo'           => $periodo ?? ($fecha->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
                             'profesor'          => $profesorModel->name,
                             'run_profesor'      => $runProfesor,
+                            'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
+                            'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                             'asignatura'        => $asignaturaNombre,
                             'codigo_asignatura' => $asignaturaCodigo,
                             'id_asignatura'     => $idAsignatura,
@@ -746,6 +810,33 @@ class TodasClasesService
 
         $clasesData = $clasesProcesadas;
 
+        if ($ua) {
+            $uaStr = trim((string)$ua);
+            $uaNorm = mb_strtolower($uaStr, 'UTF-8');
+
+            // Log para debug: muestra los valores únicos de 'ua' antes de filtrar
+            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
+                'ua_buscada' => $uaStr,
+                'total_antes_filtro' => $clasesData->count(),
+                'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
+            ]);
+
+            $clasesData = $clasesData->filter(function($item) use ($uaStr, $uaNorm) {
+                $itemUa = trim((string)($item['ua'] ?? ''));
+                // Comparar por id_carrera exacto (trim incluido)
+                if ($itemUa === $uaStr) {
+                    return true;
+                }
+                // Fallback: comparar por nombre de carrera
+                $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                return str_contains($carreraNombre, $uaNorm);
+            });
+
+            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
+                'total_despues_filtro' => $clasesData->count(),
+            ]);
+        }
+
         return $clasesData->sortBy([
             ['fecha', 'desc'],
             ['espacio', 'asc'],
@@ -776,5 +867,45 @@ class TodasClasesService
             $run = $parts[0];
         }
         return preg_replace('/[^0-9]/', '', $run);
+    }
+
+    /**
+     * Resolver la Unidad Académica (UA -> id_carrera)
+     */
+    private function resolverUa($asignatura, $profesor = null): string
+    {
+        if ($asignatura && !empty($asignatura->id_carrera)) {
+            return (string) $asignatura->id_carrera;
+        }
+        if ($profesor && !empty($profesor->id_carrera)) {
+            return (string) $profesor->id_carrera;
+        }
+        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->id_carrera)) {
+            return (string) $asignatura->carrera->id_carrera;
+        }
+        if ($profesor && $profesor->carrera && !empty($profesor->carrera->id_carrera)) {
+            return (string) $profesor->carrera->id_carrera;
+        }
+        return 'N/A';
+    }
+
+    /**
+     * Resolver el nombre de la Unidad Académica / Carrera
+     */
+    private function resolverNombreUa($asignatura, $profesor = null): string
+    {
+        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
+            return (string) $asignatura->carrera->nombre;
+        }
+        if ($profesor && $profesor->carrera && !empty($profesor->carrera->nombre)) {
+            return (string) $profesor->carrera->nombre;
+        }
+        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
+            return (string) $asignatura->carrera->areaAcademica->nombre_area_academica;
+        }
+        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->nombre_area_academica)) {
+            return (string) $profesor->areaAcademica->nombre_area_academica;
+        }
+        return '';
     }
 }

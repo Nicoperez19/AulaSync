@@ -263,20 +263,29 @@ class DataLoadController extends Controller
                 'horario' => 19,
                 'horario_profesor' => 20,
             ];
+            $tieneColumnaHorarioProfesor = false;
 
             // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
             foreach ($headers as $colIdx => $headerName) {
                 if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
                 if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
                 if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
-                if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIO_DOCENTE', 'HORARIOPROFESOR', 'HORARIODOCENTE', 'HORARIO_PROF'])) $colMap['horario_profesor'] = $colIdx;
+                if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIOPROFESOR', 'HORARIO_PROF', 'HORARIO_DOCENTE', 'HORARIODOCENTE', 'HORARIO_DOCENTES', 'HORARIODOCENTES', 'HORARIO_PROFESORES', 'HORARIOPROFESORES', 'HORARIO_POR_DOCENTE', 'HORARIOPORDOCENTE', 'HORARIO_POR_PROFESOR', 'HORARIOPORPROFESOR'])) {
+                    $colMap['horario_profesor'] = $colIdx;
+                    $tieneColumnaHorarioProfesor = true;
+                }
+                if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) $colMap['tipo_profesor'] = $colIdx;
                 if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
+                if (in_array($headerName, ['UA', 'UNIDAD_ACADEMICA', 'UNIDADACADEMICA', 'ID_CARRERA', 'COD_CARRERA', 'CODCARRERA'])) $colMap['id_carrera'] = $colIdx;
+                if (in_array($headerName, ['NOMBRE_CARRERA', 'CARRERA'])) $colMap['nombre_carrera'] = $colIdx;
             }
             Log::info('→ Carga estándar aplicada para todas las sedes.');
 
             Log::info("→ Mapa de columnas activo: " . json_encode($colMap));
 
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
+
+            $colaboradoresAsignados = []; // [id_asignatura => [id_modulo => [id_espacio => true]]]
 
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
@@ -409,8 +418,11 @@ class DataLoadController extends Controller
                         $processedUsersCount++;
                     }
 
-                    // Los profesores colaboradores se registran vinculados a la asignatura y con su planificación de módulos/espacios
-                    if (stripos($tipoProfesor, 'colaborador') !== false) {
+                    // Los colaboradores y ayudantes se registran aparte del profesor responsable.
+                    $tipoProfesorNormalizado = mb_strtolower($tipoProfesor, 'UTF-8');
+                    $esProfesorColaborador = str_contains($tipoProfesorNormalizado, 'colaborador')
+                        || str_contains($tipoProfesorNormalizado, 'ayudante');
+                    if ($esProfesorColaborador) {
                         $idAsignaturaColaborador = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
                         $nombreAsignaturaColaborador = isset($row[$colMap['nombre_asignatura']]) ? preg_replace('/^[a-z]{2}:\s*/i', '', trim($row[$colMap['nombre_asignatura']])) : '';
                         $inscritosColaborador = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : 0;
@@ -426,7 +438,7 @@ class DataLoadController extends Controller
                                     'codigo_asignatura' => $codigoAsignaturaColab,
                                     'nombre_asignatura' => $nombreAsignaturaColaborador,
                                     'seccion'           => $numeroSeccionColab,
-                                    'run_profesor'      => $run,
+                                    'run_profesor'      => null, // El titular asignará su RUN al procesar su fila
                                     'id_carrera'        => !empty($idCarrera) ? $idCarrera : null
                                 ]);
                             } elseif (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
@@ -455,9 +467,10 @@ class DataLoadController extends Controller
                             );
 
                             // 3. Registrar la planificación del colaborador en el espacio correspondiente
-                            $horarioProfesorColab = (isset($colMap['horario_profesor']) && !empty(trim($row[$colMap['horario_profesor']] ?? '')))
-                                ? trim($row[$colMap['horario_profesor']])
-                                : (isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : '');
+                            $horarioProfesorColab = trim($row[$colMap['horario_profesor']] ?? '');
+                            if (!$tieneColumnaHorarioProfesor && empty($horarioProfesorColab)) {
+                                $horarioProfesorColab = trim($row[$colMap['horario']] ?? '');
+                            }
                             if (!empty($horarioProfesorColab)) {
                                 $horarioProfesorColab = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesorColab);
                                 $horarioNormalizadoColab = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesorColab);
@@ -525,6 +538,17 @@ class DataLoadController extends Controller
                                         'id_modulo'               => $slotC['id_modulo'],
                                         'id_espacio'              => $slotC['id_espacio'],
                                     ]);
+
+                                    // Separar al titular solo en bloques prácticos asignados al colaborador.
+                                    if (!empty($idAsignaturaColaborador) && $slotC['es_practico']) {
+                                        $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
+
+                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura, eliminar el duplicado
+                                        Planificacion_Asignatura::where('id_asignatura', $idAsignaturaColaborador)
+                                            ->where('id_modulo', $slotC['id_modulo'])
+                                            ->where('id_espacio', $slotC['id_espacio'])
+                                            ->delete();
+                                    }
                                 }
                             }
                         } catch (\Exception $e) {
@@ -579,9 +603,10 @@ class DataLoadController extends Controller
 
                     $processedAsignaturasCount++;
 
-                    $horarioProfesor = (isset($colMap['horario_profesor']) && !empty(trim($row[$colMap['horario_profesor']] ?? '')))
-                        ? trim($row[$colMap['horario_profesor']])
-                        : (isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : null);
+                    $horarioProfesor = trim($row[$colMap['horario_profesor']] ?? '');
+                    if (!$tieneColumnaHorarioProfesor && empty($horarioProfesor)) {
+                        $horarioProfesor = trim($row[$colMap['horario']] ?? '');
+                    }
 
                     $periodo = $periodoSeleccionado;
 
@@ -716,9 +741,15 @@ class DataLoadController extends Controller
 
                                 $espacioIdFinal = $espacioModel->id_espacio;
 
-                                // CREAR planificación (verificando duplicados exactos)
                                 $idModulo = $dia . '.' . $modulo;
 
+                                // Si este módulo y espacio ya fue asignado a un profesor colaborador de esta asignatura, omitir para el titular
+                                if (isset($colaboradoresAsignados[$idAsignatura][$idModulo][$espacioIdFinal])) {
+                                    Log::info("ℹ Fila $index: Omitiendo asignación de espacio {$espacioIdFinal} ({$idModulo}) para el titular RUN={$run} porque pertenece a un docente colaborador de la asignatura {$idAsignatura}.");
+                                    continue;
+                                }
+
+                                // CREAR planificación (verificando duplicados exactos)
                                 try {
                                     $existePlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
@@ -768,29 +799,6 @@ class DataLoadController extends Controller
                 }
             }
 
-            // DESACOPLAMIENTO AUTOMÁTICO CÁTEDRA VS TALLER/LABORATORIO:
-            // Si una asignatura tiene colaboradores asignados a talleres/laboratorios,
-            // remover de la planificación titular esos mismos bloques para no duplicarlos
-            $planifsTitularesDesacopladas = 0;
-            $colaboradoresCargados = ProfesorColaborador::whereNotNull('id_asignatura')
-                ->with('planificaciones')
-                ->get();
-
-            foreach ($colaboradoresCargados as $colabItem) {
-                if ($colabItem->planificaciones->isNotEmpty()) {
-                    foreach ($colabItem->planificaciones as $planColab) {
-                        $eliminados = Planificacion_Asignatura::where('id_asignatura', $colabItem->id_asignatura)
-                            ->where('id_espacio', $planColab->id_espacio)
-                            ->where('id_modulo', $planColab->id_modulo)
-                            ->delete();
-                        $planifsTitularesDesacopladas += $eliminados;
-                    }
-                }
-            }
-            if ($planifsTitularesDesacopladas > 0) {
-                Log::info("✓ Desacoplamiento automático: {$planifsTitularesDesacopladas} bloques de taller/laboratorio removidos de profesores titulares a favor de los colaboradores.");
-            }
-
             $dataLoad->update([
                 'estado' => 'completado',
                 'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
@@ -807,7 +815,7 @@ class DataLoadController extends Controller
             Log::info('═══════════════════════════════════════════════════════════');
             Log::info('✓ IMPORTACIÓN COMPLETADA - PERÍODO: ' . $periodoSeleccionado);
             Log::info('  → Filas rechazadas por sede incorrecta: ' . $skippedBySede);
-            Log::info('  → Filas saltadas (profesor colaborador): ' . $skippedByColaborador);
+            Log::info('  → Filas procesadas como profesor colaborador: ' . $skippedByColaborador);
             Log::info('  → Profesores procesados: ' . $processedUsersCount);
             Log::info('  → Asignaturas procesadas: ' . $processedAsignaturasCount);
             Log::info('  → Planificaciones creadas: ' . $processedHorariosCount);

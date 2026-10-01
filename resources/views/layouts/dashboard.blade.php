@@ -209,7 +209,7 @@
                 <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
                 Horarios del Día Actual - Módulos Actuales
             </h3>
-            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6">
+            <div class="bg-[#F8FAFC] rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6">
                 <!-- Contenedor dinámico del horario -->
                 <div id="horarios-actual-container">
                     <div class="flex flex-col items-center justify-center py-12 text-gray-400">

@@ -9,37 +9,30 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <h2 class="text-2xl font-bold leading-tight">Gestión de Reservas</h2>
-                        <div class="hidden sm:flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full dark:bg-green-900/30 dark:border-green-700">
-                            <i class="fa-solid fa-circle-check text-green-600 dark:text-green-400 text-sm"></i>
-                            <div class="flex items-center gap-1">
-                                <span class="text-xs font-medium text-green-700 dark:text-green-300">Vigentes:</span>
-                                <span class="text-sm font-bold text-green-900 dark:text-green-100" id="stats-activas-header">0</span>
-                            </div>
-                        </div>
+                    
                     </div>
                     <p class="text-sm text-gray-500">Administrar estados de reservas activas y finalizadas</p>
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <x-button variant="add" href="{{ route('quick-actions.crear-reserva') }}" class="inline-flex items-center gap-2">
-                    <x-icons.add class="w-5 h-5" aria-hidden="true" />
-                    Nueva Reserva
-                </x-button>
-                <x-button href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('quick-actions.crear-reserva') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                    <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>Nueva Reserva</span>
+                </a>
+                <a href="{{ route('quick-actions.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
+                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Volver
-                </x-button>
+                    <span>Volver</span>
+                </a>
             </div>
         </div>
     </x-slot>
 
-    @push('scripts')
-    <script src="{{ asset('js/admin-panel.js') }}"></script>
-    @endpush
+
 
     <div class="space-y-6">
 
@@ -546,8 +539,9 @@ async function cargarEspaciosParaModal() {
         const response = await fetch('/quick-actions/api/espacios');
         const data = await response.json();
         
-        if (data.success && data.data) {
-            espaciosCargados = data.data;
+        const espacios = data.data || data.espacios;
+        if (data.success && espacios) {
+            espaciosCargados = espacios;
             const select = document.getElementById('edit-codigo-espacio');
             select.innerHTML = '<option value="">Seleccione un espacio</option>' +
                 espaciosCargados.map(espacio => {
@@ -1352,10 +1346,11 @@ async function cargarEspaciosParaFiltro() {
         const response = await fetch('/quick-actions/api/espacios');
         const data = await response.json();
         
-        if (data.success && data.data) {
+        const espacios = data.data || data.espacios;
+        if (data.success && espacios) {
             const select = document.getElementById('filtro-espacio-reserva');
             if (select) {
-                const opcionesHtml = data.data.map(espacio => {
+                const opcionesHtml = espacios.map(espacio => {
                     const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
                     return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
                 }).join('');
@@ -1424,9 +1419,10 @@ async function cargarReservas() {
 
         const data = await response.json();
 
+        const listaReservas = data.data || data.reservas;
 
-        if (data.success && data.data) {
-            reservasOriginales = data.data;
+        if (data.success && Array.isArray(listaReservas)) {
+            reservasOriginales = listaReservas;
 
             procesarReservas();
         } else {

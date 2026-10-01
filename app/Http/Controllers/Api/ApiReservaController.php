@@ -219,26 +219,82 @@ class ApiReservaController extends Controller
 
             // 2. Verificar si el espacio está ocupado
             if ($espacio->estado === 'Ocupado') {
-                // Si el docente actual tiene clase programada, forzamos la liberación
-                if ($tieneClase) {
-                    $reservaAnterior = Reserva::where('id_espacio', $request->espacio_id)
-                        ->where('estado', 'activa')
-                        ->orderBy('created_at', 'desc')
-                        ->first();
 
-                    if ($reservaAnterior) {
-                        $reservaAnterior->estado = 'finalizada';
-                        $reservaAnterior->hora_salida = $horaActualStr;
-                        $mensajeForzado = 'Cierre forzado por Docente ' . $request->run . ' al iniciar clase programada: ' . $tieneClase->nombre_asignatura;
-                        $reservaAnterior->observaciones = trim(($reservaAnterior->observaciones ?? '') . "\n" . $mensajeForzado);
-                        $reservaAnterior->save();
-                        $forzado = true;
+                // --- Caso A: El espacio está ocupado por el mismo docente ---
+                $reservaMismoProfesor = Reserva::activasProfesor($runNormalizado, $request->espacio_id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if ($reservaMismoProfesor) {
+                    if ($tieneClase && $reservaMismoProfesor->tipo_reserva === 'espontanea') {
+                        // El docente tenía una reserva espontánea y ahora inicia una clase programada.
+                        // Finalizamos la espontánea limpiamente antes de crear la nueva.
+                        $reservaMismoProfesor->estado      = 'finalizada';
+                        $reservaMismoProfesor->hora_salida = $horaActualStr;
+                        $reservaMismoProfesor->observaciones = trim(
+                            ($reservaMismoProfesor->observaciones ?? '') .
+                            "\nFinalizada automáticamente al iniciar clase programada: " . $tieneClase->nombre_asignatura .
+                            " (" . $horaActual->format('d/m/Y H:i:s') . ")"
+                        );
+                        $reservaMismoProfesor->save();
+
+                        \Log::info('Reserva espontánea cerrada al iniciar clase programada del mismo docente', [
+                            'reserva_cerrada' => $reservaMismoProfesor->id_reserva,
+                            'run_profesor'    => $runNormalizado,
+                            'espacio_id'      => $request->espacio_id,
+                            'clase'           => $tieneClase->nombre_asignatura,
+                        ]);
+                        // Continúa para crear la nueva reserva de tipo 'clase'.
+
+                    } elseif ($tieneClase && $reservaMismoProfesor->tipo_reserva === 'clase') {
+                        // Ya existe una reserva de clase activa para este docente en este espacio.
+                        // No se crea duplicado; se retorna éxito con la información existente.
+                        \Log::info('Registro entrada evitado: el docente ya tiene clase activa registrada', [
+                            'reserva_existente' => $reservaMismoProfesor->id_reserva,
+                            'run_profesor'      => $runNormalizado,
+                            'espacio_id'        => $request->espacio_id,
+                        ]);
+                        return response()->json([
+                            'success'        => true,
+                            'message'        => 'Ya tiene una clase activa registrada en este espacio.',
+                            'espacio_nombre' => $espacio->nombre_espacio,
+                            'hora_termino'   => $tieneClase->hora_termino,
+                            'asignatura'     => $tieneClase->nombre_asignatura,
+                        ]);
+
+                    } else {
+                        // El espacio está ocupado por el mismo docente con uso libre y no tiene clase programada.
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Ya tiene un uso activo registrado en este espacio.'
+                        ], 400);
                     }
+
                 } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El espacio se encuentra ocupado'
-                    ], 400);
+                    // --- Caso B: El espacio está ocupado por otro docente ---
+                    if ($tieneClase) {
+                        // El docente actual tiene clase programada → liberación forzada del ocupante anterior.
+                        $reservaAnterior = Reserva::activasOtrosDocentes($runNormalizado, $request->espacio_id)
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+
+                        if ($reservaAnterior) {
+                            $reservaAnterior->estado      = 'finalizada';
+                            $reservaAnterior->hora_salida = $horaActualStr;
+                            $mensajeForzado = 'Cierre forzado por Docente ' . $request->run .
+                                ' al iniciar clase programada: ' . $tieneClase->nombre_asignatura;
+                            $reservaAnterior->observaciones = trim(
+                                ($reservaAnterior->observaciones ?? '') . "\n" . $mensajeForzado
+                            );
+                            $reservaAnterior->save();
+                            $forzado = true;
+                        }
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'El espacio se encuentra ocupado'
+                        ], 400);
+                    }
                 }
             }
 
@@ -341,15 +397,32 @@ class ApiReservaController extends Controller
 
             DB::connection('tenant')->beginTransaction();
 
-            // Buscar la reserva activa para el espacio sin restricción de fecha
-            $reserva = Reserva::where('id_espacio', $request->espacio_id)
-                ->where('estado', 'activa')
+            // Buscar la reserva activa del espacio que pertenezca al docente que registra la salida.
+            // Se usa el scope activasProfesor() para filtrar por run_profesor o run_solicitante.
+            $reserva = Reserva::activasProfesor($runNormalizado, $request->espacio_id)
+                ->orderBy('created_at', 'desc')
                 ->first();
 
-
-
+            // Si no hay reserva del propio docente, verificar si el espacio tiene reserva de otro usuario
             if (!$reserva) {
+                $reservaAjena = Reserva::activasOtrosDocentes($runNormalizado, $request->espacio_id)
+                    ->first();
+
                 DB::connection('tenant')->rollBack();
+
+                if ($reservaAjena) {
+                    \Log::warning('Intento de salida sobre reserva ajena', [
+                        'run_solicitante' => $runNormalizado,
+                        'run_dueño'       => $reservaAjena->run_profesor ?? $reservaAjena->run_solicitante,
+                        'id_reserva'      => $reservaAjena->id_reserva,
+                        'id_espacio'      => $request->espacio_id,
+                    ]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No tiene una reserva activa en este espacio. El espacio está ocupado por otro usuario.'
+                    ], 403);
+                }
+
                 return response()->json([
                     'success' => false,
                     'message' => 'No se encontró una reserva activa para este espacio'
@@ -769,9 +842,34 @@ class ApiReservaController extends Controller
             try {
                 $espacio = Espacio::findOrFail($request->espacio_id);
 
-                // 2️⃣ BUSCAR Y FINALIZAR RESERVA ANTERIOR
+                // 2️⃣ BUSCAR Y FINALIZAR RESERVA ANTERIOR (solo de otro docente)
+                // Si el espacio está ocupado por el mismo docente, no se debe liberar — sería un conflicto.
+                $reservaMismoProfesor = Reserva::where('id_espacio', $request->espacio_id)
+                    ->where('estado', 'activa')
+                    ->where('run_profesor', $runNormalizado)
+                    ->first();
+
+                if ($reservaMismoProfesor) {
+                    DB::connection('tenant')->rollBack();
+                    \Log::warning('liberarYRegistrarUso: docente intenta liberar su propia reserva activa', [
+                        'run_profesor' => $runNormalizado,
+                        'id_reserva'   => $reservaMismoProfesor->id_reserva,
+                        'tipo_reserva' => $reservaMismoProfesor->tipo_reserva,
+                        'espacio_id'   => $request->espacio_id,
+                    ]);
+                    return response()->json([
+                        'success'    => false,
+                        'message'    => 'Usted ya tiene una reserva activa en este espacio. Use la opción de salida para finalizarla primero.',
+                        'error_code' => 'own_active_reservation',
+                    ], 409);
+                }
+
                 $reservaAnterior = Reserva::where('id_espacio', $request->espacio_id)
                     ->where('estado', 'activa')
+                    ->where(function ($q) use ($runNormalizado) {
+                        $q->where('run_profesor', '!=', $runNormalizado)
+                          ->orWhereNull('run_profesor');
+                    })
                     ->first();
 
                 $reservaAnteriorFinalizadaId = null;

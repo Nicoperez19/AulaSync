@@ -46,6 +46,14 @@ class DashboardController extends Controller
                     break;
                 }
             }
+
+            // Si estamos en intervalo (break) entre módulos, considerar el próximo módulo
+            if (!$moduloActualNum) {
+                $moduloActualNum = ModulosHelper::obtenerModuloActual($horaAhora, $diaNormalizado);
+                if ($moduloActualNum && isset($horariosModulos[$diaNormalizado][$moduloActualNum])) {
+                    $moduloActualHorario = $horariosModulos[$diaNormalizado][$moduloActualNum];
+                }
+            }
         }
 
         // Determinar el período actual y fecha de hoy
@@ -364,17 +372,145 @@ class DashboardController extends Controller
                         'profesor_presente' => true,
                         'estado_presencia' => 'en_sala',
                         'hora_salida' => null,
+                        'hora_inicio_proxima' => null,
                     ]);
                 }
             }
         }
 
-        // Ordenar por número de piso (sumando offset de 100 para admitir subterráneos) y luego por código de espacio
-        $asignacionesOrdenadas = $asignacionesMapeadas->sortBy(function ($item) {
-            $piso = (int) ($item->espacio->piso->numero_piso ?? 99) + 100;
-            $nombre = $item->espacio->id_espacio ?? '';
+        // Ventana de 15 minutos para clases próximas (coherente con Plano Digital)
+        $horaLimiteProxima = Carbon::parse($fechaHoy . ' ' . $horaAhora)->addMinutes(15)->format('H:i:s');
+        $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
-            return sprintf('%03d-%s', $piso, $nombre);
+        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
+            ->whereHas('horario', function ($query) use ($periodo) {
+                $query->where('periodo', $periodo);
+            })
+            ->whereHas('modulo', function ($query) use ($horaAhora, $horaLimiteProxima, $diasPosibles) {
+                $query->whereIn('dia', $diasPosibles)
+                    ->where('hora_inicio', '>=', $horaAhora)
+                    ->where('hora_inicio', '<=', $horaLimiteProxima);
+            })
+            ->get();
+
+        $colaboradoresProximos = PlanificacionProfesorColaborador::with(['modulo', 'espacio', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
+            ->whereHas('modulo', function ($query) use ($horaAhora, $horaLimiteProxima, $diasPosibles) {
+                $query->whereIn('dia', $diasPosibles)
+                    ->where('hora_inicio', '>=', $horaAhora)
+                    ->where('hora_inicio', '<=', $horaLimiteProxima);
+            })
+            ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
+                ->where('fecha_inicio', '<=', $fechaHoy)
+                ->where('fecha_termino', '>=', $fechaHoy))
+            ->get();
+
+        // Mapear identificadores de espacios ya procesados (incluyendo alias equivalentes)
+        $espaciosProcesados = [];
+        foreach ($asignacionesMapeadas as $asigItem) {
+            if (!empty($asigItem->espacio?->id_espacio)) {
+                foreach (EspacioAliasHelper::obtenerEquivalentes($asigItem->espacio->id_espacio) as $alias) {
+                    $espaciosProcesados[strtoupper($alias)] = true;
+                }
+            }
+        }
+
+        // Obtener todos los espacios del campus/sede actual para mostrar disponibilidad total
+        $todosLosEspacios = Espacio::with('piso')->get();
+
+        foreach ($todosLosEspacios as $esp) {
+            $equivs = EspacioAliasHelper::obtenerEquivalentes($esp->id_espacio);
+            $yaEsta = false;
+            foreach ($equivs as $eq) {
+                if (isset($espaciosProcesados[strtoupper($eq)])) {
+                    $yaEsta = true;
+                    break;
+                }
+            }
+            if ($yaEsta) {
+                continue;
+            }
+
+            foreach ($equivs as $eq) {
+                $espaciosProcesados[strtoupper($eq)] = true;
+            }
+
+            // 1. Estado Mantención
+            $estadoEspLower = strtolower($esp->estado ?? '');
+            if (in_array($estadoEspLower, ['mantención', 'mantenimiento', 'mantencion'])) {
+                $asignacionesMapeadas->push((object) [
+                    'espacio' => $esp,
+                    'nombre_asignatura' => 'Espacio en Mantención',
+                    'profesor_name' => 'Fuera de Servicio',
+                    'profesor_email' => 'Mantenimiento preventivo / correctivo',
+                    'profesor_presente' => false,
+                    'estado_presencia' => 'mantencion',
+                    'hora_salida' => null,
+                    'hora_inicio_proxima' => null,
+                ]);
+                continue;
+            }
+
+            // 2. Clase Regular Próxima (en los siguientes 15 minutos)
+            $proxReg = $planificacionesRegularesProximas->first(function ($p) use ($equivs) {
+                return in_array(strtoupper($p->id_espacio ?? ''), array_map('strtoupper', $equivs));
+            });
+
+            if ($proxReg) {
+                $horaIni = !empty($proxReg->modulo?->hora_inicio) ? substr($proxReg->modulo->hora_inicio, 0, 5) : '';
+                $asignacionesMapeadas->push((object) [
+                    'espacio' => $esp,
+                    'nombre_asignatura' => $proxReg->asignatura->nombre_asignatura ?? 'Clase Programada',
+                    'profesor_name' => $proxReg->horario->profesor->name ?? $proxReg->asignatura->profesor->name ?? '-',
+                    'profesor_email' => $proxReg->horario->profesor->email ?? $proxReg->asignatura->profesor->email ?? '-',
+                    'profesor_presente' => false,
+                    'estado_presencia' => 'proxima',
+                    'hora_salida' => null,
+                    'hora_inicio_proxima' => $horaIni,
+                ]);
+                continue;
+            }
+
+            // 3. Clase Colaborador Próxima (en los siguientes 15 minutos)
+            $proxColab = $colaboradoresProximos->first(function ($p) use ($equivs) {
+                return in_array(strtoupper($p->id_espacio ?? ''), array_map('strtoupper', $equivs));
+            });
+
+            if ($proxColab) {
+                $horaIni = !empty($proxColab->modulo?->hora_inicio) ? substr($proxColab->modulo->hora_inicio, 0, 5) : '';
+                $asignacionesMapeadas->push((object) [
+                    'espacio' => $esp,
+                    'nombre_asignatura' => $proxColab->profesorColaborador->nombre_asignatura ?? 'Clase Programada',
+                    'profesor_name' => $proxColab->profesorColaborador->profesor->name ?? '-',
+                    'profesor_email' => $proxColab->profesorColaborador->profesor->email ?? '-',
+                    'profesor_presente' => false,
+                    'estado_presencia' => 'proxima',
+                    'hora_salida' => null,
+                    'hora_inicio_proxima' => $horaIni,
+                ]);
+                continue;
+            }
+
+            // 4. Espacio Libre / Disponible
+            $asignacionesMapeadas->push((object) [
+                'espacio' => $esp,
+                'nombre_asignatura' => 'Disponible',
+                'profesor_name' => 'Sin clase programada',
+                'profesor_email' => 'Espacio libre para uso',
+                'profesor_presente' => false,
+                'estado_presencia' => 'disponible',
+                'hora_salida' => null,
+                'hora_inicio_proxima' => null,
+            ]);
+        }
+
+        // Ordenar por número de piso y luego orden natural por código de espacio
+        $asignacionesOrdenadas = $asignacionesMapeadas->sort(function ($a, $b) {
+            $pisoA = (int) ($a->espacio->piso->numero_piso ?? 99);
+            $pisoB = (int) ($b->espacio->piso->numero_piso ?? 99);
+            if ($pisoA !== $pisoB) {
+                return $pisoA <=> $pisoB;
+            }
+            return strnatcasecmp($a->espacio->id_espacio ?? '', $b->espacio->id_espacio ?? '');
         })->values();
 
         return view('partials.dashboard.horarios_modulo_actual', [
@@ -599,7 +735,9 @@ class DashboardController extends Controller
         $fechaFinYmd = $fechaFin->format('Y-m-d');
 
         $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
-        $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}";
+        $ultimaActualizacionCnr = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
+            ->max('updated_at') ?? 'sin-cambios';
+        $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}_{$ultimaActualizacionCnr}";
 
         $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use (
             $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
@@ -741,6 +879,8 @@ class DashboardController extends Controller
                         $recuperadas++;
                     } elseif ($registroCNR->estado === 'justificado') {
                         $justificadas++;
+                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
+                        $realizadas++;
                     } else {
                         $noRegistradas++;
                     }
@@ -802,6 +942,7 @@ class DashboardController extends Controller
         $cnrBloquesNoRegistradas = 0;
         $cnrBloquesRecuperadas = 0;
         $cnrBloquesJustificadas = 0;
+        $cnrBloquesRealizadas = 0;
 
         foreach ($cnrsBloques as $bloqueKey => $items) {
             $primerItem = $items->first();
@@ -809,6 +950,8 @@ class DashboardController extends Controller
                 $cnrBloquesRecuperadas++;
             } elseif ($primerItem->estado === 'justificado') {
                 $cnrBloquesJustificadas++;
+            } elseif (in_array($primerItem->estado, ['realizada', 'registrada'], true)) {
+                $cnrBloquesRealizadas++;
             } else {
                 $cnrBloquesNoRegistradas++;
             }
@@ -825,29 +968,34 @@ class DashboardController extends Controller
         if ($cnrBloquesJustificadas > $justificadas) {
             $justificadas = $cnrBloquesJustificadas;
         }
+        if ($cnrBloquesRealizadas > $realizadas) {
+            $realizadas = $cnrBloquesRealizadas;
+        }
 
-        $totalImpartidas = $realizadas + $recuperadas;
-        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas + $justificadas;
+        $totalImpartidas = $realizadas + $recuperadas + $justificadas;
+        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
 
-        $pctImpartidas = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
-        $pctRealizadas = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
-        $pctRecuperadas = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctImpartidas    = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRealizadas    = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRecuperadas   = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctJustificadas  = $totalClasesEvaluadas > 0 ? round(($justificadas / $totalClasesEvaluadas) * 100, 1) : 0;
         $pctNoRegistradas = $totalClasesEvaluadas > 0 ? round(($noRegistradas / $totalClasesEvaluadas) * 100, 1) : 0;
 
         return [
-            'rango' => $rango,
-            'fecha_inicio' => $fechaInicioYmd,
-            'fecha_fin' => $fechaFinYmd,
-            'total_clases' => $totalClasesEvaluadas,
-            'total_impartidas' => $totalImpartidas,
-            'realizadas' => $realizadas,
-            'recuperadas' => $recuperadas,
-            'no_registradas' => $noRegistradas,
-            'justificadas' => $justificadas,
+            'rango'              => $rango,
+            'fecha_inicio'       => $fechaInicioYmd,
+            'fecha_fin'          => $fechaFinYmd,
+            'total_clases'       => $totalClasesEvaluadas,
+            'total_impartidas'   => $totalImpartidas,
+            'realizadas'         => $realizadas,
+            'recuperadas'        => $recuperadas,
+            'justificadas'       => $justificadas,
+            'no_registradas'     => $noRegistradas,
             'futuras_pendientes' => $futurasPendientes,
-            'pct_impartidas' => $pctImpartidas,
-            'pct_realizadas' => $pctRealizadas,
-            'pct_recuperadas' => $pctRecuperadas,
+            'pct_impartidas'     => $pctImpartidas,
+            'pct_realizadas'     => $pctRealizadas,
+            'pct_recuperadas'    => $pctRecuperadas,
+            'pct_justificadas'   => $pctJustificadas,
             'pct_no_registradas' => $pctNoRegistradas,
         ];
         });

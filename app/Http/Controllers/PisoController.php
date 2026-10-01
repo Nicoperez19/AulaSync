@@ -133,7 +133,20 @@ class PisoController extends Controller
     public function getPisos($facultadId)
     {
         try {
+            // Auto-curación para Los Ángeles: asegurar que los edificios tengan sus nombres oficiales
+            if ($facultadId === 'IT_LA') {
+                \DB::connection('tenant')->table('pisos')->where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function($q) {
+                    $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 1')->orWhere('nombre_piso', 'LIKE', '%1er%');
+                })->update(['nombre_piso' => 'CAUPOLICÁN 276']);
 
+                \DB::connection('tenant')->table('pisos')->where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function($q) {
+                    $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 2');
+                })->update(['nombre_piso' => 'VILLAGRÁN 220']);
+
+                \DB::connection('tenant')->table('pisos')->where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
+                    $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
+                })->update(['nombre_piso' => 'VILLAGRÁN 251']);
+            }
 
             // Usar DB directo para evitar problemas con global scopes en contexto tenant
             $pisos = \DB::connection('tenant')
@@ -142,7 +155,18 @@ class PisoController extends Controller
                 ->orderBy('numero_piso')
                 ->get(['id', 'numero_piso', 'nombre_piso']);
 
-
+            if ($facultadId === 'IT_LA') {
+                $pisos->transform(function ($piso) {
+                    if ($piso->numero_piso == 1 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 1')) {
+                        $piso->nombre_piso = 'CAUPOLICÁN 276';
+                    } elseif ($piso->numero_piso == 2 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 2')) {
+                        $piso->nombre_piso = 'VILLAGRÁN 220';
+                    } elseif ($piso->numero_piso == 3 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 3' || !str_contains($piso->nombre_piso, '251'))) {
+                        $piso->nombre_piso = 'VILLAGRÁN 251';
+                    }
+                    return $piso;
+                });
+            }
 
             return response()->json($pisos);
         } catch (\Exception $e) {
@@ -164,21 +188,23 @@ class PisoController extends Controller
         try {
             $piso = \DB::connection('tenant')->table('pisos')->where('id', $pisoId)->first();
             $nombrePiso = strtoupper($piso->nombre_piso ?? '');
+            $numeroPiso = $piso->numero_piso ?? null;
+            $idFacultad = $piso->id_facultad ?? null;
 
             $query = \DB::connection('tenant')->table('espacios');
 
-            if (str_contains($nombrePiso, '251')) {
+            if (str_contains($nombrePiso, '251') || ($idFacultad === 'IT_LA' && $numeroPiso == 3) || $pisoId == 12 || $pisoId == 13) {
                 $query->where(function ($q) use ($pisoId) {
                     $q->where('piso_id', $pisoId)
                       ->orWhere('id_espacio', 'LIKE', 'LA-4%');
                 });
-            } elseif (str_contains($nombrePiso, '220')) {
+            } elseif (str_contains($nombrePiso, '220') || ($idFacultad === 'IT_LA' && $numeroPiso == 2) || $pisoId == 10 || $pisoId == 11) {
                 $query->where(function ($q) use ($pisoId) {
                     $q->where('piso_id', $pisoId)
                       ->orWhere('id_espacio', 'LIKE', 'LA-2%')
                       ->orWhere('id_espacio', 'LIKE', 'LA-C%');
                 });
-            } elseif (str_contains($nombrePiso, 'CAUPOLICÁN') || str_contains($nombrePiso, 'CAUPOLICAN')) {
+            } elseif (str_contains($nombrePiso, 'CAUPOLICÁN') || str_contains($nombrePiso, 'CAUPOLICAN') || ($idFacultad === 'IT_LA' && $numeroPiso == 1) || $pisoId == 8 || $pisoId == 9) {
                 $query->where(function ($q) use ($pisoId) {
                     $q->where('piso_id', $pisoId)
                       ->orWhere('id_espacio', 'LIKE', 'LA-0%')

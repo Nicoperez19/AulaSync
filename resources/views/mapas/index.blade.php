@@ -17,7 +17,7 @@
 
         @if (auth()->user()->hasRole('Administrador'))
             <div class="flex justify-end mb-4">
-                <x-button x-on:click.prevent="window.location.href='{{ route('mapas.add') }}'" variant="add"
+                <x-button x-on:click.prevent="window.location.href='{{ route('mapas.create') }}'" variant="add"
                     class="max-w-xs gap-2">
                     <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 </x-button>

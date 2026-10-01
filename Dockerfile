@@ -43,6 +43,9 @@ FROM php_base AS app
 # Copia el código PHP (sin node_modules/vendor por .dockerignore)
 COPY . /var/www
 
+# Laravel requires bootstrap/cache during Composer package discovery.
+RUN mkdir -p /var/www/bootstrap/cache
+
 # Copy entrypoint and make executable
 COPY docker/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

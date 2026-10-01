@@ -8,6 +8,7 @@ use App\Models\PeriodoAcademico;
 use App\Models\ClaseNoRealizada;
 use App\Models\Asignatura;
 use App\Models\Profesor;
+use App\Models\Carrera;
 use App\Helpers\SemesterHelper;
 use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
@@ -22,6 +23,7 @@ class ClasesNoRealizadasTable extends Component
 
     public $search = '';
     public $estado = '';
+    public $ua = '';
     public $fecha_inicio = '';
     public $fecha_fin = '';
     public $periodo = '';
@@ -43,6 +45,7 @@ class ClasesNoRealizadasTable extends Component
     protected $queryString = [
         'search' => ['except' => ''],
         'estado' => ['except' => ''],
+        'ua' => ['except' => ''],
         'fecha_inicio' => ['except' => ''],
         'fecha_fin' => ['except' => ''],
         'periodo' => ['except' => ''],
@@ -84,6 +87,14 @@ class ClasesNoRealizadasTable extends Component
     }
 
     public function updatingEstado()
+    {
+        $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
+        $this->resetPage();
+    }
+
+    public function updatingUa()
     {
         $this->cachedEstadisticas = null;
         $this->todasLasClasesFiltradasCache = null;
@@ -179,6 +190,7 @@ class ClasesNoRealizadasTable extends Component
     {
         $this->search = '';
         $this->estado = '';
+        $this->ua = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
         $this->fecha_fin = Carbon::today()->format('Y-m-d');
         
@@ -429,7 +441,8 @@ class ClasesNoRealizadasTable extends Component
             $this->fecha_fin,
             $this->periodo,
             null,
-            null
+            null,
+            $this->ua
         );
 
         // Asignar clave única a cada clase
@@ -437,6 +450,16 @@ class ClasesNoRealizadasTable extends Component
             $item['unique_key'] = $this->generarUniqueKey($item);
             return $item;
         });
+
+        // Aplicar filtro de UA en memoria si está establecido (por ID o por nombre de carrera)
+        if (!empty($this->ua)) {
+            $uaNorm = mb_strtolower(trim($this->ua), 'UTF-8');
+            $todasLasClases = $todasLasClases->filter(function($item) use ($uaNorm) {
+                $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
+                $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
+            })->values();
+        }
 
         // Aplicar filtro de estado en memoria
         if ($this->estado) {
@@ -456,15 +479,69 @@ class ClasesNoRealizadasTable extends Component
             }
         }
         
-        // Aplicar filtro de búsqueda en memoria
-        if ($this->search) {
-            $searchTerm = strtolower($this->search);
-            $todasLasClases = $todasLasClases->filter(function($item) use ($searchTerm) {
-                return str_contains(strtolower($item['profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['codigo_asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['run_profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['espacio'] ?? ''), $searchTerm);
+        // Aplicar filtro de búsqueda en memoria con soporte multi-palabra (orden independiente de nombre y apellido)
+        if (!empty(trim($this->search ?? ''))) {
+            $searchNorm = $this->normalizarTexto($this->search);
+            $palabras = array_values(array_filter(explode(' ', $searchNorm)));
+            $cleanRunSearch = preg_replace('/[^0-9kK]/', '', $this->search);
+
+            $todasLasClases = $todasLasClases->filter(function($item) use ($palabras, $cleanRunSearch) {
+                // 1. Coincidencia por RUN si tiene al menos 3 caracteres
+                if (!empty($cleanRunSearch) && strlen($cleanRunSearch) >= 3) {
+                    $itemRun = preg_replace('/[^0-9kK]/', '', $item['run_profesor'] ?? '');
+                    if (str_contains($itemRun, $cleanRunSearch)) {
+                        return true;
+                    }
+                }
+
+                if (empty($palabras)) {
+                    return true;
+                }
+
+                // 2. Coincidencia en el nombre del profesor: TODAS las palabras deben coincidir (sin importar el orden)
+                $profesorNorm = $this->normalizarTexto($item['profesor'] ?? '');
+                $todasEnProfesor = true;
+                foreach ($palabras as $p) {
+                    if (!str_contains($profesorNorm, $p)) {
+                        $todasEnProfesor = false;
+                        break;
+                    }
+                }
+                if ($todasEnProfesor) {
+                    return true;
+                }
+
+                // 3. Coincidencia en la asignatura o código: TODAS las palabras deben coincidir
+                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? ''));
+                $todasEnAsignatura = true;
+                foreach ($palabras as $p) {
+                    if (!str_contains($asigNorm, $p)) {
+                        $todasEnAsignatura = false;
+                        break;
+                    }
+                }
+                if ($todasEnAsignatura) {
+                    return true;
+                }
+
+                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, carrera, profesor, asignatura)
+                $espacioRaw = $item['espacio'] ?? '';
+                $textoFila = $this->normalizarTexto(
+                    ($item['profesor'] ?? '') . ' ' .
+                    ($item['asignatura'] ?? '') . ' ' .
+                    ($item['codigo_asignatura'] ?? '') . ' ' .
+                    $espacioRaw . ' ' .
+                    str_replace('-', '', $espacioRaw) . ' ' .
+                    ($item['ua'] ?? '') . ' ' .
+                    ($item['carrera'] ?? '') . ' ' .
+                    ($item['run_profesor'] ?? '')
+                );
+                foreach ($palabras as $p) {
+                    if (!str_contains($textoFila, $p)) {
+                        return false;
+                    }
+                }
+                return true;
             });
         }
 
@@ -495,6 +572,7 @@ class ClasesNoRealizadasTable extends Component
 
         return !empty(trim($this->search ?? ''))
             || !empty($this->estado)
+            || !empty($this->ua)
             || ($this->fecha_inicio && $this->fecha_inicio !== $fechaInicioDefecto)
             || ($this->fecha_fin && $this->fecha_fin !== $fechaFinDefecto);
     }
@@ -747,6 +825,20 @@ class ClasesNoRealizadasTable extends Component
     {        
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
+        try {
+            $tenant = \App\Models\Tenant::current();
+            $unidadesAcademicas = Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
+                ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
+                ->when($tenant && $tenant->sede_id, fn ($query) => $query->where('f.id_sede', $tenant->sede_id))
+                ->select('carreras.id_carrera', 'carreras.nombre')
+                ->orderByRaw('CAST(carreras.id_carrera AS UNSIGNED) ASC')
+                ->orderBy('carreras.id_carrera', 'ASC')
+                ->get();
+        } catch (\Exception $e) {
+            $unidadesAcademicas = collect();
+        }
+
         $periodoModel = null;
         if ($this->periodo) {
             $partes = explode('-', $this->periodo);
@@ -774,6 +866,7 @@ class ClasesNoRealizadasTable extends Component
                 'periodoNoIniciado' => true,
                 'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
                 'periodosDisponibles' => $periodosDisponibles,
+                'unidadesAcademicas' => $unidadesAcademicas,
                 'totalNoRealizadasFiltradas' => 0,
                 'currentPageNoRealizadasKeys' => [],
             ]);
@@ -781,13 +874,44 @@ class ClasesNoRealizadasTable extends Component
         
         $todasLasClases = $this->getClasesFiltradasCollection();
 
-        // Calcular estadísticas a partir de la colección ya filtrada
+        // Agrupar por bloque de clase (fecha + espacio + run_profesor + asignatura) para
+        // contar clases reales en lugar de módulos individuales, igual que hace el Dashboard.
+        $clasesAgrupadas = $todasLasClases->groupBy(function ($item) {
+            $fecha = ($item['fecha'] instanceof \Carbon\Carbon)
+                ? $item['fecha']->format('Y-m-d')
+                : \Carbon\Carbon::parse($item['fecha'])->format('Y-m-d');
+            return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+        });
+
+        // Para cada bloque, determinar el estado predominante siguiendo la misma prioridad
+        // que usa el dashboard: no_realizada > pendiente > justificada > realizada/recuperada.
+        $totalClases          = 0;
+        $totalNoRealizadas    = 0;
+        $totalPendientes      = 0;
+        $totalRealizadas      = 0;
+
+        foreach ($clasesAgrupadas as $bloqueItems) {
+            $totalClases++;
+            $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+
+            if (in_array('No Registrada', $estados)) {
+                $totalNoRealizadas++;
+            } elseif (in_array('Pendiente de Recuperación', $estados)) {
+                $totalPendientes++;
+            } else {
+                // Justificada, Realizada, Recuperada, Feriado → todas cuentan como realizadas
+                $totalRealizadas++;
+            }
+        }
+
+        // Calcular estadísticas a partir de clases agrupadas (no módulos individuales)
+        // Las Justificadas están incluidas dentro de $totalRealizadas
         $estadisticas = [
-            'total' => $todasLasClases->count(),
-            'no_realizadas' => $todasLasClases->where('estado', 'No Registrada')->count(),
-            'pendientes' => $todasLasClases->where('estado', 'Pendiente de Recuperación')->count(),
-            'justificados' => $todasLasClases->where('estado', 'Justificada')->count(),
-            'realizadas' => $todasLasClases->whereIn('estado', ['Realizada', 'Feriado/Justificado', 'Recuperada'])->count(),
+            'total'        => $totalClases,
+            'no_realizadas' => $totalNoRealizadas,
+            'pendientes'   => $totalPendientes,
+            'justificados' => $todasLasClases->where('estado', 'Justificada')->count(), // para la tarjeta KPI individual
+            'realizadas'   => $totalRealizadas,
         ];
 
         // Paginación manual
@@ -820,8 +944,30 @@ class ClasesNoRealizadasTable extends Component
             'periodoNoIniciado' => false,
             'nombrePeriodo' => '',
             'periodosDisponibles' => $periodosDisponibles,
+            'unidadesAcademicas' => $unidadesAcademicas,
             'totalNoRealizadasFiltradas' => $totalNoRealizadasFiltradas,
             'currentPageNoRealizadasKeys' => $currentPageNoRealizadasKeys,
         ]);
+    }
+
+    /**
+     * Normalizar texto para búsquedas (minúsculas, sin acentos/tildes y sin puntuación)
+     */
+    protected function normalizarTexto(?string $texto): string
+    {
+        if (empty($texto)) {
+            return '';
+        }
+
+        $texto = mb_strtolower(trim($texto), 'UTF-8');
+
+        $buscar = ['á', 'é', 'í', 'ó', 'ú', 'ü', 'ñ', 'à', 'è', 'ì', 'ò', 'ù'];
+        $reemplazar = ['a', 'e', 'i', 'o', 'u', 'u', 'n', 'a', 'e', 'i', 'o', 'u'];
+        $texto = str_replace($buscar, $reemplazar, $texto);
+
+        // Remover caracteres que no sean alfanuméricos ni espacios
+        $texto = preg_replace('/[^a-z0-9\s]/', ' ', $texto);
+
+        return preg_replace('/\s+/', ' ', trim($texto));
     }
 }

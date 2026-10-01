@@ -342,6 +342,11 @@ class ReservasController extends Controller
                     $q->where('tipo_espacio', $tipoEspacio);
                 });
             }
+        } else {
+            $query->whereHas('espacio', function ($q) {
+                $q->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
+                  ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
+            });
         }
 
         if (!empty($estado)) {

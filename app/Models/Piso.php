@@ -36,6 +36,25 @@ class Piso extends Model
     }
 
     /**
+     * Accesor para nombre_piso: asegura que Los Ángeles siempre tenga los nombres oficiales de sus edificios
+     */
+    public function getNombrePisoAttribute($value)
+    {
+        if ($this->id_facultad === 'IT_LA') {
+            if ($this->numero_piso == 1 && (empty($value) || $value === 'Piso 1' || str_contains($value, '1er'))) {
+                return 'CAUPOLICÁN 276';
+            }
+            if ($this->numero_piso == 2 && (empty($value) || $value === 'Piso 2' || $value === 'VILLAGRÁN' || str_contains($value, '220'))) {
+                return 'VILLAGRÁN 220';
+            }
+            if ($this->numero_piso == 3 && (empty($value) || $value === 'Piso 3' || $value === 'VILLAGRÁN' || !str_contains($value, '251'))) {
+                return 'VILLAGRÁN 251';
+            }
+        }
+        return $value;
+    }
+
+    /**
      * Obtener el nombre del piso (si no tiene nombre_piso, generar uno automático)
      */
     public function getDisplayNameAttribute()

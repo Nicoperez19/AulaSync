@@ -3,7 +3,7 @@
     <div class="flex items-center gap-3">
 
         <!-- Botón Toggle -->
-        <x-button type="button" icon-only sr-text="Toggle sidebar" class="bg-cloud-blue-500 dark:bg-dark-eval-1"
+        <x-button type="button" icon-only sr-text="Toggle sidebar" class="bg-cloud-blue-500 dark:bg-dark-eval-1 hover:bg-white/20 active:scale-95 transition-all duration-150 rounded-lg shadow-sm"
             x-on:click="isSidebarOpen = !isSidebarOpen">
             <x-icons.menu-fold-right x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
             <x-icons.menu-fold-left x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
@@ -108,24 +108,6 @@
         </x-dropdown>
     </div>
 </nav>
-
-<div
-    class="fixed inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 bg-light-cloud-blue sm:px-6 md:hidden dark:bg-dark-eval-1">
-    <x-button type="button" icon-only variant="secondary" sr-text="Search">
-        <x-heroicon-o-search aria-hidden="true" class="w-6 h-6" />
-    </x-button>
-
-    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}">
-        <x-application-logo-navbar-bot aria-hidden="true" class="w-10 h-10" />
-        <span class="sr-only">Dashboard</span>
-    </a>
-
-    <x-button type="button" icon-only variant="secondary" sr-text="Open main menu"
-        x-on:click="isSidebarOpen = !isSidebarOpen">
-        <x-heroicon-o-menu x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
-        <x-heroicon-o-x x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
-    </x-button>
-</div>
 
 <script>
     // Horarios de módulos copiados de show.blade.php
