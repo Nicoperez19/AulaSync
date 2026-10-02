@@ -52,6 +52,7 @@ class PeriodoAcademico extends Model
     {
         $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
 
+        // Buscar período activo que contenga la fecha dada (fecha_inicio <= hoy <= fecha_fin)
         $periodo = static::where('activo', true)
             ->where('fecha_inicio', '<=', $fecha)
             ->where('fecha_fin', '>=', $fecha)
@@ -59,13 +60,9 @@ class PeriodoAcademico extends Model
             ->orderBy('semestre', 'desc')
             ->first();
 
-        if (!$periodo) {
-            $periodo = static::where('activo', true)
-                ->where('fecha_inicio', '<=', $fecha)
-                ->orderBy('fecha_inicio', 'desc')
-                ->first();
-        }
-
+        // Si no hay período exactamente vigente, NO usar fallback con períodos ya terminados.
+        // Retornar null para que SemesterHelper aplique la lógica por defecto (mes/día),
+        // evitando que el sistema opere sobre un semestre anterior ya cerrado.
         return $periodo;
     }
 

@@ -52,6 +52,15 @@ class TenantScope implements Scope
 
         $table = $model->getTable();
 
+        // Tablas globales compartidas por todos los tenants — NO aplicar ningún filtro de tenant.
+        // 'modulos': los bloques horarios (LU.1, MA.3...) son iguales en todas las sedes.
+        // 'periodos_academicos': definidos a nivel global/central.
+        // 'sedes', 'universidades': catálogos centrales.
+        $tablasGlobales = ['modulos', 'periodos_academicos', 'sedes', 'universidades', 'dias_feriados', 'cursos_verano'];
+        if (in_array($table, $tablasGlobales)) {
+            return;
+        }
+
         $hasColumn = fn(string $col) => $this->hasColumnCached($model, $table, $col);
 
         // 1. Si la tabla tiene tenant_id o id_tenant directo
@@ -65,6 +74,8 @@ class TenantScope implements Scope
         }
 
         // 2. Si el modelo se filtra por prefijo de espacio (ej. TH-...)
+        // NOTA: solo aplica si la tabla realmente corresponde a espacios físicos,
+        // no a tablas que casualmente tienen una columna id_espacio como FK.
         if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
             $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
             return;

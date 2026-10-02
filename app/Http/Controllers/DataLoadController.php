@@ -236,11 +236,6 @@ class DataLoadController extends Controller
             // No se crean espacios durante la importación, solo se usan los existentes
             Log::info('✓ Espacios existentes en BD del tenant: ' . Espacio::count() . ' (no se crearán nuevos)');
 
-            $prefijoTenantFiltro = '';
-            if (isset($tenant) && $tenant && $tenant->prefijo_espacios) {
-                $prefijoTenantFiltro = strtoupper(trim($tenant->prefijo_espacios));
-            }
-
             // Encabezados de la primera fila
             $headers = isset($rows[0]) ? array_map(function($h) {
                 return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));

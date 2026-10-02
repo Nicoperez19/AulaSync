@@ -137,10 +137,10 @@
                     :isActive="request()->routeIs('correos-masivos.*')" />
             @endhasanyrole
 
-            @can('mantenedor de feriados')
+            @if(auth()->user()?->hasAnyRole(['Administrador', 'Supervisor']) || auth()->user()?->can('mantenedor de feriados'))
                 <x-sidebar.sublink title="Calendario Académico" href="{{ route('dias-feriados.index') }}"
                     :isActive="request()->routeIs('dias-feriados.*')" />
-            @endcan
+            @endif
 
             @can('mantenedor de escuelas')
                 <x-sidebar.sublink title="Escuelas" href="{{ route('escuelas.index') }}"
