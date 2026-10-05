@@ -118,12 +118,9 @@
                         <select id="semestre_selector" name="semestre_selector" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                             <option value="" disabled>-- Seleccione el Semestre Académico --</option>
-                            <option value="1" @selected($semActual == 1)>Primer Semestre ({{ $anioAcad }}-1){{ $semActual == 1 ? ' — vigente' : '' }}</option>
-                            <option value="2" @selected($semActual == 2)>Segundo Semestre ({{ $anioAcad }}-2){{ $semActual == 2 ? ' — vigente' : '' }}</option>
+                            <option value="1" @selected($semActual == 1)>Primer Semestre ({{ $anioAcad }}-1)</option>
+                            <option value="2" @selected($semActual == 2)>Segundo Semestre ({{ $anioAcad }}-2)</option>
                         </select>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Período vigente según el calendario académico: <strong>{{ $anioAcad }}-{{ $semActual }}</strong>. Verifica que coincida con el archivo antes de cargar.
-                        </p>
                     </div>
 
                     <!-- Spinner de carga -->

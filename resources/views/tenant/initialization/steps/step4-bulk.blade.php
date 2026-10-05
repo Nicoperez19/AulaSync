@@ -69,8 +69,8 @@
                 <select name="semestre_selector" id="semestre_selector" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
                     <option value="" disabled selected>-- Seleccione el Semestre Acad&eacute;mico --</option>
-                    <option value="1">Primer Semestre {{ $anioAcad }} ({{ $anioAcad }}-1){{ $semActual == 1 ? ' — vigente' : '' }}</option>
-                    <option value="2">Segundo Semestre {{ $anioAcad }} ({{ $anioAcad }}-2){{ $semActual == 2 ? ' — vigente' : '' }}</option>
+                    <option value="1">Primer Semestre {{ $anioAcad }} ({{ $anioAcad }}-1)</option>
+                    <option value="2">Segundo Semestre {{ $anioAcad }} ({{ $anioAcad }}-2)</option>
                 </select>
                 <p class="text-sm text-gray-500 mt-1">
                     Seleccione obligatoriamente el semestre al que corresponden los datos del archivo.
