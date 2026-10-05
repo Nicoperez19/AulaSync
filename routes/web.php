@@ -244,19 +244,8 @@ Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases
 });
 
 // Calendario Académico: accesible por Administrador, Supervisor o quien tenga permiso de feriados
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dias-feriados', [DiaFeriadoController::class, 'index'])
-        ->name('dias-feriados.index')
-        ->middleware(function ($request, $next) {
-            $user = $request->user();
-            if ($user && (
-                $user->hasAnyRole(['Administrador', 'Supervisor']) ||
-                $user->can('mantenedor de feriados')
-            )) {
-                return $next($request);
-            }
-            abort(403);
-        });
+Route::middleware(['auth', 'role_or_permission:Administrador|Supervisor|mantenedor de feriados'])->group(function () {
+    Route::get('/dias-feriados', [DiaFeriadoController::class, 'index'])->name('dias-feriados.index');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {
