@@ -38,6 +38,11 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground();
 
+        // Sincronizar automáticamente el período académico activo según el calendario (00:01 cada día)
+        $schedule->call(function () {
+            \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
+        })->dailyAt('00:01')->name('sincronizar-periodo-academico');
+
         // Verificar inconsistencias del sistema cada 30 minutos
         $schedule->command('sistema:verificar-estado')
                 ->everyThirtyMinutes()

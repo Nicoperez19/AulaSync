@@ -421,6 +421,9 @@ class CalendarioAcademicoTable extends Component
             session()->flash('message', 'Períodos académicos creados exitosamente (1° y 2° semestre).');
         }
 
+        // Auto-sincronizar estados: solo el semestre que coincide con la fecha de hoy queda activo
+        PeriodoAcademico::sincronizarEstadosSegunFechas();
+
         $this->closeModalPeriodo();
     }
 

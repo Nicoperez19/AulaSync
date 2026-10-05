@@ -46,24 +46,78 @@ class PeriodoAcademico extends Model
     }
 
     /**
-     * Obtener el período académico actual basado en la fecha
+     * Obtener el período académico actual basado en la fecha.
+     * La fecha del calendario es la fuente de verdad absoluta:
+     * El período cuyo rango (fecha_inicio <= fecha <= fecha_fin) contenga la fecha dada es el actual.
      */
     public static function obtenerPeriodoActual($fecha = null)
     {
         $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
+        $fechaStr = $fecha->toDateString();
 
-        // Buscar período activo que contenga la fecha dada (fecha_inicio <= hoy <= fecha_fin)
-        $periodo = static::where('activo', true)
-            ->where('fecha_inicio', '<=', $fecha)
-            ->where('fecha_fin', '>=', $fecha)
+        // 1. Buscar período vigente exactamente por fechas
+        $periodo = static::whereDate('fecha_inicio', '<=', $fechaStr)
+            ->whereDate('fecha_fin', '>=', $fechaStr)
             ->orderBy('anio', 'desc')
             ->orderBy('semestre', 'desc')
             ->first();
 
-        // Si no hay período exactamente vigente, NO usar fallback con períodos ya terminados.
-        // Retornar null para que SemesterHelper aplique la lógica por defecto (mes/día),
-        // evitando que el sistema opere sobre un semestre anterior ya cerrado.
-        return $periodo;
+        if ($periodo) {
+            // Auto-reparación: si el período en curso no estaba activo en BD, o hay anteriores activos, auto-sincronizar
+            if (!$periodo->activo) {
+                static::sincronizarEstadosSegunFechas($fecha);
+                $periodo->activo = true;
+            }
+            return $periodo;
+        }
+
+        // 2. Si hoy es un día entre semestres (vacaciones) y no hay fecha exacta,
+        // buscar el período marcado explícitamente como activo
+        return static::where('activo', true)
+            ->orderBy('anio', 'desc')
+            ->orderBy('semestre', 'desc')
+            ->first();
+    }
+
+    /**
+     * Sincroniza automáticamente la columna 'activo' de todos los períodos según las fechas reales:
+     * - El período en curso (fecha_inicio <= hoy <= fecha_fin) pasa a activo = true.
+     * - Los períodos ya finalizados (fecha_fin < hoy) pasan a activo = false.
+     * - Los períodos futuros (fecha_inicio > hoy) pasan a activo = false hasta su inicio.
+     *
+     * Esto garantiza que la base de datos siempre tenga activo exactamente el semestre
+     * que corresponde, de forma 100% desatendida.
+     *
+     * @param string|Carbon|null $fecha
+     * @return PeriodoAcademico|null El período que quedó activo
+     */
+    public static function sincronizarEstadosSegunFechas($fecha = null)
+    {
+        $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
+        $fechaStr = $fecha->toDateString();
+
+        // 1. Desactivar todos los períodos cuya fecha de fin ya expiró
+        static::whereDate('fecha_fin', '<', $fechaStr)
+            ->where('activo', true)
+            ->update(['activo' => false]);
+
+        // 2. Desactivar períodos que aún no inician
+        static::whereDate('fecha_inicio', '>', $fechaStr)
+            ->where('activo', true)
+            ->update(['activo' => false]);
+
+        // 3. Activar el período que esté en curso
+        $periodoEnCurso = static::whereDate('fecha_inicio', '<=', $fechaStr)
+            ->whereDate('fecha_fin', '>=', $fechaStr)
+            ->orderBy('anio', 'desc')
+            ->orderBy('semestre', 'desc')
+            ->first();
+
+        if ($periodoEnCurso && !$periodoEnCurso->activo) {
+            $periodoEnCurso->update(['activo' => true]);
+        }
+
+        return $periodoEnCurso;
     }
 
     /**

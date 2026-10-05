@@ -111,14 +111,18 @@
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Semestre Académico <span class="text-red-500">*</span>
                         </label>
+                        @php
+                            $anioAcad = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
+                            $semActual = \App\Helpers\SemesterHelper::getCurrentSemester();
+                        @endphp
                         <select id="semestre_selector" name="semestre_selector" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="" disabled selected>-- Seleccione el Semestre Académico --</option>
-                            <option value="1">Primer Semestre ({{ date('Y') }}-1)</option>
-                            <option value="2">Segundo Semestre ({{ date('Y') }}-2)</option>
+                            <option value="" disabled>-- Seleccione el Semestre Académico --</option>
+                            <option value="1" @selected($semActual == 1)>Primer Semestre ({{ $anioAcad }}-1){{ $semActual == 1 ? ' — vigente' : '' }}</option>
+                            <option value="2" @selected($semActual == 2)>Segundo Semestre ({{ $anioAcad }}-2){{ $semActual == 2 ? ' — vigente' : '' }}</option>
                         </select>
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Selecciona obligatoriamente el semestre al que corresponden los datos del archivo. El año será el actual ({{ date('Y') }}).
+                            Período vigente según el calendario académico: <strong>{{ $anioAcad }}-{{ $semActual }}</strong>. Verifica que coincida con el archivo antes de cargar.
                         </p>
                     </div>
 
