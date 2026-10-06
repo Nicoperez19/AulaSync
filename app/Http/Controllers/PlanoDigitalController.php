@@ -163,12 +163,13 @@ class PlanoDigitalController extends Controller
 
             $idModuloActual = $codigoDia . '.' . $moduloActualNumero;
 
-            $planificaciones = Planificacion_Asignatura::with(['horario.profesor', 'espacio', 'modulo'])
+            $planificaciones = Planificacion_Asignatura::with(['horario.profesor', 'espacio', 'modulo', 'asignatura'])
                 ->where('id_modulo', $idModuloActual)
                 ->whereHas('horario', function ($query) {
                     $query->where('periodo', SemesterHelper::getCurrentPeriod());
                 })
                 ->get()
+                ->toBase()
                 ->map(function ($planificacion) {
                     $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
                     $nombreDocente = $planificacion->horario?->profesor?->name ?? 'Docente no asignado';
@@ -181,12 +182,13 @@ class PlanoDigitalController extends Controller
                     ];
                 });
 
-            $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'espacio', 'modulo'])
+            $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'espacio', 'modulo'])
                 ->where('id_modulo', $idModuloActual)
                 ->whereHas('profesorColaborador', function ($query) {
                     $query->where('estado', 'activo');
                 })
                 ->get()
+                ->toBase()
                 ->map(function ($planificacion) {
                     $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
                     $nombreDocente = $planificacion->profesorColaborador?->profesor?->name ?? 'Docente no asignado';
@@ -199,11 +201,12 @@ class PlanoDigitalController extends Controller
                     ];
                 });
 
-            return $planificaciones->merge($profesoresColaboradores)
+            return $planificaciones->concat($profesoresColaboradores)
                 ->sortBy(fn ($clase) => [$clase['id_espacio'] ?? 'zz', $clase['docente'] ?? 'zz'])
                 ->values()
                 ->all();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Log::error('Error en obtenerClasesModuloActual: ' . $e->getMessage());
             return [];
         }
     }
@@ -477,7 +480,7 @@ class PlanoDigitalController extends Controller
             })
             ->get();
 
-        return $planificacionesRegulares->merge($planificacionesTemporales);
+        return $planificacionesRegulares->concat($planificacionesTemporales);
     }
 
     private function obtenerPlanificacionesProximas(Mapa $mapa, array $estadoActual)
@@ -549,7 +552,7 @@ class PlanoDigitalController extends Controller
             })
             ->get();
 
-        return $planificacionesRegularesProximas->merge($planificacionesTemporalesProximas);
+        return $planificacionesRegularesProximas->concat($planificacionesTemporalesProximas);
     }
 
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array
