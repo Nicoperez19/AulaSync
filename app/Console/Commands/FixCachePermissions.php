@@ -57,6 +57,7 @@ class FixCachePermissions extends Command
     private function createCacheDirectories()
     {
         $cacheDirectories = [
+            base_path('bootstrap/cache'),
             storage_path('framework/cache'),
             storage_path('framework/cache/data'),
             storage_path('framework/sessions'),
@@ -68,7 +69,7 @@ class FixCachePermissions extends Command
         foreach ($cacheDirectories as $directory) {
             if (!File::exists($directory)) {
                 try {
-                    File::makeDirectory($directory, 0755, true);
+                    File::makeDirectory($directory, 0775, true);
                     $this->info("📁 Creado directorio: {$directory}");
                 } catch (\Exception $e) {
                     $this->error("❌ Error creando directorio {$directory}: " . $e->getMessage());
@@ -145,6 +146,7 @@ class FixCachePermissions extends Command
     private function checkPermissions()
     {
         $checkDirectories = [
+            base_path('bootstrap/cache'),
             storage_path(),
             storage_path('framework'),
             storage_path('framework/cache'),
@@ -167,7 +169,7 @@ class FixCachePermissions extends Command
                     $this->warn("⚠️  Directorio no escribible: {$directory}");
                     
                     try {
-                        chmod($directory, 0755);
+                        chmod($directory, 0775);
                         $this->info("✅ Permisos corregidos para: {$directory}");
                     } catch (\Exception $e) {
                         $this->error("❌ No se pudieron corregir permisos para {$directory}: " . $e->getMessage());

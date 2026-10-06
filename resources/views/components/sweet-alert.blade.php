@@ -281,20 +281,17 @@
         if (typeof Swal !== 'undefined') {
             Swal.fire({
                 title: '¡Sesión Expirada!',
-                text: 'Tu sesión ha caducado por inactividad. ¿Deseas recargar la página para continuar?',
+                text: 'Tu sesión ha caducado por inactividad. Por favor, inicia sesión nuevamente para continuar.',
                 icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#2563eb',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Recargar página',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.reload();
-                }
+                showCancelButton: false,
+                confirmButtonColor: '#D2091E',
+                confirmButtonText: 'Iniciar Sesión',
+                allowOutsideClick: false
+            }).then(() => {
+                window.location.href = '{{ route("login") }}';
             });
         } else {
-            window.location.reload();
+            window.location.href = '{{ route("login") }}';
         }
     }
 

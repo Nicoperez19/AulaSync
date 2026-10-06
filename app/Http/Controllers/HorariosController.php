@@ -382,10 +382,10 @@ class HorariosController extends Controller
         sort($aniosDisponibles);
         sort($semestresDisponibles);
 
-        // Obtener todos los pisos con sus espacios, ordenados por número de piso
+        // Obtener todos los pisos con sus espacios, ordenados por número de piso y código de espacio
         $pisos = Piso::with([
             'espacios' => function ($q) {
-                $q->orderBy('nombre_espacio');
+                $q->orderBy('id_espacio');
             }
         ])->orderBy('numero_piso')->get();
 

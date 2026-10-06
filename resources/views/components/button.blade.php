@@ -19,7 +19,8 @@
             $variantClasses = 'border border-transparent bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500';
             break;
         case 'login':
-            $variantClasses = 'border border-transparent bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500';
+        case 'ucsc':
+            $variantClasses = 'border border-transparent bg-[#D2091E] text-white hover:bg-[#B50718] active:bg-[#990615] focus:ring-[#D2091E]';
             break;
         case 'secondary':
         case 'outline':

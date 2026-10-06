@@ -15,21 +15,23 @@
 
     <div class="px-6 min-h-[80vh]">
         <!-- Tarjeta de filtros -->
-        <div class="p-6 mb-6 bg-white shadow-sm rounded-xl">
+        <div class="p-4 sm:p-6 mb-6 bg-white shadow-sm rounded-2xl border border-gray-100">
             <form id="filtro-letra-form" method="GET" action="" class="flex flex-col gap-4" onsubmit="return false;">
-                <!-- Filtros en una sola fila -->
-                <div class="flex flex-col w-full gap-4 lg:flex-row lg:items-center lg:justify-center">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-light-cloud-blue">Año:</span>
-                        <span class="px-3 py-2 font-medium text-gray-700 border border-gray-300 rounded-lg bg-gray-50">
+                <!-- Fila 1: Filtros principales (Año, Semestre y Búsqueda) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-center">
+                    <!-- Año -->
+                    <div class="flex items-center gap-2 sm:col-span-1 lg:col-span-2">
+                        <span class="text-sm font-bold text-gray-700 shrink-0">Año:</span>
+                        <span class="w-full px-3 py-2 text-sm font-semibold text-center text-gray-700 border border-gray-300 rounded-lg bg-gray-50 shadow-2xs">
                             {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
                         </span>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-light-cloud-blue">Semestre:</span>
+                    <!-- Semestre -->
+                    <div class="flex items-center gap-2 sm:col-span-1 lg:col-span-3">
+                        <span class="text-sm font-bold text-gray-700 shrink-0">Semestre:</span>
                         <select name="semestre" id="semestre-filtro"
-                            class="px-4 py-2 pr-8 transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue">
+                            class="w-full px-3 py-2 text-sm transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D2091E]/30 focus:border-[#D2091E] shadow-2xs font-medium">
                             @foreach($semestresDisponibles ?? [] as $semestre)
                                 <option value="{{ $semestre }}" {{ request('semestre', \App\Helpers\SemesterHelper::getCurrentSemester()) == $semestre ? 'selected' : '' }}>
                                     {{ $semestre }}° Semestre</option>
@@ -37,41 +39,67 @@
                         </select>
                     </div>
 
-                    <div class="flex items-center flex-1 gap-2">
-                        <div class="relative w-full">
+                    <!-- Búsqueda rápida por texto -->
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-7 flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+                                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                            </span>
                             <input type="text" name="search" id="search-profesor" value="{{ request('search') }}"
                                 placeholder="Buscar por nombre, apellido o RUN..."
-                                class="w-full px-4 py-2 pr-10 transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue" />
+                                class="w-full pl-9 pr-4 py-2 text-sm transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D2091E]/30 focus:border-[#D2091E] shadow-2xs font-medium placeholder:text-gray-400" />
                         </div>
                         <button id="buscar-btn" type="button"
-                            class="px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">Buscar</button>
+                            class="px-5 py-2 bg-[#D2091E] hover:bg-[#B50718] text-white rounded-lg font-semibold text-sm shadow-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            Buscar
+                        </button>
                     </div>
                 </div>
 
+                <!-- Fila 2: Abecedario de Profesores y Botones de Acción -->
+                <div class="pt-3 border-t border-gray-100 flex flex-col gap-2.5">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-gray-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrow-down-a-z text-[#D2091E]"></i>
+                                Profesor:
+                            </span>
+                        </div>
 
+                        <!-- Botones de Acción a la derecha -->
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button id="aplicar-filtro-btn" type="button"
+                                class="px-4 py-1.5 bg-[#D2091E] hover:bg-[#B50718] text-white rounded-lg font-semibold text-sm shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-filter text-xs"></i>
+                                Aplicar filtro
+                            </button>
+                            <button id="limpiar-filtro-btn" type="button"
+                                class="px-4 py-1.5 text-sm font-semibold text-gray-700 transition bg-gray-100 hover:bg-gray-200 border border-gray-300/80 rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-eraser text-xs text-gray-500"></i>
+                                Limpiar filtros
+                            </button>
+                        </div>
+                    </div>
 
-                <div class="flex flex-col w-full gap-2 sm:flex-row sm:items-center">
-                    <span class="mr-2 font-semibold text-light-cloud-blue">Profesor:</span>
-                    <div class="flex flex-wrap items-center gap-1">
+                    <!-- Abecedario adaptable a todo el ancho -->
+                    <div class="flex flex-wrap items-center gap-1 sm:gap-1.5 p-2 bg-slate-50 border border-slate-200/80 rounded-xl">
                         @php
                             $letras = ['Todos', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'Ñ', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
                             $letraSeleccionada = request('letra', 'Todos');
                         @endphp
                         @foreach($letras as $letra)
                             <button type="button"
-                                class="{{ $letra === 'Todos' ? 'w-16' : 'w-8' }} h-8 flex items-center justify-center rounded border text-xs font-bold uppercase focus:outline-none letra-filtro-btn transition
-                                    {{ $letraSeleccionada == $letra ? 'bg-light-cloud-blue text-white' : 'bg-white text-light-cloud-blue  hover:bg-light-cloud-blue/10' }}"
-                                data-letra="{{ $letra }}">{{ $letra }}</button>
+                                class="{{ $letra === 'Todos' ? 'px-3 min-w-[3.5rem]' : 'w-7 sm:w-8' }} h-8 flex items-center justify-center rounded-lg border text-xs font-bold uppercase focus:outline-none letra-filtro-btn transition shadow-2xs cursor-pointer
+                                    {{ $letraSeleccionada == $letra 
+                                        ? 'bg-[#D2091E] text-white border-[#D2091E] shadow-xs' 
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-[#D2091E] hover:text-[#D2091E] hover:bg-red-50/50' }}"
+                                data-letra="{{ $letra }}">
+                                {{ $letra }}
+                            </button>
                         @endforeach
                     </div>
                     <input type="hidden" name="letra" id="letra-filtro-input" value="{{ $letraSeleccionada }}">
-                    <button id="aplicar-filtro-btn" type="button"
-                        class="ml-2 px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">Aplicar
-                        filtro</button>
-                    <button id="limpiar-filtro-btn" type="button"
-                        class="px-4 py-2 ml-2 text-sm font-semibold text-black transition bg-gray-200 rounded hover:bg-gray-400">
-                        <i class="mr-1 fa-solid fa-eraser"></i>Limpiar filtros
-                    </button>
                 </div>
             </form>
         </div>
@@ -411,10 +439,12 @@
         letraBtns.forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
-                letraBtns.forEach(b => b.classList.remove('bg-light-cloud-blue', 'text-white'));
-                letraBtns.forEach(b => b.classList.add('bg-white', 'text-light-cloud-blue'));
-                this.classList.remove('bg-white', 'text-light-cloud-blue');
-                this.classList.add('bg-light-cloud-blue', 'text-white');
+                letraBtns.forEach(b => {
+                    b.classList.remove('bg-[#D2091E]', 'text-white', 'border-[#D2091E]', 'shadow-xs', 'bg-light-cloud-blue');
+                    b.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+                });
+                this.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                this.classList.add('bg-[#D2091E]', 'text-white', 'border-[#D2091E]', 'shadow-xs');
                 letraInput.value = this.dataset.letra;
             });
         });
@@ -487,12 +517,15 @@
             
             // Actualizar visual de botones de letra
             letraBtns.forEach(b => {
-                b.classList.remove('bg-light-cloud-blue', 'text-white');
-                b.classList.add('bg-white', 'text-light-cloud-blue');
+                b.classList.remove('bg-[#D2091E]', 'text-white', 'border-[#D2091E]', 'shadow-xs', 'bg-light-cloud-blue');
+                b.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
             });
             // Activar botón "Todos"
-            document.querySelector('[data-letra="Todos"]').classList.remove('bg-white', 'text-light-cloud-blue');
-            document.querySelector('[data-letra="Todos"]').classList.add('bg-light-cloud-blue', 'text-white');
+            const btnTodos = document.querySelector('[data-letra="Todos"]');
+            if (btnTodos) {
+                btnTodos.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                btnTodos.classList.add('bg-[#D2091E]', 'text-white', 'border-[#D2091E]', 'shadow-xs');
+            }
             
             // Aplicar filtros limpios
             aplicarFiltros();

@@ -30,17 +30,17 @@
                     </div>
 
                     <div>
-                    <x-button class="justify-center w-full gap-1">
-                        <x-heroicon-o-mail class="w-7 h-7" aria-hidden="true" />
-                        <span>{{ __('Enviar correo con enlace de recuperación') }}</span>
+                        <x-button variant="login" class="justify-center w-full gap-1">
+                            <x-heroicon-o-mail class="w-7 h-7" aria-hidden="true" />
+                            <span>{{ __('Enviar correo con enlace de recuperación') }}</span>
                         </x-button>
                     </div>
 
                     <div class="text-center">
-                        <a href="{{ route('login') }}" class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
-                        {{ __('Volver al Inicio') }}
+                        <a href="{{ route('login') }}" class="text-sm text-[#D2091E] hover:text-[#B50718] hover:underline dark:text-red-400">
+                            {{ __('Volver al Inicio') }}
                         </a>
-                </div>
+                    </div>
                     </div>
                 </form>
     </x-auth-card>
@@ -127,13 +127,13 @@
                                 form.dispatchEvent(new Event('submit'));
                             }).catch(() => {
                                 Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error de Sesión',
-                                    text: 'No se pudo refrescar tu sesión. Por favor, recarga la página.',
-                                    confirmButtonText: 'Recargar Página',
-                                    confirmButtonColor: '#EF4444'
+                                    icon: 'warning',
+                                    title: 'Sesión Expirada',
+                                    text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+                                    confirmButtonText: 'Iniciar Sesión',
+                                    confirmButtonColor: '#D2091E'
                                 }).then(() => {
-                                    window.location.reload();
+                                    window.location.href = '{{ route("login") }}';
                                 });
                             });
                             return;
