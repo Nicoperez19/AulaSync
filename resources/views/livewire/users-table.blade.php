@@ -1,33 +1,3 @@
-<style>
-    .sort-icon {
-        display: none;
-        margin-left: 5px;
-        transition: transform 0.2s;
-    }
-
-    .asc .sort-icon,
-    .desc .sort-icon {
-        display: inline-block;
-    }
-
-    .asc .sort-icon {
-        transform: rotate(180deg);
-    }
-
-    .desc .sort-icon {
-        transform: rotate(0deg);
-    }
-
-    th {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    th:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-</style>
-
 <div>
     <div class="flex flex-col gap-4 mb-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-3/4">
@@ -76,101 +46,117 @@
         </div>
     </div>
 
-    <div class="mt-2 mb-4">
-        {{ $users->links('vendor.pagination.tailwind') }}
-    </div>
-
-    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700" wire:loading.class="opacity-60">
-        <table class="w-full text-sm text-center border-collapse table-auto min-w-max">
-            <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
-                <tr>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('run')">
-                        RUN
-                        @if($sortField === 'run')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('name')">
-                        Nombre
-                        @if($sortField === 'name')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('email')">
-                        Correo
-                        @if($sortField === 'email')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3">Rol</th>
-                    <th class="p-3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($users as $index => $user)
-                    <tr wire:key="user-row-{{ $user->run }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800 transition-colors">
-                        <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-gray-700 dark:text-blue-400">
-                            {{ $user->run }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap text-gray-800 dark:text-gray-200">
-                            {{ $user->name }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                            {{ $user->email }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            <div class="flex flex-wrap justify-center gap-1">
-                                @forelse($user->roles as $role)
-                                    <span class="px-2.5 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">
-                                        {{ $role->name }}
-                                    </span>
-                                @empty
-                                    <span class="text-xs text-gray-400 italic">Sin rol</span>
-                                @endforelse
-                            </div>
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            <div class="flex justify-center space-x-2">
-                                <x-button variant="view" href="{{ route('users.edit', $user->run) }}"
-                                    class="inline-flex items-center px-4 py-2">
-                                    <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
-                                </x-button>
-
-                                <form id="delete-form-{{ $user->run }}" action="{{ route('users.delete', $user->run) }}"
-                                    method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button variant="danger" type="button" onclick="deleteUser('{{ $user->run }}', '{{ addslashes($user->name) }}')"
-                                        class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
-                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
-                                    </x-button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr wire:key="empty-users-row">
-                        <td colspan="5" class="p-8 text-center text-gray-500 dark:text-gray-400">
-                            <div class="flex flex-col items-center justify-center">
-                                <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                <p class="font-medium text-gray-600 dark:text-gray-300">No se encontraron usuarios</p>
-                                @if(!empty($search) || !empty($roleFilter))
-                                    <p class="text-xs text-gray-400 mt-1">No hay resultados para "{{ $search ?: $roleFilter }}"</p>
-                                    <button wire:click="clearFilters" class="mt-3 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition dark:bg-blue-900/30 dark:text-blue-300">
-                                        Limpiar filtros
-                                    </button>
+    <!-- Card Tabla de Usuarios Universal -->
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700" wire:loading.class="opacity-60">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 border-b border-gray-200 dark:bg-gray-900/60 dark:border-gray-700">
+                    <tr>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('run')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                RUN
+                                @if($sortField === 'run')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
                                 @endif
-                            </div>
-                        </td>
+                            </span>
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('name')">
+                            <span class="inline-flex items-center gap-1">
+                                Nombre
+                                @if($sortField === 'name')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('email')">
+                            <span class="inline-flex items-center gap-1">
+                                Correo
+                                @if($sortField === 'email')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-44 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            Rol
+                        </th>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            Acciones
+                        </th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="mt-4">
-        {{ $users->links('vendor.pagination.tailwind') }}
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    @forelse ($users as $user)
+                        <tr wire:key="user-row-{{ $user->run }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="font-medium text-blue-600 dark:text-blue-400 text-sm">{{ $user->run }}</span>
+                            </td>
+                            <td class="px-3 py-3 text-left align-middle whitespace-nowrap">
+                                <span class="font-medium text-gray-800 dark:text-gray-200 text-sm">{{ $user->name }}</span>
+                            </td>
+                            <td class="px-3 py-3 text-left align-middle whitespace-nowrap">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">{{ $user->email }}</span>
+                            </td>
+                            <td class="w-44 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex flex-wrap justify-center gap-1">
+                                    @forelse($user->roles as $role)
+                                        <span class="px-2.5 py-0.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-full dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800">
+                                            {{ $role->name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-xs text-gray-400 italic">Sin rol</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{{ route('users.edit', $user->run) }}"
+                                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
+                                       title="Editar usuario">
+                                        <i class="fa-solid fa-edit w-3.5 h-3.5"></i>
+                                    </a>
+
+                                    <form id="delete-form-{{ $user->run }}" action="{{ route('users.delete', $user->run) }}" method="POST" class="inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" onclick="deleteUser('{{ $user->run }}', '{{ addslashes($user->name) }}')"
+                                                class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors shadow-xs dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
+                                                title="Eliminar usuario">
+                                            <x-icons.delete class="w-3.5 h-3.5" aria-hidden="true" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr wire:key="empty-users-row">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-users-slash text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron usuarios</p>
+                                    @if(!empty($search) || !empty($roleFilter))
+                                        <p class="text-xs text-gray-400 mt-1">No hay resultados para "{{ $search ?: $roleFilter }}"</p>
+                                        <button wire:click="clearFilters" class="mt-3 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition dark:bg-blue-900/30 dark:text-blue-300">
+                                            Limpiar filtros
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Footer de paginación integrado --}}
+        <div class="px-6 py-4 bg-gray-50/70 border-t border-gray-200 dark:bg-gray-900/40 dark:border-gray-700">
+            {{ $users->links('vendor.pagination.tailwind') }}
+        </div>
     </div>
 </div>
 

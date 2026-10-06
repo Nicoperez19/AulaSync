@@ -15,30 +15,30 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-end gap-2 mb-4">
-            <x-button variant="add" class="justify-end max-w-xs gap-2"
+    <div class="space-y-4">
+        <div class="flex items-center justify-end gap-2">
+            <x-button variant="add" class="gap-2"
                 x-on:click.prevent="$dispatch('open-modal', 'add-espacio')">
-                <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                Agregar Espacio
+                <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Agregar Espacio</span>
             </x-button>
-            <x-button variant="warning" href="{{ route('spaces.download-all-qr') }}"
-                class="inline-flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <x-button variant="secondary" href="{{ route('spaces.download-all-qr') }}"
+                class="gap-2">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                     </path>
                 </svg>
-                QRs (ZIP)
+                <span>QRs (ZIP)</span>
             </x-button>
-            <x-button variant="success" href="{{ route('spaces.download-all-qr-pdf') }}"
-                class="inline-flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <x-button variant="secondary" href="{{ route('spaces.download-all-qr-pdf') }}"
+                class="gap-2">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
                     </path>
                 </svg>
-                QRs (PDF)
+                <span>QRs (PDF)</span>
             </x-button>
         </div>
         <livewire:spaces-table />

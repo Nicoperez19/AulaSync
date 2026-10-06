@@ -8,8 +8,8 @@
     </x-slot>
 
     <div class="flex justify-end mb-4">
-        <x-button x-on:click.prevent="$dispatch('open-modal', 'add-reserva')" variant="primary" class="max-w-xs gap-2">
-            <x-icons.add class="w-6 h-6" aria-hidden="true" />
+        <x-button x-on:click.prevent="$dispatch('open-modal', 'add-reserva')" variant="add" class="gap-2">
+            <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>Nueva Reserva</span>
         </x-button>
     </div>
@@ -97,8 +97,8 @@
                 <!-- Hidden para hora_salida calculada -->
                 <input type="hidden" id="hora_salida" name="hora_salida" />
                 <div class="flex justify-end pt-4">
-                    <x-button id="btn-submit-reserva" type="submit" class="gap-2">
-                        <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
+                    <x-button id="btn-submit-reserva" variant="add" type="submit" class="gap-2">
+                        <x-heroicon-o-user-add class="w-4 h-4 shrink-0" aria-hidden="true" />
                         {{ __('Agregar Reserva') }}
                     </x-button>
                 </div>
@@ -529,16 +529,14 @@
             </div>
 
             {{-- Pie --}}
-            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 flex justify-end gap-3">
+            <div class="px-6 py-4 bg-gray-50/70 flex justify-end gap-3 border-t border-gray-200">
                 <button onclick="cerrarModalAdmin()"
-                        class="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700
-                               border border-gray-300 dark:bg-gray-700 rounded-lg hover:bg-gray-100 transition">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all shadow-sm">
                     Cancelar
                 </button>
                 <button id="btn-confirmar-admin"
                         onclick="confirmarRegistroAdmin()"
-                        class="px-5 py-2 text-sm font-bold text-white rounded-lg transition shadow-sm
-                               flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg id="btn-spinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>

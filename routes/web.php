@@ -496,6 +496,9 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     // API para cambiar estado de reserva
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
 
+    // API para cancelar/eliminar definitivamente una reserva
+    Route::delete('/api/reserva/{id}', [QuickActionsController::class, 'eliminarReserva'])->name('quick-actions.api.eliminar-reserva');
+
     // Ruta para editar reserva
     Route::get('/editar-reserva/{id}', [QuickActionsController::class, 'editarReserva'])->name('editar-reserva');
     Route::put('/api/reserva/{id}', [QuickActionsController::class, 'actualizarReserva'])->name('api.actualizar-reserva');

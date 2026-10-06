@@ -80,40 +80,35 @@ class ClasesNoRealizadasTable extends Component
 
     public function updatingSearch()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingEstado()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingUa()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingPeriodo()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatedPeriodo($value)
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
 
@@ -137,18 +132,32 @@ class ClasesNoRealizadasTable extends Component
 
     public function updatingFechaInicio()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingFechaFin()
     {
-        $this->cachedEstadisticas = null;
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
         $this->resetPage();
+    }
+
+    public function limpiarCacheFiltradas()
+    {
+        $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+
+        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
+        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
+            $this->fecha_inicio,
+            $this->fecha_fin,
+            $this->periodo,
+            $this->ua,
+            $this->estado,
+        ]));
+        \Illuminate\Support\Facades\Cache::forget($cacheKey);
     }
 
     public function getEstadoNombreProperty()
@@ -165,8 +174,7 @@ class ClasesNoRealizadasTable extends Component
     public function refresh()
     {
         // Método para refrescar manualmente los datos
-        $this->cachedEstadisticas = null; // Limpiar cache
-        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarCacheFiltradas();
         $this->resetPage();
     }
 
@@ -232,11 +240,8 @@ class ClasesNoRealizadasTable extends Component
 
     public function updatedSelectedClases()
     {
-        $todasLasClases = $this->getClasesFiltradasCollection();
-        $totalNoRealizadas = $todasLasClases->where('estado', 'No Registrada')->count();
-        if ($totalNoRealizadas > 0 && count($this->selectedClases) === $totalNoRealizadas) {
-            $this->selectAllFiltered = true;
-        } else {
+        // Si el usuario desmarca alguna clase individual, desactivar la bandera de selección completa
+        if ($this->selectAllFiltered) {
             $this->selectAllFiltered = false;
         }
     }
@@ -435,49 +440,64 @@ class ClasesNoRealizadasTable extends Component
             return $this->todasLasClasesFiltradasCache;
         }
 
-        $servicio = new \App\Services\TodasClasesService();
-        $todasLasClases = $servicio->obtenerTodasLasClases(
+        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
+        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
-            null,
-            null,
-            $this->ua
-        );
+            $this->ua,
+            $this->estado,
+        ]));
 
-        // Asignar clave única a cada clase
-        $todasLasClases = $todasLasClases->map(function($item) {
-            $item['unique_key'] = $this->generarUniqueKey($item);
-            return $item;
-        });
+        $todasLasClasesBase = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function() {
+            $servicio = new \App\Services\TodasClasesService();
+            $clases = $servicio->obtenerTodasLasClases(
+                $this->fecha_inicio,
+                $this->fecha_fin,
+                $this->periodo,
+                null,
+                null,
+                $this->ua
+            );
 
-        // Aplicar filtro de UA en memoria si está establecido (por ID o por nombre de carrera)
-        if (!empty($this->ua)) {
-            $uaNorm = mb_strtolower(trim($this->ua), 'UTF-8');
-            $todasLasClases = $todasLasClases->filter(function($item) use ($uaNorm) {
-                $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
-                $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
-                return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
-            })->values();
-        }
+            // Asignar clave única a cada clase
+            $clases = $clases->map(function($item) {
+                $item['unique_key'] = $this->generarUniqueKey($item);
+                return $item;
+            });
 
-        // Aplicar filtro de estado en memoria
-        if ($this->estado) {
-            $estadoStr = match($this->estado) {
-                'no_realizada' => 'No Registrada',
-                'realizada', 'registrada' => 'Realizada',
-                'justificado' => 'Justificada',
-                'pendiente' => 'Pendiente de Recuperación',
-                default => null
-            };
-            if ($estadoStr) {
-                if ($estadoStr === 'Realizada') {
-                    $todasLasClases = $todasLasClases->whereIn('estado', ['Realizada', 'Registrada']);
-                } else {
-                    $todasLasClases = $todasLasClases->where('estado', $estadoStr);
+            // Aplicar filtro de UA en memoria si está establecido (por ID o por nombre de carrera)
+            if (!empty($this->ua)) {
+                $uaNorm = mb_strtolower(trim($this->ua), 'UTF-8');
+                $clases = $clases->filter(function($item) use ($uaNorm) {
+                    $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
+                    $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                    return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
+                })->values();
+            }
+
+            // Aplicar filtro de estado en memoria
+            if ($this->estado) {
+                $estadoStr = match($this->estado) {
+                    'no_realizada' => 'No Registrada',
+                    'realizada', 'registrada' => 'Realizada',
+                    'justificado' => 'Justificada',
+                    'pendiente' => 'Pendiente de Recuperación',
+                    default => null
+                };
+                if ($estadoStr) {
+                    if ($estadoStr === 'Realizada') {
+                        $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
+                    } else {
+                        $clases = $clases->where('estado', $estadoStr);
+                    }
                 }
             }
-        }
+
+            return $clases;
+        });
+
+        $todasLasClases = clone $todasLasClasesBase;
         
         // Aplicar filtro de búsqueda en memoria con soporte multi-palabra (orden independiente de nombre y apellido)
         if (!empty(trim($this->search ?? ''))) {

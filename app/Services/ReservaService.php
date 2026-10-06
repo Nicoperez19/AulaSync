@@ -88,6 +88,8 @@ class ReservaService
             $asignaturaInfo = 'Sin asignatura';
             if ($reserva->asignatura) {
                 $asignaturaInfo = $reserva->asignatura->codigo_asignatura . ' - ' . $reserva->asignatura->nombre_asignatura;
+            } elseif (!empty($reserva->nombre_actividad)) {
+                $asignaturaInfo = $reserva->nombre_actividad;
             } elseif ($reserva->id_asignatura) {
                 $asignaturaInfo = $reserva->id_asignatura;
             }
@@ -622,6 +624,45 @@ class ReservaService
     }
 
     /**
+     * Cancelar y eliminar definitivamente una reserva (borrado físico directo).
+     */
+    public function eliminarReserva(string $id): array
+    {
+        $reserva = Reserva::where('id_reserva', $id)->first();
+
+        if (!$reserva) {
+            return [
+                'success' => false,
+                'status' => 404,
+                'mensaje' => 'Reserva no encontrada',
+            ];
+        }
+
+        $espacioId = $reserva->id_espacio;
+        $espacioLiberado = false;
+
+        // Liberar el espacio relacionado si estaba activa o programada
+        if ($reserva->id_espacio) {
+            $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
+            if ($espacio && (strtolower($espacio->estado) === 'ocupado' || $reserva->estado === 'activa')) {
+                $espacio->estado = 'disponible';
+                $espacio->save();
+                $espacioLiberado = true;
+            }
+        }
+
+        $reserva->delete();
+        $this->espacioService->limpiarCacheEstados();
+
+        return [
+            'success' => true,
+            'status' => 200,
+            'mensaje' => "Reserva {$id} cancelada y eliminada correctamente.",
+            'espacio_liberado' => $espacioLiberado,
+        ];
+    }
+
+    /**
      * Actualizar una reserva existente.
      */
     public function actualizarReserva(string $id, array $data, ?User $usuario = null): array
@@ -764,8 +805,8 @@ class ReservaService
         }
 
         if ($moduloInicio && $moduloFin && isset($horariosModulos[$moduloInicio]) && isset($horariosModulos[$moduloFin])) {
-            $horaInicio = $horariosModulos[$moduloInicio]['inicio'];
-            $horaFin = $horariosModulos[$moduloFin]['fin'];
+            $horaInicio = substr($horariosModulos[$moduloInicio]['inicio'], 0, 5);
+            $horaFin = substr($horariosModulos[$moduloFin]['fin'], 0, 5);
 
             return [
                 'modulo_inicial' => $moduloInicio,

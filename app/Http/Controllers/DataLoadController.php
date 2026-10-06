@@ -135,6 +135,104 @@ class DataLoadController extends Controller
             $espaciosNoEncontrados = 0;   // Espacios del tenant que no existen en BD
             $espaciosFaltantes = [];      // Lista de espacios que no se encontraron en BD
 
+            // Encabezados de la primera fila
+            $headers = isset($rows[0]) ? array_map(function($h) {
+                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
+            }, $rows[0]) : [];
+
+            // ── NUEVA CAPA DE SEGURIDAD: VERIFICACIÓN DEL SEMESTRE EN EL ARCHIVO ──
+            $posiblesHeadersSemestre = [
+                'SEMESTRE', 'SEM', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
+                'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
+                'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE', 'TERMINO', 'TERM'
+            ];
+
+            $colSemestreIdx = null;
+            $headerSemestreEncontrado = null;
+            foreach ($headers as $colIdx => $headerName) {
+                if (in_array($headerName, $posiblesHeadersSemestre)) {
+                    $colSemestreIdx = $colIdx;
+                    $headerSemestreEncontrado = $headerName;
+                    break;
+                }
+            }
+
+            if ($colSemestreIdx !== null) {
+                $parseSemestreValor = function($val) {
+                    if ($val === null || $val === '') return null;
+                    $v = strtoupper(trim((string)$val));
+
+                    // Formatos con año: 2026-1, 2026-2, 2026/1, 2026/2, 2026_1, 2026_2
+                    if (preg_match('/(?:\d{4}|\d{2})[-_\/]([12])\b/', $v, $m)) {
+                        return (int)$m[1];
+                    }
+                    // Formatos compactos: 202610, 202620, 20261, 20262
+                    if (preg_match('/^\d{4}([12])0?$/', $v, $m)) {
+                        return (int)$m[1];
+                    }
+                    // Textos descriptivos
+                    if (str_contains($v, 'SEGUNDO') || str_contains($v, '2DO') || str_contains($v, '2°') || str_contains($v, '2DO.')) {
+                        return 2;
+                    }
+                    if (str_contains($v, 'PRIMER') || str_contains($v, '1ER') || str_contains($v, '1°') || str_contains($v, '1ER.')) {
+                        return 1;
+                    }
+                    // Dígito exacto 1 o 2
+                    if ($v === '1' || $v === '2') {
+                        return (int)$v;
+                    }
+                    // Otros números (ej: 3 al 12) -> corresponden a nivel curricular de malla, no a período
+                    if (is_numeric($v)) {
+                        return (int)$v;
+                    }
+                    return null;
+                };
+
+                $conteoSemestres = [1 => 0, 2 => 0, 'otros' => 0];
+                $filasVerificadas = 0;
+
+                for ($r = 1; $r < count($rows); $r++) {
+                    $rawVal = $rows[$r][$colSemestreIdx] ?? null;
+                    $res = $parseSemestreValor($rawVal);
+                    if ($res === 1 || $res === 2) {
+                        $conteoSemestres[$res]++;
+                        $filasVerificadas++;
+                    } elseif ($res !== null) {
+                        $conteoSemestres['otros']++;
+                    }
+                }
+
+                // Si predominan números mayores a 2, es nivel curricular de carrera, no período académico
+                $esMallaCurricular = $conteoSemestres['otros'] > 0 && ($conteoSemestres['otros'] / max(1, $filasVerificadas + $conteoSemestres['otros'])) > 0.15;
+
+                if (!$esMallaCurricular && $filasVerificadas > 0) {
+                    $semestreArchivo = $conteoSemestres[1] > $conteoSemestres[2] ? 1 : 2;
+                    $semestreSeleccionadoInt = (int)$semestreSeleccionado;
+
+                    // Si la mayoría del archivo contiene un semestre DISTINTO al que seleccionó el usuario
+                    if ($semestreArchivo !== $semestreSeleccionadoInt && ($conteoSemestres[$semestreArchivo] / $filasVerificadas) >= 0.7) {
+                        // Eliminar archivo temporal recién subido
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                        }
+                        $dataLoad->update([
+                            'estado' => 'error',
+                            'registros_cargados' => 0
+                        ]);
+
+                        $msgError = "Inconsistencia de Semestre: El archivo contiene asignaturas del Semestre {$semestreArchivo} (detectado en columna '{$headerSemestreEncontrado}' con {$conteoSemestres[$semestreArchivo]} filas), pero seleccionaste el Semestre {$semestreSeleccionadoInt} en el formulario. Por favor verifica el archivo o selecciona el Semestre {$semestreArchivo} para procesarlo.";
+                        Log::warning("⛔ " . $msgError);
+
+                        return response()->json([
+                            'message' => $msgError
+                        ], 422);
+                    }
+
+                    Log::info("✓ Verificación de semestre exitosa: la columna '{$headerSemestreEncontrado}' coincide con el Semestre {$semestreSeleccionadoInt} seleccionado ({$conteoSemestres[$semestreSeleccionadoInt]} filas verificadas).");
+                }
+            }
+
             // Actualizar estado inicial
             $dataLoad->update([
                 'estado' => 'procesando',
@@ -273,6 +371,9 @@ class DataLoadController extends Controller
                 if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
                 if (in_array($headerName, ['UA', 'UNIDAD_ACADEMICA', 'UNIDADACADEMICA', 'ID_CARRERA', 'COD_CARRERA', 'CODCARRERA'])) $colMap['id_carrera'] = $colIdx;
                 if (in_array($headerName, ['NOMBRE_CARRERA', 'CARRERA'])) $colMap['nombre_carrera'] = $colIdx;
+            }
+            if ($colSemestreIdx !== null) {
+                $colMap['semestre'] = $colSemestreIdx;
             }
             Log::info('→ Carga estándar aplicada para todas las sedes.');
 

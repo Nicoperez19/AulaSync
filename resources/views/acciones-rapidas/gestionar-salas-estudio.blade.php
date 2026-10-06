@@ -14,13 +14,13 @@
 
             <div class="flex items-center gap-2.5">
                 <button type="button" onclick="abrirModalManualReserva()" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer">
                     <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>Nueva Reserva</span>
                 </button>
                 <a href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
-                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                    <svg class="w-4 h-4 shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     <span>Volver</span>
@@ -88,7 +88,7 @@
                 </div>
                 
                 <div class="flex items-end">
-                    <button onclick="cargarReservas()" class="w-full px-4 py-2 bg-blue-600 text-white text-sm sm:text-base rounded-md hover:bg-blue-700 transition-colors">
+                    <button onclick="cargarReservas()" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm">
                         <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
                         Actualizar
                     </button>
@@ -734,7 +734,7 @@
                         <div class="text-sm font-medium text-gray-900">${r.nombre_responsable}</div>
                         <div class="text-xs text-gray-500">RUN: ${r.run_responsable}</div>
                     </td>
-                    <td class="px-2 py-3 text-sm text-gray-900">${r.fecha_reserva} <span class="text-xs text-gray-500">${r.hora_inicio}</span></td>
+                    <td class="px-2 py-3 text-sm text-gray-900">${r.fecha_reserva} <span class="text-xs text-gray-500">${r.hora_inicio ? r.hora_inicio.substring(0, 5) : ''}</span></td>
                     <td class="px-2 py-3 text-xs text-gray-900 font-medium">
                         <span class="${r.vencida ? 'text-red-600 font-bold' : (r.proxima_vencer ? 'text-yellow-700 font-bold' : 'text-gray-900')}">
                             ${tiempoTexto}
@@ -776,12 +776,12 @@
                     <div class="text-xs text-gray-500">RUN: ${r.run_responsable} • ${r.fecha_reserva}</div>
                     <div class="pt-2 flex gap-2 justify-end">
                         ${r.estado === 'activa' ? `
-                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="flex-1 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg shadow">
+                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="flex-1 py-2 border border-transparent bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md shadow-xs transition-all">
                                 Devolver Sala
                             </button>
                         ` : ''}
-                        <a href="/reservas/${r.id_reserva}/comprobante" target="_blank" class="px-3 py-2 bg-blue-50 border border-blue-300 text-blue-700 text-xs font-bold rounded-lg flex items-center justify-center">
-                            <i class="fa-solid fa-file-pdf mr-1"></i> PDF
+                        <a href="/reservas/${r.id_reserva}/comprobante" target="_blank" class="px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-md flex items-center justify-center shadow-xs transition-all">
+                            <i class="fa-solid fa-file-pdf mr-1.5 text-red-600"></i> PDF
                         </a>
                     </div>
                 </div>

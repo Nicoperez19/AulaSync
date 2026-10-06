@@ -370,6 +370,25 @@ class QuickActionsController extends Controller
     }
 
     /**
+     * Cancelar y eliminar definitivamente una reserva (borrado físico).
+     */
+    public function eliminarReserva($id): JsonResponse
+    {
+        try {
+            $resultado = $this->reservaService->eliminarReserva((string) $id);
+
+            return response()->json($resultado, $resultado['status'] ?? 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al eliminar reserva: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Actualizar datos de una reserva existente.
      */
     public function actualizarReserva(Request $request, $id): JsonResponse

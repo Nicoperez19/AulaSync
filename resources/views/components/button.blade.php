@@ -10,58 +10,54 @@
 ])
 @php
 
-    $baseClasses = 'inline-flex items-center transition-colors font-medium select-none disabled:opacity-50 
-                disabled:cursor-not-allowed focus:outline-none focus:ring focus:ring-offset-2 focus:ring-offset-white 
+    $baseClasses = 'inline-flex items-center justify-center font-medium transition-all duration-150 select-none shadow-sm disabled:opacity-50 
+                disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white 
                 dark:focus:ring-offset-dark-eval-2';
 
     switch ($variant) {
         case 'primary':
-            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-red-600 focus:ring-red-600';
+            $variantClasses = 'border border-transparent bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500';
             break;
         case 'login':
-            $variantClasses = 'bg-gray-100 text-black hover:bg-steel-blue-600 focus:ring-light-cloud dark:bg-dark-eval-0 dark:hover:bg-dark-eval-0 dark:hover:text-gray-100 dark:text-white';
+            $variantClasses = 'border border-transparent bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500';
             break;
         case 'secondary':
-            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
+        case 'outline':
+            $variantClasses = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-300 dark:bg-dark-eval-1 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-dark-eval-2';
             break;
         case 'success':
-            $variantClasses = 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500';
+        case 'add':
+            $variantClasses = 'border border-transparent bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 focus:ring-emerald-500';
             break;
         case 'danger':
-            $variantClasses = 'bg-red-500 text-white hover:bg-red-600 focus:ring-red-500';
+            $variantClasses = 'border border-transparent bg-red-600 text-white hover:bg-red-700 active:bg-red-800 focus:ring-red-500';
             break;
         case 'warning':
-            $variantClasses = 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500';
+            $variantClasses = 'border border-transparent bg-amber-600 text-white hover:bg-amber-700 active:bg-amber-800 focus:ring-amber-500';
             break;
         case 'info':
-            $variantClasses = 'bg-cyan-500 text-white hover:bg-cyan-600 focus:ring-cyan-500';
+            $variantClasses = 'border border-transparent bg-sky-600 text-white hover:bg-sky-700 active:bg-sky-800 focus:ring-sky-500';
             break;
         case 'black':
-            $variantClasses =
-                'bg-black text-gray-300 hover:text-white hover:bg-gray-800 focus:ring-black dark:hover:bg-dark-eval-3';
-            break;
-        case 'add':
-            $variantClasses =
-                'bg-green-600 text-white hover:text-white hover:bg-green-add focus:ring-black dark:hover:bg-dark-eval-3';
+            $variantClasses = 'border border-transparent bg-gray-900 text-white hover:bg-black focus:ring-gray-900';
             break;
         case 'view':
-            $variantClasses =
-                'bg-blue-600 text-white hover:text-white hover:bg-blue-800 focus:ring-black dark:hover:bg-dark-eval-3';
+            $variantClasses = 'border border-transparent bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 focus:ring-blue-500';
             break;
         default:
-            $variantClasses = 'bg-purple-500 text-white hover:bg-purple-600 focus:ring-purple-500';
+            $variantClasses = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-300';
     }
 
     switch ($size) {
         case 'sm':
-            $sizeClasses = $iconOnly ? 'p-1.5' : 'px-2.5 py-1.5 text-sm';
+            $sizeClasses = $iconOnly ? 'p-1.5 text-xs' : 'px-3 py-1.5 text-xs gap-1.5';
             break;
         case 'base':
-            $sizeClasses = $iconOnly ? 'p-0' : 'px-4 py-1 text-base';
+            $sizeClasses = $iconOnly ? 'p-2 text-sm' : 'px-4 py-2 text-sm gap-2';
             break;
         case 'lg':
         default:
-            $sizeClasses = $iconOnly ? 'p-3' : 'px-5 py-2 text-xl';
+            $sizeClasses = $iconOnly ? 'p-2.5 text-base' : 'px-5 py-2.5 text-base gap-2.5';
             break;
     }
 

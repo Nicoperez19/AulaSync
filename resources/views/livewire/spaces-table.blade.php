@@ -1,33 +1,3 @@
-<style>
-    .sort-icon {
-        display: none;
-        margin-left: 5px;
-        transition: transform 0.2s;
-    }
-
-    .asc .sort-icon,
-    .desc .sort-icon {
-        display: inline-block;
-    }
-
-    .asc .sort-icon {
-        transform: rotate(180deg);
-    }
-
-    .desc .sort-icon {
-        transform: rotate(0deg);
-    }
-
-    th {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    th:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-</style>
-
 <div>
     <div class="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
         <div class="relative w-full md:w-1/2">
@@ -49,178 +19,161 @@
             @endif
         </div>
         <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span>Total: <strong>{{ $espacios->total() }}</strong> espacios</span>
+            <span class="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-xs font-semibold">
+                Total: <strong class="text-gray-800 dark:text-white">{{ $espacios->total() }}</strong> espacios
+            </span>
         </div>
     </div>
 
-    <div class="mt-2 mb-4">
-        {{ $espacios->links('vendor.pagination.tailwind') }}
-    </div>
-
-    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-        <table class="w-full text-sm text-center border-collapse table-auto min-w-max">
-            <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
-                <tr>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('id_espacio')">
-                        ID del Espacio
-                        @if($sortField === 'id_espacio')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('nombre_espacio')">
-                        Nombre del Espacio
-                        @if($sortField === 'nombre_espacio')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3">Facultad</th>
-                    <th class="p-3">Piso</th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('tipo_espacio')">
-                        Tipo
-                        @if($sortField === 'tipo_espacio')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('estado')">
-                        Estado
-                        @if($sortField === 'estado')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('puestos_disponibles')">
-                        Puestos
-                        @if($sortField === 'puestos_disponibles')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($espacios as $index => $espacio)
-                    <tr wire:key="espacio-row-{{ $espacio->id_espacio }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
-
-                        <td
-                            class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
-                            {{ $espacio->id_espacio }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->nombre_espacio ?? 'Sin nombre' }}
-
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}, Sede
-                            {{ $espacio->piso->facultad->sede->nombre_sede ?? 'Sin nombre' }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->piso->numero_piso ?? 'Sin Piso' }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->tipo_espacio }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                    @if ($espacio->estado === 'Disponible') bg-green-100 text-green-800 
-                                    @elseif($espacio->estado === 'Ocupado') bg-red-100 text-red-800 
-                                    @else bg-yellow-100 text-yellow-800 @endif">
-                                {{ $espacio->estado }}
+    <!-- Card Tabla de Espacios Universal -->
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700" wire:loading.class="opacity-60">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 border-b border-gray-200 dark:bg-gray-900/60 dark:border-gray-700">
+                    <tr>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('id_espacio')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                ID Espacio
+                                @if($sortField === 'id_espacio')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
                             </span>
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->puestos_disponibles ?? 'N/A' }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <div class="flex justify-center space-x-2">
-                                <x-button variant="view" href="{{ route('spaces.edit', $espacio->id_espacio) }}"
-                                    class="inline-flex items-center px-4 py-2">
-                                    <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
-
-                                </x-button>
-                                <x-button variant="warning"
-                                    href="{{ route('spaces.download-qr', $espacio->id_espacio) }}"
-                                    class="inline-flex items-center px-4 py-2"
-                                    title="Descargar QR">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                        </path>
-                                    </svg>
-                                </x-button>
-                                <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
-                                    style="display: inline;" id="delete-form-{{ $espacio->id_espacio }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button variant="danger" type="button"
-                                        class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700"
-                                        onclick="confirmDelete('delete-form-{{ $espacio->id_espacio }}')">
-                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
-                                    </x-button>
-                                </form>
-                            </div>
-                        </td>
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('nombre_espacio')">
+                            <span class="inline-flex items-center gap-1">
+                                Nombre del Espacio
+                                @if($sortField === 'nombre_espacio')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            Facultad / Sede
+                        </th>
+                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            Piso
+                        </th>
+                        <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('tipo_espacio')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                Tipo
+                                @if($sortField === 'tipo_espacio')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-28 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('estado')">
+                            <span class="inline-flex items-center gap-1">
+                                Estado
+                                @if($sortField === 'estado')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('puestos_disponibles')">
+                            <span class="inline-flex items-center gap-1">
+                                Puestos
+                                @if($sortField === 'puestos_disponibles')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                            Acciones
+                        </th>
                     </tr>
-                @empty
-                    <tr wire:key="empty-espacios-row">
-                        <td colspan="8" class="p-8 text-center text-gray-500">
-                            <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
-                                    </path>
-                                </svg>
-                                <p class="text-lg font-medium">No se encontraron espacios</p>
-                                <p class="text-sm">Intenta ajustar los filtros de búsqueda</p>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    @forelse ($espacios as $espacio)
+                        <tr wire:key="espacio-row-{{ $espacio->id_espacio }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="font-medium text-blue-600 dark:text-blue-400 text-sm">{{ $espacio->id_espacio }}</span>
+                            </td>
+                            <td class="px-3 py-3 text-left align-middle whitespace-nowrap">
+                                <span class="font-semibold text-gray-800 dark:text-gray-200 text-sm">{{ $espacio->nombre_espacio ?? 'Sin nombre' }}</span>
+                            </td>
+                            <td class="px-3 py-3 text-left align-middle whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-800 dark:text-gray-300">{{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}</div>
+                                <div class="text-xs text-gray-500">Sede {{ $espacio->piso->facultad->sede->nombre_sede ?? 'Sin nombre' }}</div>
+                            </td>
+                            <td class="w-24 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
+                                    Piso {{ $espacio->piso->numero_piso ?? 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="w-36 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="text-sm text-gray-700 dark:text-gray-300">{{ $espacio->tipo_espacio }}</span>
+                            </td>
+                            <td class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full 
+                                    @if ($espacio->estado === 'Disponible') bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800
+                                    @elseif($espacio->estado === 'Ocupado') bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800
+                                    @else bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800 @endif">
+                                    {{ $espacio->estado }}
+                                </span>
+                            </td>
+                            <td class="w-24 px-3 py-3 text-center align-middle whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-medium">
+                                {{ $espacio->puestos_disponibles ?? 'N/A' }}
+                            </td>
+                            <td class="w-36 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1">
+                                    <a href="{{ route('spaces.edit', $espacio->id_espacio) }}"
+                                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
+                                       title="Editar espacio">
+                                        <i class="fa-solid fa-edit w-3.5 h-3.5"></i>
+                                    </a>
 
-    <div class="mt-4">
-        {{ $espacios->links('vendor.pagination.tailwind') }}
+                                    <a href="{{ route('spaces.download-qr', $espacio->id_espacio) }}"
+                                       class="inline-flex items-center justify-center p-1.5 border border-amber-300 text-xs font-medium rounded-md text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors shadow-xs dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700"
+                                       title="Descargar QR">
+                                        <i class="fa-solid fa-qrcode w-3.5 h-3.5"></i>
+                                    </a>
+
+                                    <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST" class="inline-block" id="delete-form-{{ $espacio->id_espacio }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" onclick="confirmDelete('delete-form-{{ $espacio->id_espacio }}')"
+                                                class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors shadow-xs dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
+                                                title="Eliminar espacio">
+                                            <x-icons.delete class="w-3.5 h-3.5" aria-hidden="true" />
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr wire:key="empty-espacios-row">
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-building-circle-xmark text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron espacios</p>
+                                    <p class="text-xs text-gray-400 mt-1">Intenta ajustar los filtros de búsqueda</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Footer de paginación integrado --}}
+        <div class="px-6 py-4 bg-gray-50/70 border-t border-gray-200 dark:bg-gray-900/40 dark:border-gray-700">
+            {{ $espacios->links('vendor.pagination.tailwind') }}
+        </div>
     </div>
 </div>
 
 <script>
-    function sortTable(columnIndex) {
-        var table = document.getElementById("spaces-table");
-        var rows = Array.from(table.rows).slice(1);
-        var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
-
-        // Remover clases de ordenamiento de todas las columnas
-        Array.from(table.rows[0].cells).forEach(cell => {
-            cell.classList.remove("asc", "desc");
-        });
-
-        rows.sort((rowA, rowB) => {
-            var cellA = rowA.cells[columnIndex].textContent.trim();
-            var cellB = rowB.cells[columnIndex].textContent.trim();
-
-            if (columnIndex === 5 || columnIndex === 6) {
-                cellA = new Date(cellA);
-                cellB = new Date(cellB);
-            }
-
-            if (cellA < cellB) {
-                return isAscending ? -1 : 1;
-            }
-            if (cellA > cellB) {
-                return isAscending ? 1 : -1;
-            }
-            return 0;
-        });
-
-        rows.forEach(row => table.appendChild(row));
-
-        table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
-    }
-
     function confirmDelete(formId) {
-        // Función confirmDelete llamada para formulario
-
         Swal.fire({
             title: '¿Estás seguro?',
             text: "Esta acción no se puede deshacer",
@@ -232,19 +185,11 @@
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Usuario confirmó eliminación
                 const form = document.getElementById(formId);
-                // Formulario encontrado
-
                 if (form) {
-                    // Enviando formulario
                     form.submit();
-                } else {
-                    // No se encontró el formulario con ID
                 }
             }
         });
     }
-
-
 </script>

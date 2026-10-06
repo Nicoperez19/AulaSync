@@ -203,34 +203,34 @@
 
             {{-- Barra de Acciones Masivas --}}
             @if(count($selectedClases) > 0 || $selectAllFiltered)
-                <div class="mb-4 bg-[#EFF6FF] text-[#1E3A8A] px-5 py-3.5 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3 border border-[#BFDBFE] transition-all duration-300">
+                <div class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200">
                     <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-[#2563EB]/10 rounded-lg text-[#2563EB] border border-[#2563EB]/20">
-                            <i class="fas fa-check-double text-xl"></i>
+                        <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700 border border-slate-300/60">
+                            <i class="fas fa-check-double text-lg"></i>
                         </div>
                         <div>
-                            <p class="font-bold text-base text-[#1E3A8A] flex items-center gap-2">
+                            <p class="font-semibold text-sm text-slate-900 flex items-center gap-2">
                                 @if($selectAllFiltered)
                                     <span>{{ $totalNoRealizadasFiltradas }} clases seleccionadas</span>
-                                    <span class="text-xs px-2.5 py-0.5 bg-[#BFDBFE] text-[#1E3A8A] rounded-full font-extrabold uppercase tracking-wide">Filtro completo</span>
+                                    <span class="text-[11px] px-2 py-0.5 bg-slate-200 text-slate-700 rounded-md font-medium">Filtro completo</span>
                                 @else
                                     <span>{{ count($selectedClases) }} {{ count($selectedClases) === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
                                 @endif
                             </p>
-                            <p class="text-xs text-[#1E3A8A]/80">
-                                Aplica una justificación en lote a todas las clases seleccionadas con un único motivo y detalle.
+                            <p class="text-xs text-slate-500">
+                                Justifica en lote las clases seleccionadas con un único motivo y detalle.
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2.5">
+                    <div class="flex items-center gap-2">
                         <button type="button" wire:click="limpiarSeleccion" 
-                                class="px-3.5 py-2 text-xs font-semibold text-[#1E3A8A] hover:text-[#1E3A8A] bg-white/70 hover:bg-[#BFDBFE]/60 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+                                class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
                             <i class="fas fa-times"></i> Cancelar
                         </button>
                         <button type="button" wire:click="abrirModalJustificarMasivo" 
-                                class="px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs sm:text-sm font-black rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
-                            <i class="fas fa-shield-alt text-base"></i>
+                                class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-shield-alt text-sm"></i>
                             <span>Justificar Seleccionadas</span>
                         </button>
                     </div>
@@ -240,20 +240,20 @@
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 {{-- Banner de Selección Global (Estilo Gmail) --}}
                 @if($selectAllPage && $totalNoRealizadasFiltradas > count($currentPageNoRealizadasKeys))
-                    <div class="bg-blue-50 border-b border-blue-200 text-blue-900 px-4 py-2.5 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                    <div class="bg-slate-100/70 border-b border-slate-200 text-slate-700 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
                         <div class="flex items-center gap-2">
-                            <i class="fas fa-info-circle text-blue-600 text-base"></i>
+                            <i class="fas fa-info-circle text-slate-500 text-sm"></i>
                             @if($selectAllFiltered)
                                 <span>Están seleccionadas <strong>todas las {{ $totalNoRealizadasFiltradas }} clases no registradas</strong> de esta búsqueda.</span>
                             @else
                                 <span>Has seleccionado las <strong>{{ count($currentPageNoRealizadasKeys) }}</strong> clases no registradas de esta página.</span>
-                                <button type="button" wire:click="seleccionarTodoElFiltro" class="font-bold underline text-blue-700 hover:text-blue-950 cursor-pointer ml-1">
+                                <button type="button" wire:click="seleccionarTodoElFiltro" class="font-semibold underline text-slate-900 hover:text-slate-700 cursor-pointer ml-1">
                                     Seleccionar las {{ $totalNoRealizadasFiltradas }} clases encontradas en esta búsqueda
                                 </button>
                             @endif
                         </div>
                         @if($selectAllFiltered)
-                            <button type="button" wire:click="limpiarSeleccion" class="text-xs font-semibold text-blue-700 hover:text-blue-900 underline cursor-pointer">
+                            <button type="button" wire:click="limpiarSeleccion" class="text-xs font-medium text-slate-600 hover:text-slate-900 underline cursor-pointer">
                                 Deshacer selección global
                             </button>
                         @endif
@@ -468,22 +468,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const cantidad = payload?.cantidad || 0;
 
         Swal.fire({
-            title: '<strong><i class="fas fa-shield-alt text-amber-500"></i> Justificación Masiva</strong>',
+            title: '<strong><i class="fas fa-shield-alt text-slate-700"></i> Justificación Masiva</strong>',
             html: `
                 <div class="text-left space-y-4">
-                    <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-lg flex items-center gap-3">
-                        <div class="p-2 bg-amber-100 rounded-lg text-amber-700">
-                            <i class="fas fa-tasks text-xl"></i>
+                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg flex items-center gap-3">
+                        <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700">
+                            <i class="fas fa-tasks text-lg"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-bold text-amber-950">Vas a justificar ${cantidad} ${cantidad === 1 ? 'clase no registrada' : 'clases no registradas'}</p>
-                            <p class="text-xs text-amber-800">Todas pasarán al estado <strong>Justificada</strong> y se reflejarán inmediatamente en las estadísticas y reportes.</p>
+                            <p class="text-sm font-semibold text-slate-900">Vas a justificar ${cantidad} ${cantidad === 1 ? 'clase no registrada' : 'clases no registradas'}</p>
+                            <p class="text-xs text-slate-600">Todas pasarán al estado <strong>Justificada</strong> y se reflejarán en las estadísticas y reportes.</p>
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Motivo Principal</label>
-                        <select id="swal-bulk-motivo-select" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                        <select id="swal-bulk-motivo-select" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-500">
                             <option value="Supervisión de Prácticas / Terreno" selected>Supervisión de Prácticas / Terreno (Campos clínicos, visitas, prácticas)</option>
                             <option value="Licencia Médica / Permiso Administrativo">Licencia Médica / Permiso Administrativo</option>
                             <option value="Comisión de Servicio / Actividad Institucional">Comisión de Servicio / Actividad Institucional</option>
@@ -496,13 +496,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Observaciones / Detalle</label>
-                        <textarea id="swal-bulk-observaciones" rows="3" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="Ej: Docente asignado a supervisión de prácticas clínicas según programación del semestre..."></textarea>
+                        <textarea id="swal-bulk-observaciones" rows="3" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-slate-400 focus:border-slate-500" placeholder="Ej: Docente asignado a supervisión de prácticas clínicas según programación del semestre..."></textarea>
                         <p class="text-[11px] text-gray-500 mt-1">Este texto quedará registrado en las observaciones de cada una de las clases seleccionadas.</p>
                     </div>
 
                     <div class="pt-2 border-t border-gray-200">
                         <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" id="swal-bulk-sobrescribir" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <input type="checkbox" id="swal-bulk-sobrescribir" class="rounded border-gray-300 text-slate-800 focus:ring-slate-500">
                             <span class="text-xs text-gray-700">Reemplazar observaciones previas (si no se marca, se añadirá al final)</span>
                         </label>
                     </div>
@@ -512,7 +512,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: `<i class="fas fa-check-circle mr-1"></i> Justificar ${cantidad} ${cantidad === 1 ? 'Clase' : 'Clases'}`,
             cancelButtonText: '<i class="fas fa-times mr-1"></i> Cancelar',
-            confirmButtonColor: '#F59E0B',
+            confirmButtonColor: '#1E293B',
             cancelButtonColor: '#6B7280',
             didOpen: () => {
                 const select = document.getElementById('swal-bulk-motivo-select');

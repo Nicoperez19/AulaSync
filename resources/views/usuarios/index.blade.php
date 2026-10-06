@@ -14,11 +14,11 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-end mb-6">
-            <x-button variant="add" class="max-w-xs gap-2" x-on:click="$dispatch('open-modal', 'add-user')">
-                <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                Agregar Usuario
+    <div class="space-y-4">
+        <div class="flex items-center justify-end">
+            <x-button variant="add" class="gap-2" x-on:click="$dispatch('open-modal', 'add-user')">
+                <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Agregar Usuario</span>
             </x-button>
         </div>
 

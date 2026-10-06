@@ -2,12 +2,15 @@
     class="sticky top z-50 flex items-center justify-between px-3 py-2 bg-light-cloud-blue sm:px-6 dark:bg-dark-eval-1 shadow-[0_4px_6px_rgba(255,255,255,0.3)]">
     <div class="flex items-center gap-3">
 
-        <!-- Botón Toggle -->
-        <x-button type="button" icon-only sr-text="Toggle sidebar" class="bg-cloud-blue-500 dark:bg-dark-eval-1 hover:bg-white/20 active:scale-95 transition-all duration-150 rounded-lg shadow-sm"
+        <!-- Botón Toggle (Sin interacción de colores, solo alterna estado expandido/colapsado) -->
+        <button type="button" 
+            aria-label="Alternar menú lateral" 
+            title="Alternar menú lateral"
+            class="inline-flex items-center justify-center p-2 text-white hover:bg-white/10 active:bg-white/20 rounded-md focus:outline-none transition-all duration-150"
             x-on:click="isSidebarOpen = !isSidebarOpen">
-            <x-icons.menu-fold-right x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
-            <x-icons.menu-fold-left x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
-        </x-button>
+            <x-icons.menu-fold-right x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
+            <x-icons.menu-fold-left x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6" />
+        </button>
 
         <!-- Logo -->
         <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="flex items-center">
