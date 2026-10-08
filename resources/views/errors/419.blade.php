@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Página Expirada - SIA | AulaSync</title>
+    <title>Página Expirada - SIA | Sistema de Información de Aulas</title>
 
     <!-- Fuentes & Iconos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,7 +41,7 @@
 
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-400">
-            AulaSync &bull; Sistema de Información de Aulas
+            SIA &bull; Sistema de Información de Aulas
         </div>
     </div>
 </body>

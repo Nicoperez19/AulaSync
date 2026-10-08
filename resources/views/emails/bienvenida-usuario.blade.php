@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido a AulaSync</title>
+    <title>Bienvenido a SIA</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -134,13 +134,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>AulaSync</h1>
+            <h1>SIA | Sistema de Información de Aulas</h1>
             <p>Plataforma de GestiÃ³n AcadÃ©mica</p>
         </div>
         <div class="content">
             <div class="greeting">Â¡Hola, {{ $user->name }}!</div>
             <p class="intro-text">
-                Se ha creado tu cuenta exitosamente en <strong>AulaSync</strong>. A continuaciÃ³n, te compartimos tus datos y credenciales para acceder a la plataforma:
+                Se ha creado tu cuenta exitosamente en <strong>SIA | Sistema de Información de Aulas</strong>. A continuaciÃ³n, te compartimos tus datos y credenciales para acceder a la plataforma:
             </p>
 
             <div class="card">
@@ -178,12 +178,12 @@
             </div>
 
             <div class="button-container">
-                <a href="{{ $loginUrl }}" class="btn" target="_blank">Iniciar SesiÃ³n en AulaSync</a>
+                <a href="{{ $loginUrl }}" class="btn" target="_blank">Iniciar SesiÃ³n en SIA</a>
             </div>
         </div>
         <div class="footer">
-            <p>Este es un correo automÃ¡tico enviado por el sistema AulaSync. Por favor, no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} AulaSync. Todos los derechos reservados.</p>
+            <p>Este es un correo automÃ¡tico enviado por el sistema SIA | Sistema de Información de Aulas. Por favor, no respondas a este mensaje.</p>
+            <p>&copy; {{ date('Y') }} SIA | Sistema de Información de Aulas. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

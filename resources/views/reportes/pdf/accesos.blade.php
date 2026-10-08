@@ -111,7 +111,7 @@
 <body>
     <div class=header>
         <h1>Reporte de Accesos Registrados</h1>
-        <p>AulaSync | Sistema de Información de Aulas</p>
+        <p>SIA | Sistema de Información de Aulas</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
@@ -167,7 +167,7 @@
     </table>
 
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por AulaSync</p>
+        <p>Este reporte fue generado automáticamente por SIA</p>
     </div>
 </body>
 </html>
