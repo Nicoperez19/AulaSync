@@ -51,38 +51,33 @@ class SedeSelectionController extends Controller
     {
         $sede = Sede::with('tenant')->findOrFail($sedeId);
 
-        if (!$sede->tenant || !$sede->tenant->is_active) {
+        $tenantService = app(\App\Services\TenantSessionService::class);
+        if (!$tenantService->activar($sede)) {
             return back()->with('error', 'Esta sede no está disponible actualmente.');
         }
-
-        // Almacenar el tenant en la sesión
-        // El sistema ahora identifica tenants por sesión en lugar de subdominio
-
-        session(['tenant_id' => $sede->tenant->id]);
-        session()->save(); // Forzar guardado inmediato
-
-
-        // Establecer el tenant como actual
-        $sede->tenant->makeCurrent();
 
         // DEBUG: Log para verificar
         $user = Auth::user();
 
+        // Si es Profesor, NUNCA debe ver el wizard
+        if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
+            if ($sede->tenant->needsInitialization()) {
+                return redirect()->route('docente.sede-no-inicializada');
+            }
+            return redirect()->route('docente.dashboard');
+        }
 
-        // Verificar si el tenant necesita inicialización
+        // Verificar si el tenant necesita inicialización (para otros roles)
         if ($sede->tenant->needsInitialization()) {
-
             return redirect()->route('tenant.initialization.index');
         }
 
         // Si es Control Docente, redirigir directamente al plano
         if ($user->hasRole('Control Docente')) {
-
             return redirect()->route('plano.index');
         }
 
         // Ya autenticado y tenant seleccionado, redirigir al dashboard según rol
-
         return $this->redirectByRole();
     }
 }

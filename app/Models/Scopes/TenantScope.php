@@ -56,7 +56,10 @@ class TenantScope implements Scope
         // 'modulos': los bloques horarios (LU.1, MA.3...) son iguales en todas las sedes.
         // 'periodos_academicos': definidos a nivel global/central.
         // 'sedes', 'universidades': catálogos centrales.
-        $tablasGlobales = ['modulos', 'periodos_academicos', 'sedes', 'universidades', 'dias_feriados', 'cursos_verano'];
+        $tablasGlobales = [
+            'modulos', 'periodos_academicos', 'sedes', 'universidades', 'dias_feriados', 'cursos_verano',
+            'sesiones_asistencia', 'asistencia_estudiantes', 'estudiantes', 'inscripciones'
+        ];
         if (in_array($table, $tablasGlobales)) {
             return;
         }

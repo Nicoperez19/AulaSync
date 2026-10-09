@@ -18,6 +18,11 @@ trait RedirectByRole
         if ($user->hasRole('Control Docente')) {
             return redirect()->route('plano.index');
         }
+
+        // Profesor redirige al Portal Docente
+        if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
+            return redirect()->route('docente.dashboard');
+        }
         
         // Verificar si el usuario tiene el permiso dashboard
         $hasDashboardPermission = false;
