@@ -84,5 +84,6 @@ class Kernel extends HttpKernel
         'extend.execution' => \App\Http\Middleware\ExtendExecutionTime::class,
         'tenant' => \App\Http\Middleware\TenantMiddleware::class,
         'tenant.init' => \App\Http\Middleware\CheckTenantInitialization::class,
+        'portal.docente' => \App\Http\Middleware\PortalDocente::class,
     ];
 }

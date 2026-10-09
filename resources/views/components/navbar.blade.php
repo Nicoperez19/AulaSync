@@ -13,7 +13,7 @@
         </button>
 
         <!-- Logo -->
-        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="flex items-center">
+        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasRole('Administrador') ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
             <x-application-logo-navbar />
         </a>
     </div>

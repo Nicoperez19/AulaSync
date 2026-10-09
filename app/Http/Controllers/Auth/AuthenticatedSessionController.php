@@ -80,6 +80,46 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
         }
 
+        // Si el usuario es Profesor (y no es superusuario ni administrador maestro)
+        if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
+            Log::info('✅ Profesor detectado, activando sede y redirigiendo al portal docente', [
+                'run' => $user->run,
+                'id_sede' => $user->id_sede,
+            ]);
+
+            if (!$user->id_sede) {
+                Log::warning('❌ Profesor sin sede asignada', ['run' => $user->run]);
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'Tu cuenta de docente no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
+            }
+
+            $tenantService = app(\App\Services\TenantSessionService::class);
+            $sede = $tenantService->activarPorIdSede($user->id_sede);
+
+            if (!$sede) {
+                Log::warning('❌ Sede del profesor no disponible o inactiva', [
+                    'run' => $user->run,
+                    'id_sede' => $user->id_sede,
+                ]);
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'La sede asignada a tu cuenta no está disponible actualmente.');
+            }
+
+            if ($sede->tenant && $sede->tenant->needsInitialization()) {
+                Log::warning('⚠️ Sede del profesor no inicializada', [
+                    'run' => $user->run,
+                    'id_sede' => $user->id_sede,
+                ]);
+                return redirect()->route('docente.sede-no-inicializada');
+            }
+
+            return redirect()->route('docente.dashboard');
+        }
+
         // Si el usuario es superusuario, administrador o usuario maestro (19716146), mostrar selección de sedes
         if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
             Log::info('✅ Superusuario / Administrador Maestro detectado, mostrando selección de sedes', [

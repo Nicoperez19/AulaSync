@@ -24,6 +24,7 @@ class TenantMiddleware
         'password.request',
         'password.reset',
         'verification.notice',
+        'docente.sede-no-inicializada',
     ];
 
     /**
@@ -34,6 +35,7 @@ class TenantMiddleware
         'sedes/selection',
         'sedes/redirect',
         'tenant/initialization',
+        'docente/sede-no-inicializada',
         'login',
         'logout',
         'register',
@@ -116,6 +118,9 @@ class TenantMiddleware
             // ¡IMPORTANTE! Si ya estamos en las rutas de inicialización, las exclusiones de arriba (PASO 2)
             // ya habrán retornado $next, así que aquí solo llegan las rutas NO excluidas (ej. dashboard).
             if ($tenant->needsInitialization()) {
+                if (Auth::check() && Auth::user()->hasRole('Profesor') && !Auth::user()->is_superuser && !Auth::user()->hasRole('Super Admin') && (string)Auth::user()->run !== '19716146') {
+                    return redirect()->route('docente.sede-no-inicializada');
+                }
                 return redirect()->route('tenant.initialization.index');
             }
 

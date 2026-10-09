@@ -1,4 +1,24 @@
 <nav aria-label="main" class="flex flex-col gap-1.5 py-1 text-white">
+    <!-- Portal Docente y Reportes de Asistencia - Para profesores o superadmin -->
+    @if(auth()->check() && (auth()->user()->hasRole('Profesor') || auth()->user()->is_superuser || auth()->user()->hasRole('Super Admin') || (string)auth()->user()->run === '19716146'))
+    <x-sidebar.link title="Portal Docente" href="{{ route('docente.dashboard') }}" :isActive="request()->routeIs('docente.dashboard') || request()->routeIs('docente.asistencia.*')">
+        <x-slot name="icon">
+            <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-graduation-cap text-lg flex items-center justify-center" aria-hidden="true"></i>
+        </x-slot>
+    </x-sidebar.link>
+
+    <x-sidebar.link title="Reportes" href="{{ route('docente.reportes-asistencia.index') }}" :isActive="request()->routeIs('docente.reportes-asistencia.*')">
+        <x-slot name="icon">
+            <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-chart-column text-lg flex items-center justify-center" aria-hidden="true"></i>
+        </x-slot>
+    </x-sidebar.link>
+    @endif
+
+    @php
+        $esDocentePuro = auth()->check() && auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !auth()->user()->is_superuser;
+    @endphp
+
+    @if(!$esDocentePuro)
     <!-- Dashboard - Solo Administrador y Supervisor (NO Usuario) -->
     @role('Administrador|Supervisor')
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">
@@ -225,4 +245,5 @@
             :isActive="request()->routeIs('maps.index')" />
     </x-sidebar.dropdown>
     @endrole
+    @endif
 </nav>

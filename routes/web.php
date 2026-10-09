@@ -456,6 +456,7 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
 });
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/docente.php';
 
 // Rutas para Acciones Rápidas (Mantenedores)
 Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
