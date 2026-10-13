@@ -58,6 +58,7 @@ class ClasesNoRealizadasTable extends Component
         'reagendarClase',
         'marcarComoRecuperada',
         'ejecutarJustificacionMasiva',
+        'ejecutarRegistroMasivo',
     ];
 
     public function mount()
@@ -150,14 +151,17 @@ class ClasesNoRealizadasTable extends Component
         $this->todasLasClasesFiltradasCache = null;
 
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
-            $this->fecha_inicio,
-            $this->fecha_fin,
-            $this->periodo,
-            $this->ua,
-            $this->estado,
-        ]));
-        \Illuminate\Support\Facades\Cache::forget($cacheKey);
+        $estados = ['', 'no_realizada', 'realizada', 'justificado', 'pendiente'];
+        foreach ($estados as $est) {
+            $key = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
+                $this->fecha_inicio,
+                $this->fecha_fin,
+                $this->periodo,
+                $this->ua,
+                $est,
+            ]));
+            \Illuminate\Support\Facades\Cache::forget($key);
+        }
     }
 
     public function getEstadoNombreProperty()
@@ -356,6 +360,103 @@ class ClasesNoRealizadasTable extends Component
             ]);
             $this->dispatch('show-error', [
                 'message' => 'Error al procesar la justificación masiva: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function abrirModalRegistrarMasivo()
+    {
+        $clasesFiltradas = $this->getClasesFiltradasCollection();
+        $noRealizadas = $clasesFiltradas->where('estado', 'No Registrada');
+
+        if ($this->selectAllFiltered) {
+            $cantidad = $noRealizadas->count();
+        } else {
+            $cantidad = $noRealizadas->whereIn('unique_key', $this->selectedClases)->count();
+        }
+
+        if ($cantidad === 0) {
+            $this->dispatch('show-error', ['message' => 'No hay clases no registradas seleccionadas para registrar.']);
+            return;
+        }
+
+        $this->dispatch('show-bulk-register-modal', [
+            'cantidad' => $cantidad,
+        ]);
+    }
+
+    public function ejecutarRegistroMasivo($motivo, $observaciones, $sobrescribir = false)
+    {
+        $motivo = trim($motivo);
+        if (empty($motivo)) {
+            $motivo = 'Docente dictó la clase (asistencia regularizada)';
+        }
+
+        $observaciones = trim($observaciones);
+
+        try {
+            $clasesFiltradas = $this->getClasesFiltradasCollection();
+            $candidatas = $clasesFiltradas->where('estado', 'No Registrada');
+
+            if (!$this->selectAllFiltered) {
+                $candidatas = $candidatas->whereIn('unique_key', $this->selectedClases);
+            }
+
+            if ($candidatas->isEmpty()) {
+                $this->dispatch('show-error', ['message' => 'No se encontraron clases válidas para registrar.']);
+                return;
+            }
+
+            $usuarioActual = auth()->user()->name ?? 'Administrador';
+            $fechaHora = Carbon::now()->format('d/m/Y H:i');
+            $notaAuditoria = "✓ Registro Masivo aplicado por {$usuarioActual} el {$fechaHora}. Motivo: {$motivo}";
+            if (!empty($observaciones)) {
+                $notaAuditoria .= " - Detalle: {$observaciones}";
+            }
+
+            $procesadas = 0;
+
+            DB::beginTransaction();
+
+            foreach ($candidatas as $claseData) {
+                $claseModel = $this->materializarClaseNoRealizada($claseData);
+
+                $nuevaObs = $notaAuditoria;
+                if (!$sobrescribir && !empty($claseModel->observaciones)) {
+                    $nuevaObs = $claseModel->observaciones . "\n\n" . $notaAuditoria;
+                }
+
+                $claseModel->update([
+                    'estado' => 'realizada',
+                    'motivo' => $motivo,
+                    'observaciones' => $nuevaObs,
+                ]);
+
+                $procesadas++;
+            }
+
+            DB::commit();
+
+            $this->limpiarSeleccion();
+            $this->refresh();
+
+            $this->dispatch('show-success', [
+                'message' => "Se registraron exitosamente {$procesadas} clases con estado Registrada."
+            ]);
+
+            Log::info("Registro masivo completado exitosamente", [
+                'usuario' => $usuarioActual,
+                'clases_registradas' => $procesadas,
+                'motivo' => $motivo,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en registro masivo: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $this->dispatch('show-error', [
+                'message' => 'Error al procesar el registro masivo: ' . $e->getMessage()
             ]);
         }
     }

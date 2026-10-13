@@ -218,15 +218,20 @@
                                 @endif
                             </p>
                             <p class="text-xs text-slate-500">
-                                Justifica en lote las clases seleccionadas con un único motivo y detalle.
+                                Acciones masivas para registrar o justificar las clases no registradas seleccionadas.
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <button type="button" wire:click="limpiarSeleccion" 
                                 class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
                             <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" wire:click="abrirModalRegistrarMasivo" 
+                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-check-circle text-sm"></i>
+                            <span>Cambiar a Registradas</span>
                         </button>
                         <button type="button" wire:click="abrirModalJustificarMasivo" 
                                 class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer">
@@ -310,7 +315,7 @@
                                                    value="{{ $clase['unique_key'] }}" 
                                                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer">
                                         @else
-                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden justificar clases no registradas">
+                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden seleccionar clases no registradas">
                                         @endif
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
@@ -559,6 +564,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 window.Livewire.find('{{ $this->getId() }}').call('ejecutarJustificacionMasiva', motivo, observaciones, sobrescribir);
+            }
+        });
+    });
+
+    // Listener para abrir modal de registro masivo (cambiar a Registrada)
+    Livewire.on('show-bulk-register-modal', (data) => {
+        const payload = Array.isArray(data) ? data[0] : data;
+        const cantidad = payload?.cantidad || 0;
+
+        Swal.fire({
+            title: '<strong><i class="fas fa-check-circle text-indigo-600"></i> Registrar Clases Masivamente</strong>',
+            html: `
+                <div class="text-left space-y-4">
+                    <div class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-lg flex items-center gap-3">
+                        <div class="p-2 bg-indigo-100 rounded-lg text-indigo-700">
+                            <i class="fas fa-clipboard-check text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-indigo-950">Vas a registrar ${cantidad} ${cantidad === 1 ? 'clase no registrada' : 'clases no registradas'}</p>
+                            <p class="text-xs text-indigo-700">Todas pasarán al estado <strong>Registrada (Docente realizó la clase)</strong> y se reflejarán en las estadísticas.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Motivo / Causa del Registro</label>
+                        <select id="swal-bulk-reg-motivo-select" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500">
+                            <option value="Docente dictó la clase (asistencia regularizada)" selected>Docente dictó la clase (asistencia regularizada)</option>
+                            <option value="Firma en libro / Registro manual en sala">Firma en libro / Registro manual en sala</option>
+                            <option value="Problema técnico con marcación QR / Sistema">Problema técnico con marcación QR / Sistema</option>
+                            <option value="Validación de Jefatura de Carrera / Coordinación">Validación de Jefatura de Carrera / Coordinación</option>
+                            <option value="__OTRO__">Otro motivo (especificar)...</option>
+                        </select>
+                        <input type="text" id="swal-bulk-reg-motivo-custom" class="w-full p-2 text-sm border border-gray-300 rounded-lg mt-2 hidden" placeholder="Escribe el motivo personalizado...">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Observaciones / Detalle (Opcional)</label>
+                        <textarea id="swal-bulk-reg-observaciones" rows="3" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500" placeholder="Ingrese observaciones opcionales (ej: Regularizado según planilla de asistencia...)..."></textarea>
+                        <p class="text-[11px] text-gray-500 mt-1">Este texto quedará guardado en las observaciones de cada una de las clases seleccionadas.</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-200">
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="swal-bulk-reg-sobrescribir" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-xs text-gray-700">Reemplazar observaciones previas (si no se marca, se añadirá al final)</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            width: 580,
+            showCancelButton: true,
+            confirmButtonText: `<i class="fas fa-check-circle mr-1"></i> Registrar ${cantidad} ${cantidad === 1 ? 'Clase' : 'Clases'}`,
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Cancelar',
+            confirmButtonColor: '#4F46E5',
+            cancelButtonColor: '#6B7280',
+            didOpen: () => {
+                const select = document.getElementById('swal-bulk-reg-motivo-select');
+                const customInput = document.getElementById('swal-bulk-reg-motivo-custom');
+                select.addEventListener('change', () => {
+                    if (select.value === '__OTRO__') {
+                        customInput.classList.remove('hidden');
+                        customInput.focus();
+                    } else {
+                        customInput.classList.add('hidden');
+                    }
+                });
+            },
+            preConfirm: () => {
+                const select = document.getElementById('swal-bulk-reg-motivo-select');
+                const customInput = document.getElementById('swal-bulk-reg-motivo-custom');
+                let motivo = select.value === '__OTRO__' ? customInput.value.trim() : select.value;
+                const observaciones = document.getElementById('swal-bulk-reg-observaciones').value.trim();
+                const sobrescribir = document.getElementById('swal-bulk-reg-sobrescribir').checked;
+
+                if (!motivo) {
+                    Swal.showValidationMessage('Por favor especifica un motivo');
+                    return false;
+                }
+
+                if (observaciones.length > 1000) {
+                    Swal.showValidationMessage('Las observaciones no pueden exceder 1000 caracteres');
+                    return false;
+                }
+
+                return { motivo, observaciones, sobrescribir };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const { motivo, observaciones, sobrescribir } = result.value;
+
+                Swal.fire({
+                    title: 'Aplicando registro masivo...',
+                    text: `Actualizando ${cantidad} clases a estado Registrada, por favor espera.`,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                window.Livewire.find('{{ $this->getId() }}').call('ejecutarRegistroMasivo', motivo, observaciones, sobrescribir);
             }
         });
     });

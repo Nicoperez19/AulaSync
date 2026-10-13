@@ -102,6 +102,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
         $estadoTexto = match($clase->estado) {
             'no_realizada' => 'No Realizada',
             'justificado' => 'Justificada',
+            'realizada', 'registrada' => 'Registrada',
             'recuperada' => 'Recuperada',
             'pendiente' => 'Pendiente de Recuperación',
             default => ucfirst($clase->estado),
