@@ -550,6 +550,9 @@ class ApiReservaController extends Controller
                 'estado' => 'activa'
             ]);
 
+            // Enviar comprobante de reserva por correo
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
+
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva espontánea registrada correctamente',

@@ -559,7 +559,11 @@ class SolicitanteController extends Controller
                 ->where('id_espacio', $request->id_espacio)
                 ->update(['estado' => 'Ocupado', 'updated_at' => $ahora]);
 
-
+            // Enviar comprobante de reserva por correo
+            $reservaModel = Reserva::on('tenant')->where('id_reserva', $idReserva)->first();
+            if ($reservaModel) {
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($reservaModel, $solicitante->correo ?? null);
+            }
 
             return response()->json([
                 'success' => true,

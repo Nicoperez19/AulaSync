@@ -165,6 +165,9 @@ class ProfesorController extends Controller
                 $profesor->run_profesor
             );
 
+            // Enviar comprobante de reserva por correo
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
+
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva creada exitosamente para el profesor',
