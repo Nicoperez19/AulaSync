@@ -270,6 +270,8 @@ Route::group(['middleware' => ['permission:mantenedor de sedes']], function () {
 Route::group(['middleware' => ['permission:mantenedor de configuracion']], function () {
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
     Route::post('/configuracion', [ConfiguracionController::class, 'store'])->name('configuracion.store');
+    Route::post('/configuracion/guardar-general', [ConfiguracionController::class, 'guardarGeneral'])->name('configuracion.guardar-general');
+    Route::delete('/configuracion/eliminar-logo/{id_sede}', [ConfiguracionController::class, 'eliminarLogo'])->name('configuracion.eliminar-logo');
     Route::get('/configuracion/{id}/edit', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
     Route::put('/configuracion/{id}', [ConfiguracionController::class, 'update'])->name('configuracion.update');
     Route::delete('/configuracion/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.destroy');

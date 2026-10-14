@@ -149,16 +149,28 @@ class DataLoadController extends Controller
             ];
 
             $colSemestreIdx = null;
-            $headerSemestreEncontrado = null;
+            $colPeriodoAcademicoIdx = null;
+            $headerPeriodoAcademicoEncontrado = null;
+            $headersPeriodoAcademico = [
+                'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
+                'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
+                'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE'
+            ];
             foreach ($headers as $colIdx => $headerName) {
-                if (in_array($headerName, $posiblesHeadersSemestre)) {
+            foreach ($headers as $colIdx => $headerName) {
                     $colSemestreIdx = $colIdx;
-                    $headerSemestreEncontrado = $headerName;
-                    break;
+                    $colSemestreIdx = $colIdx;
+                }
+
+                // "SEMESTRE" a secas suele indicar el nivel curricular de la asignatura.
+                if ($colPeriodoAcademicoIdx === null && in_array($headerName, $headersPeriodoAcademico)) {
+                    $colPeriodoAcademicoIdx = $colIdx;
+                    $headerPeriodoAcademicoEncontrado = $headerName;
                 }
             }
 
-            if ($colSemestreIdx !== null) {
+            if ($colPeriodoAcademicoIdx !== null) {
                 $parseSemestreValor = function($val) {
                     if ($val === null || $val === '') return null;
                     $v = strtoupper(trim((string)$val));
@@ -193,7 +205,7 @@ class DataLoadController extends Controller
                 $filasVerificadas = 0;
 
                 for ($r = 1; $r < count($rows); $r++) {
-                    $rawVal = $rows[$r][$colSemestreIdx] ?? null;
+                    $rawVal = $rows[$r][$colPeriodoAcademicoIdx] ?? null;
                     $res = $parseSemestreValor($rawVal);
                     if ($res === 1 || $res === 2) {
                         $conteoSemestres[$res]++;
@@ -221,7 +233,7 @@ class DataLoadController extends Controller
                             'registros_cargados' => 0
                         ]);
 
-                        $msgError = "Inconsistencia de Semestre: El archivo contiene asignaturas del Semestre {$semestreArchivo} (detectado en columna '{$headerSemestreEncontrado}' con {$conteoSemestres[$semestreArchivo]} filas), pero seleccionaste el Semestre {$semestreSeleccionadoInt} en el formulario. Por favor verifica el archivo o selecciona el Semestre {$semestreArchivo} para procesarlo.";
+                        $msgError = "Inconsistencia de Semestre: El archivo contiene asignaturas del Semestre {$semestreArchivo} (detectado en columna '{$headerPeriodoAcademicoEncontrado}' con {$conteoSemestres[$semestreArchivo]} filas), pero seleccionaste el Semestre {$semestreSeleccionadoInt} en el formulario. Por favor verifica el archivo o selecciona el Semestre {$semestreArchivo} para procesarlo.";
                         Log::warning("⛔ " . $msgError);
 
                         return response()->json([
@@ -229,7 +241,7 @@ class DataLoadController extends Controller
                         ], 422);
                     }
 
-                    Log::info("✓ Verificación de semestre exitosa: la columna '{$headerSemestreEncontrado}' coincide con el Semestre {$semestreSeleccionadoInt} seleccionado ({$conteoSemestres[$semestreSeleccionadoInt]} filas verificadas).");
+                    Log::info("✓ Verificación de semestre exitosa: la columna '{$headerPeriodoAcademicoEncontrado}' coincide con el Semestre {$semestreSeleccionadoInt} seleccionado ({$conteoSemestres[$semestreSeleccionadoInt]} filas verificadas).");
                 }
             }
 
