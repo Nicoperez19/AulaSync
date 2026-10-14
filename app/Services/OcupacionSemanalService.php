@@ -106,10 +106,14 @@ class OcupacionSemanalService
             })
             ->get()
             ->groupBy(function ($reserva) {
-                $fecha = $reserva->fecha_reserva;
-                return $fecha instanceof Carbon 
-                    ? $fecha->format('Y-m-d') 
-                    : Carbon::parse($fecha)->format('Y-m-d');
+                try {
+                    $fecha = $reserva->fecha_reserva;
+                    return $fecha instanceof Carbon 
+                        ? $fecha->format('Y-m-d') 
+                        : Carbon::parse($fecha)->format('Y-m-d');
+                } catch (\Throwable $e) {
+                    return '';
+                }
             });
 
         // En vivo: sólo si se solicita y coincide con la semana actual
@@ -118,18 +122,22 @@ class OcupacionSemanalService
         $moduloActualNum = null;
 
         if ($incluirEstadoVivo && $esSemanaActual) {
-            $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
-            $diaHoyNormalizado = ModulosHelper::normalizarDia($diaActual);
-            $horaAhora = date('H:i:s');
+            try {
+                $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+                $diaHoyNormalizado = ModulosHelper::normalizarDia($diaActual);
+                $horaAhora = date('H:i:s');
 
-            $horariosModulos = ModulosHelper::getHorariosModulos();
-            if (isset($horariosModulos[$diaHoyNormalizado])) {
-                foreach ($horariosModulos[$diaHoyNormalizado] as $num => $horario) {
-                    if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
-                        $moduloActualNum = $num;
-                        break;
+                $horariosModulos = ModulosHelper::getHorariosModulos();
+                if (isset($horariosModulos[$diaHoyNormalizado])) {
+                    foreach ($horariosModulos[$diaHoyNormalizado] as $num => $horario) {
+                        if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
+                            $moduloActualNum = $num;
+                            break;
+                        }
                     }
                 }
+            } catch (\Throwable $e) {
+                // Continuar sin estado en vivo si falla detección de hora/locale
             }
         }
 
@@ -170,16 +178,20 @@ class OcupacionSemanalService
                             $overlap = true;
                         }
                     } else {
-                        if ($horarioModulo && $reserva->hora) {
-                            $resInicio = $reserva->hora;
-                            $resFin = $reserva->hora_salida ?: Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
-                            $modInicioHorario = $horarioModulo['inicio'];
-                            $modFinHorario = $horarioModulo['fin'];
+                        if ($horarioModulo && !empty($reserva->hora)) {
+                            try {
+                                $resInicio = $reserva->hora;
+                                $resFin = $reserva->hora_salida ?: Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
+                                $modInicioHorario = $horarioModulo['inicio'];
+                                $modFinHorario = $horarioModulo['fin'];
 
-                            $overlapStart = max($resInicio, $modInicioHorario);
-                            $overlapEnd = min($resFin, $modFinHorario);
-                            if ($overlapStart < $overlapEnd) {
-                                $overlap = true;
+                                $overlapStart = max($resInicio, $modInicioHorario);
+                                $overlapEnd = min($resFin, $modFinHorario);
+                                if ($overlapStart < $overlapEnd) {
+                                    $overlap = true;
+                                }
+                            } catch (\Throwable $e) {
+                                // Ignorar reserva si hora está malformada
                             }
                         }
                     }

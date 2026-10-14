@@ -531,18 +531,34 @@ class DashboardController extends Controller
             session_write_close();
         }
 
-        $tipoFilter = strtolower($request->query('tipo', 'todos'));
-        $fechaParam = $request->query('fecha');
-        $lunesDate = $fechaParam ? Carbon::parse($fechaParam)->startOfWeek() : now()->startOfWeek();
+        try {
+            $tipoFilter = strtolower($request->query('tipo', 'todos'));
+            $fechaParam = $request->query('fecha');
+            $lunesDate = $fechaParam ? Carbon::parse($fechaParam)->startOfWeek() : now()->startOfWeek();
 
-        $datos = $service->calcularOcupacion($lunesDate, $tipoFilter, true);
+            $datos = $service->calcularOcupacion($lunesDate, $tipoFilter, true);
 
-        return view('partials.dashboard.ocupacion_grid', [
-            'ocupacion' => $datos['ocupacion'],
-            'tipoFilter' => $tipoFilter,
-            'resumen' => $datos['resumen'],
-            'totalEspacios' => $datos['total_espacios'],
-        ])->render();
+            return view('partials.dashboard.ocupacion_grid', [
+                'ocupacion' => $datos['ocupacion'],
+                'tipoFilter' => $tipoFilter,
+                'resumen' => $datos['resumen'],
+                'totalEspacios' => $datos['total_espacios'],
+            ])->render();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error en ocupacionDatosAjax: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response(
+                '<div class="p-6 text-center text-red-600 bg-red-50 border border-red-200 rounded-xl my-4">' .
+                '<i class="fas fa-exclamation-triangle text-2xl mb-2 text-red-500 block"></i>' .
+                '<p class="font-bold">Error al calcular la ocupación:</p>' .
+                '<p class="text-xs text-red-700 mt-1 font-mono">' . htmlspecialchars($e->getMessage()) . '</p>' .
+                '</div>',
+                500
+            );
+        }
     }
 
     /**

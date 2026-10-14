@@ -52,31 +52,35 @@ class PeriodoAcademico extends Model
      */
     public static function obtenerPeriodoActual($fecha = null)
     {
-        $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
-        $fechaStr = $fecha->toDateString();
+        try {
+            $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
+            $fechaStr = $fecha->toDateString();
 
-        // 1. Buscar período vigente exactamente por fechas
-        $periodo = static::whereDate('fecha_inicio', '<=', $fechaStr)
-            ->whereDate('fecha_fin', '>=', $fechaStr)
-            ->orderBy('anio', 'desc')
-            ->orderBy('semestre', 'desc')
-            ->first();
+            // 1. Buscar período vigente exactamente por fechas
+            $periodo = static::whereDate('fecha_inicio', '<=', $fechaStr)
+                ->whereDate('fecha_fin', '>=', $fechaStr)
+                ->orderBy('anio', 'desc')
+                ->orderBy('semestre', 'desc')
+                ->first();
 
-        if ($periodo) {
-            // Auto-reparación: si el período en curso no estaba activo en BD, o hay anteriores activos, auto-sincronizar
-            if (!$periodo->activo) {
-                static::sincronizarEstadosSegunFechas($fecha);
-                $periodo->activo = true;
+            if ($periodo) {
+                // Auto-reparación: si el período en curso no estaba activo en BD, o hay anteriores activos, auto-sincronizar
+                if (!$periodo->activo) {
+                    static::sincronizarEstadosSegunFechas($fecha);
+                    $periodo->activo = true;
+                }
+                return $periodo;
             }
-            return $periodo;
-        }
 
-        // 2. Si hoy es un día entre semestres (vacaciones) y no hay fecha exacta,
-        // buscar el período marcado explícitamente como activo
-        return static::where('activo', true)
-            ->orderBy('anio', 'desc')
-            ->orderBy('semestre', 'desc')
-            ->first();
+            // 2. Si hoy es un día entre semestres (vacaciones) y no hay fecha exacta,
+            // buscar el período marcado explícitamente como activo
+            return static::where('activo', true)
+                ->orderBy('anio', 'desc')
+                ->orderBy('semestre', 'desc')
+                ->first();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

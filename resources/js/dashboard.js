@@ -312,13 +312,16 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     
     fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar ocupación');
-            }
-            return response.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
+            return response.text().then(text => {
+                if (!response.ok) {
+                    if (text && text.includes('Error al calcular')) {
+                        container.innerHTML = text;
+                        return;
+                    }
+                    throw new Error(text || 'Error al cargar ocupación');
+                }
+                container.innerHTML = text;
+            });
         })
         .catch(error => {
             console.error('Error:', error);
