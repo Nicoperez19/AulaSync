@@ -16,6 +16,8 @@ use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OcupacionHistoricoController;
+use App\Http\Controllers\AuditoriaClaseController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\PlanoDigitalController;
@@ -129,6 +131,7 @@ Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execut
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
+    Route::get('/dashboard/ocupacion/export/{format}', [DashboardController::class, 'exportOcupacion'])->name('dashboard.ocupacion.export');
     Route::get('/dashboard/status-clases', [DashboardController::class, 'statusClasesAjax'])->name('dashboard.status-clases');
 });
 
@@ -453,6 +456,16 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('uso-auditorio', [ReportController::class, 'usoAuditorio'])->name('reportes.uso-auditorio');
     Route::get('uso-auditorio/datos-historicos', [ReportController::class, 'getHistoricoAuditorio'])->name('reportes.uso-auditorio.historico');
     Route::get('uso-auditorio/export/{format}', [ReportController::class, 'exportUsoAuditorio'])->name('reportes.uso-auditorio.export');
+
+    // Histórico de Ocupación Semanal
+    Route::get('ocupacion-semanal', [OcupacionHistoricoController::class, 'index'])->name('reportes.ocupacion-semanal.index');
+    Route::get('ocupacion-semanal/export/{id}/{format}', [OcupacionHistoricoController::class, 'export'])->name('reportes.ocupacion-semanal.export');
+    Route::post('ocupacion-semanal/generar', [OcupacionHistoricoController::class, 'generarManual'])->name('reportes.ocupacion-semanal.generar');
+
+    // Auditoría de Clases y Justificaciones
+    Route::get('auditoria-clases', [AuditoriaClaseController::class, 'index'])->name('reportes.auditoria-clases.index');
+    Route::get('auditoria-clases/export/{format}', [AuditoriaClaseController::class, 'export'])->name('reportes.auditoria-clases.export');
+    Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
 });
 
 require __DIR__ . '/auth.php';

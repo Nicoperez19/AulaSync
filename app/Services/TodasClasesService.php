@@ -24,8 +24,10 @@ class TodasClasesService
         $fechaInicio = $fechaInicio ? Carbon::parse($fechaInicio) : null;
         $fechaFin = $fechaFin ? Carbon::parse($fechaFin) : null;
 
-        // Aumentar límite de memoria temporalmente para procesos grandes
-        ini_set('memory_limit', '512M');
+        // Aumentar límites de memoria y tiempo de ejecución temporalmente para procesos grandes
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+        @ini_set('max_execution_time', '180');
         
         $clasesData = new Collection();
 

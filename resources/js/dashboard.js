@@ -271,6 +271,24 @@ function cambiarTabOcupacion(tipo) {
         selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
         selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
     }
+
+    // Actualizar parámetros de tipo en los botones de exportación
+    const excelBtn = document.getElementById('btn-export-ocupacion-excel');
+    if (excelBtn) {
+        try {
+            const url = new URL(excelBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            excelBtn.href = url.toString();
+        } catch (e) {}
+    }
+    const pdfBtn = document.getElementById('btn-export-ocupacion-pdf');
+    if (pdfBtn) {
+        try {
+            const url = new URL(pdfBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            pdfBtn.href = url.toString();
+        } catch (e) {}
+    }
     
     activeTabOcupacion = tipo;
     cargarOcupacionGrid(tipo, false);
