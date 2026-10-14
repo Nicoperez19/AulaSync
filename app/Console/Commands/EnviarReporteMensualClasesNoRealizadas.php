@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\ClasesNoRealizadasReportService;
 use App\Mail\ReporteMensualClasesNoRealizadas;
-use Illuminate\Support\Facades\Mail;
+use App\Services\ClasesNoRealizadasReportService;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Mail;
 
 class EnviarReporteMensualClasesNoRealizadas extends Command
 {
@@ -52,29 +52,29 @@ class EnviarReporteMensualClasesNoRealizadas extends Command
 
             // Generar PDF
             $pdf = $this->reportService->generarPDFMensual($mes, $anio);
-            
+
             // Obtener destinatarios
-            $destinatarios = $this->option('email') 
+            $destinatarios = $this->option('email')
                 ? explode(',', $this->option('email'))
                 : explode(',', config('mail.report_recipients', 'admin@example.com'));
 
             // Enviar correo a cada destinatario
             foreach ($destinatarios as $email) {
                 $email = trim($email);
-                
+
                 $this->info("Enviando reporte a: {$email}");
-                
+
                 Mail::to($email)->send(new ReporteMensualClasesNoRealizadas($datos, $pdf));
             }
 
             $this->info('✓ Reporte mensual enviado exitosamente');
-            
+
             return Command::SUCCESS;
 
         } catch (\Exception $e) {
-            $this->error('Error al generar o enviar el reporte: ' . $e->getMessage());
+            $this->error('Error al generar o enviar el reporte: '.$e->getMessage());
             $this->error($e->getTraceAsString());
-            
+
             return Command::FAILURE;
         }
     }

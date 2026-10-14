@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class RecuperacionClase extends Model
 {
-    use HasFactory, BelongsToTenant;
-    
+    use BelongsToTenant, HasFactory;
+
     protected $connection = 'tenant';
+
     protected $table = 'recuperacion_clases';
+
     protected $primaryKey = 'id_recuperacion';
 
     protected $fillable = [
@@ -41,7 +43,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Licencia
      */
-    public function licencia()
+    public function licencia(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(LicenciaProfesor::class, 'id_licencia', 'id_licencia');
     }
@@ -49,7 +51,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Profesor
      */
-    public function profesor()
+    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
@@ -57,7 +59,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Asignatura
      */
-    public function asignatura()
+    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
@@ -65,7 +67,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Espacio original
      */
-    public function espacio()
+    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
@@ -73,7 +75,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Módulo original
      */
-    public function moduloOriginal()
+    public function moduloOriginal(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Modulo::class, 'id_modulo_original', 'id_modulo');
     }
@@ -81,7 +83,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Módulo reagendado
      */
-    public function moduloReagendado()
+    public function moduloReagendado(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Modulo::class, 'id_modulo_reagendado', 'id_modulo');
     }
@@ -89,7 +91,7 @@ class RecuperacionClase extends Model
     /**
      * Relación con Espacio reagendado
      */
-    public function espacioReagendado()
+    public function espacioReagendado(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Espacio::class, 'id_espacio_reagendado', 'id_espacio');
     }
@@ -97,7 +99,7 @@ class RecuperacionClase extends Model
     /**
      * Usuario que gestionó la recuperación
      */
-    public function gestor()
+    public function gestor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'gestionado_por', 'run');
     }

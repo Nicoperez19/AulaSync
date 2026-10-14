@@ -11,6 +11,7 @@ class DiaFeriado extends Model
     use HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'dias_feriados';
 
     protected $primaryKey = 'id_feriado';

@@ -2,18 +2,23 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class Piso extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
+
     protected $connection = 'tenant';
-    protected $table = 'pisos'; 
-    protected $primaryKey = 'id';  
-    public $incrementing = true;  
-    protected $keyType = 'int';   
+
+    protected $table = 'pisos';
+
+    protected $primaryKey = 'id';
+
+    public $incrementing = true;
+
+    protected $keyType = 'int';
 
     protected $fillable = [
         'numero_piso',
@@ -21,16 +26,17 @@ class Piso extends Model
         'id_facultad',
     ];
 
-    public function facultad()
+    public function facultad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Facultad::class, 'id_facultad');
     }
-       public function mapas()
+
+    public function mapas(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Mapa::class);
     }
 
-    public function espacios()
+    public function espacios(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Espacio::class);
     }
@@ -47,10 +53,11 @@ class Piso extends Model
             if ($this->numero_piso == 2 && (empty($value) || $value === 'Piso 2' || $value === 'VILLAGRÁN' || str_contains($value, '220'))) {
                 return 'VILLAGRÁN 220';
             }
-            if ($this->numero_piso == 3 && (empty($value) || $value === 'Piso 3' || $value === 'VILLAGRÁN' || !str_contains($value, '251'))) {
+            if ($this->numero_piso == 3 && (empty($value) || $value === 'Piso 3' || $value === 'VILLAGRÁN' || ! str_contains($value, '251'))) {
                 return 'VILLAGRÁN 251';
             }
         }
+
         return $value;
     }
 
@@ -59,6 +66,6 @@ class Piso extends Model
      */
     public function getDisplayNameAttribute()
     {
-        return $this->nombre_piso ?? 'Piso ' . $this->numero_piso;
+        return $this->nombre_piso ?? 'Piso '.$this->numero_piso;
     }
 }

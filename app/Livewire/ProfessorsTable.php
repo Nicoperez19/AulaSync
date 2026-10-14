@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Profesor;
+use App\Models\Universidad;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -11,7 +12,9 @@ class ProfessorsTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'run_profesor';
+
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -56,31 +59,31 @@ class ProfessorsTable extends Component
                 );
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
-                $universidadIds = \App\Models\Universidad::where(function($uq) use ($terms) {
+                $universidadIds = Universidad::where(function ($uq) use ($terms) {
                     foreach ($terms as $t) {
-                        $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
+                        $uq->orWhere('nombre_universidad', 'like', '%'.$t.'%');
                     }
                 })->pluck('id_universidad');
 
                 $query->where(function ($q) use ($terms, $cleanRun, $universidadIds) {
-                    if (!empty($cleanRun)) {
-                        $q->where('run_profesor', 'like', '%' . $cleanRun . '%')
-                          ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                    if (! empty($cleanRun)) {
+                        $q->where('run_profesor', 'like', '%'.$cleanRun.'%')
+                            ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%'.$cleanRun.'%']);
                     }
 
                     foreach ($terms as $t) {
-                        $q->orWhere('name', 'like', '%' . $t . '%')
-                          ->orWhere('email', 'like', '%' . $t . '%')
-                          ->orWhere('tipo_profesor', 'like', '%' . $t . '%')
-                          ->orWhereHas('carrera', function ($subQuery) use ($t) {
-                              $subQuery->where('nombre', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('facultad', function ($subQuery) use ($t) {
-                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('areaAcademica', function ($subQuery) use ($t) {
-                              $subQuery->where('nombre_area_academica', 'like', '%' . $t . '%');
-                          });
+                        $q->orWhere('name', 'like', '%'.$t.'%')
+                            ->orWhere('email', 'like', '%'.$t.'%')
+                            ->orWhere('tipo_profesor', 'like', '%'.$t.'%')
+                            ->orWhereHas('carrera', function ($subQuery) use ($t) {
+                                $subQuery->where('nombre', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('facultad', function ($subQuery) use ($t) {
+                                $subQuery->where('nombre_facultad', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('areaAcademica', function ($subQuery) use ($t) {
+                                $subQuery->where('nombre_area_academica', 'like', '%'.$t.'%');
+                            });
                     }
 
                     if ($universidadIds->isNotEmpty()) {
@@ -104,8 +107,8 @@ class ProfessorsTable extends Component
                         break;
                     case 'carrera':
                         $query->join('carreras', 'profesors.id_carrera', '=', 'carreras.id_carrera')
-                              ->orderBy('carreras.nombre', $this->sortDirection)
-                              ->select('profesors.*');
+                            ->orderBy('carreras.nombre', $this->sortDirection)
+                            ->select('profesors.*');
                         break;
                     default:
                         $query->orderBy('run_profesor', 'asc');

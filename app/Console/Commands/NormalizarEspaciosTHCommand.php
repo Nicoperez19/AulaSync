@@ -2,14 +2,14 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Tenant;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
-use App\Helpers\EspacioAliasHelper;
-use Illuminate\Support\Facades\DB;
+use App\Models\Tenant;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class NormalizarEspaciosTHCommand extends Command
 {
@@ -33,8 +33,9 @@ class NormalizarEspaciosTHCommand extends Command
             ->orWhere('prefijo_espacios', 'TH')
             ->first();
 
-        if (!$tenant) {
+        if (! $tenant) {
             $this->error('No se encontró el tenant para la sede Talcahuano (TH).');
+
             return 1;
         }
 
@@ -45,13 +46,13 @@ class NormalizarEspaciosTHCommand extends Command
             return $this->revertirNormalizacion($tenant);
         }
 
-        $this->info("=== NORMALIZACIÓN DE ESPACIOS TALCAHUANO (TH) ===" . ($dryRun ? ' (MODO SIMULACIÓN)' : ''));
+        $this->info('=== NORMALIZACIÓN DE ESPACIOS TALCAHUANO (TH) ==='.($dryRun ? ' (MODO SIMULACIÓN)' : ''));
         $this->line("Tenant encontrado: {$tenant->name} ({$tenant->domain})");
 
         // Estructura de respaldo
         $backup = [
             'created_at' => Carbon::now()->toDateTimeString(),
-            'tenant_id'  => $tenant->id,
+            'tenant_id' => $tenant->id,
             'planificaciones_regulares' => [],
             'planificaciones_colaboradores' => [],
         ];
@@ -69,27 +70,27 @@ class NormalizarEspaciosTHCommand extends Command
         $this->normalizarPlanificacionesColaboradores($dryRun, $backup);
 
         // Guardar archivo de respaldo si se aplicaron cambios (silenciando si hay problemas de permisos en el servidor)
-        if (!$dryRun) {
+        if (! $dryRun) {
             try {
                 $backupDir = storage_path('app/backups');
-                if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
-                    @\Illuminate\Support\Facades\File::makeDirectory($backupDir, 0755, true);
+                if (! File::exists($backupDir)) {
+                    @File::makeDirectory($backupDir, 0755, true);
                 }
-                $filename = 'normalizacion_th_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
-                $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
-                @\Illuminate\Support\Facades\File::put($fullPath, json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                $filename = 'normalizacion_th_backup_'.Carbon::now()->format('Y-m-d_His').'.json';
+                $fullPath = $backupDir.DIRECTORY_SEPARATOR.$filename;
+                @File::put($fullPath, json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 $this->newLine();
-                $this->info("==================================================================");
-                $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
+                $this->info('==================================================================');
+                $this->info('🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:');
                 $this->info("   Archivo: {$fullPath}");
-                $this->info("   Si necesitas revertir estos cambios en cualquier momento, ejecuta:");
-                $this->line("   <fg=yellow>php artisan espacios:normalizar-th --revertir</>");
-                $this->info("==================================================================");
+                $this->info('   Si necesitas revertir estos cambios en cualquier momento, ejecuta:');
+                $this->line('   <fg=yellow>php artisan espacios:normalizar-th --revertir</>');
+                $this->info('==================================================================');
             } catch (\Throwable $e) {
                 // Omitir si hay restricciones de permisos en storage de Linux
                 $this->newLine();
-                $this->warn("Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).");
+                $this->warn('Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).');
             }
         }
 
@@ -102,11 +103,12 @@ class NormalizarEspaciosTHCommand extends Command
             ]);
         } else {
             $this->newLine();
-            $this->line("<fg=yellow>Nota: Para regularizar reservas históricas pasadas, ejecuta:</>");
-            $this->line("<fg=cyan>php artisan reservas:reconciliar-espontaneas --desde=" . Carbon::now()->subMonth()->startOfMonth()->toDateString() . "</>");
+            $this->line('<fg=yellow>Nota: Para regularizar reservas históricas pasadas, ejecuta:</>');
+            $this->line('<fg=cyan>php artisan reservas:reconciliar-espontaneas --desde='.Carbon::now()->subMonth()->startOfMonth()->toDateString().'</>');
         }
 
         $this->info("\nProceso de normalización finalizado con éxito.");
+
         return 0;
     }
 
@@ -123,7 +125,7 @@ class NormalizarEspaciosTHCommand extends Command
 
         // Caso TH-L09 (Laboratorio Termodinámica / Refrigeración)
         $lab09 = Espacio::withoutGlobalScope('tenant')->find('TH-L09');
-        if (!$lab09) {
+        if (! $lab09) {
             // Verificar si existía como TH-30 o TH-LAB09
             $antiguo09 = Espacio::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
@@ -131,7 +133,7 @@ class NormalizarEspaciosTHCommand extends Command
 
             if ($antiguo09) {
                 $this->line("  → Renombrando espacio {$antiguo09->id_espacio} a TH-L09...");
-                if (!$dryRun) {
+                if (! $dryRun) {
                     DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=0;');
                     DB::connection('tenant')->table('espacios')
                         ->where('id_espacio', $antiguo09->id_espacio)
@@ -143,8 +145,8 @@ class NormalizarEspaciosTHCommand extends Command
                     DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=1;');
                 }
             } else {
-                $this->line("  → Creando espacio TH-L09 (Laboratorio Termodinámica)...");
-                if (!$dryRun) {
+                $this->line('  → Creando espacio TH-L09 (Laboratorio Termodinámica)...');
+                if (! $dryRun) {
                     $nuevo = Espacio::create([
                         'id_espacio' => 'TH-L09',
                         'nombre_espacio' => 'Laboratorio Termodinámica',
@@ -156,26 +158,27 @@ class NormalizarEspaciosTHCommand extends Command
                     ]);
                     try {
                         $nuevo->generateQR();
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                    }
                 }
             }
         } else {
-            $this->line("  ✓ Espacio TH-L09 ya existe.");
-            if (!$dryRun) {
+            $this->line('  ✓ Espacio TH-L09 ya existe.');
+            if (! $dryRun) {
                 Espacio::withoutGlobalScope('tenant')->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])->delete();
             }
         }
 
         // Caso TH-L08 (Taller de Construcción)
         $lab08 = Espacio::withoutGlobalScope('tenant')->find('TH-L08');
-        if (!$lab08) {
+        if (! $lab08) {
             $antiguo08 = Espacio::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
                 ->first();
 
             if ($antiguo08) {
                 $this->line("  → Renombrando espacio {$antiguo08->id_espacio} a TH-L08...");
-                if (!$dryRun) {
+                if (! $dryRun) {
                     DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=0;');
                     DB::connection('tenant')->table('espacios')
                         ->where('id_espacio', $antiguo08->id_espacio)
@@ -187,8 +190,8 @@ class NormalizarEspaciosTHCommand extends Command
                     DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=1;');
                 }
             } else {
-                $this->line("  → Creando espacio TH-L08 (Taller de Construcción)...");
-                if (!$dryRun) {
+                $this->line('  → Creando espacio TH-L08 (Taller de Construcción)...');
+                if (! $dryRun) {
                     $nuevo = Espacio::create([
                         'id_espacio' => 'TH-L08',
                         'nombre_espacio' => 'Taller de Construcción',
@@ -200,12 +203,13 @@ class NormalizarEspaciosTHCommand extends Command
                     ]);
                     try {
                         $nuevo->generateQR();
-                    } catch (\Exception $e) {}
+                    } catch (\Exception $e) {
+                    }
                 }
             }
         } else {
-            $this->line("  ✓ Espacio TH-L08 ya existe.");
-            if (!$dryRun) {
+            $this->line('  ✓ Espacio TH-L08 ya existe.');
+            if (! $dryRun) {
                 Espacio::withoutGlobalScope('tenant')->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])->delete();
             }
         }
@@ -221,7 +225,7 @@ class NormalizarEspaciosTHCommand extends Command
             ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
             ->get();
 
-        $this->line("  → Planificaciones en TH-30 / TH-LAB09 a mover a TH-L09: " . $planificaciones30->count());
+        $this->line('  → Planificaciones en TH-30 / TH-LAB09 a mover a TH-L09: '.$planificaciones30->count());
         foreach ($planificaciones30 as $p) {
             $backup['planificaciones_regulares'][] = [
                 'id' => $p->id ?? $p->id_planificacion,
@@ -232,7 +236,7 @@ class NormalizarEspaciosTHCommand extends Command
             ];
         }
 
-        if (!$dryRun && $planificaciones30->isNotEmpty()) {
+        if (! $dryRun && $planificaciones30->isNotEmpty()) {
             Planificacion_Asignatura::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
                 ->update(['id_espacio' => 'TH-L09']);
@@ -243,7 +247,7 @@ class NormalizarEspaciosTHCommand extends Command
             ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
             ->get();
 
-        $this->line("  → Planificaciones en TH-LA8 / TH-LAB08 a mover a TH-L08: " . $planificaciones08Antiguas->count());
+        $this->line('  → Planificaciones en TH-LA8 / TH-LAB08 a mover a TH-L08: '.$planificaciones08Antiguas->count());
         foreach ($planificaciones08Antiguas as $p) {
             $backup['planificaciones_regulares'][] = [
                 'id' => $p->id ?? $p->id_planificacion,
@@ -254,7 +258,7 @@ class NormalizarEspaciosTHCommand extends Command
             ];
         }
 
-        if (!$dryRun && $planificaciones08Antiguas->isNotEmpty()) {
+        if (! $dryRun && $planificaciones08Antiguas->isNotEmpty()) {
             Planificacion_Asignatura::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
                 ->update(['id_espacio' => 'TH-L08']);
@@ -271,7 +275,7 @@ class NormalizarEspaciosTHCommand extends Command
             ->get();
 
         if ($ppc30->isNotEmpty()) {
-            $this->line("  → Planificaciones de colaboradores en TH-30 / TH-LAB09 a mover a TH-L09: " . $ppc30->count());
+            $this->line('  → Planificaciones de colaboradores en TH-30 / TH-LAB09 a mover a TH-L09: '.$ppc30->count());
             foreach ($ppc30 as $p) {
                 $backup['planificaciones_colaboradores'][] = [
                     'id' => $p->id,
@@ -279,7 +283,7 @@ class NormalizarEspaciosTHCommand extends Command
                     'id_espacio_nuevo' => 'TH-L09',
                 ];
             }
-            if (!$dryRun) {
+            if (! $dryRun) {
                 PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
                     ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
                     ->update(['id_espacio' => 'TH-L09']);
@@ -291,7 +295,7 @@ class NormalizarEspaciosTHCommand extends Command
             ->get();
 
         if ($ppc08->isNotEmpty()) {
-            $this->line("  → Planificaciones de colaboradores en TH-LA8 / TH-LAB08 a mover a TH-L08: " . $ppc08->count());
+            $this->line('  → Planificaciones de colaboradores en TH-LA8 / TH-LAB08 a mover a TH-L08: '.$ppc08->count());
             foreach ($ppc08 as $p) {
                 $backup['planificaciones_colaboradores'][] = [
                     'id' => $p->id,
@@ -299,7 +303,7 @@ class NormalizarEspaciosTHCommand extends Command
                     'id_espacio_nuevo' => 'TH-L08',
                 ];
             }
-            if (!$dryRun) {
+            if (! $dryRun) {
                 PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
                     ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
                     ->update(['id_espacio' => 'TH-L08']);
@@ -314,16 +318,18 @@ class NormalizarEspaciosTHCommand extends Command
     {
         $archivo = $this->option('archivo');
 
-        if (!$archivo) {
+        if (! $archivo) {
             $backupDir = storage_path('app/backups');
-            if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
+            if (! File::exists($backupDir)) {
                 $this->error("No se encontró el directorio de respaldos en: {$backupDir}");
+
                 return 1;
             }
 
-            $archivos = \Illuminate\Support\Facades\File::glob($backupDir . DIRECTORY_SEPARATOR . 'normalizacion_th_backup_*.json');
+            $archivos = File::glob($backupDir.DIRECTORY_SEPARATOR.'normalizacion_th_backup_*.json');
             if (empty($archivos)) {
                 $this->error("No se encontraron archivos de respaldo en {$backupDir}.");
+
                 return 1;
             }
 
@@ -331,31 +337,33 @@ class NormalizarEspaciosTHCommand extends Command
             $archivo = $archivos[0];
         }
 
-        if (!\Illuminate\Support\Facades\File::exists($archivo)) {
+        if (! File::exists($archivo)) {
             $this->error("El archivo de respaldo especificado no existe: {$archivo}");
+
             return 1;
         }
 
-        $this->warn("==================================================================");
-        $this->warn(" REVERSIÓN DE NORMALIZACIÓN DE ESPACIOS TH");
+        $this->warn('==================================================================');
+        $this->warn(' REVERSIÓN DE NORMALIZACIÓN DE ESPACIOS TH');
         $this->warn(" Archivo de respaldo: {$archivo}");
-        $this->warn("==================================================================");
+        $this->warn('==================================================================');
 
-        $contenido = json_decode(\Illuminate\Support\Facades\File::get($archivo), true);
-        if (!$contenido || !isset($contenido['planificaciones_regulares'])) {
-            $this->error("El archivo de respaldo no tiene una estructura válida.");
+        $contenido = json_decode(File::get($archivo), true);
+        if (! $contenido || ! isset($contenido['planificaciones_regulares'])) {
+            $this->error('El archivo de respaldo no tiene una estructura válida.');
+
             return 1;
         }
 
         $revertidasRegulares = 0;
         foreach ($contenido['planificaciones_regulares'] as $item) {
             $q = Planificacion_Asignatura::withoutGlobalScope('tenant');
-            if (!empty($item['id'])) {
+            if (! empty($item['id'])) {
                 $q->where('id', $item['id']);
             } else {
                 $q->where('id_asignatura', $item['id_asignatura'])
-                  ->where('id_modulo', $item['id_modulo'])
-                  ->where('id_espacio', $item['id_espacio_nuevo']);
+                    ->where('id_modulo', $item['id_modulo'])
+                    ->where('id_espacio', $item['id_espacio_nuevo']);
             }
 
             $actualizado = $q->update(['id_espacio' => $item['id_espacio_anterior']]);
@@ -376,7 +384,7 @@ class NormalizarEspaciosTHCommand extends Command
 
         $this->info("✓ Planificaciones regulares revertidas: {$revertidasRegulares}");
         $this->info("✓ Planificaciones de colaboradores revertidas: {$revertidasColab}");
-        $this->info("Reversión completada exitosamente.");
+        $this->info('Reversión completada exitosamente.');
 
         return 0;
     }

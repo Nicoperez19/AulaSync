@@ -2,19 +2,22 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\WithPagination;
 use App\Models\Carrera;
 use App\Models\Sede;
 use App\Models\Universidad;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class CareersTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'id_carrera';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -60,7 +63,7 @@ class CareersTable extends Component
             try {
                 // Buscar coincidencias en sedes y universidades usando conexión central
                 $sedeIds = Sede::on('mysql')
-                    ->where(function($sq) use ($terms) {
+                    ->where(function ($sq) use ($terms) {
                         foreach ($terms as $t) {
                             $sq->orWhere('nombre_sede', 'like', "%{$t}%");
                         }
@@ -69,7 +72,7 @@ class CareersTable extends Component
                     ->all();
 
                 $universidadIds = Universidad::on('mysql')
-                    ->where(function($uq) use ($terms) {
+                    ->where(function ($uq) use ($terms) {
                         foreach ($terms as $t) {
                             $uq->orWhere('nombre_universidad', 'like', "%{$t}%");
                         }
@@ -105,7 +108,7 @@ class CareersTable extends Component
                             });
                     }
 
-                    if (!empty($sedeIds)) {
+                    if (! empty($sedeIds)) {
                         $innerQuery->orWhereHas('areaAcademica.facultad', function ($q) use ($sedeIds) {
                             $q->whereIn('id_sede', $sedeIds);
                         });

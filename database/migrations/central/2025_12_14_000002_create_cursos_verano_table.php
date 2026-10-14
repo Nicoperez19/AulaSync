@@ -23,7 +23,7 @@ return new class extends Migration
             // Índices
             $table->unique(['anio'], 'curso_verano_anio_unico');
             $table->index(['activo', 'fecha_inicio', 'fecha_fin'], 'curso_verano_activo_fechas');
-            
+
             // Foreign key
             $table->foreign('created_by')->references('run')->on('users')->onDelete('set null');
         });

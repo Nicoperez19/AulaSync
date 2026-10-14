@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class AuditoriaClase extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
 
@@ -60,27 +60,27 @@ class AuditoriaClase extends Model
         });
     }
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function profesor()
+    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
-    public function asignatura()
+    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
 
-    public function espacio()
+    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function modulo()
+    public function modulo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Modulo::class, 'id_modulo', 'id_modulo');
     }
@@ -109,6 +109,7 @@ class AuditoriaClase extends Model
         } elseif ($hasta) {
             return $query->where('fecha_clase', '<=', $hasta);
         }
+
         return $query;
     }
 }

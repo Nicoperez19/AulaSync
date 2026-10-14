@@ -2,31 +2,31 @@
 
 namespace App\Services;
 
-use App\Helpers\SemesterHelper;
 use App\Models\Espacio;
-use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
  * OccupancyService - Servicio centralizado para cálculos de ocupación de espacios
- * 
+ *
  * Centraliza toda la lógica de ocupación que antes estaba dispersa entre:
  * - DashboardController
  * - ModulosActualesTable
  * - Varias vistas show.blade.php
- * 
+ *
  * Garantiza coherencia en los datos de ocupación en toda la aplicación
  */
 class OccupancyService
 {
     /**
      * Obtiene espacios filtrados por facultad y piso
-     * 
-     * @param string|null $facultad ID de facultad
-     * @param int|null $piso Número de piso
-     * @return \Illuminate\Database\Eloquent\Builder
+     *
+     * @param  string|null  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
+     * @return Builder
      */
     public function getEspaciosQuery($facultad = null, $piso = null)
     {
@@ -50,15 +50,15 @@ class OccupancyService
     /**
      * Calcula módulos reales de uso basado en hora de inicio y salida
      * Considera mínimo 10 minutos para contar como válido
-     * 
-     * @param string|null $horaInicio Hora de inicio (formato H:i:s o H:i)
-     * @param string|null $horaSalida Hora de salida real
-     * @param int|null $modulosTeoricos Campo modulos de la reserva (fallback)
+     *
+     * @param  string|null  $horaInicio  Hora de inicio (formato H:i:s o H:i)
+     * @param  string|null  $horaSalida  Hora de salida real
+     * @param  int|null  $modulosTeoricos  Campo modulos de la reserva (fallback)
      * @return float Número de módulos calculados
      */
     public function calcularModulosReales($horaInicio, $horaSalida, $modulosTeoricos = null)
     {
-        if (!$horaSalida || !$horaInicio) {
+        if (! $horaSalida || ! $horaInicio) {
             return $modulosTeoricos ?? 1;
         }
 
@@ -99,9 +99,9 @@ class OccupancyService
      * Verifica si una hora está en un turno específico
      * Diurno: 08:00 - 19:00
      * Vespertino: 19:00 - 23:00
-     * 
-     * @param string $hora Hora en formato H:i:s o H:i
-     * @param string|null $turno 'diurno', 'vespertino' o null para todos
+     *
+     * @param  string  $hora  Hora en formato H:i:s o H:i
+     * @param  string|null  $turno  'diurno', 'vespertino' o null para todos
      * @return bool
      */
     public function esTurno($hora, $turno = null)
@@ -123,9 +123,9 @@ class OccupancyService
 
     /**
      * Calcula horas disponibles para un turno
-     * 
-     * @param string|null $turno 'diurno', 'vespertino' o null
-     * @param Carbon|null $fecha Fecha para determinar si es sábado
+     *
+     * @param  string|null  $turno  'diurno', 'vespertino' o null
+     * @param  Carbon|null  $fecha  Fecha para determinar si es sábado
      * @return int|float
      */
     public function horasPorTurno($turno = null, $fecha = null)
@@ -138,6 +138,7 @@ class OccupancyService
             } elseif ($turno === 'vespertino') {
                 return 0;  // Sábado: no hay clases vespertinas
             }
+
             return 5;
         }
 
@@ -152,10 +153,10 @@ class OccupancyService
 
     /**
      * Obtiene salas ocupadas y libres para una facultad y piso
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso (opcional)
-     * @param string|null $turno Filtro por turno (opcional)
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso (opcional)
+     * @param  string|null  $turno  Filtro por turno (opcional)
      * @return array ['ocupadas' => count, 'libres' => count]
      */
     public function obtenerSalasOcupadas($facultad, $piso = null, $turno = null)
@@ -189,18 +190,18 @@ class OccupancyService
 
         return [
             'ocupadas' => $ocupadas,
-            'libres' => $libres
+            'libres' => $libres,
         ];
     }
 
     /**
      * Calcula ocupación promedio por hora
-     * 
-     * @param Carbon $inicio Fecha inicial
-     * @param Carbon $fin Fecha final
-     * @param string|null $facultad ID de facultad
-     * @param int|null $piso Número de piso
-     * @param string|null $turno Filtro por turno
+     *
+     * @param  Carbon  $inicio  Fecha inicial
+     * @param  Carbon  $fin  Fecha final
+     * @param  string|null  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
+     * @param  string|null  $turno  Filtro por turno
      * @return float Porcentaje de ocupación
      */
     public function calcularOcupacionPromedioHora($inicio, $fin, $facultad = null, $piso = null, $turno = null)
@@ -208,6 +209,7 @@ class OccupancyService
         if ($turno === null) {
             $diurno = $this->calcularOcupacionPromedioHora($inicio, $fin, $facultad, $piso, 'diurno');
             $vespertino = $this->calcularOcupacionPromedioHora($inicio, $fin, $facultad, $piso, 'vespertino');
+
             return round(($diurno + $vespertino) / 2, 2);
         }
 
@@ -260,7 +262,7 @@ class OccupancyService
             }
 
             $key = $hora;
-            if (!isset($maximosPorHora[$key])) {
+            if (! isset($maximosPorHora[$key])) {
                 $maximosPorHora[$key] = 0;
             }
             $maximosPorHora[$key] = max($maximosPorHora[$key], $registro->total_reservas);
@@ -283,10 +285,10 @@ class OccupancyService
 
     /**
      * Calcula ocupación semanal
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
-     * @param string|null $turno Filtro por turno
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
+     * @param  string|null  $turno  Filtro por turno
      * @return float Porcentaje de ocupación
      */
     public function calcularOcupacionSemanal($facultad, $piso = null, $turno = null)
@@ -299,10 +301,10 @@ class OccupancyService
 
     /**
      * Calcula ocupación mensual
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
-     * @param string|null $turno Filtro por turno
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
+     * @param  string|null  $turno  Filtro por turno
      * @return float Porcentaje de ocupación
      */
     public function calcularOcupacionMensual($facultad, $piso = null, $turno = null)
@@ -315,8 +317,8 @@ class OccupancyService
 
     /**
      * Obtiene el estado actual de ocupación de un espacio específico
-     * 
-     * @param string $idEspacio ID del espacio
+     *
+     * @param  string  $idEspacio  ID del espacio
      * @return array ['ocupado' => bool, 'clase' => array|null, 'finalizaEn' => string|null]
      */
     public function obtenerEstadoEspacio($idEspacio)
@@ -335,11 +337,11 @@ class OccupancyService
             ->with(['asignatura', 'profesor', 'espacio'])
             ->first();
 
-        if (!$reservaActiva) {
+        if (! $reservaActiva) {
             return [
                 'ocupado' => false,
                 'clase' => null,
-                'finalizaEn' => null
+                'finalizaEn' => null,
             ];
         }
 
@@ -349,18 +351,18 @@ class OccupancyService
                 'asignatura' => $reservaActiva->asignatura?->nombre_asignatura,
                 'profesor' => $reservaActiva->profesor?->nombre_profesor,
                 'modulos' => $reservaActiva->modulos,
-                'horaInicio' => $reservaActiva->hora
+                'horaInicio' => $reservaActiva->hora,
             ],
-            'finalizaEn' => $reservaActiva->hora_salida ?? 'Por determinar'
+            'finalizaEn' => $reservaActiva->hora_salida ?? 'Por determinar',
         ];
     }
 
     /**
      * Obtiene todas las salas ocupadas en este momento
-     * 
-     * @param string|null $facultad ID de facultad (opcional)
-     * @param int|null $piso Número de piso (opcional)
-     * @return \Illuminate\Support\Collection
+     *
+     * @param  string|null  $facultad  ID de facultad (opcional)
+     * @param  int|null  $piso  Número de piso (opcional)
+     * @return Collection
      */
     public function obtenerSalasOcupadasAhora($facultad = null, $piso = null)
     {
@@ -392,9 +394,9 @@ class OccupancyService
 
     /**
      * Obtiene espacios ocupados/libres totales (incluyendo todos los tipos)
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
      * @return array ['ocupadas' => count, 'libres' => count]
      */
     public function obtenerEspaciosOcupadosTotal($facultad, $piso = null)
@@ -416,15 +418,15 @@ class OccupancyService
 
         return [
             'ocupadas' => $ocupados,
-            'libres' => $libres
+            'libres' => $libres,
         ];
     }
 
     /**
      * Obtiene uso de espacios por día de la semana
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
      * @return array Datos de uso por día
      */
     public function obtenerUsoPorDia($facultad, $piso = null)
@@ -460,16 +462,16 @@ class OccupancyService
             'datos' => $usoPorDia,
             'rango_fechas' => [
                 'inicio' => $inicioSemana->format('d/m/Y'),
-                'fin' => $finSemana->format('d/m/Y')
-            ]
+                'fin' => $finSemana->format('d/m/Y'),
+            ],
         ];
     }
 
     /**
      * Obtiene salas utilizadas por día
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
      * @return array Datos de salas por día
      */
     public function obtenerSalasUtilizadasPorDia($facultad, $piso = null)
@@ -506,16 +508,16 @@ class OccupancyService
             'datos' => $salasUtilizadas,
             'rango_fechas' => [
                 'inicio' => $inicioSemana->format('d/m/Y'),
-                'fin' => $finSemana->format('d/m/Y')
-            ]
+                'fin' => $finSemana->format('d/m/Y'),
+            ],
         ];
     }
 
     /**
      * Obtiene ocupación por día
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
      * @return array Datos de ocupación por día
      */
     public function obtenerOcupacionPorDia($facultad, $piso = null)
@@ -541,16 +543,16 @@ class OccupancyService
             'datos' => $ocupacionPorDia,
             'rango_fechas' => [
                 'inicio' => $inicioSemana->format('d/m/Y'),
-                'fin' => $finSemana->format('d/m/Y')
-            ]
+                'fin' => $finSemana->format('d/m/Y'),
+            ],
         ];
     }
 
     /**
      * Obtiene ocupación por turno
-     * 
-     * @param string $facultad ID de facultad
-     * @param int|null $piso Número de piso
+     *
+     * @param  string  $facultad  ID de facultad
+     * @param  int|null  $piso  Número de piso
      * @return array Datos de ocupación por turno
      */
     public function obtenerOcupacionPorTurno($facultad, $piso = null)
@@ -563,8 +565,8 @@ class OccupancyService
 
     /**
      * Verifica coherencia de datos de ocupación
-     * 
-     * @param string $idEspacio ID del espacio
+     *
+     * @param  string  $idEspacio  ID del espacio
      * @return array Reporte de coherencia
      */
     public function verificarCoherenciaEspacio($idEspacio)
@@ -575,7 +577,7 @@ class OccupancyService
             'problemas' => [],
             'estado_actual' => $this->obtenerEstadoEspacio($idEspacio),
             'reservas_activas' => 0,
-            'reservas_finalizadas_sin_hora_salida' => 0
+            'reservas_finalizadas_sin_hora_salida' => 0,
         ];
 
         $horaActual = Carbon::now()->format('H:i:s');

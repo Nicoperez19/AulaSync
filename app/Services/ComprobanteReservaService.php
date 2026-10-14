@@ -37,19 +37,23 @@ class ComprobanteReservaService
 
         try {
             $espacio = $reserva->relationLoaded('espacio') ? $reserva->espacio : ($reserva->exists ? $reserva->espacio : null);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         try {
             $profesor = $reserva->relationLoaded('profesor') ? $reserva->profesor : ($reserva->exists ? $reserva->profesor : null);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         try {
             $solicitante = $reserva->relationLoaded('solicitante') ? $reserva->solicitante : ($reserva->exists ? $reserva->solicitante : null);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         try {
             $asignatura = $reserva->relationLoaded('asignatura') ? $reserva->asignatura : ($reserva->exists ? $reserva->asignatura : null);
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         // Nombre y RUN del responsable
         $nombreResponsable = 'Usuario';
@@ -80,10 +84,10 @@ class ComprobanteReservaService
                 ? "Módulo {$reserva->modulo_inicio}"
                 : "Módulos {$reserva->modulo_inicio} al {$reserva->modulo_fin}";
             if ($reserva->modulos) {
-                $modulosTexto .= " ({$reserva->modulos} " . ($reserva->modulos == 1 ? 'módulo' : 'módulos') . ")";
+                $modulosTexto .= " ({$reserva->modulos} ".($reserva->modulos == 1 ? 'módulo' : 'módulos').')';
             }
         } elseif ($reserva->modulos) {
-            $modulosTexto = "{$reserva->modulos} " . ($reserva->modulos == 1 ? 'módulo' : 'módulos');
+            $modulosTexto = "{$reserva->modulos} ".($reserva->modulos == 1 ? 'módulo' : 'módulos');
         }
 
         // Ubicación
@@ -94,7 +98,8 @@ class ComprobanteReservaService
             $piso = $espacio?->piso;
             $facultad = $piso?->facultad;
             $universidad = $facultad?->universidad;
-        } catch (\Throwable $e) {}
+        } catch (\Throwable $e) {
+        }
 
         $nombreEspacio = $espacio ? ($espacio->nombre_espacio ?? $reserva->id_espacio) : $reserva->id_espacio;
         $tipoEspacio = $espacio->tipo_espacio ?? 'Espacio';
@@ -165,35 +170,36 @@ class ComprobanteReservaService
             $idSede = $sedeActual?->id_sede;
 
             if ($sedeActual && $sedeActual->logo) {
-                $path = 'sedes/logos/' . $sedeActual->logo;
+                $path = 'sedes/logos/'.$sedeActual->logo;
                 if (Storage::disk('public')->exists($path)) {
                     $logoFilePath = Storage::disk('public')->path($path);
                 }
             }
 
             // 2. Verificar configuración institucional por sede
-            if (!$logoFilePath && class_exists(Configuracion::class)) {
+            if (! $logoFilePath && class_exists(Configuracion::class)) {
                 try {
                     $configLogo = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
                     if ($configLogo && $configLogo->valor) {
-                        $path = 'images/logo/' . $configLogo->valor;
+                        $path = 'images/logo/'.$configLogo->valor;
                         if (Storage::disk('public')->exists($path)) {
                             $logoFilePath = Storage::disk('public')->path($path);
                         }
                     }
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
             }
 
             // 3. Buscar logos en storage/app/public/sedes/logos
-            if (!$logoFilePath) {
+            if (! $logoFilePath) {
                 $storageLogos = glob(storage_path('app/public/sedes/logos/*.png'));
-                if (!empty($storageLogos)) {
+                if (! empty($storageLogos)) {
                     $logoFilePath = $storageLogos[0];
                 }
             }
 
             // 4. Fallback a los logos en public/images/
-            if (!$logoFilePath || !file_exists($logoFilePath)) {
+            if (! $logoFilePath || ! file_exists($logoFilePath)) {
                 $candidatos = [
                     public_path('images/logo_instituto_tecnologico-01.png'),
                     public_path('images/logo_IT_talcahuano.png'),
@@ -213,10 +219,11 @@ class ComprobanteReservaService
             if ($logoFilePath && file_exists($logoFilePath)) {
                 $fileContent = file_get_contents($logoFilePath);
                 $ext = pathinfo($logoFilePath, PATHINFO_EXTENSION) ?: 'png';
-                return 'data:image/' . ($ext === 'svg' ? 'svg+xml' : $ext) . ';base64,' . base64_encode($fileContent);
+
+                return 'data:image/'.($ext === 'svg' ? 'svg+xml' : $ext).';base64,'.base64_encode($fileContent);
             }
         } catch (\Throwable $e) {
-            Log::warning('⚠️ Error al obtener logo institucional para comprobante: ' . $e->getMessage());
+            Log::warning('⚠️ Error al obtener logo institucional para comprobante: '.$e->getMessage());
         }
 
         return '';
@@ -236,16 +243,17 @@ class ComprobanteReservaService
                 'fecha' => $reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : (string) $reserva->fecha_reserva,
                 'hora' => substr($reserva->hora, 0, 5),
                 'run' => $reserva->run_profesor ?: $reserva->run_solicitante,
-                'hash' => substr(hash('sha256', $reserva->id_reserva . config('app.key')), 0, 16),
+                'hash' => substr(hash('sha256', $reserva->id_reserva.config('app.key')), 0, 16),
             ]);
 
             $qrCode = new QrCode($payload);
-            $writer = new PngWriter();
+            $writer = new PngWriter;
             $result = $writer->write($qrCode);
 
-            return 'data:image/png;base64,' . base64_encode($result->getString());
+            return 'data:image/png;base64,'.base64_encode($result->getString());
         } catch (\Throwable $e) {
-            Log::warning('⚠️ Error al generar código QR para comprobante: ' . $e->getMessage());
+            Log::warning('⚠️ Error al generar código QR para comprobante: '.$e->getMessage());
+
             return '';
         }
     }
@@ -268,7 +276,7 @@ class ComprobanteReservaService
     public function responderPdf(Reserva $reserva, bool $descargar = false): Response
     {
         $pdf = $this->generarPdf($reserva);
-        $filename = 'comprobante-reserva-' . $reserva->id_reserva . '.pdf';
+        $filename = 'comprobante-reserva-'.$reserva->id_reserva.'.pdf';
 
         if ($descargar) {
             return $pdf->download($filename);

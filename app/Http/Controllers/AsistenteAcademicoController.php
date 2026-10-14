@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AsistenteAcademico;
 use App\Models\AreaAcademica;
+use App\Models\AsistenteAcademico;
 use App\Services\CorreoAdministrativoService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class AsistenteAcademicoController extends Controller
@@ -19,6 +20,7 @@ class AsistenteAcademicoController extends Controller
             $escuelas = AreaAcademica::where('tipo_area_academica', 'escuela')
                 ->with('facultad.sede.universidad')
                 ->get();
+
             return view('asistentes-academicos.index', compact('escuelas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los asistentes académicos.'])->withInput();
@@ -48,7 +50,7 @@ class AsistenteAcademicoController extends Controller
             ]);
 
             $asistente = AsistenteAcademico::create($validatedData);
-            
+
             // Limpiar caché del área académica
             CorreoAdministrativoService::limpiarCache($asistente->id_area_academica);
 
@@ -76,11 +78,12 @@ class AsistenteAcademicoController extends Controller
             $escuelas = AreaAcademica::where('tipo_area_academica', 'escuela')
                 ->with('facultad.sede.universidad')
                 ->get();
+
             return view('asistentes-academicos.edit', compact('asistenteAcademico', 'escuelas'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('asistentes-academicos.index')->withErrors(['error' => 'Asistente académico no encontrado.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar el asistente académico: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar el asistente académico: '.$e->getMessage()]);
         }
     }
 
@@ -92,17 +95,17 @@ class AsistenteAcademicoController extends Controller
         try {
             $request->validate([
                 'nombre' => 'required|string|max:100',
-                'email' => 'required|email|unique:asistentes_academicos,email,' . $id,
+                'email' => 'required|email|unique:asistentes_academicos,email,'.$id,
                 'nombre_remitente' => 'nullable|string|max:150',
                 'telefono' => 'nullable|string|max:20',
                 'id_area_academica' => 'required|exists:area_academicas,id_area_academica',
             ]);
 
             $asistenteAcademico = AsistenteAcademico::findOrFail($id);
-            
+
             // Guardar el área académica anterior para limpiar su caché
             $areaAcademicaAnterior = $asistenteAcademico->id_area_academica;
-            
+
             $asistenteAcademico->update([
                 'nombre' => $request->nombre,
                 'email' => $request->email,
@@ -110,7 +113,7 @@ class AsistenteAcademicoController extends Controller
                 'telefono' => $request->telefono,
                 'id_area_academica' => $request->id_area_academica,
             ]);
-            
+
             // Limpiar caché de ambas áreas (anterior y nueva si cambió)
             CorreoAdministrativoService::limpiarCache($areaAcademicaAnterior);
             if ($areaAcademicaAnterior !== $request->id_area_academica) {
@@ -118,10 +121,10 @@ class AsistenteAcademicoController extends Controller
             }
 
             return redirect()->route('asistentes-academicos.index')->with('success', 'Asistente académico actualizado exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('asistentes-academicos.index')->withErrors(['error' => 'Asistente académico no encontrado.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar el asistente académico: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar el asistente académico: '.$e->getMessage()]);
         }
     }
 
@@ -133,17 +136,17 @@ class AsistenteAcademicoController extends Controller
         try {
             $asistenteAcademico = AsistenteAcademico::findOrFail($id);
             $idAreaAcademica = $asistenteAcademico->id_area_academica;
-            
+
             $asistenteAcademico->delete();
-            
+
             // Limpiar caché del área académica
             CorreoAdministrativoService::limpiarCache($idAreaAcademica);
-            
+
             return redirect()->route('asistentes-academicos.index')->with('success', 'Asistente académico eliminado exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Asistente académico no encontrado.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el asistente académico: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar el asistente académico: '.$e->getMessage()], 500);
         }
     }
 }

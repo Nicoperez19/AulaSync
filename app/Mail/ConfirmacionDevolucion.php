@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Reserva;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -14,13 +15,21 @@ class ConfirmacionDevolucion extends Mailable
     use Queueable, SerializesModels;
 
     public string $nombreUsuario;
+
     public string $idEspacio;
+
     public string $nombreEspacio;
+
     public string $tipoEspacio;
+
     public string $horaReserva;
+
     public string $horaDevolucion;
+
     public string $fechaReserva;
+
     public ?string $nombreAsignatura;
+
     public string $idReserva;
 
     /**
@@ -39,18 +48,18 @@ class ConfirmacionDevolucion extends Mailable
 
         // Datos del espacio
         $espacio = $reserva->espacio;
-        $this->idEspacio      = $reserva->id_espacio;
-        $this->nombreEspacio  = $espacio ? ($espacio->nombre_espacio ?? $reserva->id_espacio) : $reserva->id_espacio;
-        $this->tipoEspacio    = $espacio ? ($espacio->tipo_espacio ?? 'No especificado') : 'No especificado';
+        $this->idEspacio = $reserva->id_espacio;
+        $this->nombreEspacio = $espacio ? ($espacio->nombre_espacio ?? $reserva->id_espacio) : $reserva->id_espacio;
+        $this->tipoEspacio = $espacio ? ($espacio->tipo_espacio ?? 'No especificado') : 'No especificado';
 
         // Datos de tiempo
-        $this->horaReserva    = substr($reserva->hora, 0, 5);
+        $this->horaReserva = substr($reserva->hora, 0, 5);
         $this->horaDevolucion = $reserva->hora_salida
             ? substr($reserva->hora_salida, 0, 5)
             : now()->format('H:i');
-        $this->fechaReserva   = $reserva->fecha_reserva instanceof \Carbon\Carbon
+        $this->fechaReserva = $reserva->fecha_reserva instanceof Carbon
             ? $reserva->fecha_reserva->format('d/m/Y')
-            : \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y');
+            : Carbon::parse($reserva->fecha_reserva)->format('d/m/Y');
 
         // Asignatura (opcional)
         $this->nombreAsignatura = $reserva->asignatura
@@ -63,7 +72,7 @@ class ConfirmacionDevolucion extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Confirmación de Devolución – ' . $this->idEspacio,
+            subject: 'Confirmación de Devolución – '.$this->idEspacio,
         );
     }
 

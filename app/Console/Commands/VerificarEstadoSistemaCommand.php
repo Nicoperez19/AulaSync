@@ -2,16 +2,17 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
+use App\Mail\InconsistenciaSistema;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\Tenant;
+use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use App\Mail\InconsistenciaSistema;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class VerificarEstadoSistemaCommand extends Command
 {
@@ -35,11 +36,12 @@ class VerificarEstadoSistemaCommand extends Command
     public function handle()
     {
         $this->info('=== VERIFICACIÓN DE ESTADO DEL SISTEMA ===');
-        $this->info('Fecha y hora: ' . Carbon::now()->format('Y-m-d H:i:s'));
-        
+        $this->info('Fecha y hora: '.Carbon::now()->format('Y-m-d H:i:s'));
+
         if ($this->option('demo')) {
             $this->warn('🔧 MODO DEMO ACTIVADO - Simulando inconsistencias');
             $this->processDemoMode();
+
             return 0;
         }
 
@@ -48,6 +50,7 @@ class VerificarEstadoSistemaCommand extends Command
 
         if ($tenants->isEmpty()) {
             $this->warn('No se encontraron tenants configurados.');
+
             return 0;
         }
 
@@ -64,18 +67,18 @@ class VerificarEstadoSistemaCommand extends Command
 
         // 1. Estado de espacios
         $this->info('📍 ESTADO DE ESPACIOS:');
-        $this->line("   • Disponibles: 25 (DEMO)");
-        $this->line("   • Ocupados: 4 (DEMO)");
-        $this->line("   • En mantenimiento: 0 (DEMO)");
-        $this->line("   • Total: 29 (DEMO)");
+        $this->line('   • Disponibles: 25 (DEMO)');
+        $this->line('   • Ocupados: 4 (DEMO)');
+        $this->line('   • En mantenimiento: 0 (DEMO)');
+        $this->line('   • Total: 29 (DEMO)');
         $this->newLine();
 
         // 2. Estado de reservas
         $this->info('📅 ESTADO DE RESERVAS:');
-        $this->line("   • Activas: 5 (DEMO)");
-        $this->line("   • Finalizadas: 15 (DEMO)");
-        $this->line("   • Hoy: 3 (DEMO)");
-        $this->line("   • Total: 20 (DEMO)");
+        $this->line('   • Activas: 5 (DEMO)');
+        $this->line('   • Finalizadas: 15 (DEMO)');
+        $this->line('   • Hoy: 3 (DEMO)');
+        $this->line('   • Total: 20 (DEMO)');
     }
 
     protected function processTenant(Tenant $tenant)
@@ -116,14 +119,14 @@ class VerificarEstadoSistemaCommand extends Command
 
             // 3. Detectar inconsistencias
             $this->info('🔍 DETECCIÓN DE INCONSISTENCIAS:');
-            
+
             // Espacios ocupados sin reserva activa
             $espaciosOcupadosSinReserva = Espacio::on('tenant')
                 ->where('estado', 'Ocupado')
-                ->whereNotIn('id_espacio', function($query) {
+                ->whereNotIn('id_espacio', function ($query) {
                     $query->select('id_espacio')
-                          ->from('reservas')
-                          ->where('estado', 'activa');
+                        ->from('reservas')
+                        ->where('estado', 'activa');
                 })
                 ->get();
 
@@ -133,13 +136,13 @@ class VerificarEstadoSistemaCommand extends Command
                     $this->line("      - {$espacio->id_espacio}: {$espacio->nombre_espacio}");
                 }
             } else {
-                $this->info("   ✅ No hay espacios ocupados sin reserva activa");
+                $this->info('   ✅ No hay espacios ocupados sin reserva activa');
             }
 
             // Reservas activas en espacios disponibles
             $reservasActivasEnEspaciosDisponibles = Reserva::on('tenant')
                 ->where('estado', 'activa')
-                ->whereHas('espacio', function($query) {
+                ->whereHas('espacio', function ($query) {
                     $query->where('estado', 'disponible');
                 })
                 ->get();
@@ -152,7 +155,7 @@ class VerificarEstadoSistemaCommand extends Command
                     $this->line("      - Reserva {$reserva->id_reserva}: {$reserva->espacio->id_espacio} ({$tipoUsuario}: {$usuario})");
                 }
             } else {
-                $this->info("   ✅ No hay reservas activas en espacios disponibles");
+                $this->info('   ✅ No hay reservas activas en espacios disponibles');
             }
 
             // Reservas activas antiguas (más de 24 horas)
@@ -169,7 +172,7 @@ class VerificarEstadoSistemaCommand extends Command
                     $this->line("      - Reserva {$reserva->id_reserva}: {$reserva->fecha_reserva} ({$tipoUsuario}: {$usuario})");
                 }
             } else {
-                $this->info("   ✅ No hay reservas activas de días anteriores");
+                $this->info('   ✅ No hay reservas activas de días anteriores');
             }
 
             // Enviar correo si hay inconsistencias
@@ -180,11 +183,11 @@ class VerificarEstadoSistemaCommand extends Command
                 $reservasAntiguas
             );
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            $this->error("  Error procesando tenant {$tenant->name}: ".$e->getMessage());
             Log::error("Error en VerificarEstadoSistemaCommand para tenant {$tenant->name}", [
                 'tenant' => $tenant->domain,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -194,12 +197,13 @@ class VerificarEstadoSistemaCommand extends Command
      */
     private function enviarCorreoSiHayInconsistencias(Tenant $tenant, $espaciosOcupadosSinReserva, $reservasActivasEnEspaciosDisponibles, $reservasAntiguas)
     {
-        $hayInconsistencias = $espaciosOcupadosSinReserva->count() > 0 || 
-                             $reservasActivasEnEspaciosDisponibles->count() > 0 || 
+        $hayInconsistencias = $espaciosOcupadosSinReserva->count() > 0 ||
+                             $reservasActivasEnEspaciosDisponibles->count() > 0 ||
                              $reservasAntiguas->count() > 0;
 
-        if (!$hayInconsistencias) {
+        if (! $hayInconsistencias) {
             $this->info('✅ No se detectaron inconsistencias - No se enviará correo');
+
             return;
         }
 
@@ -207,14 +211,14 @@ class VerificarEstadoSistemaCommand extends Command
             // Preparar datos para el correo
             $datosInconsistencias = [
                 'fecha_verificacion' => Carbon::now()->format('Y-m-d H:i:s'),
-                'espacios_ocupados_sin_reserva' => $espaciosOcupadosSinReserva->map(function($espacio) {
+                'espacios_ocupados_sin_reserva' => $espaciosOcupadosSinReserva->map(function ($espacio) {
                     return [
                         'id_espacio' => is_object($espacio) ? $espacio->id_espacio : $espacio['id_espacio'],
                         'nombre_espacio' => is_object($espacio) ? $espacio->nombre_espacio : $espacio['nombre_espacio'],
-                        'estado' => is_object($espacio) ? $espacio->estado : $espacio['estado']
+                        'estado' => is_object($espacio) ? $espacio->estado : $espacio['estado'],
                     ];
                 })->toArray(),
-                'reservas_activas_espacios_disponibles' => $reservasActivasEnEspaciosDisponibles->map(function($reserva) {
+                'reservas_activas_espacios_disponibles' => $reservasActivasEnEspaciosDisponibles->map(function ($reserva) {
                     $reservaArray = is_array($reserva) ? $reserva : [
                         'id_reserva' => $reserva->id_reserva,
                         'espacio_id' => $reserva->id_espacio,
@@ -222,9 +226,9 @@ class VerificarEstadoSistemaCommand extends Command
                         'tipo_usuario' => $reserva->run_profesor ? 'Profesor' : 'Solicitante',
                         'usuario' => $reserva->run_profesor ?? $reserva->run_solicitante,
                         'fecha_reserva' => $reserva->fecha_reserva,
-                        'hora' => $reserva->hora
+                        'hora' => $reserva->hora,
                     ];
-                    
+
                     if (is_array($reserva)) {
                         return [
                             'id_reserva' => $reserva['id_reserva'],
@@ -233,13 +237,13 @@ class VerificarEstadoSistemaCommand extends Command
                             'tipo_usuario' => $reserva['run_profesor'] ? 'Profesor' : 'Solicitante',
                             'usuario' => $reserva['run_profesor'] ?? $reserva['run_solicitante'],
                             'fecha_reserva' => $reserva['fecha_reserva'],
-                            'hora' => $reserva['hora']
+                            'hora' => $reserva['hora'],
                         ];
                     }
-                    
+
                     return $reservaArray;
                 })->toArray(),
-                'reservas_antiguas' => $reservasAntiguas->map(function($reserva) {
+                'reservas_antiguas' => $reservasAntiguas->map(function ($reserva) {
                     if (is_array($reserva)) {
                         return [
                             'id_reserva' => $reserva['id_reserva'],
@@ -248,10 +252,10 @@ class VerificarEstadoSistemaCommand extends Command
                             'tipo_usuario' => $reserva['run_profesor'] ? 'Profesor' : 'Solicitante',
                             'usuario' => $reserva['run_profesor'] ?? $reserva['run_solicitante'],
                             'fecha_reserva' => $reserva['fecha_reserva'],
-                            'hora' => $reserva['hora']
+                            'hora' => $reserva['hora'],
                         ];
                     }
-                    
+
                     return [
                         'id_reserva' => $reserva->id_reserva,
                         'espacio_id' => $reserva->id_espacio,
@@ -259,7 +263,7 @@ class VerificarEstadoSistemaCommand extends Command
                         'tipo_usuario' => $reserva->run_profesor ? 'Profesor' : 'Solicitante',
                         'usuario' => $reserva->run_profesor ?? $reserva->run_solicitante,
                         'fecha_reserva' => $reserva->fecha_reserva,
-                        'hora' => $reserva->hora
+                        'hora' => $reserva->hora,
                     ];
                 })->toArray(),
                 'estadisticas' => $this->option('demo') ? [
@@ -267,23 +271,23 @@ class VerificarEstadoSistemaCommand extends Command
                     'espacios_disponibles' => 25,
                     'espacios_ocupados' => 4,
                     'reservas_activas' => 5,
-                    'reservas_finalizadas' => 15
+                    'reservas_finalizadas' => 15,
                 ] : [
                     'total_espacios' => Espacio::count(),
                     'espacios_disponibles' => Espacio::where('estado', 'disponible')->count(),
                     'espacios_ocupados' => Espacio::where('estado', 'Ocupado')->count(),
                     'reservas_activas' => Reserva::where('estado', 'activa')->count(),
-                    'reservas_finalizadas' => Reserva::where('estado', 'finalizada')->count()
-                ]
+                    'reservas_finalizadas' => Reserva::where('estado', 'finalizada')->count(),
+                ],
             ];
 
             // Obtener correos de administradores desde configuración
             $correosAdmin = config('mail.admin_emails', ['admin@aulasync.com']);
-            
+
             // Si no hay configuración, intentar obtener correos de usuarios admin
             if ($correosAdmin === ['admin@aulasync.com']) {
-                $admins = \App\Models\User::role('admin')->pluck('email')->toArray();
-                if (!empty($admins)) {
+                $admins = User::role('admin')->pluck('email')->toArray();
+                if (! empty($admins)) {
                     $correosAdmin = $admins;
                 }
             }
@@ -293,14 +297,14 @@ class VerificarEstadoSistemaCommand extends Command
                 Mail::to($correoAdmin)->send(new InconsistenciaSistema($datosInconsistencias));
             }
 
-            $this->warn("📧 Se envió alerta por inconsistencias a: " . implode(', ', $correosAdmin));
-            
+            $this->warn('📧 Se envió alerta por inconsistencias a: '.implode(', ', $correosAdmin));
+
         } catch (\Exception $e) {
-            $this->error("❌ Error al enviar correo de inconsistencias: " . $e->getMessage());
-            Log::error('Error enviando correo de inconsistencias: ' . $e->getMessage(), [
+            $this->error('❌ Error al enviar correo de inconsistencias: '.$e->getMessage());
+            Log::error('Error enviando correo de inconsistencias: '.$e->getMessage(), [
                 'espacios_inconsistentes' => $espaciosOcupadosSinReserva->count(),
                 'reservas_inconsistentes' => $reservasActivasEnEspaciosDisponibles->count(),
-                'reservas_antiguas' => $reservasAntiguas->count()
+                'reservas_antiguas' => $reservasAntiguas->count(),
             ]);
         }
     }

@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Profesor;
 use App\Models\User;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
@@ -46,7 +46,7 @@ class CrearUsuariosProfesores extends Command
         $this->info('Iniciando creación de usuarios para profesores...');
 
         $profesores = Profesor::all();
-        $this->info('Profesores encontrados: ' . $profesores->count());
+        $this->info('Profesores encontrados: '.$profesores->count());
 
         $created = 0;
         $skipped = 0;
@@ -57,6 +57,7 @@ class CrearUsuariosProfesores extends Command
             if (empty($runProfesor)) {
                 $this->warn("Profesor {$prof->name} sin RUN - se omite.");
                 $skipped++;
+
                 continue;
             }
 
@@ -75,6 +76,7 @@ class CrearUsuariosProfesores extends Command
             if ($existe) {
                 $this->line("Ya existe usuario para RUN: {$runProfesor} ({$prof->name}) - omitido.");
                 $skipped++;
+
                 continue;
             }
 
@@ -82,7 +84,7 @@ class CrearUsuariosProfesores extends Command
 
             $this->line("Crear usuario -> run: {$runProfesor}, email: {$prof->email}, pass (sin DV): {$passwordPlain}");
 
-            if (!$dryRun) {
+            if (! $dryRun) {
                 try {
                     User::create([
                         'run' => $runProfesor,
@@ -100,7 +102,7 @@ class CrearUsuariosProfesores extends Command
                     ]);
                     $created++;
                 } catch (\Exception $e) {
-                    $this->error("Error creando usuario para {$runProfesor}: " . $e->getMessage());
+                    $this->error("Error creando usuario para {$runProfesor}: ".$e->getMessage());
                     Log::error('crear:usuarios-profesores error', ['run' => $runProfesor, 'error' => $e->getMessage()]);
                 }
             }

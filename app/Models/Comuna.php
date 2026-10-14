@@ -10,9 +10,12 @@ class Comuna extends Model
     use HasFactory;
 
     protected $table = 'comunas';
+
     protected $primaryKey = 'id_comuna';
+
     protected $fillable = ['nombre_comuna', 'id_provincia'];
-    public function provincia()
+
+    public function provincia(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Provincia::class, 'provincias_id', 'id_provincia');
     }

@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportTicket extends Model
 {
@@ -48,40 +48,40 @@ class SupportTicket extends Model
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'open'        => 'Abierto',
+            'open' => 'Abierto',
             'in_progress' => 'En proceso',
-            'closed'      => 'Cerrado',
-            default       => $this->status,
+            'closed' => 'Cerrado',
+            default => $this->status,
         };
     }
 
     public function statusColor(): string
     {
         return match ($this->status) {
-            'open'        => 'blue',
+            'open' => 'blue',
             'in_progress' => 'yellow',
-            'closed'      => 'green',
-            default       => 'gray',
+            'closed' => 'green',
+            default => 'gray',
         };
     }
 
     public function priorityLabel(): string
     {
         return match ($this->priority) {
-            'low'    => 'Baja',
+            'low' => 'Baja',
             'medium' => 'Media',
-            'high'   => 'Alta',
-            default  => $this->priority,
+            'high' => 'Alta',
+            default => $this->priority,
         };
     }
 
     public function priorityColor(): string
     {
         return match ($this->priority) {
-            'low'    => 'gray',
+            'low' => 'gray',
             'medium' => 'yellow',
-            'high'   => 'red',
-            default  => 'gray',
+            'high' => 'red',
+            default => 'gray',
         };
     }
 

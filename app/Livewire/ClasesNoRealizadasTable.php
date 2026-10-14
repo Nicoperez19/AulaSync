@@ -2,43 +2,57 @@
 
 namespace App\Livewire;
 
+use App\Helpers\SemesterHelper;
+use App\Models\Asignatura;
+use App\Models\Carrera;
+use App\Models\ClaseNoRealizada;
+use App\Models\PeriodoAcademico;
+use App\Models\Planificacion_Asignatura;
+use App\Models\Profesor;
+use App\Models\Tenant;
+use App\Services\AuditoriaService;
+use App\Services\TodasClasesService;
+use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\PeriodoAcademico;
-use App\Models\ClaseNoRealizada;
-use App\Models\Asignatura;
-use App\Models\Profesor;
-use App\Models\Carrera;
-use App\Helpers\SemesterHelper;
-use App\Helpers\ModulosHelper;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
-use App\Services\ClasesNoRealizadasReportService;
-use App\Services\AuditoriaService;
 
 class ClasesNoRealizadasTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $estado = '';
+
     public $ua = '';
+
     public $fecha_inicio = '';
+
     public $fecha_fin = '';
+
     public $periodo = '';
+
     public $perPage = 15;
+
     public $sortField = 'created_at';
+
     public $sortDirection = 'desc';
-    
+
     // Cache para estadísticas y colecciones filtradas
     private $cachedEstadisticas = null;
+
     private $todasLasClasesFiltradasCache = null;
 
     // Propiedades de selección múltiple (Justificación Masiva)
     public $selectedClases = [];
+
     public $selectAllPage = false;
+
     public $selectAllFiltered = false;
 
     public $reagendar_id = null; // ID de clase para abrir modal automáticamente
@@ -66,14 +80,14 @@ class ClasesNoRealizadasTable extends Component
     {
         $this->periodo = SemesterHelper::getCurrentPeriod();
         $this->fecha_fin = Carbon::today()->format('Y-m-d');
-        
+
         $periodoActual = SemesterHelper::getPeriodoActual();
         if ($periodoActual && $periodoActual->fecha_inicio) {
             $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
         } else {
             $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         }
-        
+
         // Si viene un reagendar_id desde URL, abrir modal automáticamente
         if ($this->reagendar_id) {
             $this->dispatch('auto-open-reagendar', ['id' => $this->reagendar_id]);
@@ -117,8 +131,8 @@ class ClasesNoRealizadasTable extends Component
         if ($value) {
             $partes = explode('-', $value);
             if (count($partes) === 2) {
-                $periodoModel = PeriodoAcademico::where('anio', (int)$partes[0])
-                    ->where('semestre', (int)$partes[1])
+                $periodoModel = PeriodoAcademico::where('anio', (int) $partes[0])
+                    ->where('semestre', (int) $partes[1])
                     ->first();
                 if ($periodoModel) {
                     $this->fecha_inicio = Carbon::parse($periodoModel->fecha_inicio)->format('Y-m-d');
@@ -151,23 +165,23 @@ class ClasesNoRealizadasTable extends Component
         $this->cachedEstadisticas = null;
         $this->todasLasClasesFiltradasCache = null;
 
-        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
+        $tenantId = class_exists(Tenant::class) ? (Tenant::current()->id ?? 'default') : 'default';
         $estados = ['', 'no_realizada', 'realizada', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
-            $key = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
+            $key = "clases_no_realizadas_coll_{$tenantId}_".md5(json_encode([
                 $this->fecha_inicio,
                 $this->fecha_fin,
                 $this->periodo,
                 $this->ua,
                 $est,
             ]));
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
         }
     }
 
     public function getEstadoNombreProperty()
     {
-        return match($this->estado) {
+        return match ($this->estado) {
             'no_realizada' => 'No registradas',
             'realizada' => 'Registradas',
             'justificado' => 'Justificadas',
@@ -189,10 +203,11 @@ class ClasesNoRealizadasTable extends Component
         if ($this->fecha_inicio && $this->fecha_fin) {
             if (Carbon::parse($this->fecha_inicio)->gt(Carbon::parse($this->fecha_fin))) {
                 $this->dispatch('show-error', ['message' => 'La fecha inicio no puede ser mayor que la fecha fin']);
+
                 return;
             }
         }
-        
+
         $this->cachedEstadisticas = null;
         $this->todasLasClasesFiltradasCache = null;
         $this->limpiarSeleccion();
@@ -206,7 +221,7 @@ class ClasesNoRealizadasTable extends Component
         $this->ua = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
         $this->fecha_fin = Carbon::today()->format('Y-m-d');
-        
+
         $periodoActual = SemesterHelper::getPeriodoActual();
         if ($periodoActual && $periodoActual->fecha_inicio) {
             $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
@@ -243,10 +258,10 @@ class ClasesNoRealizadasTable extends Component
             $this->selectAllPage = true;
         } else {
             $this->selectAllFiltered = false;
-            $currentPage = method_exists($this, 'getPage') ? $this->getPage() : (\Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1);
+            $currentPage = method_exists($this, 'getPage') ? $this->getPage() : (Paginator::resolveCurrentPage() ?: 1);
             $items = $todasLasClases->forPage($currentPage, $this->perPage);
             $keysPagina = $items->where('estado', 'No Registrada')->pluck('unique_key')->toArray();
-            if (!empty($keysPagina) && !empty(array_diff($keysPagina, $this->selectedClases))) {
+            if (! empty($keysPagina) && ! empty(array_diff($keysPagina, $this->selectedClases))) {
                 $this->selectAllPage = false;
             }
         }
@@ -283,6 +298,7 @@ class ClasesNoRealizadasTable extends Component
 
         if ($cantidad === 0) {
             $this->dispatch('show-error', ['message' => 'No hay clases no registradas seleccionadas para gestionar.']);
+
             return;
         }
 
@@ -318,19 +334,20 @@ class ClasesNoRealizadasTable extends Component
             $clasesFiltradas = $this->getClasesFiltradasCollection();
             $candidatas = $clasesFiltradas->where('estado', 'No Registrada');
 
-            if (!$this->selectAllFiltered) {
+            if (! $this->selectAllFiltered) {
                 $candidatas = $candidatas->whereIn('unique_key', $this->selectedClases);
             }
 
             if ($candidatas->isEmpty()) {
                 $this->dispatch('show-error', ['message' => 'No se encontraron clases válidas para justificar.']);
+
                 return;
             }
 
             $usuarioActual = auth()->user()->name ?? 'Administrador';
             $fechaHora = Carbon::now()->format('d/m/Y H:i');
             $notaAuditoria = "✓ Justificación Masiva aplicada por {$usuarioActual} el {$fechaHora}. Motivo: {$motivo}";
-            if (!empty($observaciones)) {
+            if (! empty($observaciones)) {
                 $notaAuditoria .= " - Detalle: {$observaciones}";
             }
 
@@ -346,8 +363,8 @@ class ClasesNoRealizadasTable extends Component
                 $estadoAnterior = $claseModel->estado ?? 'no_realizada';
 
                 $nuevaObs = $notaAuditoria;
-                if (!$sobrescribir && !empty($claseModel->observaciones)) {
-                    $nuevaObs = $claseModel->observaciones . "\n\n" . $notaAuditoria;
+                if (! $sobrescribir && ! empty($claseModel->observaciones)) {
+                    $nuevaObs = $claseModel->observaciones."\n\n".$notaAuditoria;
                 }
 
                 $claseModel->update([
@@ -383,6 +400,7 @@ class ClasesNoRealizadasTable extends Component
                         $item['motivo'] = $motivo;
                         $item['observaciones'] = $notaAuditoria;
                     }
+
                     return $item;
                 });
             }
@@ -392,10 +410,10 @@ class ClasesNoRealizadasTable extends Component
             $this->resetPage();
 
             $this->dispatch('show-success', [
-                'message' => "Se justificaron exitosamente {$procesadas} clases con estado Justificada."
+                'message' => "Se justificaron exitosamente {$procesadas} clases con estado Justificada.",
             ]);
 
-            Log::info("Justificación masiva completada exitosamente", [
+            Log::info('Justificación masiva completada exitosamente', [
                 'usuario' => $usuarioActual,
                 'clases_justificadas' => $procesadas,
                 'motivo' => $motivo,
@@ -403,11 +421,11 @@ class ClasesNoRealizadasTable extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error en justificación masiva: " . $e->getMessage(), [
+            Log::error('Error en justificación masiva: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
             $this->dispatch('show-error', [
-                'message' => 'Error al procesar la justificación masiva: ' . $e->getMessage()
+                'message' => 'Error al procesar la justificación masiva: '.$e->getMessage(),
             ]);
         }
     }
@@ -429,19 +447,20 @@ class ClasesNoRealizadasTable extends Component
             $clasesFiltradas = $this->getClasesFiltradasCollection();
             $candidatas = $clasesFiltradas->where('estado', 'No Registrada');
 
-            if (!$this->selectAllFiltered) {
+            if (! $this->selectAllFiltered) {
                 $candidatas = $candidatas->whereIn('unique_key', $this->selectedClases);
             }
 
             if ($candidatas->isEmpty()) {
                 $this->dispatch('show-error', ['message' => 'No se encontraron clases válidas para registrar.']);
+
                 return;
             }
 
             $usuarioActual = auth()->user()->name ?? 'Administrador';
             $fechaHora = Carbon::now()->format('d/m/Y H:i');
             $notaAuditoria = "✓ Registro Masivo aplicado por {$usuarioActual} el {$fechaHora}. Motivo: {$motivo}";
-            if (!empty($observaciones)) {
+            if (! empty($observaciones)) {
                 $notaAuditoria .= " - Detalle: {$observaciones}";
             }
 
@@ -457,8 +476,8 @@ class ClasesNoRealizadasTable extends Component
                 $estadoAnterior = $claseModel->estado ?? 'no_realizada';
 
                 $nuevaObs = $notaAuditoria;
-                if (!$sobrescribir && !empty($claseModel->observaciones)) {
-                    $nuevaObs = $claseModel->observaciones . "\n\n" . $notaAuditoria;
+                if (! $sobrescribir && ! empty($claseModel->observaciones)) {
+                    $nuevaObs = $claseModel->observaciones."\n\n".$notaAuditoria;
                 }
 
                 $claseModel->update([
@@ -494,6 +513,7 @@ class ClasesNoRealizadasTable extends Component
                         $item['motivo'] = $motivo;
                         $item['observaciones'] = $notaAuditoria;
                     }
+
                     return $item;
                 });
             }
@@ -503,10 +523,10 @@ class ClasesNoRealizadasTable extends Component
             $this->resetPage();
 
             $this->dispatch('show-success', [
-                'message' => "Se registraron exitosamente {$procesadas} clases con estado Registrada."
+                'message' => "Se registraron exitosamente {$procesadas} clases con estado Registrada.",
             ]);
 
-            Log::info("Registro masivo completado exitosamente", [
+            Log::info('Registro masivo completado exitosamente', [
                 'usuario' => $usuarioActual,
                 'clases_registradas' => $procesadas,
                 'motivo' => $motivo,
@@ -514,11 +534,11 @@ class ClasesNoRealizadasTable extends Component
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error en registro masivo: " . $e->getMessage(), [
+            Log::error('Error en registro masivo: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
             $this->dispatch('show-error', [
-                'message' => 'Error al procesar el registro masivo: ' . $e->getMessage()
+                'message' => 'Error al procesar el registro masivo: '.$e->getMessage(),
             ]);
         }
     }
@@ -536,7 +556,7 @@ class ClasesNoRealizadasTable extends Component
         $espacio = $clase['espacio'] ?? '';
         $modulo = $clase['modulo'] ?? '';
         $run = $clase['run_profesor'] ?? '';
-        
+
         return "{$idAsignatura}_{$espacio}_{$modulo}_{$fecha}_{$run}";
     }
 
@@ -549,7 +569,7 @@ class ClasesNoRealizadasTable extends Component
 
         // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
         $diaStr = strtolower($claseData['dia'] ?? '');
-        $prefijoDia = match($diaStr) {
+        $prefijoDia = match ($diaStr) {
             'lunes' => 'LU',
             'martes' => 'MA',
             'miércoles', 'miercoles' => 'MI',
@@ -560,24 +580,25 @@ class ClasesNoRealizadasTable extends Component
             default => 'LU'
         };
 
-        $modulo = (string)($claseData['modulo'] ?? '');
-        if (!str_contains($modulo, '.')) {
+        $modulo = (string) ($claseData['modulo'] ?? '');
+        if (! str_contains($modulo, '.')) {
             $partesModulo = explode(',', $modulo);
-            $modulosConPrefijo = array_map(function($m) use ($prefijoDia) {
+            $modulosConPrefijo = array_map(function ($m) use ($prefijoDia) {
                 $m = trim($m);
-                return str_contains($m, '.') ? $m : $prefijoDia . '.' . $m;
+
+                return str_contains($m, '.') ? $m : $prefijoDia.'.'.$m;
             }, $partesModulo);
             $idModulo = implode(',', $modulosConPrefijo);
         } else {
             $idModulo = $modulo;
         }
 
-        $fecha = is_string($claseData['fecha']) 
+        $fecha = is_string($claseData['fecha'])
             ? Carbon::parse($claseData['fecha'])->format('Y-m-d')
             : $claseData['fecha']->format('Y-m-d');
 
-        $periodo = (!empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A') 
-            ? $claseData['periodo'] 
+        $periodo = (! empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A')
+            ? $claseData['periodo']
             : ($this->periodo ?: SemesterHelper::getCurrentPeriod());
 
         return ClaseNoRealizada::firstOrCreate(
@@ -603,8 +624,8 @@ class ClasesNoRealizadasTable extends Component
             return $this->todasLasClasesFiltradasCache;
         }
 
-        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
+        $tenantId = class_exists(Tenant::class) ? (Tenant::current()->id ?? 'default') : 'default';
+        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_".md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
@@ -612,8 +633,8 @@ class ClasesNoRealizadasTable extends Component
             $this->estado,
         ]));
 
-        $todasLasClasesBase = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function() {
-            $servicio = new \App\Services\TodasClasesService();
+        $todasLasClasesBase = Cache::remember($cacheKey, 60, function () {
+            $servicio = new TodasClasesService;
             $clases = $servicio->obtenerTodasLasClases(
                 $this->fecha_inicio,
                 $this->fecha_fin,
@@ -624,24 +645,26 @@ class ClasesNoRealizadasTable extends Component
             );
 
             // Asignar clave única a cada clase
-            $clases = $clases->map(function($item) {
+            $clases = $clases->map(function ($item) {
                 $item['unique_key'] = $this->generarUniqueKey($item);
+
                 return $item;
             });
 
             // Aplicar filtro de UA en memoria si está establecido (por ID o por nombre de carrera)
-            if (!empty($this->ua)) {
+            if (! empty($this->ua)) {
                 $uaNorm = mb_strtolower(trim($this->ua), 'UTF-8');
-                $clases = $clases->filter(function($item) use ($uaNorm) {
-                    $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
-                    $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
+                $clases = $clases->filter(function ($item) use ($uaNorm) {
+                    $carreraId = mb_strtolower(trim((string) ($item['ua'] ?? '')), 'UTF-8');
+                    $carreraNombre = mb_strtolower(trim((string) ($item['carrera'] ?? '')), 'UTF-8');
+
                     return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
                 })->values();
             }
 
             // Aplicar filtro de estado en memoria
             if ($this->estado) {
-                $estadoStr = match($this->estado) {
+                $estadoStr = match ($this->estado) {
                     'no_realizada' => 'No Registrada',
                     'realizada', 'registrada' => 'Realizada',
                     'justificado' => 'Justificada',
@@ -661,16 +684,16 @@ class ClasesNoRealizadasTable extends Component
         });
 
         $todasLasClases = clone $todasLasClasesBase;
-        
+
         // Aplicar filtro de búsqueda en memoria con soporte multi-palabra (orden independiente de nombre y apellido)
-        if (!empty(trim($this->search ?? ''))) {
+        if (! empty(trim($this->search ?? ''))) {
             $searchNorm = $this->normalizarTexto($this->search);
             $palabras = array_values(array_filter(explode(' ', $searchNorm)));
             $cleanRunSearch = preg_replace('/[^0-9kK]/', '', $this->search);
 
-            $todasLasClases = $todasLasClases->filter(function($item) use ($palabras, $cleanRunSearch) {
+            $todasLasClases = $todasLasClases->filter(function ($item) use ($palabras, $cleanRunSearch) {
                 // 1. Coincidencia por RUN si tiene al menos 3 caracteres
-                if (!empty($cleanRunSearch) && strlen($cleanRunSearch) >= 3) {
+                if (! empty($cleanRunSearch) && strlen($cleanRunSearch) >= 3) {
                     $itemRun = preg_replace('/[^0-9kK]/', '', $item['run_profesor'] ?? '');
                     if (str_contains($itemRun, $cleanRunSearch)) {
                         return true;
@@ -685,7 +708,7 @@ class ClasesNoRealizadasTable extends Component
                 $profesorNorm = $this->normalizarTexto($item['profesor'] ?? '');
                 $todasEnProfesor = true;
                 foreach ($palabras as $p) {
-                    if (!str_contains($profesorNorm, $p)) {
+                    if (! str_contains($profesorNorm, $p)) {
                         $todasEnProfesor = false;
                         break;
                     }
@@ -695,10 +718,10 @@ class ClasesNoRealizadasTable extends Component
                 }
 
                 // 3. Coincidencia en la asignatura o código: TODAS las palabras deben coincidir
-                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? ''));
+                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '').' '.($item['codigo_asignatura'] ?? ''));
                 $todasEnAsignatura = true;
                 foreach ($palabras as $p) {
-                    if (!str_contains($asigNorm, $p)) {
+                    if (! str_contains($asigNorm, $p)) {
                         $todasEnAsignatura = false;
                         break;
                     }
@@ -710,20 +733,21 @@ class ClasesNoRealizadasTable extends Component
                 // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, carrera, profesor, asignatura)
                 $espacioRaw = $item['espacio'] ?? '';
                 $textoFila = $this->normalizarTexto(
-                    ($item['profesor'] ?? '') . ' ' .
-                    ($item['asignatura'] ?? '') . ' ' .
-                    ($item['codigo_asignatura'] ?? '') . ' ' .
-                    $espacioRaw . ' ' .
-                    str_replace('-', '', $espacioRaw) . ' ' .
-                    ($item['ua'] ?? '') . ' ' .
-                    ($item['carrera'] ?? '') . ' ' .
+                    ($item['profesor'] ?? '').' '.
+                    ($item['asignatura'] ?? '').' '.
+                    ($item['codigo_asignatura'] ?? '').' '.
+                    $espacioRaw.' '.
+                    str_replace('-', '', $espacioRaw).' '.
+                    ($item['ua'] ?? '').' '.
+                    ($item['carrera'] ?? '').' '.
                     ($item['run_profesor'] ?? '')
                 );
                 foreach ($palabras as $p) {
-                    if (!str_contains($textoFila, $p)) {
+                    if (! str_contains($textoFila, $p)) {
                         return false;
                     }
                 }
+
                 return true;
             });
         }
@@ -733,8 +757,10 @@ class ClasesNoRealizadasTable extends Component
         if (str_contains($sortField, '.')) {
             $sortField = explode('.', $sortField)[1];
         }
-        if ($sortField === 'fecha_clase') $sortField = 'fecha';
-        
+        if ($sortField === 'fecha_clase') {
+            $sortField = 'fecha';
+        }
+
         if ($this->sortDirection === 'asc') {
             $todasLasClases = $todasLasClases->sortBy($sortField)->values();
         } else {
@@ -742,20 +768,21 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $this->todasLasClasesFiltradasCache = $todasLasClases;
+
         return $this->todasLasClasesFiltradasCache;
     }
 
     public function getHayFiltrosActivosProperty(): bool
     {
         $periodoActual = SemesterHelper::getPeriodoActual();
-        $fechaInicioDefecto = $periodoActual && $periodoActual->fecha_inicio 
-            ? Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d') 
+        $fechaInicioDefecto = $periodoActual && $periodoActual->fecha_inicio
+            ? Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d')
             : Carbon::now()->startOfMonth()->format('Y-m-d');
         $fechaFinDefecto = Carbon::today()->format('Y-m-d');
 
-        return !empty(trim($this->search ?? ''))
-            || !empty($this->estado)
-            || !empty($this->ua)
+        return ! empty(trim($this->search ?? ''))
+            || ! empty($this->estado)
+            || ! empty($this->ua)
             || ($this->fecha_inicio && $this->fecha_inicio !== $fechaInicioDefecto)
             || ($this->fecha_fin && $this->fecha_fin !== $fechaFinDefecto);
     }
@@ -773,7 +800,7 @@ class ClasesNoRealizadasTable extends Component
     public function prepararAccion($accion, $claseData)
     {
         $id = $claseData['id'] ?? null;
-        if (!$id) {
+        if (! $id) {
             $clase = $this->materializarClaseNoRealizada($claseData);
             $id = $clase->id;
         }
@@ -792,7 +819,7 @@ class ClasesNoRealizadasTable extends Component
     public function showEditModal($id)
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
-        
+
         $this->dispatch('show-edit-modal', [
             'id' => $id,
             'estado' => $clase->estado,
@@ -807,13 +834,15 @@ class ClasesNoRealizadasTable extends Component
     public function updateClase($id, $estado, $observaciones)
     {
         // Validar los datos recibidos
-        if (empty($estado) || !in_array($estado, ['no_realizada', 'justificado', 'pendiente', 'realizada', 'registrada'])) {
+        if (empty($estado) || ! in_array($estado, ['no_realizada', 'justificado', 'pendiente', 'realizada', 'registrada'])) {
             $this->dispatch('show-error', ['message' => 'El estado seleccionado no es válido']);
+
             return;
         }
 
         if (strlen($observaciones) > 1000) {
             $this->dispatch('show-error', ['message' => 'Las observaciones no pueden exceder 1000 caracteres']);
+
             return;
         }
 
@@ -840,23 +869,23 @@ class ClasesNoRealizadasTable extends Component
                 $estado,
                 'web'
             );
-            
+
             $this->dispatch('show-success', ['message' => 'Clase actualizada exitosamente']);
             $this->refresh(); // Refrescar datos después de actualizar
         } catch (\Exception $e) {
-            $this->dispatch('show-error', ['message' => 'Error al actualizar la clase: ' . $e->getMessage()]);
+            $this->dispatch('show-error', ['message' => 'Error al actualizar la clase: '.$e->getMessage()]);
         }
     }
 
     public function showReagendarModal($id)
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
-        
+
         // Detectar automáticamente cuántos módulos no se realizaron
         // Contar todos los módulos programados para esta asignatura
-        $totalModulosProgramados = \App\Models\Planificacion_Asignatura::where('id_asignatura', $clase->id_asignatura)
+        $totalModulosProgramados = Planificacion_Asignatura::where('id_asignatura', $clase->id_asignatura)
             ->count();
-        
+
         // Log para debugging
         Log::info("Clase no realizada: {$clase->id}, Asignatura: {$clase->id_asignatura}, Total módulos programados: {$totalModulosProgramados}");
 
@@ -875,20 +904,21 @@ class ClasesNoRealizadasTable extends Component
     {
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
-            
+
             // Convertir cantidadModulos a entero y validar
-            $cantidadModulos = max(1, min(15, (int)$cantidadModulos));
-            
+            $cantidadModulos = max(1, min(15, (int) $cantidadModulos));
+
             // Validar que la nueva fecha no sea anterior a hoy
             if (Carbon::parse($nuevaFecha)->lt(Carbon::today())) {
                 $this->dispatch('show-error', ['message' => 'La nueva fecha no puede ser anterior a hoy']);
+
                 return;
             }
-            
+
             // Obtener el día de la nueva fecha
             $fechaParsed = Carbon::parse($nuevaFecha);
             $nombreDia = strtolower($fechaParsed->format('l'));
-            
+
             // Mapear nombre del día en inglés a prefijo en BD (mayúsculas)
             $diasMap = [
                 'monday' => 'LU',
@@ -897,10 +927,10 @@ class ClasesNoRealizadasTable extends Component
                 'thursday' => 'JU',
                 'friday' => 'VI',
                 'saturday' => 'SA',
-                'sunday' => 'DO'
+                'sunday' => 'DO',
             ];
             $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
-            
+
             // Extraer el número del módulo si viene con el prefijo (ej: "LU.1" -> 1)
             $moduloBase = $nuevoModulo;
             if (is_string($nuevoModulo) && strpos($nuevoModulo, '.') !== false) {
@@ -908,7 +938,7 @@ class ClasesNoRealizadasTable extends Component
             } else {
                 $moduloBase = (int) $nuevoModulo;
             }
-            
+
             // Construir el id_modulo completo con todos los módulos seleccionados
             if ($cantidadModulos > 1) {
                 // Múltiples módulos: construir array LU.1,LU.2,LU.3
@@ -922,20 +952,20 @@ class ClasesNoRealizadasTable extends Component
                 // Un solo módulo
                 $nuevoModuloId = "{$prefijoDia}.{$moduloBase}";
             }
-            
+
             // Crear observación completa indicando que debe recuperarse
-            $observacionReagendamiento = "⚠️ CLASE PENDIENTE DE RECUPERACIÓN - ";
+            $observacionReagendamiento = '⚠️ CLASE PENDIENTE DE RECUPERACIÓN - ';
             $observacionReagendamiento .= "Reagendada desde {$clase->fecha_clase->format('d/m/Y')} ({$clase->id_espacio}, módulo {$clase->id_modulo}) ";
             $observacionReagendamiento .= "a {$nuevaFecha} ({$nuevoEspacio}, módulo {$nuevoModuloId}). ";
-            $observacionReagendamiento .= "El profesor debe recuperar esta clase en la nueva fecha programada.";
-            
+            $observacionReagendamiento .= 'El profesor debe recuperar esta clase en la nueva fecha programada.';
+
             if ($observaciones) {
                 $observacionReagendamiento .= " Motivo: {$observaciones}";
             }
 
             $valoresAnteriores = $clase->only(['fecha_clase', 'id_espacio', 'id_modulo', 'estado', 'observaciones']);
             $estadoAnterior = $clase->estado;
-            
+
             // Cambiar estado a PENDIENTE (esperando recuperación)
             $clase->update([
                 'fecha_clase' => $nuevaFecha,
@@ -956,8 +986,8 @@ class ClasesNoRealizadasTable extends Component
                 'pendiente',
                 'web'
             );
-            
-            Log::info("Clase reagendada exitosamente", [
+
+            Log::info('Clase reagendada exitosamente', [
                 'clase_id' => $id,
                 'fecha_original' => $clase->fecha_clase->format('Y-m-d'),
                 'fecha_nueva' => $nuevaFecha,
@@ -967,12 +997,12 @@ class ClasesNoRealizadasTable extends Component
                 'modulo_nuevo' => $nuevoModuloId,
                 'estado' => 'pendiente',
             ]);
-            
+
             $this->dispatch('show-success', ['message' => 'Clase reagendada exitosamente. Quedará como PENDIENTE hasta que se confirme su realización.']);
             $this->refresh(); // Refrescar datos después de reagendar
         } catch (\Exception $e) {
-            Log::error("Error al reagendar clase: " . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al reagendar la clase: ' . $e->getMessage()]);
+            Log::error('Error al reagendar clase: '.$e->getMessage());
+            $this->dispatch('show-error', ['message' => 'Error al reagendar la clase: '.$e->getMessage()]);
         }
     }
 
@@ -980,20 +1010,21 @@ class ClasesNoRealizadasTable extends Component
     {
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
-            
+
             // Verificar que esté en estado pendiente
             if ($clase->estado !== 'pendiente') {
                 $this->dispatch('show-error', ['message' => 'Solo se pueden marcar como recuperadas las clases en estado PENDIENTE']);
+
                 return;
             }
 
             $valoresAnteriores = $clase->only(['estado', 'observaciones']);
             $estadoAnterior = $clase->estado;
-            
+
             // Actualizar observaciones agregando confirmación de recuperación
             $observacionAnterior = $clase->observaciones ?? '';
-            $nuevaObservacion = $observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i');
-            
+            $nuevaObservacion = $observacionAnterior."\n\n✓ CLASE RECUPERADA - Confirmada el ".Carbon::now()->format('d/m/Y H:i');
+
             // Cambiar estado a justificado
             $clase->update([
                 'estado' => 'justificado',
@@ -1011,25 +1042,25 @@ class ClasesNoRealizadasTable extends Component
                 'justificado',
                 'web'
             );
-            
-            Log::info("Clase marcada como recuperada", [
+
+            Log::info('Clase marcada como recuperada', [
                 'clase_id' => $id,
                 'fecha_clase' => $clase->fecha_clase->format('Y-m-d'),
                 'profesor' => $clase->profesor->name ?? 'N/A',
             ]);
-            
+
             $this->dispatch('show-success', ['message' => 'Clase marcada como recuperada exitosamente']);
             $this->refresh();
         } catch (\Exception $e) {
-            Log::error("Error al marcar clase como recuperada: " . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al procesar: ' . $e->getMessage()]);
+            Log::error('Error al marcar clase como recuperada: '.$e->getMessage());
+            $this->dispatch('show-error', ['message' => 'Error al procesar: '.$e->getMessage()]);
         }
     }
 
     public function showDeleteModal($id)
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
-        
+
         $this->dispatch('confirm-delete', [
             'id' => $id,
             'profesor' => $clase->profesor->name ?? 'N/A',
@@ -1058,11 +1089,11 @@ class ClasesNoRealizadasTable extends Component
             );
 
             $clase->delete();
-            
+
             $this->dispatch('show-success', ['message' => 'Registro eliminado exitosamente']);
             $this->refresh(); // Refrescar datos después de eliminar
         } catch (\Exception $e) {
-            $this->dispatch('show-error', ['message' => 'Error al eliminar el registro: ' . $e->getMessage()]);
+            $this->dispatch('show-error', ['message' => 'Error al eliminar el registro: '.$e->getMessage()]);
         }
     }
 
@@ -1093,16 +1124,16 @@ class ClasesNoRealizadasTable extends Component
                     'observaciones' => $item->observaciones,
                     'ip' => $item->ip,
                 ];
-            })->toArray()
+            })->toArray(),
         ]);
     }
 
     public function render()
-    {        
+    {
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
         try {
-            $tenant = \App\Models\Tenant::current();
+            $tenant = Tenant::current();
             $unidadesAcademicas = DB::connection('tenant')->table('carreras')
                 ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
                 ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
@@ -1119,8 +1150,8 @@ class ClasesNoRealizadasTable extends Component
         if ($this->periodo) {
             $partes = explode('-', $this->periodo);
             if (count($partes) === 2) {
-                $periodoModel = PeriodoAcademico::where('anio', (int)$partes[0])
-                    ->where('semestre', (int)$partes[1])
+                $periodoModel = PeriodoAcademico::where('anio', (int) $partes[0])
+                    ->where('semestre', (int) $partes[1])
                     ->first();
             }
         } else {
@@ -1128,10 +1159,10 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $periodoNoIniciado = $periodoModel && $periodoModel->noHaIniciado();
-        
+
         if ($periodoNoIniciado) {
             return view('livewire.clases-no-realizadas-table', [
-                'clasesNoRealizadas' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage),
+                'clasesNoRealizadas' => new LengthAwarePaginator([], 0, $this->perPage),
                 'estadisticas' => [
                     'total' => 0,
                     'no_realizadas' => 0,
@@ -1147,25 +1178,26 @@ class ClasesNoRealizadasTable extends Component
                 'currentPageNoRealizadasKeys' => [],
             ]);
         }
-        
+
         $todasLasClases = $this->getClasesFiltradasCollection();
 
         if ($this->cachedEstadisticas === null) {
             // Agrupar por bloque de clase (fecha + espacio + run_profesor + asignatura) para
             // contar clases reales en lugar de módulos individuales, igual que hace el Dashboard.
             $clasesAgrupadas = $todasLasClases->groupBy(function ($item) {
-                $fecha = ($item['fecha'] instanceof \Carbon\Carbon)
+                $fecha = ($item['fecha'] instanceof Carbon)
                     ? $item['fecha']->format('Y-m-d')
-                    : \Carbon\Carbon::parse($item['fecha'])->format('Y-m-d');
-                return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+                    : Carbon::parse($item['fecha'])->format('Y-m-d');
+
+                return $fecha.'_'.($item['espacio'] ?? '').'_'.($item['run_profesor'] ?? '').'_'.($item['id_asignatura'] ?? '');
             });
 
             // Para cada bloque, determinar el estado predominante siguiendo la misma prioridad
             // que usa el dashboard: no_realizada > pendiente > justificada > realizada/recuperada.
-            $totalClases          = 0;
-            $totalNoRealizadas    = 0;
-            $totalPendientes      = 0;
-            $totalRealizadas      = 0;
+            $totalClases = 0;
+            $totalNoRealizadas = 0;
+            $totalPendientes = 0;
+            $totalRealizadas = 0;
 
             foreach ($clasesAgrupadas as $bloqueItems) {
                 $totalClases++;
@@ -1183,26 +1215,26 @@ class ClasesNoRealizadasTable extends Component
 
             // Calcular estadísticas a partir de clases agrupadas (no módulos individuales)
             $this->cachedEstadisticas = [
-                'total'        => $totalClases,
+                'total' => $totalClases,
                 'no_realizadas' => $totalNoRealizadas,
-                'pendientes'   => $totalPendientes,
+                'pendientes' => $totalPendientes,
                 'justificados' => $todasLasClases->where('estado', 'Justificada')->count(), // para la tarjeta KPI individual
-                'realizadas'   => $totalRealizadas,
+                'realizadas' => $totalRealizadas,
             ];
         }
 
         $estadisticas = $this->cachedEstadisticas;
 
         // Paginación manual
-        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $currentPage = Paginator::resolveCurrentPage() ?: 1;
         $items = $todasLasClases->forPage($currentPage, $this->perPage);
-        
-        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+
+        $paginator = new LengthAwarePaginator(
             $items,
             $todasLasClases->count(),
             $this->perPage,
             $currentPage,
-            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            ['path' => Paginator::resolveCurrentPath()]
         );
 
         $currentPageNoRealizadasKeys = $items->where('estado', 'No Registrada')->pluck('unique_key')->toArray();
@@ -1211,7 +1243,7 @@ class ClasesNoRealizadasTable extends Component
         // Sincronizar estado del checkbox maestro de la página actual
         if ($this->selectAllFiltered) {
             $this->selectAllPage = true;
-        } elseif (!empty($currentPageNoRealizadasKeys) && empty(array_diff($currentPageNoRealizadasKeys, $this->selectedClases))) {
+        } elseif (! empty($currentPageNoRealizadasKeys) && empty(array_diff($currentPageNoRealizadasKeys, $this->selectedClases))) {
             $this->selectAllPage = true;
         } else {
             $this->selectAllPage = false;

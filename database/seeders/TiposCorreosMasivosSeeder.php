@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
 use App\Models\TipoCorreoMasivo;
-use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class TiposCorreosMasivosSeeder extends Seeder
 {

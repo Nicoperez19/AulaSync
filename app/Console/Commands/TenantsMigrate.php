@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
 
 class TenantsMigrate extends Command
 {
@@ -34,7 +34,7 @@ class TenantsMigrate extends Command
         $seed = $this->option('seed');
 
         $query = Tenant::query();
-        
+
         if ($tenantDomain) {
             $query->where('domain', $tenantDomain);
         }
@@ -43,20 +43,21 @@ class TenantsMigrate extends Command
 
         if ($tenants->isEmpty()) {
             $this->error('No tenants found.');
+
             return 1;
         }
 
         foreach ($tenants as $tenant) {
             $this->info("Migrating tenant: {$tenant->name} ({$tenant->domain})");
-            
+
             // Backup default connection
             $defaultConnection = Config::get('database.default');
-            
+
             try {
                 // Set tenant connection
                 Config::set('database.connections.tenant.database', $tenant->database);
                 DB::purge('tenant');
-                
+
                 $this->info("Database: {$tenant->database}");
 
                 $options = [
@@ -66,27 +67,27 @@ class TenantsMigrate extends Command
                 ];
 
                 if ($fresh) {
-                     $this->warn("Wiping database for tenant {$tenant->domain}...");
-                     Artisan::call('db:wipe', [
-                         '--database' => 'tenant',
-                         '--force' => true,
-                     ], $this->output);
-                     
-                     $this->info("Running fresh migration...");
-                     Artisan::call('migrate', $options, $this->output);
+                    $this->warn("Wiping database for tenant {$tenant->domain}...");
+                    Artisan::call('db:wipe', [
+                        '--database' => 'tenant',
+                        '--force' => true,
+                    ], $this->output);
+
+                    $this->info('Running fresh migration...');
+                    Artisan::call('migrate', $options, $this->output);
                 } else {
                     Artisan::call('migrate', $options, $this->output);
                 }
-                
+
                 $this->info(Artisan::output());
 
                 if ($seed) {
-                    $this->info("Seeding tenant...");
-                    
+                    $this->info('Seeding tenant...');
+
                     // Asegurar que el tenant esté bindeado para los seeders
                     $tenant->makeCurrent();
                     app()->instance('tenant', $tenant);
-                    
+
                     Artisan::call('db:seed', [
                         '--database' => 'tenant',
                         '--class' => 'TenantDatabaseSeeder',
@@ -96,16 +97,17 @@ class TenantsMigrate extends Command
                 }
 
             } catch (\Exception $e) {
-                $this->error("Error migrating tenant {$tenant->domain}: " . $e->getMessage());
+                $this->error("Error migrating tenant {$tenant->domain}: ".$e->getMessage());
             } finally {
                 // Restore default connection just in case
                 Config::set('database.default', $defaultConnection);
             }
-            
+
             $this->newLine();
         }
-        
+
         $this->info('Tenants migration completed.');
+
         return 0;
     }
 }

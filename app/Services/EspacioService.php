@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\ModulosHelper;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use Carbon\Carbon;
@@ -23,11 +24,11 @@ class EspacioService
             ->orderBy('pisos.numero_piso', 'asc')
             ->orderBy('espacios.id_espacio', 'asc');
 
-        if (!empty($filtros['estado'])) {
+        if (! empty($filtros['estado'])) {
             $query->where('espacios.estado', $filtros['estado']);
         }
 
-        if (!empty($filtros['piso'])) {
+        if (! empty($filtros['piso'])) {
             $query->where('espacios.piso_id', $filtros['piso']);
         }
 
@@ -60,7 +61,7 @@ class EspacioService
     {
         $espacio = Espacio::where('id_espacio', $codigo)->first();
 
-        if (!$espacio) {
+        if (! $espacio) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -91,7 +92,7 @@ class EspacioService
 
         $espacio->estado = $nuevoEstado;
 
-        if (!$espacio->save()) {
+        if (! $espacio->save()) {
             return [
                 'success' => false,
                 'status' => 500,
@@ -107,9 +108,9 @@ class EspacioService
         }
 
         $mensaje = "Estado del espacio {$codigo} cambiado de {$estadoAnterior} a {$nuevoEstado}";
-        if (!empty($reservasFinalizadas)) {
+        if (! empty($reservasFinalizadas)) {
             $cantidadReservas = count($reservasFinalizadas);
-            $mensaje .= ". Se finalizaron automáticamente {$cantidadReservas} reserva(s) activa(s): " . implode(', ', $reservasFinalizadas);
+            $mensaje .= ". Se finalizaron automáticamente {$cantidadReservas} reserva(s) activa(s): ".implode(', ', $reservasFinalizadas);
         }
 
         return [
@@ -200,18 +201,19 @@ class EspacioService
 
                     $reserva->estado = 'finalizada';
                     $reserva->hora_salida = $horaActual;
-                    $reserva->observaciones = ($reserva->observaciones ?? '') . " | {$motivo} el " . now()->format('d/m/Y H:i:s');
+                    $reserva->observaciones = ($reserva->observaciones ?? '')." | {$motivo} el ".now()->format('d/m/Y H:i:s');
                     $reserva->save();
 
                     $reservasFinalizadas[] = $reserva->id_reserva;
                 } catch (\Exception $e) {
-                    Log::error("❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
+                    Log::error("❌ Error al finalizar reserva {$reserva->id_reserva}: ".$e->getMessage());
                 }
             }
 
             return $reservasFinalizadas;
         } catch (\Exception $e) {
-            Log::error('❌ Error al finalizar reservas activas: ' . $e->getMessage());
+            Log::error('❌ Error al finalizar reservas activas: '.$e->getMessage());
+
             return [];
         }
     }
@@ -255,7 +257,7 @@ class EspacioService
                 ? $reserva->fecha_reserva->format('Y-m-d')
                 : substr($reserva->fecha_reserva, 0, 10);
 
-            if ($fechaReserva === $fechaActual && !$hayReservaEnCurso) {
+            if ($fechaReserva === $fechaActual && ! $hayReservaEnCurso) {
                 $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
                 if ($espacio) {
                     $estadoActual = Schema::hasColumn('espacios', 'estado_espacio') ? $espacio->estado_espacio : $espacio->estado;
@@ -267,6 +269,7 @@ class EspacioService
                             $espacio->estado = 'Disponible';
                         }
                         $espacio->save();
+
                         return true;
                     }
                 }
@@ -274,7 +277,8 @@ class EspacioService
 
             return false;
         } catch (\Exception $e) {
-            Log::error('❌ Error al verificar liberación de espacio: ' . $e->getMessage());
+            Log::error('❌ Error al verificar liberación de espacio: '.$e->getMessage());
+
             return false;
         }
     }
@@ -296,8 +300,8 @@ class EspacioService
                 return false;
             }
 
-            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia(\Carbon\Carbon::parse($fechaReserva)->locale('es')->isoFormat('dddd'));
-            $horariosModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+            $diaNormalizado = ModulosHelper::normalizarDia(Carbon::parse($fechaReserva)->locale('es')->isoFormat('dddd'));
+            $horariosModulos = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
             $moduloActual = null;
             foreach ($horariosModulos as $modulo => $horario) {
@@ -307,7 +311,7 @@ class EspacioService
                 }
             }
 
-            if (!$moduloActual) {
+            if (! $moduloActual) {
                 return false;
             }
 
@@ -332,7 +336,7 @@ class EspacioService
                 }
             }
 
-            if (!$moduloInicio || !$moduloFin) {
+            if (! $moduloInicio || ! $moduloFin) {
                 $horaReserva = $reserva->hora;
                 foreach ($horariosModulos as $modulo => $horario) {
                     if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
@@ -356,6 +360,7 @@ class EspacioService
                                 $espacio->estado = 'Ocupado';
                             }
                             $espacio->save();
+
                             return true;
                         }
                     }
@@ -364,7 +369,8 @@ class EspacioService
 
             return false;
         } catch (\Exception $e) {
-            Log::error('❌ Error al verificar ocupación de espacio: ' . $e->getMessage());
+            Log::error('❌ Error al verificar ocupación de espacio: '.$e->getMessage());
+
             return false;
         }
     }
@@ -379,7 +385,7 @@ class EspacioService
             Cache::forget('espacios_disponibles');
             Cache::forget('dashboard_espacios');
         } catch (\Exception $e) {
-            Log::warning('⚠️ No se pudo limpiar el caché de estados: ' . $e->getMessage());
+            Log::warning('⚠️ No se pudo limpiar el caché de estados: '.$e->getMessage());
         }
     }
 

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\Tenant;
 
 class ModuloActualController extends Controller
@@ -24,7 +22,7 @@ class ModuloActualController extends Controller
         // El componente Livewire maneja la actualización de datos directamente
         return response()->json([
             'status' => 'ok',
-            'timestamp' => now()->toIso8601String()
+            'timestamp' => now()->toIso8601String(),
         ]);
     }
-} 
+}

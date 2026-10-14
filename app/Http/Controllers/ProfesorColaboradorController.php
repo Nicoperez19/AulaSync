@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ProfesorColaborador;
-use App\Models\PlanificacionProfesorColaborador;
-use App\Models\Profesor;
+use App\Helpers\ModulosHelper;
 use App\Models\Asignatura;
 use App\Models\Espacio;
 use App\Models\Modulo;
+use App\Models\PlanificacionProfesorColaborador;
+use App\Models\Profesor;
+use App\Models\ProfesorColaborador;
 use App\Models\Tenant;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
-use Carbon\Carbon;
-use App\Helpers\ModulosHelper;
 
 class ProfesorColaboradorController extends Controller
 {
@@ -24,8 +24,8 @@ class ProfesorColaboradorController extends Controller
     protected function ensureTenantConnection()
     {
         $tenant = Tenant::current();
-        
-        if (!$tenant) {
+
+        if (! $tenant) {
             // Si no hay tenant en la sesión, intentar obtener del usuario autenticado
             if (auth()->check() && auth()->user()->sede_id) {
                 $tenant = Tenant::where('sede_id', auth()->user()->sede_id)->first();
@@ -34,13 +34,13 @@ class ProfesorColaboradorController extends Controller
                 }
             }
         }
-        
+
         // Si tenemos un tenant, asegurar que la conexión está configurada
         if ($tenant && $tenant->database) {
             config([
                 'database.connections.tenant.database' => $tenant->database,
             ]);
-            
+
             // Purgar la conexión anterior para forzar reconexión
             DB::purge('tenant');
             DB::disconnect('tenant');
@@ -69,14 +69,14 @@ class ProfesorColaboradorController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nombre_asignatura_temporal', 'like', "%{$search}%")
-                  ->orWhereHas('profesor', function($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('asignatura', function($q2) use ($search) {
-                      $q2->where('nombre_asignatura', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('profesor', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('asignatura', function ($q2) use ($search) {
+                        $q2->where('nombre_asignatura', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -94,7 +94,7 @@ class ProfesorColaboradorController extends Controller
     {
         // Asegurar que el tenant está correctamente establecido
         $this->ensureTenantConnection();
-        
+
         $profesores = Profesor::orderBy('name')->get();
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
@@ -109,7 +109,7 @@ class ProfesorColaboradorController extends Controller
     {
         // Asegurar que el tenant está correctamente establecido
         $this->ensureTenantConnection();
-        
+
         // Validate based on profesor_option
         $validationRules = [
             'nombre_asignatura_temporal' => 'required|string|max:255',
@@ -120,7 +120,7 @@ class ProfesorColaboradorController extends Controller
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('tenant.asignaturas', 'id_asignatura')
+                Rule::exists('tenant.asignaturas', 'id_asignatura'),
             ],
             'planificaciones' => 'required|json',
         ];
@@ -128,19 +128,19 @@ class ProfesorColaboradorController extends Controller
         if ($request->profesor_option === 'nuevo') {
             $validationRules['nuevo_run'] = [
                 'required',
-                Rule::unique('tenant.profesors', 'run_profesor')
+                Rule::unique('tenant.profesors', 'run_profesor'),
             ];
             $validationRules['nuevo_nombre'] = 'required|string|max:255';
             $validationRules['nuevo_email'] = [
                 'required',
                 'email',
-                Rule::unique('tenant.profesors', 'email')
+                Rule::unique('tenant.profesors', 'email'),
             ];
             $validationRules['nuevo_celular'] = 'nullable|string|max:20';
         } else {
             $validationRules['run_profesor_colaborador'] = [
                 'required',
-                Rule::exists('tenant.profesors', 'run_profesor')
+                Rule::exists('tenant.profesors', 'run_profesor'),
             ];
         }
 
@@ -196,10 +196,10 @@ class ProfesorColaboradorController extends Controller
                 ->with('success', 'Profesor colaborador creado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al crear profesor colaborador: ' . $e->getMessage());
-            
+            Log::error('Error al crear profesor colaborador: '.$e->getMessage());
+
             return back()->withInput()
-                ->with('error', 'Error al crear el profesor colaborador: ' . $e->getMessage());
+                ->with('error', 'Error al crear el profesor colaborador: '.$e->getMessage());
         }
     }
 
@@ -220,17 +220,18 @@ class ProfesorColaboradorController extends Controller
     {
         // Asegurar que el tenant está correctamente establecido
         $this->ensureTenantConnection();
-        
+
         $profesorColaborador->load(['planificaciones.modulo', 'planificaciones.espacio']);
         $profesores = Profesor::orderBy('name')->get();
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
-        
+
         // Obtener módulos para pasar a la vista
         $modulos = collect(ModulosHelper::getModulosSimples())
             ->mapWithKeys(function ($mod, $idx) {
                 $inicio = substr($mod['hora_inicio'], 0, 5);
-                $fin    = substr($mod['hora_termino'], 0, 5);
+                $fin = substr($mod['hora_termino'], 0, 5);
+
                 return [$idx + 1 => "{$inicio} - {$fin}"];
             })->all();
 
@@ -244,7 +245,7 @@ class ProfesorColaboradorController extends Controller
     {
         // Asegurar que el tenant está correctamente establecido
         $this->ensureTenantConnection();
-        
+
         // Si planificaciones viene como JSON string, decodificar
         $planificaciones = $request->planificaciones;
         if (is_string($planificaciones)) {
@@ -256,7 +257,7 @@ class ProfesorColaboradorController extends Controller
         $request->validate([
             'run_profesor_colaborador' => [
                 'required',
-                Rule::exists('tenant.profesors', 'run_profesor')
+                Rule::exists('tenant.profesors', 'run_profesor'),
             ],
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
@@ -265,17 +266,17 @@ class ProfesorColaboradorController extends Controller
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('tenant.asignaturas', 'id_asignatura')
+                Rule::exists('tenant.asignaturas', 'id_asignatura'),
             ],
             'estado' => 'required|in:activo,inactivo',
             'planificaciones' => 'required|array|min:1',
             'planificaciones.*.id_modulo' => [
                 'required',
-                Rule::exists('tenant.modulos', 'id_modulo')
+                Rule::exists('tenant.modulos', 'id_modulo'),
             ],
             'planificaciones.*.id_espacio' => [
                 'required',
-                Rule::exists('tenant.espacios', 'id_espacio')
+                Rule::exists('tenant.espacios', 'id_espacio'),
             ],
         ]);
 
@@ -312,10 +313,10 @@ class ProfesorColaboradorController extends Controller
                 ->with('success', 'Profesor colaborador actualizado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al actualizar profesor colaborador: ' . $e->getMessage());
-            
+            Log::error('Error al actualizar profesor colaborador: '.$e->getMessage());
+
             return back()->withInput()
-                ->with('error', 'Error al actualizar el profesor colaborador: ' . $e->getMessage());
+                ->with('error', 'Error al actualizar el profesor colaborador: '.$e->getMessage());
         }
     }
 
@@ -330,9 +331,9 @@ class ProfesorColaboradorController extends Controller
             return redirect()->route('clases-temporales.index')
                 ->with('success', 'Profesor colaborador eliminado exitosamente.');
         } catch (\Exception $e) {
-            Log::error('Error al eliminar profesor colaborador: ' . $e->getMessage());
-            
-            return back()->with('error', 'Error al eliminar el profesor colaborador: ' . $e->getMessage());
+            Log::error('Error al eliminar profesor colaborador: '.$e->getMessage());
+
+            return back()->with('error', 'Error al eliminar el profesor colaborador: '.$e->getMessage());
         }
     }
 
@@ -360,38 +361,39 @@ class ProfesorColaboradorController extends Controller
 
             $prefijoDia = $diasPrefijos[$diaActual] ?? '';
 
-            if (!$prefijoDia) {
+            if (! $prefijoDia) {
                 return response()->json([
                     'success' => true,
                     'ocupados' => [],
-                    'message' => 'No hay clases programadas para este día'
+                    'message' => 'No hay clases programadas para este día',
                 ]);
             }
 
             // Obtener módulos ocupados del espacio específico o todos
             $queryBase = Modulo::where('dia', $diaActual);
-            
+
             if ($idEspacio) {
-                $queryBase->where(function($q) use ($idEspacio, $prefijoDia) {
+                $queryBase->where(function ($q) use ($idEspacio) {
                     // Planificaciones normales
-                    $q->whereHas('planificaciones', function($q2) use ($idEspacio) {
+                    $q->whereHas('planificaciones', function ($q2) use ($idEspacio) {
                         $q2->where('id_espacio', $idEspacio);
                     })
                     // Planificaciones de colaboradores
-                    ->orWhereHas('planificacionesColaboradores', function($q2) use ($idEspacio) {
-                        $q2->where('id_espacio', $idEspacio)
-                           ->whereHas('profesorColaborador', function($q3) {
-                               $q3->activosYVigentes();
-                           });
-                    });
+                        ->orWhereHas('planificacionesColaboradores', function ($q2) use ($idEspacio) {
+                            $q2->where('id_espacio', $idEspacio)
+                                ->whereHas('profesorColaborador', function ($q3) {
+                                    $q3->activosYVigentes();
+                                });
+                        });
                 });
             }
 
-            $modulosOcupados = $queryBase->get()->map(function($modulo) {
+            $modulosOcupados = $queryBase->get()->map(function ($modulo) {
                 $parts = explode('.', $modulo->id_modulo);
+
                 return [
                     'id_modulo' => $modulo->id_modulo,
-                    'numero' => isset($parts[1]) ? (int)$parts[1] : 0,
+                    'numero' => isset($parts[1]) ? (int) $parts[1] : 0,
                     'hora_inicio' => substr($modulo->hora_inicio, 0, 5),
                     'hora_termino' => substr($modulo->hora_termino, 0, 5),
                 ];
@@ -401,14 +403,14 @@ class ProfesorColaboradorController extends Controller
                 'success' => true,
                 'ocupados' => $modulosOcupados,
                 'dia' => $diaActual,
-                'prefijo' => $prefijoDia
+                'prefijo' => $prefijoDia,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al obtener horarios ocupados: ' . $e->getMessage());
-            
+            Log::error('Error al obtener horarios ocupados: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener horarios: ' . $e->getMessage()
+                'message' => 'Error al obtener horarios: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -422,13 +424,13 @@ class ProfesorColaboradorController extends Controller
         try {
             // Asegurar que el tenant está correctamente establecido
             $this->ensureTenantConnection();
-            
+
             $modulos = $request->input('modulos', []);
-            
+
             if (empty($modulos)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se especificaron módulos'
+                    'message' => 'No se especificaron módulos',
                 ], 400);
             }
 
@@ -445,7 +447,7 @@ class ProfesorColaboradorController extends Controller
                 // Count total conflicts
                 $conflictos = 0;
                 $conflictosDetalle = [];
-                
+
                 foreach ($modulos as $idModulo) {
                     // Check planificaciones normales
                     $planificacionNormal = DB::connection('tenant')->table('planificacion_asignaturas as pa')
@@ -475,7 +477,7 @@ class ProfesorColaboradorController extends Controller
                             'dia' => $planificacionNormal->dia,
                             'hora_inicio' => $planificacionNormal->hora_inicio,
                             'hora_fin' => $planificacionNormal->hora_termino,
-                            'tipo' => 'Asignatura Regular'
+                            'tipo' => 'Asignatura Regular',
                         ];
                     }
 
@@ -486,7 +488,7 @@ class ProfesorColaboradorController extends Controller
                             'dia' => $planificacionColaborador->dia,
                             'hora_inicio' => $planificacionColaborador->hora_inicio,
                             'hora_fin' => $planificacionColaborador->hora_termino,
-                            'tipo' => 'Temporal'
+                            'tipo' => 'Temporal',
                         ];
                     }
                 }
@@ -505,11 +507,11 @@ class ProfesorColaboradorController extends Controller
                     ->count();
 
                 $totalOcupaciones = $totalPlanificaciones + $totalColaboradores;
-                
+
                 // Total possible slots (5 days * 15 modules = 75)
                 $totalPosibles = 75;
                 $porcentajePlanificacion = $totalPosibles > 0 ? round(($totalOcupaciones / $totalPosibles) * 100, 1) : 0;
-                
+
                 // Real usage percentage (physical occupation)
                 $capacidadMaxima = $espacio->capacidad_maxima > 0 ? $espacio->capacidad_maxima : ($espacio->puestos_disponibles ?? 1);
                 $puestosOcupados = $capacidadMaxima - ($espacio->puestos_disponibles ?? 0);
@@ -518,13 +520,13 @@ class ProfesorColaboradorController extends Controller
                 $salaInfo = [
                     'id_espacio' => $espacio->id_espacio,
                     'nombre_espacio' => $espacio->nombre_espacio,
-                    'piso_nombre' => $espacio->piso ? 'Piso ' . $espacio->piso->numero_piso : null,
+                    'piso_nombre' => $espacio->piso ? 'Piso '.$espacio->piso->numero_piso : null,
                     'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
                     'capacidad_maxima' => $capacidadMaxima,
                     'porcentaje_planificacion' => $porcentajePlanificacion,
                     'porcentaje_real' => $porcentajeReal,
                     'ocupacion_total' => $totalOcupaciones,
-                    'es_especifica' => in_array($espacio->tipo_espacio, ['Auditorio', 'Laboratorio', 'Taller'])
+                    'es_especifica' => in_array($espacio->tipo_espacio, ['Auditorio', 'Laboratorio', 'Taller']),
                 ];
 
                 // Only include if no conflicts
@@ -537,22 +539,22 @@ class ProfesorColaboradorController extends Controller
             }
 
             // Sort by occupation percentage (lower first)
-            usort($salasConOcupacion, function($a, $b) {
+            usort($salasConOcupacion, function ($a, $b) {
                 return $a['porcentaje_planificacion'] <=> $b['porcentaje_planificacion'];
             });
 
             return response()->json([
                 'success' => true,
                 'salas' => $salasConOcupacion,
-                'salas_descartadas' => $salasDescartadas
+                'salas_descartadas' => $salasDescartadas,
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error al obtener salas disponibles: ' . $e->getMessage());
-            
+            Log::error('Error al obtener salas disponibles: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener salas disponibles: ' . $e->getMessage()
+                'message' => 'Error al obtener salas disponibles: '.$e->getMessage(),
             ], 500);
         }
     }

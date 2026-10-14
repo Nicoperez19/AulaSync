@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use League\CommonMark\CommonMarkConverter;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
@@ -15,7 +13,7 @@ class ManualController extends Controller
     {
         $manualPath = base_path('docs/MANUAL.md');
 
-        if (!file_exists($manualPath)) {
+        if (! file_exists($manualPath)) {
             abort(404, 'El manual no está disponible.');
         }
 
@@ -26,8 +24,8 @@ class ManualController extends Controller
             'html_input' => 'allow',
             'allow_unsafe_links' => false,
         ]);
-        $environment->addExtension(new CommonMarkCoreExtension());
-        $environment->addExtension(new GithubFlavoredMarkdownExtension());
+        $environment->addExtension(new CommonMarkCoreExtension);
+        $environment->addExtension(new GithubFlavoredMarkdownExtension);
 
         $converter = new MarkdownConverter($environment);
 
@@ -40,7 +38,7 @@ class ManualController extends Controller
         }
 
         // Convertir el contenido de la introducción (antes del primer ##) a HTML
-        $introHtml = !empty($chapters[0]['intro'])
+        $introHtml = ! empty($chapters[0]['intro'])
             ? $converter->convert($chapters[0]['intro'])->getContent()
             : '';
 
@@ -51,10 +49,11 @@ class ManualController extends Controller
                 function ($matches) {
                     $src = $matches[2];
                     // Solo reescribir rutas relativas (sin http/https/data)
-                    if (!preg_match('/^(https?:|data:|\/)/', $src)) {
+                    if (! preg_match('/^(https?:|data:|\/)/', $src)) {
                         $src = route('manual.image', ['file' => basename($src)]);
                     }
-                    return '<img' . $matches[1] . 'src="' . $src . '"' . $matches[3] . '>';
+
+                    return '<img'.$matches[1].'src="'.$src.'"'.$matches[3].'>';
                 },
                 $chapter['html']
             );
@@ -65,14 +64,14 @@ class ManualController extends Controller
         $chaptersSearch = array_values(array_map(function ($c) {
             return [
                 'title' => $c['title'],
-                'slug'  => $c['slug'],
-                'text'  => strip_tags($c['html']),
+                'slug' => $c['slug'],
+                'text' => strip_tags($c['html']),
             ];
         }, $chapters));
 
         return view('manual.index', [
-            'chapters'       => $chapters,
-            'introHtml'      => $introHtml,
+            'chapters' => $chapters,
+            'introHtml' => $introHtml,
             'chaptersSearch' => $chaptersSearch,
         ]);
     }
@@ -102,11 +101,11 @@ class ManualController extends Controller
                 $firstChapterFound = true;
                 $title = trim($matches[1]);
                 $currentChapter = [
-                    'title'   => $title,
-                    'slug'    => $this->slugify($title),
-                    'lines'   => ["## {$title}"],
+                    'title' => $title,
+                    'slug' => $this->slugify($title),
+                    'lines' => ["## {$title}"],
                     'content' => '',
-                    'html'    => '',
+                    'html' => '',
                 ];
             } elseif ($firstChapterFound && $currentChapter !== null) {
                 $currentChapter['lines'][] = $line;
@@ -123,7 +122,7 @@ class ManualController extends Controller
         }
 
         // Adjuntar intro al primer capítulo (para referencia)
-        if (!empty($chapters) && !empty($introLines)) {
+        if (! empty($chapters) && ! empty($introLines)) {
             $chapters[0]['intro'] = implode("\n", $introLines);
         }
 
@@ -135,20 +134,20 @@ class ManualController extends Controller
      */
     public function serveImage(string $file)
     {
-        $path = base_path('docs/' . $file);
+        $path = base_path('docs/'.$file);
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             abort(404);
         }
 
         $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $mimeTypes = [
-            'png'  => 'image/png',
-            'jpg'  => 'image/jpeg',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
-            'gif'  => 'image/gif',
+            'gif' => 'image/gif',
             'webp' => 'image/webp',
-            'svg'  => 'image/svg+xml',
+            'svg' => 'image/svg+xml',
         ];
 
         $mime = $mimeTypes[$extension] ?? 'application/octet-stream';
@@ -162,9 +161,10 @@ class ManualController extends Controller
     protected function slugify(string $text): string
     {
         $text = mb_strtolower($text, 'UTF-8');
-        $text = str_replace(['á','é','í','ó','ú','ñ','ü'], ['a','e','i','o','u','n','u'], $text);
+        $text = str_replace(['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü'], ['a', 'e', 'i', 'o', 'u', 'n', 'u'], $text);
         $text = preg_replace('/[^a-z0-9\s-]/', '', $text);
         $text = preg_replace('/[\s-]+/', '-', trim($text));
+
         return $text;
     }
 }

@@ -23,14 +23,14 @@ return new class extends Migration
 
             // Foreign keys
             $table->foreign('id_reserva')
-                  ->references('id_reserva')
-                  ->on('reservas')
-                  ->onDelete('cascade');
-            
+                ->references('id_reserva')
+                ->on('reservas')
+                ->onDelete('cascade');
+
             $table->foreign('id_asignatura')
-                  ->references('id_asignatura')
-                  ->on('asignaturas')
-                  ->onDelete('set null');
+                ->references('id_asignatura')
+                ->on('asignaturas')
+                ->onDelete('set null');
 
             // Índices para mejorar rendimiento
             $table->index('id_reserva');

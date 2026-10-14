@@ -2,13 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Tenant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Models\Tenant;
 
 class FixEspaciosLA extends Command
 {
     protected $signature = 'fix:espacios-la';
+
     protected $description = 'Asegura pisos y puebla espacios faltantes de Los Ángeles';
 
     public function handle()
@@ -38,7 +39,7 @@ class FixEspaciosLA extends Command
         ]);
 
         $piso251 = DB::connection('tenant')->table('pisos')->where('id_facultad', 'IT_LA')->where('numero_piso', 3)->first();
-        if (!$piso251) {
+        if (! $piso251) {
             $piso251Id = DB::connection('tenant')->table('pisos')->insertGetId([
                 'numero_piso' => 3,
                 'nombre_piso' => 'VILLAGRÁN 251',
@@ -57,8 +58,9 @@ class FixEspaciosLA extends Command
 
         // 3. Cargar espacios desde el archivo
         $archivo = database_path('seeders/Data/Espacios/LA.php');
-        if (!file_exists($archivo)) {
+        if (! file_exists($archivo)) {
             $this->error("No se encontró el archivo de espacios en: {$archivo}");
+
             return 1;
         }
 
@@ -80,7 +82,7 @@ class FixEspaciosLA extends Command
             $e['updated_at'] = now();
 
             $existe = DB::connection('tenant')->table('espacios')->where('id_espacio', $e['id_espacio'])->first();
-            if (!$existe) {
+            if (! $existe) {
                 $e['created_at'] = now();
                 DB::connection('tenant')->table('espacios')->insert($e);
                 $insertados++;
@@ -109,6 +111,7 @@ class FixEspaciosLA extends Command
         $this->table(['Piso ID', 'Total Espacios'], $rows);
 
         $this->info('¡Los Ángeles sincronizado correctamente!');
+
         return 0;
     }
 }

@@ -11,7 +11,9 @@ class UniversitiesTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'id_universidad';
+
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -54,12 +56,12 @@ class UniversitiesTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_universidad', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('telefono_universidad', 'like', '%' . $searchTerm . '%');
+                    $q->where('id_universidad', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('telefono_universidad', 'like', '%'.$searchTerm.'%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_universidad', 'like', '%' . $t . '%')
-                          ->orWhere('direccion_universidad', 'like', '%' . $t . '%');
+                        $q->orWhere('nombre_universidad', 'like', '%'.$t.'%')
+                            ->orWhere('direccion_universidad', 'like', '%'.$t.'%');
                     }
                 });
             })

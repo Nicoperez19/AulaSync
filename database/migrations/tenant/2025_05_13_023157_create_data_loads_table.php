@@ -33,4 +33,4 @@ class CreateDataLoadsTable extends Migration
     {
         Schema::dropIfExists('data_loads');
     }
-};
+}

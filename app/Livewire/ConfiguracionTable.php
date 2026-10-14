@@ -11,8 +11,11 @@ class ConfiguracionTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'clave';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -55,10 +58,10 @@ class ConfiguracionTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('clave', 'like', '%' . $searchTerm . '%');
+                    $q->where('clave', 'like', '%'.$searchTerm.'%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('descripcion', 'like', '%' . $t . '%');
+                        $q->orWhere('descripcion', 'like', '%'.$t.'%');
                     }
                 });
             })

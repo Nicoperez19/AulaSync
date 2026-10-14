@@ -5,29 +5,41 @@ namespace App\Livewire;
 use App\Models\LicenciaProfesor;
 use App\Models\Profesor;
 use App\Services\LicenciaRecuperacionService;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Auth;
 
 class LicenciasProfesoresTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $estado = '';
+
     public $sortField = 'fecha_inicio';
+
     public $sortDirection = 'desc';
-    
+
     // Propiedades para el modal de crear/editar
     public $showModal = false;
+
     public $editMode = false;
+
     public $licenciaId;
+
     public $run_profesor = '';
+
     public $profesorNombre = '';
+
     public $fecha_inicio = '';
+
     public $fecha_fin = '';
+
     public $motivo = '';
+
     public $observaciones = '';
+
     public $genera_recuperacion = true;
 
     protected $queryString = ['search', 'estado'];
@@ -56,12 +68,12 @@ class LicenciasProfesoresTable extends Component
 
     public function getProfesoresFiltradosProperty()
     {
-        if (empty($this->run_profesor) || strlen($this->run_profesor) < 2 || !empty($this->profesorNombre)) {
+        if (empty($this->run_profesor) || strlen($this->run_profesor) < 2 || ! empty($this->profesorNombre)) {
             return collect();
         }
 
-        return Profesor::where('run_profesor', 'like', '%' . $this->run_profesor . '%')
-            ->orWhere('name', 'like', '%' . $this->run_profesor . '%')
+        return Profesor::where('run_profesor', 'like', '%'.$this->run_profesor.'%')
+            ->orWhere('name', 'like', '%'.$this->run_profesor.'%')
             ->limit(5)
             ->get();
     }
@@ -75,9 +87,9 @@ class LicenciasProfesoresTable extends Component
     public function updatedRunProfesor()
     {
         // Si el usuario empieza a escribir de nuevo, limpiar el nombre seleccionado
-        if (!empty($this->profesorNombre)) {
+        if (! empty($this->profesorNombre)) {
             $profesor = Profesor::where('run_profesor', $this->run_profesor)->first();
-            if (!$profesor || $profesor->name !== $this->profesorNombre) {
+            if (! $profesor || $profesor->name !== $this->profesorNombre) {
                 $this->profesorNombre = '';
             }
         }
@@ -134,12 +146,12 @@ class LicenciasProfesoresTable extends Component
             'genera_recuperacion' => $this->genera_recuperacion,
         ];
 
-        $service = new LicenciaRecuperacionService();
+        $service = new LicenciaRecuperacionService;
 
         if ($this->editMode) {
             $licencia = LicenciaProfesor::findOrFail($this->licenciaId);
             $licencia->update($data);
-            
+
             // Regenerar clases a recuperar si está habilitado
             if ($licencia->genera_recuperacion) {
                 $clasesGeneradas = $service->regenerarClasesARecuperar($licencia);
@@ -153,7 +165,7 @@ class LicenciasProfesoresTable extends Component
             $data['created_by'] = Auth::user()->run;
             $data['estado'] = 'activa';
             $licencia = LicenciaProfesor::create($data);
-            
+
             // El Observer se encargará de generar las clases automáticamente
             session()->flash('message', 'Licencia creada exitosamente.');
         }
@@ -171,10 +183,10 @@ class LicenciasProfesoresTable extends Component
     public function delete($id)
     {
         $licencia = LicenciaProfesor::findOrFail($id);
-        
+
         // El cascade en la base de datos eliminará automáticamente las recuperaciones asociadas
         $licencia->delete();
-        
+
         session()->flash('message', 'Licencia y clases asociadas eliminadas exitosamente.');
     }
 
@@ -184,19 +196,19 @@ class LicenciasProfesoresTable extends Component
             ->when($this->search, function ($q) {
                 $rawSearch = trim($this->search);
                 $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
-                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn ($w) => mb_strlen(trim($w)) > 0));
 
                 $q->where(function ($subQ) use ($words, $cleanRun) {
-                    if (!empty($words)) {
+                    if (! empty($words)) {
                         $subQ->whereHas('profesor', function ($query) use ($words) {
                             foreach ($words as $word) {
-                                $query->where('name', 'like', '%' . $word . '%');
+                                $query->where('name', 'like', '%'.$word.'%');
                             }
                         });
                     }
-                    if (!empty($cleanRun)) {
+                    if (! empty($cleanRun)) {
                         $subQ->orWhereHas('profesor', function ($query) use ($cleanRun) {
-                            $query->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                            $query->where('run_profesor', 'like', '%'.$cleanRun.'%');
                         });
                     }
                 });

@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\AreaAcademica;
 use App\Models\Facultad;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 
 class AreaAcademicaController extends Controller
 {
@@ -15,6 +16,7 @@ class AreaAcademicaController extends Controller
     {
         try {
             $facultades = Facultad::with('sede.universidad')->get();
+
             return view('areas-academicas.index', compact('facultades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las áreas académicas.'])->withInput();
@@ -66,12 +68,12 @@ class AreaAcademicaController extends Controller
         try {
             $areaAcademica = AreaAcademica::findOrFail($id);
             $facultades = Facultad::with('sede.universidad')->get();
-            
+
             return view('areas-academicas.edit', compact('areaAcademica', 'facultades'));
         } catch (ModelNotFoundException $e) {
             return redirect()->route('academic_areas.index')->withErrors(['error' => 'Área Académica no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar el área académica: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar el área académica: '.$e->getMessage()]);
         }
     }
 
@@ -82,7 +84,7 @@ class AreaAcademicaController extends Controller
     {
         try {
             $request->validate([
-                'id_area_academica' => 'required|string|max:20|unique:area_academicas,id_area_academica,' . $id . ',id_area_academica',
+                'id_area_academica' => 'required|string|max:20|unique:area_academicas,id_area_academica,'.$id.',id_area_academica',
                 'nombre_area_academica' => 'required|string|max:255',
                 'tipo_area_academica' => 'required|in:departamento,escuela',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
@@ -100,7 +102,7 @@ class AreaAcademicaController extends Controller
         } catch (ModelNotFoundException $e) {
             return redirect()->route('academic_areas.index')->withErrors(['error' => 'Área Académica no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar el área académica: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar el área académica: '.$e->getMessage()]);
         }
     }
 
@@ -112,13 +114,13 @@ class AreaAcademicaController extends Controller
         try {
             $areaAcademica = AreaAcademica::findOrFail($id);
             $areaAcademica->delete();
+
             return redirect()->route('academic_areas.index')->with('success', 'Área Académica eliminada exitosamente.');
 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Área Académica no encontrada.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el área académica: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar el área académica: '.$e->getMessage()], 500);
         }
     }
 }
-

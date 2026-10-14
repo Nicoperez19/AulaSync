@@ -28,7 +28,7 @@ return new class extends Migration
                 ->references('run_profesor')
                 ->on('profesors')
                 ->onDelete('cascade');
-            
+
             $table->foreign('id_asignatura')
                 ->references('id_asignatura')
                 ->on('asignaturas')

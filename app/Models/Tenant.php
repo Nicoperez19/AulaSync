@@ -33,7 +33,7 @@ class Tenant extends Model
     /**
      * Relación con la sede
      */
-    public function sede()
+    public function sede(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Sede::class, 'sede_id', 'id_sede');
     }
@@ -52,25 +52,25 @@ class Tenant extends Model
     public function makeCurrent()
     {
         app()->instance('tenant', $this);
-        
+
         // Cambiar a la base de datos del tenant si está configurada
         if ($this->database) {
             $config = [
                 'database.connections.tenant.database' => $this->database,
             ];
-            
+
             // Si el tenant tiene un host específico, usarlo
             if ($this->database_host) {
                 $config['database.connections.tenant.host'] = $this->database_host;
             }
-            
+
             config($config);
-            
+
             // CRÍTICO: Forzar que se olvide de la conexión anterior para que se reconecte
             app('db')->purge('tenant');
             app('db')->disconnect('tenant');
         }
-        
+
         return $this;
     }
 
@@ -87,7 +87,7 @@ class Tenant extends Model
      */
     public function needsInitialization()
     {
-        return !$this->is_initialized;
+        return ! $this->is_initialized;
     }
 
     /**

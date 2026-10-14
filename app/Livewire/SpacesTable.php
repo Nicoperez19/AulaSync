@@ -2,7 +2,7 @@
 
 namespace App\Livewire;
 
-use App\Models\Espacio;  
+use App\Models\Espacio;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -10,8 +10,10 @@ class SpacesTable extends Component
 {
     use WithPagination;
 
-    public $search = '';  
+    public $search = '';
+
     public $sortField = 'id_espacio';
+
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -55,17 +57,17 @@ class SpacesTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_espacio', 'like', '%' . $searchTerm . '%');
+                    $q->where('id_espacio', 'like', '%'.$searchTerm.'%');
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_espacio', 'like', '%' . $t . '%')
-                          ->orWhere('tipo_espacio', 'like', '%' . $t . '%')
-                          ->orWhere('estado', 'like', '%' . $t . '%')
-                          ->orWhereHas('piso.facultad', function ($subQuery) use ($t) {
-                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('piso', function ($subQuery) use ($t) {
-                              $subQuery->where('numero_piso', 'like', '%' . $t . '%');
-                          });
+                        $q->orWhere('nombre_espacio', 'like', '%'.$t.'%')
+                            ->orWhere('tipo_espacio', 'like', '%'.$t.'%')
+                            ->orWhere('estado', 'like', '%'.$t.'%')
+                            ->orWhereHas('piso.facultad', function ($subQuery) use ($t) {
+                                $subQuery->where('nombre_facultad', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('piso', function ($subQuery) use ($t) {
+                                $subQuery->where('numero_piso', 'like', '%'.$t.'%');
+                            });
                     }
                 });
             })
@@ -90,7 +92,7 @@ class SpacesTable extends Component
                         $query->orderBy('id_espacio', 'asc');
                 }
             })
-            ->paginate(10);  
+            ->paginate(10);
 
         return view('livewire.spaces-table', compact('espacios'));
     }

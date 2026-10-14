@@ -12,6 +12,7 @@ class DestinatarioCorreo extends Model
     use HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'destinatarios_correos';
 
     protected $fillable = [
@@ -48,8 +49,8 @@ class DestinatarioCorreo extends Model
             'destinatario_correo_id',
             'tipo_correo_masivo_id'
         )
-        ->withPivot('habilitado')
-        ->withTimestamps();
+            ->withPivot('habilitado')
+            ->withTimestamps();
     }
 
     /**
@@ -78,19 +79,19 @@ class DestinatarioCorreo extends Model
             return $query;
         }
 
-        return $query->where(function($q) use ($termino) {
+        return $query->where(function ($q) use ($termino) {
             // Buscar en datos del usuario (destinatarios internos)
-            $q->whereHas('user', function($subQ) use ($termino) {
-                $subQ->where('name', 'like', '%' . $termino . '%')
-                     ->orWhere('email', 'like', '%' . $termino . '%')
-                     ->orWhere('run', 'like', '%' . $termino . '%');
+            $q->whereHas('user', function ($subQ) use ($termino) {
+                $subQ->where('name', 'like', '%'.$termino.'%')
+                    ->orWhere('email', 'like', '%'.$termino.'%')
+                    ->orWhere('run', 'like', '%'.$termino.'%');
             })
             // Buscar en destinatarios externos
-            ->orWhere('email_externo', 'like', '%' . $termino . '%')
-            ->orWhere('nombre_externo', 'like', '%' . $termino . '%')
+                ->orWhere('email_externo', 'like', '%'.$termino.'%')
+                ->orWhere('nombre_externo', 'like', '%'.$termino.'%')
             // Buscar en rol y cargo
-            ->orWhere('rol', 'like', '%' . $termino . '%')
-            ->orWhere('cargo', 'like', '%' . $termino . '%');
+                ->orWhere('rol', 'like', '%'.$termino.'%')
+                ->orWhere('cargo', 'like', '%'.$termino.'%');
         });
     }
 
@@ -99,11 +100,11 @@ class DestinatarioCorreo extends Model
      */
     public function scopePorTipoUsuario($query, $tipo = null)
     {
-        if (!$tipo) {
+        if (! $tipo) {
             return $query;
         }
 
-        return $query->whereHas('user.roles', function($q) use ($tipo) {
+        return $query->whereHas('user.roles', function ($q) use ($tipo) {
             $q->where('name', $tipo);
         });
     }
@@ -119,10 +120,11 @@ class DestinatarioCorreo extends Model
         } else {
             $nombre = $this->user->name ?? 'N/A';
         }
-        
+
         if ($this->rol) {
             $nombre .= " ({$this->rol})";
         }
+
         return $nombre;
     }
 
@@ -134,6 +136,7 @@ class DestinatarioCorreo extends Model
         if ($this->es_externo) {
             return $this->email_externo;
         }
+
         return $this->user->email ?? null;
     }
 
@@ -143,25 +146,25 @@ class DestinatarioCorreo extends Model
     public function getInfoBusquedaAttribute(): string
     {
         $info = [];
-        
+
         if ($this->es_externo) {
             $info[] = $this->nombre_externo ?? 'Sin nombre';
             $info[] = $this->email_externo;
             $info[] = 'Externo';
-        } else if ($this->user) {
+        } elseif ($this->user) {
             $info[] = $this->user->name;
             $info[] = $this->user->email;
-            $info[] = 'RUN: ' . $this->user->run;
+            $info[] = 'RUN: '.$this->user->run;
         }
-        
+
         if ($this->rol) {
-            $info[] = 'Rol: ' . $this->rol;
+            $info[] = 'Rol: '.$this->rol;
         }
-        
+
         if ($this->cargo) {
             $info[] = $this->cargo;
         }
-        
+
         return implode(' | ', $info);
     }
 }

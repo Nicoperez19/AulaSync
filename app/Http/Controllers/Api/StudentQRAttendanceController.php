@@ -2,28 +2,28 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttendanceRegistered;
 use App\Http\Controllers\Controller;
 use App\Models\Asistencia;
-use App\Models\Reserva;
 use App\Models\Espacio;
+use App\Models\Reserva;
 use App\Models\User;
-use App\Models\Modulo;
-use App\Events\AttendanceRegistered;
+use App\Traits\RunNormalizer;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use App\Traits\RunNormalizer;
 
 /**
  * Controlador para registro de asistencia de alumnos mediante escáner QR
- * 
+ *
  * Este controlador maneja:
  * 1. Entrada de alumnos a clases planificadas (con reserva activa)
  * 2. Entrada/Salida de alumnos en reservas espontáneas (sin reserva previa)
  * 3. Consulta de estado de asistencia de un alumno
- * 
+ *
  * Lógica de módulos aledaños:
  * - Si hay una reserva planificada que abarca varios módulos consecutivos,
  *   se considera una sola clase y el alumno queda presente durante toda ella.
@@ -34,10 +34,9 @@ class StudentQRAttendanceController extends Controller
 
     /**
      * Marcar entrada de alumno mediante QR
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     * 
+     *
+     * @return JsonResponse
+     *
      * Lógica:
      * 1. Busca si hay reserva activa en el espacio
      * 2. Si hay reserva planificada → registra entrada (queda presente toda la clase)
@@ -60,7 +59,7 @@ class StudentQRAttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -74,15 +73,15 @@ class StudentQRAttendanceController extends Controller
             Log::info('Registro de entrada QR alumno iniciado', [
                 'rut_alumno' => $rutAlumno,
                 'id_espacio' => $idEspacio,
-                'timestamp' => $now->toDateTimeString()
+                'timestamp' => $now->toDateTimeString(),
             ]);
 
             // Verificar que el espacio existe
             $espacio = Espacio::find($idEspacio);
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El espacio especificado no existe'
+                    'message' => 'El espacio especificado no existe',
                 ], 404);
             }
 
@@ -100,10 +99,10 @@ class StudentQRAttendanceController extends Controller
                         'message' => 'Ya tienes asistencia registrada en esta sala',
                         'data' => [
                             'asistencia' => $this->formatearAsistencia($asistenciaActiva),
-                            'accion_requerida' => $asistenciaActiva->tipo_entrada === Asistencia::TIPO_ESPONTANEA 
-                                ? 'marcar_salida' 
-                                : 'ninguna'
-                        ]
+                            'accion_requerida' => $asistenciaActiva->tipo_entrada === Asistencia::TIPO_ESPONTANEA
+                                ? 'marcar_salida'
+                                : 'ninguna',
+                        ],
                     ], 409);
                 } else {
                     // Está en otra sala, debe salir primero
@@ -112,26 +111,26 @@ class StudentQRAttendanceController extends Controller
                         'message' => 'Ya tienes asistencia activa en otra sala. Debes marcar salida primero.',
                         'data' => [
                             'sala_actual' => $asistenciaActiva->espacio->nombre_espacio ?? $asistenciaActiva->id_espacio,
-                            'hora_entrada' => $asistenciaActiva->hora_llegada
-                        ]
+                            'hora_entrada' => $asistenciaActiva->hora_llegada,
+                        ],
                     ], 409);
                 }
             }
 
             // Buscar reserva activa en el espacio
             $reservaActiva = $this->buscarReservaActiva($idEspacio, $now);
-            
+
             // Obtener nombre del alumno
             $nombreAlumno = $request->nombre_alumno;
-            if (!$nombreAlumno) {
+            if (! $nombreAlumno) {
                 $user = User::where('run', $rutAlumno)->first();
-                $nombreAlumno = $user ? $user->name : 'Alumno #' . $rutAlumno;
+                $nombreAlumno = $user ? $user->name : 'Alumno #'.$rutAlumno;
             }
 
             if ($reservaActiva) {
                 // === CASO 1: Hay reserva activa (clase planificada o espontánea del profesor) ===
                 $asistencia = $this->registrarAsistenciaPlanificada($reservaActiva, $rutAlumno, $nombreAlumno, $idEspacio, $now);
-                
+
                 DB::commit();
 
                 // Disparar evento de broadcasting si está disponible
@@ -148,20 +147,20 @@ class StudentQRAttendanceController extends Controller
                             'tipo' => $reservaActiva->tipo_reserva,
                             'profesor' => $reservaActiva->profesor->name ?? $reservaActiva->solicitante->nombre ?? 'Desconocido',
                             'asignatura' => $reservaActiva->asignatura->nombre_asignatura ?? 'Uso libre',
-                            'hora_fin_estimada' => $this->calcularHoraFinReserva($reservaActiva)
+                            'hora_fin_estimada' => $this->calcularHoraFinReserva($reservaActiva),
                         ],
                         'espacio' => [
                             'id' => $espacio->id_espacio,
-                            'nombre' => $espacio->nombre_espacio
+                            'nombre' => $espacio->nombre_espacio,
                         ],
                         'accion_requerida' => 'ninguna',
-                        'mensaje_usuario' => 'Tu asistencia quedó registrada para toda la clase'
-                    ]
+                        'mensaje_usuario' => 'Tu asistencia quedó registrada para toda la clase',
+                    ],
                 ], 201);
             } else {
                 // === CASO 2: No hay reserva activa (entrada espontánea) ===
                 $asistencia = $this->registrarAsistenciaEspontanea($rutAlumno, $nombreAlumno, $idEspacio, $now);
-                
+
                 DB::commit();
 
                 return response()->json([
@@ -172,37 +171,36 @@ class StudentQRAttendanceController extends Controller
                         'asistencia' => $this->formatearAsistencia($asistencia),
                         'espacio' => [
                             'id' => $espacio->id_espacio,
-                            'nombre' => $espacio->nombre_espacio
+                            'nombre' => $espacio->nombre_espacio,
                         ],
                         'accion_requerida' => 'marcar_salida',
-                        'mensaje_usuario' => 'No hay clase programada. Debes escanear el QR nuevamente cuando te retires para registrar tu salida.'
-                    ]
+                        'mensaje_usuario' => 'No hay clase programada. Debes escanear el QR nuevamente cuando te retires para registrar tu salida.',
+                    ],
                 ], 201);
             }
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Error al registrar entrada QR alumno', [
                 'rut_alumno' => $request->rut_alumno ?? null,
                 'id_espacio' => $request->id_espacio ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar la entrada',
-                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
             ], 500);
         }
     }
 
     /**
      * Marcar salida de alumno mediante QR
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function marcarSalida(Request $request)
     {
@@ -218,7 +216,7 @@ class StudentQRAttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -236,10 +234,10 @@ class StudentQRAttendanceController extends Controller
                 ->whereDate('created_at', $now->toDateString())
                 ->first();
 
-            if (!$asistencia) {
+            if (! $asistencia) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes una entrada activa en esta sala'
+                    'message' => 'No tienes una entrada activa en esta sala',
                 ], 404);
             }
 
@@ -247,15 +245,15 @@ class StudentQRAttendanceController extends Controller
             if ($asistencia->tipo_entrada === Asistencia::TIPO_PLANIFICADA) {
                 // Para clases planificadas, verificar si la clase ya terminó
                 $reservaActiva = $this->buscarReservaActiva($idEspacio, $now);
-                
+
                 if ($reservaActiva && $reservaActiva->id_reserva === $asistencia->id_reserva) {
                     return response()->json([
                         'success' => false,
                         'message' => 'La clase aún está en curso. Tu asistencia quedará registrada hasta que termine.',
                         'data' => [
                             'tipo' => 'planificada',
-                            'hora_fin_estimada' => $this->calcularHoraFinReserva($reservaActiva)
-                        ]
+                            'hora_fin_estimada' => $this->calcularHoraFinReserva($reservaActiva),
+                        ],
                     ], 400);
                 }
             }
@@ -268,7 +266,7 @@ class StudentQRAttendanceController extends Controller
             Log::info('Salida QR alumno registrada', [
                 'rut_alumno' => $rutAlumno,
                 'id_espacio' => $idEspacio,
-                'duracion_minutos' => $asistencia->duracion_minutos
+                'duracion_minutos' => $asistencia->duracion_minutos,
             ]);
 
             return response()->json([
@@ -277,32 +275,31 @@ class StudentQRAttendanceController extends Controller
                 'data' => [
                     'asistencia' => $this->formatearAsistencia($asistencia),
                     'duracion_minutos' => $asistencia->duracion_minutos,
-                    'mensaje_usuario' => 'Tu salida ha sido registrada. ¡Hasta pronto!'
-                ]
+                    'mensaje_usuario' => 'Tu salida ha sido registrada. ¡Hasta pronto!',
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Error al registrar salida QR alumno', [
                 'rut_alumno' => $request->rut_alumno ?? null,
                 'id_espacio' => $request->id_espacio ?? null,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar la salida',
-                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
             ], 500);
         }
     }
 
     /**
      * Toggle entrada/salida de alumno (escaneo único que detecta estado)
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function toggleAsistencia(Request $request)
     {
@@ -316,7 +313,7 @@ class StudentQRAttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -343,8 +340,8 @@ class StudentQRAttendanceController extends Controller
                     'data' => [
                         'tipo' => 'planificada',
                         'asistencia' => $this->formatearAsistencia($asistenciaActiva),
-                        'accion_requerida' => 'ninguna'
-                    ]
+                        'accion_requerida' => 'ninguna',
+                    ],
                 ], 409);
             }
         } else {
@@ -355,10 +352,10 @@ class StudentQRAttendanceController extends Controller
 
     /**
      * Verificar estado de asistencia de un alumno
-     * 
-     * @param string $rutAlumno
-     * @param string|null $idEspacio
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @param  string  $rutAlumno
+     * @param  string|null  $idEspacio
+     * @return JsonResponse
      */
     public function verificarEstado($rutAlumno, $idEspacio = null)
     {
@@ -377,11 +374,11 @@ class StudentQRAttendanceController extends Controller
 
             $asistenciaActiva = $query->first();
 
-            if (!$asistenciaActiva) {
+            if (! $asistenciaActiva) {
                 return response()->json([
                     'success' => true,
                     'presente' => false,
-                    'message' => 'El alumno no tiene asistencia activa'
+                    'message' => 'El alumno no tiene asistencia activa',
                 ], 200);
             }
 
@@ -392,34 +389,33 @@ class StudentQRAttendanceController extends Controller
                     'asistencia' => $this->formatearAsistencia($asistenciaActiva),
                     'espacio' => [
                         'id' => $asistenciaActiva->id_espacio,
-                        'nombre' => $asistenciaActiva->espacio->nombre_espacio ?? null
+                        'nombre' => $asistenciaActiva->espacio->nombre_espacio ?? null,
                     ],
                     'tipo' => $asistenciaActiva->tipo_entrada,
-                    'accion_requerida' => $asistenciaActiva->tipo_entrada === Asistencia::TIPO_ESPONTANEA 
-                        ? 'marcar_salida' 
-                        : 'ninguna'
-                ]
+                    'accion_requerida' => $asistenciaActiva->tipo_entrada === Asistencia::TIPO_ESPONTANEA
+                        ? 'marcar_salida'
+                        : 'ninguna',
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Error al verificar estado de asistencia', [
                 'rut_alumno' => $rutAlumno,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al verificar el estado'
+                'message' => 'Error al verificar el estado',
             ], 500);
         }
     }
 
     /**
      * Obtener historial de asistencias de un alumno
-     * 
-     * @param Request $request
-     * @param string $rutAlumno
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @param  string  $rutAlumno
+     * @return JsonResponse
      */
     public function historialAlumno(Request $request, $rutAlumno)
     {
@@ -430,7 +426,7 @@ class StudentQRAttendanceController extends Controller
             $limite = min($request->query('limite', 50), 100);
 
             $asistencias = Asistencia::where('rut_asistente', $rutLimpio)
-                ->whereBetween('created_at', [$fechaInicio . ' 00:00:00', $fechaFin . ' 23:59:59'])
+                ->whereBetween('created_at', [$fechaInicio.' 00:00:00', $fechaFin.' 23:59:59'])
                 ->with(['espacio', 'reserva.asignatura', 'asignatura'])
                 ->orderBy('created_at', 'desc')
                 ->limit($limite)
@@ -445,40 +441,40 @@ class StudentQRAttendanceController extends Controller
                     'rut_alumno' => $rutLimpio,
                     'periodo' => [
                         'inicio' => $fechaInicio,
-                        'fin' => $fechaFin
+                        'fin' => $fechaFin,
                     ],
                     'total' => $asistencias->count(),
-                    'asistencias' => $asistencias
-                ]
+                    'asistencias' => $asistencias,
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Error al obtener historial de asistencias', [
                 'rut_alumno' => $rutAlumno,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el historial'
+                'message' => 'Error al obtener el historial',
             ], 500);
         }
     }
 
     /**
      * Obtener lista de alumnos presentes en un espacio
-     * 
-     * @param string $idEspacio
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @param  string  $idEspacio
+     * @return JsonResponse
      */
     public function alumnosPresentesEnEspacio($idEspacio)
     {
         try {
             $espacio = Espacio::find($idEspacio);
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Espacio no encontrado'
+                    'message' => 'Espacio no encontrado',
                 ], 404);
             }
 
@@ -495,7 +491,7 @@ class StudentQRAttendanceController extends Controller
                         'rut' => $asistencia->rut_asistente,
                         'nombre' => $asistencia->nombre_asistente,
                         'hora_entrada' => Carbon::parse($asistencia->hora_llegada)->format('H:i'),
-                        'tipo_entrada' => $asistencia->tipo_entrada
+                        'tipo_entrada' => $asistencia->tipo_entrada,
                     ];
                 });
 
@@ -505,22 +501,22 @@ class StudentQRAttendanceController extends Controller
                     'espacio' => [
                         'id' => $espacio->id_espacio,
                         'nombre' => $espacio->nombre_espacio,
-                        'capacidad' => $espacio->puestos_disponibles
+                        'capacidad' => $espacio->puestos_disponibles,
                     ],
                     'ocupacion_actual' => $presentes->count(),
-                    'alumnos_presentes' => $presentes
-                ]
+                    'alumnos_presentes' => $presentes,
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Error al obtener alumnos presentes', [
                 'id_espacio' => $idEspacio,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener la información'
+                'message' => 'Error al obtener la información',
             ], 500);
         }
     }
@@ -534,7 +530,6 @@ class StudentQRAttendanceController extends Controller
     {
         return $this->normalizeRun($rut);
     }
-
 
     /**
      * Buscar reserva activa en un espacio para el momento actual
@@ -596,6 +591,7 @@ class StudentQRAttendanceController extends Controller
         // Si tiene número de módulos, calcular
         if ($reserva->modulos && $reserva->modulos > 0) {
             $horaInicio = Carbon::parse($reserva->hora);
+
             return $horaInicio->addMinutes(50 * $reserva->modulos)->format('H:i');
         }
 
@@ -627,7 +623,7 @@ class StudentQRAttendanceController extends Controller
             'hora_salida' => null,
             'tipo_entrada' => Asistencia::TIPO_PLANIFICADA,
             'estado' => Asistencia::ESTADO_PRESENTE,
-            'observaciones' => null
+            'observaciones' => null,
         ]);
     }
 
@@ -646,7 +642,7 @@ class StudentQRAttendanceController extends Controller
             'hora_salida' => null,
             'tipo_entrada' => Asistencia::TIPO_ESPONTANEA,
             'estado' => Asistencia::ESTADO_PRESENTE,
-            'observaciones' => 'Entrada espontánea - sin reserva activa'
+            'observaciones' => 'Entrada espontánea - sin reserva activa',
         ]);
     }
 
@@ -660,18 +656,18 @@ class StudentQRAttendanceController extends Controller
             'rut_alumno' => $asistencia->rut_asistente,
             'nombre_alumno' => $asistencia->nombre_asistente,
             'hora_entrada' => Carbon::parse($asistencia->hora_llegada)->format('H:i'),
-            'hora_salida' => $asistencia->hora_salida 
-                ? Carbon::parse($asistencia->hora_salida)->format('H:i') 
+            'hora_salida' => $asistencia->hora_salida
+                ? Carbon::parse($asistencia->hora_salida)->format('H:i')
                 : null,
             'tipo' => $asistencia->tipo_entrada,
             'estado' => $asistencia->estado,
             'fecha' => $asistencia->created_at->format('Y-m-d'),
             'espacio' => $asistencia->id_espacio,
             'reserva_id' => $asistencia->id_reserva,
-            'asignatura' => $asistencia->asignatura 
-                ? $asistencia->asignatura->nombre_asignatura 
+            'asignatura' => $asistencia->asignatura
+                ? $asistencia->asignatura->nombre_asignatura
                 : null,
-            'duracion_minutos' => $asistencia->duracion_minutos
+            'duracion_minutos' => $asistencia->duracion_minutos,
         ];
     }
 
@@ -697,7 +693,7 @@ class StudentQRAttendanceController extends Controller
             }
         } catch (\Exception $e) {
             Log::warning('No se pudo disparar evento de asistencia', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
     }

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -22,8 +23,8 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Otorgar acceso global a Superusuarios y cuenta máster 19716146
-        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
-            if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin')) {
+        Gate::before(function ($user, $ability) {
+            if ($user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Super Admin')) {
                 return true;
             }
         });

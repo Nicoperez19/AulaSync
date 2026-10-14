@@ -2,20 +2,20 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Espacio;
-use App\Models\Reserva;
-use App\Models\Planificacion_Asignatura;
-use App\Models\Tenant;
+use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
+use App\Models\Espacio;
+use App\Models\Planificacion_Asignatura;
+use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class ActualizarEstadoEspacios extends Command
 {
     protected $signature = 'espacios:actualizar-estado';
+
     protected $description = 'Actualiza el estado de los espacios basado en las reservas y clases programadas';
 
     public function handle()
@@ -27,6 +27,7 @@ class ActualizarEstadoEspacios extends Command
 
         if ($tenants->isEmpty()) {
             $this->warn('No se encontraron tenants configurados.');
+
             return 0;
         }
 
@@ -47,7 +48,7 @@ class ActualizarEstadoEspacios extends Command
 
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diaLimpio = ModulosHelper::normalizarDia($diaActual);
             $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
             $horaActual = $ahora->format('H:i:s');
 
@@ -62,7 +63,7 @@ class ActualizarEstadoEspacios extends Command
 
             // Obtener todos los espacios
             $espacios = Espacio::on('tenant')->get();
-            $this->line("  Total de espacios a verificar: " . $espacios->count());
+            $this->line('  Total de espacios a verificar: '.$espacios->count());
 
             // Obtener planificaciones activas para el período actual
             $planificacionesActivas = Planificacion_Asignatura::on('tenant')
@@ -75,7 +76,7 @@ class ActualizarEstadoEspacios extends Command
                 })
                 ->get();
 
-            $this->line("  Planificaciones activas encontradas: " . $planificacionesActivas->count());
+            $this->line('  Planificaciones activas encontradas: '.$planificacionesActivas->count());
 
             // Obtener reservas activas usando el scope unificado 'vigentes'
             // Esto asegura consistencia en la lógica de determinación de estado
@@ -83,7 +84,7 @@ class ActualizarEstadoEspacios extends Command
                 ->vigentes($ahora->toDateString(), $horaActual)
                 ->get();
 
-            $this->line("  Reservas activas encontradas: " . $reservasActivas->count());
+            $this->line('  Reservas activas encontradas: '.$reservasActivas->count());
             $this->line("  Hora actual para filtro: {$horaActual}");
 
             // Debug: Mostrar detalles de las reservas encontradas
@@ -97,7 +98,7 @@ class ActualizarEstadoEspacios extends Command
                         'hora_inicio' => $res->hora,
                         'hora_fin' => $res->hora_salida,
                         'run_solicitante' => $res->run_solicitante ?? 'N/A',
-                        'hora_actual' => $horaActual
+                        'hora_actual' => $horaActual,
                     ]);
                 }
             } else {
@@ -108,9 +109,9 @@ class ActualizarEstadoEspacios extends Command
                     'fecha_buscada' => $ahora->toDateString(),
                     'hora_actual' => $horaActual,
                     'total_reservas_en_bd' => $todasReservas->count(),
-                    'reservas_por_estado' => $todasReservas->groupBy('estado')->map->count()
+                    'reservas_por_estado' => $todasReservas->groupBy('estado')->map->count(),
                 ]);
-                
+
                 // Mostrar detalles de las primeras 10 reservas para debugging
                 foreach ($todasReservas->take(10) as $res) {
                     Log::warning('Reserva encontrada (debug)', [
@@ -119,7 +120,7 @@ class ActualizarEstadoEspacios extends Command
                         'fecha' => $res->fecha_reserva,
                         'hora_inicio' => $res->hora,
                         'hora_fin' => $res->hora_salida,
-                        'dentro_de_rango' => ($res->hora <= $horaActual && $res->hora_salida > $horaActual) ? 'SI' : 'NO'
+                        'dentro_de_rango' => ($res->hora <= $horaActual && $res->hora_salida > $horaActual) ? 'SI' : 'NO',
                     ]);
                 }
             }
@@ -131,85 +132,85 @@ class ActualizarEstadoEspacios extends Command
             foreach ($espacios as $espacio) {
                 // Estado anterior como está en BD (puede tener variación de case)
                 $estadoAnterior = $espacio->estado;
-                
+
                 // Verificar si hay reserva activa para este espacio
                 $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
-                
+
                 // Verificar si hay clase programada que debería estar en curso
                 $planificacionActual = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function($planificacion) use ($horaActual) {
-                        return $planificacion->modulo->hora_inicio <= $horaActual && 
+                    ->filter(function ($planificacion) use ($horaActual) {
+                        return $planificacion->modulo->hora_inicio <= $horaActual &&
                                $planificacion->modulo->hora_termino > $horaActual;
                     })->first();
-                
+
                 $tieneClaseActual = $planificacionActual !== null;
-                
+
                 // Determinar el estado correcto
                 $nuevoEstado = 'Disponible';
-                
+
                 if ($tieneReservaActiva) {
                     $nuevoEstado = 'Ocupado';
                     $espaciosOcupados++;
-                    
+
                     Log::info('Espacio marcado como ocupado por reserva activa', [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
-                        'reservas_encontradas' => $reservasActivas->where('id_espacio', $espacio->id_espacio)->pluck('id_reserva')->toArray()
+                        'reservas_encontradas' => $reservasActivas->where('id_espacio', $espacio->id_espacio)->pluck('id_reserva')->toArray(),
                     ]);
                 } elseif ($tieneClaseActual) {
-                    // Si hay clase programada pero no hay reserva activa, 
+                    // Si hay clase programada pero no hay reserva activa,
                     // el espacio debería estar ocupado pero no se ha registrado el ingreso
                     $nuevoEstado = 'Disponible';
                     $espaciosDisponibles++;
-                    
+
                     if (strtolower($estadoAnterior) === 'ocupado') {
                         $this->warn("  Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene reserva activa. Cambiando a disponible.");
                     }
                 } else {
                     $espaciosDisponibles++;
-                    
+
                     if (strtolower($estadoAnterior) === 'ocupado') {
                         Log::warning('Espacio ocupado sin reserva detectado', [
                             'espacio' => $espacio->nombre_espacio,
                             'id_espacio' => $espacio->id_espacio,
                             'estado_anterior' => $estadoAnterior,
                             'reservas_activas_total' => $reservasActivas->count(),
-                            'reservas_para_este_espacio' => $reservasActivas->where('id_espacio', $espacio->id_espacio)->count()
+                            'reservas_para_este_espacio' => $reservasActivas->where('id_espacio', $espacio->id_espacio)->count(),
                         ]);
                         $this->warn("  Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene actividad. Cambiando a disponible.");
                     }
                 }
-                
+
                 // Actualizar el estado si es diferente (comparación case-insensitive)
                 if (strtolower($estadoAnterior) !== strtolower($nuevoEstado)) {
                     $espacio->estado = $nuevoEstado;
                     $espacio->save();
                     $espaciosActualizados++;
-                    
+
                     Log::info('Estado de espacio actualizado', [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
                         'estado_anterior' => $estadoAnterior,
-                        'estado_nuevo' => $nuevoEstado
+                        'estado_nuevo' => $nuevoEstado,
                     ]);
-                    
+
                     $this->line("  Espacio {$espacio->nombre_espacio}: {$estadoAnterior} → {$nuevoEstado}");
                 }
             }
 
             $this->newLine();
-            $this->info("  === RESUMEN DE ACTUALIZACIÓN ===");
+            $this->info('  === RESUMEN DE ACTUALIZACIÓN ===');
             $this->info("  Espacios actualizados: {$espaciosActualizados}");
             $this->info("  Espacios ocupados: {$espaciosOcupados}");
             $this->info("  Espacios disponibles: {$espaciosDisponibles}");
-            $this->info("  Total de espacios: " . $espacios->count());
+            $this->info('  Total de espacios: '.$espacios->count());
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            $this->error("  Error procesando tenant {$tenant->name}: ".$e->getMessage());
             Log::error("Error en ActualizarEstadoEspacios para tenant {$tenant->name}", [
                 'tenant' => $tenant->domain,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
-} 
+}

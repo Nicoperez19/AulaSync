@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AreaAcademica;
 use App\Models\Facultad;
 use App\Models\Universidad;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 
 class EscuelaController extends Controller
@@ -21,7 +22,7 @@ class EscuelaController extends Controller
                 ->get();
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
-            
+
             return view('escuelas.index', compact('escuelas', 'facultades', 'universidades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las escuelas.'])->withInput();
@@ -76,12 +77,12 @@ class EscuelaController extends Controller
             $escuela = AreaAcademica::where('tipo_area_academica', 'escuela')->findOrFail($id);
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
-            
+
             return view('escuelas.edit', compact('escuela', 'facultades', 'universidades'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('escuelas.index')->withErrors(['error' => 'Escuela no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar la escuela: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar la escuela: '.$e->getMessage()]);
         }
     }
 
@@ -92,7 +93,7 @@ class EscuelaController extends Controller
     {
         try {
             $request->validate([
-                'id_area_academica' => 'required|string|max:20|unique:area_academicas,id_area_academica,' . $id . ',id_area_academica',
+                'id_area_academica' => 'required|string|max:20|unique:area_academicas,id_area_academica,'.$id.',id_area_academica',
                 'nombre_area_academica' => 'required|string|max:255',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
             ]);
@@ -106,10 +107,10 @@ class EscuelaController extends Controller
             ]);
 
             return redirect()->route('escuelas.index')->with('success', 'Escuela actualizada exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('escuelas.index')->withErrors(['error' => 'Escuela no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la escuela: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la escuela: '.$e->getMessage()]);
         }
     }
 
@@ -121,11 +122,12 @@ class EscuelaController extends Controller
         try {
             $escuela = AreaAcademica::where('tipo_area_academica', 'escuela')->findOrFail($id);
             $escuela->delete();
+
             return redirect()->route('escuelas.index')->with('success', 'Escuela eliminada exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Escuela no encontrada.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar la escuela: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar la escuela: '.$e->getMessage()], 500);
         }
     }
 }

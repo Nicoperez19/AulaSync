@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Configuracion;
+use App\Models\DiaFeriado;
+use App\Models\PeriodoAcademico;
 use App\Models\Sede;
 use App\Models\Tenant;
-use App\Models\PeriodoAcademico;
-use App\Models\DiaFeriado;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class ConfiguracionController extends Controller
 {
@@ -20,7 +21,9 @@ class ConfiguracionController extends Controller
     {
         if ($request->filled('id_sede')) {
             $sede = Sede::find($request->id_sede);
-            if ($sede) return $sede;
+            if ($sede) {
+                return $sede;
+            }
         }
 
         $tenant = Tenant::current();
@@ -37,7 +40,9 @@ class ConfiguracionController extends Controller
 
         if (auth()->check() && auth()->user()->id_sede) {
             $userSede = Sede::find(auth()->user()->id_sede);
-            if ($userSede) return $userSede;
+            if ($userSede) {
+                return $userSede;
+            }
         }
 
         return Sede::find('LA') ?? Sede::first();
@@ -57,17 +62,17 @@ class ConfiguracionController extends Controller
             $logoUrl = null;
             $hasCustomLogo = false;
             if ($sede) {
-                if ($sede->logo && Storage::disk('public')->exists('sedes/logos/' . $sede->logo)) {
-                    $logoUrl = asset('storage/sedes/logos/' . $sede->logo);
+                if ($sede->logo && Storage::disk('public')->exists('sedes/logos/'.$sede->logo)) {
+                    $logoUrl = asset('storage/sedes/logos/'.$sede->logo);
                     $hasCustomLogo = true;
                 } elseif ($configLogo = Configuracion::where('clave', "logo_institucional_{$sede->id_sede}")->first()) {
-                    if ($configLogo->valor && Storage::disk('public')->exists('images/logo/' . $configLogo->valor)) {
-                        $logoUrl = asset('storage/images/logo/' . $configLogo->valor);
+                    if ($configLogo->valor && Storage::disk('public')->exists('images/logo/'.$configLogo->valor)) {
+                        $logoUrl = asset('storage/images/logo/'.$configLogo->valor);
                         $hasCustomLogo = true;
                     }
                 }
             }
-            if (!$logoUrl) {
+            if (! $logoUrl) {
                 if (file_exists(public_path('images/Logo-UCSC-Color-Horizontal.png'))) {
                     $logoUrl = asset('images/Logo-UCSC-Color-Horizontal.png');
                 } elseif (file_exists(public_path('images/logo_IT_talcahuano.png'))) {
@@ -110,13 +115,13 @@ class ConfiguracionController extends Controller
             $receso1Feriado = DiaFeriado::where('tipo', 'semana_reajuste')
                 ->where(function ($q) use ($anio) {
                     $q->where('nombre', 'like', "%{$anio}-1%")
-                      ->orWhere('nombre', 'like', "%Primer Semestre {$anio}%");
+                        ->orWhere('nombre', 'like', "%Primer Semestre {$anio}%");
                 })->first();
 
             $receso2Feriado = DiaFeriado::where('tipo', 'semana_reajuste')
                 ->where(function ($q) use ($anio) {
                     $q->where('nombre', 'like', "%{$anio}-2%")
-                      ->orWhere('nombre', 'like', "%Segundo Semestre {$anio}%");
+                        ->orWhere('nombre', 'like', "%Segundo Semestre {$anio}%");
                 })->first();
 
             $receso1Habilitado = $p1Config['receso_habilitado'] ?? ($receso1Feriado ? $receso1Feriado->activo : false);
@@ -149,7 +154,7 @@ class ConfiguracionController extends Controller
                 'configuraciones'
             ));
         } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las configuraciones: ' . $e->getMessage()])->withInput();
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las configuraciones: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -192,26 +197,26 @@ class ConfiguracionController extends Controller
 
             // 1. Manejo del Logo Institucional
             if ($request->filled('eliminar_logo') && $request->eliminar_logo == '1') {
-                if ($sede->logo && Storage::disk('public')->exists('sedes/logos/' . $sede->logo)) {
-                    Storage::disk('public')->delete('sedes/logos/' . $sede->logo);
+                if ($sede->logo && Storage::disk('public')->exists('sedes/logos/'.$sede->logo)) {
+                    Storage::disk('public')->delete('sedes/logos/'.$sede->logo);
                 }
                 $sede->update(['logo' => null]);
 
                 $configLogo = Configuracion::where('clave', "logo_institucional_{$sede->id_sede}")->first();
                 if ($configLogo) {
-                    if ($configLogo->valor && Storage::disk('public')->exists('images/logo/' . $configLogo->valor)) {
-                        Storage::disk('public')->delete('images/logo/' . $configLogo->valor);
+                    if ($configLogo->valor && Storage::disk('public')->exists('images/logo/'.$configLogo->valor)) {
+                        Storage::disk('public')->delete('images/logo/'.$configLogo->valor);
                     }
                     $configLogo->delete();
                 }
                 Cache::forget("logo_institucional_path_{$sede->id_sede}");
             } elseif ($request->hasFile('logo')) {
                 $file = $request->file('logo');
-                $filename = $sede->id_sede . '_logo_' . time() . '.' . $file->getClientOriginalExtension();
+                $filename = $sede->id_sede.'_logo_'.time().'.'.$file->getClientOriginalExtension();
                 $file->storeAs('public/sedes/logos', $filename);
 
-                if ($sede->logo && $sede->logo !== $filename && Storage::disk('public')->exists('sedes/logos/' . $sede->logo)) {
-                    Storage::disk('public')->delete('sedes/logos/' . $sede->logo);
+                if ($sede->logo && $sede->logo !== $filename && Storage::disk('public')->exists('sedes/logos/'.$sede->logo)) {
+                    Storage::disk('public')->delete('sedes/logos/'.$sede->logo);
                 }
                 $sede->update(['logo' => $filename]);
 
@@ -228,7 +233,7 @@ class ConfiguracionController extends Controller
             Configuracion::set(
                 "periodos_academicos_definidos_{$sede->id_sede}",
                 $periodosDefinidos,
-                "Indica si los períodos académicos están definidos para la sede"
+                'Indica si los períodos académicos están definidos para la sede'
             );
 
             // 3. Períodos Académicos en BD central
@@ -329,7 +334,7 @@ class ConfiguracionController extends Controller
             return redirect()->route('configuracion.index', ['id_sede' => $sede->id_sede, 'anio' => $anio])
                 ->with('success', 'Configuración del sistema guardada exitosamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al guardar la configuración: ' . $e->getMessage()])->withInput();
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al guardar la configuración: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -340,15 +345,15 @@ class ConfiguracionController extends Controller
     {
         try {
             $sede = Sede::findOrFail($idSede);
-            if ($sede->logo && Storage::disk('public')->exists('sedes/logos/' . $sede->logo)) {
-                Storage::disk('public')->delete('sedes/logos/' . $sede->logo);
+            if ($sede->logo && Storage::disk('public')->exists('sedes/logos/'.$sede->logo)) {
+                Storage::disk('public')->delete('sedes/logos/'.$sede->logo);
             }
             $sede->update(['logo' => null]);
 
             $configLogo = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
             if ($configLogo) {
-                if ($configLogo->valor && Storage::disk('public')->exists('images/logo/' . $configLogo->valor)) {
-                    Storage::disk('public')->delete('images/logo/' . $configLogo->valor);
+                if ($configLogo->valor && Storage::disk('public')->exists('images/logo/'.$configLogo->valor)) {
+                    Storage::disk('public')->delete('images/logo/'.$configLogo->valor);
                 }
                 $configLogo->delete();
             }
@@ -365,7 +370,8 @@ class ConfiguracionController extends Controller
             if (request()->wantsJson() || request()->ajax()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
             }
-            return back()->withErrors(['error' => 'Error al eliminar el logo: ' . $e->getMessage()]);
+
+            return back()->withErrors(['error' => 'Error al eliminar el logo: '.$e->getMessage()]);
         }
     }
 
@@ -406,9 +412,9 @@ class ConfiguracionController extends Controller
                 }
 
                 // Upload logo
-                $logoName = time() . '_' . $request->id_sede . '.' . $request->logo->extension();
+                $logoName = time().'_'.$request->id_sede.'.'.$request->logo->extension();
                 $request->logo->storeAs('images/logo', $logoName, 'public');
-                
+
                 Configuracion::create([
                     'clave' => $claveCompleta,
                     'valor' => $logoName,
@@ -417,8 +423,7 @@ class ConfiguracionController extends Controller
 
                 // Clear logo cache for this sede
                 Cache::forget("logo_institucional_path_{$request->id_sede}");
-            } 
-            else {
+            } else {
                 $request->validate([
                     'clave' => 'required|string',
                     'clave_custom' => 'nullable|string|max:100|unique:configuracion,clave',
@@ -435,7 +440,7 @@ class ConfiguracionController extends Controller
 
             return redirect()->route('configuracion.index')->with('success', 'Configuración creada exitosamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear la configuración. Por favor, intente nuevamente. ' . $e->getMessage()])->withInput();
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear la configuración. Por favor, intente nuevamente. '.$e->getMessage()])->withInput();
         }
     }
 
@@ -454,11 +459,12 @@ class ConfiguracionController extends Controller
     {
         try {
             $configuracion = Configuracion::findOrFail($id);
+
             return view('configuracion.edit', compact('configuracion'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('configuracion.index')->withErrors(['error' => 'Configuración no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar la configuración: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar la configuración: '.$e->getMessage()]);
         }
     }
 
@@ -479,17 +485,17 @@ class ConfiguracionController extends Controller
                     ]);
 
                     // Delete old logo if exists
-                    if ($configuracion->valor && Storage::disk('public')->exists('images/logo/' . $configuracion->valor)) {
-                        Storage::disk('public')->delete('images/logo/' . $configuracion->valor);
+                    if ($configuracion->valor && Storage::disk('public')->exists('images/logo/'.$configuracion->valor)) {
+                        Storage::disk('public')->delete('images/logo/'.$configuracion->valor);
                     }
 
                     // Extract sede ID from clave
                     $idSede = str_replace('logo_institucional_', '', $configuracion->clave);
 
                     // Upload new logo
-                    $logoName = time() . '_' . $idSede . '.' . $request->logo->extension();
+                    $logoName = time().'_'.$idSede.'.'.$request->logo->extension();
                     $request->logo->storeAs('images/logo', $logoName, 'public');
-                    
+
                     $configuracion->update([
                         'valor' => $logoName,
                         'descripcion' => $request->descripcion,
@@ -507,9 +513,9 @@ class ConfiguracionController extends Controller
                         'descripcion' => $request->descripcion,
                     ]);
                 }
-            } 
+            }
             // Special handling for administrative email
-            else if (str_starts_with($configuracion->clave, 'correo_administrativo_')) {
+            elseif (str_starts_with($configuracion->clave, 'correo_administrativo_')) {
                 $request->validate([
                     'valor' => 'required|email|max:255',
                     'nombre_remitente' => 'nullable|string|max:255',
@@ -522,14 +528,14 @@ class ConfiguracionController extends Controller
                 // If new logo is uploaded
                 if ($request->hasFile('logo')) {
                     // Delete old logo file
-                    if ($configuracion->valor && Storage::disk('public')->exists('images/logo/' . $configuracion->valor)) {
-                        Storage::disk('public')->delete('images/logo/' . $configuracion->valor);
+                    if ($configuracion->valor && Storage::disk('public')->exists('images/logo/'.$configuracion->valor)) {
+                        Storage::disk('public')->delete('images/logo/'.$configuracion->valor);
                     }
 
                     // Upload new logo
-                    $logoName = time() . '_' . $idSede . '.' . $request->logo->extension();
+                    $logoName = time().'_'.$idSede.'.'.$request->logo->extension();
                     $request->logo->storeAs('images/logo', $logoName, 'public');
-                    
+
                     $configuracion->update([
                         'valor' => $logoName,
                         'descripcion' => $request->descripcion,
@@ -542,8 +548,7 @@ class ConfiguracionController extends Controller
 
                 // Clear logo cache for this sede
                 Cache::forget("logo_institucional_path_{$idSede}");
-            }
-            else {
+            } else {
                 $request->validate([
                     'valor' => 'required|string',
                     'descripcion' => 'nullable|string|max:255',
@@ -556,10 +561,10 @@ class ConfiguracionController extends Controller
             }
 
             return redirect()->route('configuracion.index')->with('success', 'Configuración actualizada exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('configuracion.index')->withErrors(['error' => 'Configuración no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la configuración: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la configuración: '.$e->getMessage()]);
         }
     }
 
@@ -570,23 +575,24 @@ class ConfiguracionController extends Controller
     {
         try {
             $configuracion = Configuracion::findOrFail($id);
-            
+
             // Delete logo file if it's a logo configuration
             if (str_starts_with($configuracion->clave, 'logo_institucional_') && $configuracion->valor) {
-                if (Storage::disk('public')->exists('images/logo/' . $configuracion->valor)) {
-                    Storage::disk('public')->delete('images/logo/' . $configuracion->valor);
+                if (Storage::disk('public')->exists('images/logo/'.$configuracion->valor)) {
+                    Storage::disk('public')->delete('images/logo/'.$configuracion->valor);
                 }
                 // Extract sede ID and clear cache
                 $idSede = str_replace('logo_institucional_', '', $configuracion->clave);
                 Cache::forget("logo_institucional_path_{$idSede}");
             }
-            
+
             $configuracion->delete();
+
             return redirect()->route('configuracion.index')->with('success', 'Configuración eliminada exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Configuración no encontrada.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar la configuración: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar la configuración: '.$e->getMessage()], 500);
         }
     }
 }

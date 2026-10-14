@@ -40,6 +40,7 @@ class DesactivarProfesoresColaboradoresVencidos extends Command
 
             if ($profesoresVencidos->isEmpty()) {
                 $this->info('No se encontraron profesores colaboradores vencidos.');
+
                 return Command::SUCCESS;
             }
 
@@ -76,12 +77,12 @@ class DesactivarProfesoresColaboradoresVencidos extends Command
             $bar->finish();
             $this->newLine(2);
 
-            $this->info("✓ Proceso completado exitosamente.");
+            $this->info('✓ Proceso completado exitosamente.');
             $this->info("Total procesados: {$total}");
             $this->info("Desactivados: {$desactivados}");
 
             if ($desactivados < $total) {
-                $this->warn("Errores: " . ($total - $desactivados));
+                $this->warn('Errores: '.($total - $desactivados));
             }
 
             return Command::SUCCESS;
@@ -92,6 +93,7 @@ class DesactivarProfesoresColaboradoresVencidos extends Command
             ]);
 
             $this->error("Error general: {$e->getMessage()}");
+
             return Command::FAILURE;
         }
     }

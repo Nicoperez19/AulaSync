@@ -1,6 +1,10 @@
 <?php
+
+use App\Http\Controllers\Api\ApiReservaController;
 use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\AsignaturaController;
+use App\Http\Controllers\AsistenteAcademicoController;
+use App\Http\Controllers\AuditoriaClaseController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\CarreraController;
 use App\Http\Controllers\ClasesNoRealizadasController;
@@ -9,23 +13,23 @@ use App\Http\Controllers\ControlDocenteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\DiaFeriadoController;
+use App\Http\Controllers\EscuelaController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\HorariosController;
-use App\Http\Controllers\LicenciaProfesorController;
+use App\Http\Controllers\JefeCarreraController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
-use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ModuloActualController;
 use App\Http\Controllers\OcupacionHistoricoController;
-use App\Http\Controllers\AuditoriaClaseController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorColaboradorController;
 use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QrPersonalController;
 use App\Http\Controllers\QuickActionsController;
-use App\Http\Controllers\RecuperacionClaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\RoleController;
@@ -36,8 +40,8 @@ use App\Http\Controllers\TenantInitializationController;
 use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisitanteController;
+use App\Livewire\CorreosMasivosManager;
 use Illuminate\Support\Facades\Route;
-use Spatie\Permission\Middleware\RoleMiddleware;
 
 /*
  * |--------------------------------------------------------------------------
@@ -92,8 +96,8 @@ Route::get('/', function () {
 
 // Rutas públicas de módulos actuales (sin autenticación)
 Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
-    Route::get('/modulos-actuales', [\App\Http\Controllers\ModuloActualController::class, 'index'])->name('modulos.actuales');
-    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\ModuloActualController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+    Route::get('/modulos-actuales', [ModuloActualController::class, 'index'])->name('modulos.actuales');
+    Route::get('/modulos-actuales/actualizar-datos', [ModuloActualController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
 
 // Ruta Keep-Alive de sesión y refresco de CSRF token
@@ -101,7 +105,7 @@ Route::middleware(['tenant'])->get('/keep-alive', function () {
     return response()->json([
         'status' => 'ok',
         'timestamp' => now()->format('Y-m-d H:i:s'),
-        'csrf_token' => csrf_token()
+        'csrf_token' => csrf_token(),
     ]);
 })->name('web.keep-alive');
 
@@ -143,16 +147,16 @@ Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
 
     // Rutas para QR Personal (requiere permiso adicional 'generar qr personal')
-    Route::post('/user/qr-personal/{run}/generar', [\App\Http\Controllers\QrPersonalController::class, 'generar'])->name('users.qr.generar');
-    Route::get('/user/qr-personal/{run}/descargar', [\App\Http\Controllers\QrPersonalController::class, 'descargar'])->name('users.qr.descargar');
-    Route::get('/user/qr-personal/{run}/preview', [\App\Http\Controllers\QrPersonalController::class, 'preview'])->name('users.qr.preview');
-    Route::delete('/user/qr-personal/{run}/anular', [\App\Http\Controllers\QrPersonalController::class, 'anular'])->name('users.qr.anular');
-    Route::get('/user/qr-personal/{run}/verificar', [\App\Http\Controllers\QrPersonalController::class, 'verificar'])->name('users.qr.verificar');
+    Route::post('/user/qr-personal/{run}/generar', [QrPersonalController::class, 'generar'])->name('users.qr.generar');
+    Route::get('/user/qr-personal/{run}/descargar', [QrPersonalController::class, 'descargar'])->name('users.qr.descargar');
+    Route::get('/user/qr-personal/{run}/preview', [QrPersonalController::class, 'preview'])->name('users.qr.preview');
+    Route::delete('/user/qr-personal/{run}/anular', [QrPersonalController::class, 'anular'])->name('users.qr.anular');
+    Route::get('/user/qr-personal/{run}/verificar', [QrPersonalController::class, 'verificar'])->name('users.qr.verificar');
 });
 
 // Administración de Correos Masivos - Administrador y Supervisor
 Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () {
-    Route::get('/correos-masivos', \App\Livewire\CorreosMasivosManager::class)->name('correos-masivos.index');
+    Route::get('/correos-masivos', CorreosMasivosManager::class)->name('correos-masivos.index');
 });
 
 // Estadísticas de clases no realizadas - Administrador y Supervisor
@@ -278,27 +282,27 @@ Route::group(['middleware' => ['permission:mantenedor de configuracion']], funct
 });
 
 Route::group(['middleware' => ['permission:mantenedor de escuelas']], function () {
-    Route::get('/escuelas', [\App\Http\Controllers\EscuelaController::class, 'index'])->name('escuelas.index');
-    Route::post('/escuelas', [\App\Http\Controllers\EscuelaController::class, 'store'])->name('escuelas.store');
-    Route::get('/escuelas/{id}/edit', [\App\Http\Controllers\EscuelaController::class, 'edit'])->name('escuelas.edit');
-    Route::put('/escuelas/{id}', [\App\Http\Controllers\EscuelaController::class, 'update'])->name('escuelas.update');
-    Route::delete('/escuelas/{id}', [\App\Http\Controllers\EscuelaController::class, 'destroy'])->name('escuelas.destroy');
+    Route::get('/escuelas', [EscuelaController::class, 'index'])->name('escuelas.index');
+    Route::post('/escuelas', [EscuelaController::class, 'store'])->name('escuelas.store');
+    Route::get('/escuelas/{id}/edit', [EscuelaController::class, 'edit'])->name('escuelas.edit');
+    Route::put('/escuelas/{id}', [EscuelaController::class, 'update'])->name('escuelas.update');
+    Route::delete('/escuelas/{id}', [EscuelaController::class, 'destroy'])->name('escuelas.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de jefes de carrera']], function () {
-    Route::get('/jefes-carrera', [\App\Http\Controllers\JefeCarreraController::class, 'index'])->name('jefes-carrera.index');
-    Route::post('/jefes-carrera', [\App\Http\Controllers\JefeCarreraController::class, 'store'])->name('jefes-carrera.store');
-    Route::get('/jefes-carrera/{id}/edit', [\App\Http\Controllers\JefeCarreraController::class, 'edit'])->name('jefes-carrera.edit');
-    Route::put('/jefes-carrera/{id}', [\App\Http\Controllers\JefeCarreraController::class, 'update'])->name('jefes-carrera.update');
-    Route::delete('/jefes-carrera/{id}', [\App\Http\Controllers\JefeCarreraController::class, 'destroy'])->name('jefes-carrera.destroy');
+    Route::get('/jefes-carrera', [JefeCarreraController::class, 'index'])->name('jefes-carrera.index');
+    Route::post('/jefes-carrera', [JefeCarreraController::class, 'store'])->name('jefes-carrera.store');
+    Route::get('/jefes-carrera/{id}/edit', [JefeCarreraController::class, 'edit'])->name('jefes-carrera.edit');
+    Route::put('/jefes-carrera/{id}', [JefeCarreraController::class, 'update'])->name('jefes-carrera.update');
+    Route::delete('/jefes-carrera/{id}', [JefeCarreraController::class, 'destroy'])->name('jefes-carrera.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de asistentes academicos']], function () {
-    Route::get('/asistentes-academicos', [\App\Http\Controllers\AsistenteAcademicoController::class, 'index'])->name('asistentes-academicos.index');
-    Route::post('/asistentes-academicos', [\App\Http\Controllers\AsistenteAcademicoController::class, 'store'])->name('asistentes-academicos.store');
-    Route::get('/asistentes-academicos/{id}/edit', [\App\Http\Controllers\AsistenteAcademicoController::class, 'edit'])->name('asistentes-academicos.edit');
-    Route::put('/asistentes-academicos/{id}', [\App\Http\Controllers\AsistenteAcademicoController::class, 'update'])->name('asistentes-academicos.update');
-    Route::delete('/asistentes-academicos/{id}', [\App\Http\Controllers\AsistenteAcademicoController::class, 'destroy'])->name('asistentes-academicos.destroy');
+    Route::get('/asistentes-academicos', [AsistenteAcademicoController::class, 'index'])->name('asistentes-academicos.index');
+    Route::post('/asistentes-academicos', [AsistenteAcademicoController::class, 'store'])->name('asistentes-academicos.store');
+    Route::get('/asistentes-academicos/{id}/edit', [AsistenteAcademicoController::class, 'edit'])->name('asistentes-academicos.edit');
+    Route::put('/asistentes-academicos/{id}', [AsistenteAcademicoController::class, 'update'])->name('asistentes-academicos.update');
+    Route::delete('/asistentes-academicos/{id}', [AsistenteAcademicoController::class, 'destroy'])->name('asistentes-academicos.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de facultades']], function () {
@@ -398,8 +402,8 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
     Route::get('/espacios-disponibles', [ReservasController::class, 'getEspaciosDisponibles']);
 
     // Registro administrativo de entrada/salida en nombre de un docente
-    Route::post('/reservas/{id}/admin-entrada', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarEntradaAdmin'])->name('reservas.admin.entrada');
-    Route::post('/reservas/{id}/admin-salida', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarSalidaAdmin'])->name('reservas.admin.salida');
+    Route::post('/reservas/{id}/admin-entrada', [ApiReservaController::class, 'registrarEntradaAdmin'])->name('reservas.admin.entrada');
+    Route::post('/reservas/{id}/admin-salida', [ApiReservaController::class, 'registrarSalidaAdmin'])->name('reservas.admin.salida');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de asignaturas']], function () {
@@ -470,7 +474,7 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';
 
 // Rutas para Acciones Rápidas (Mantenedores)
 Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
@@ -488,7 +492,6 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
     Route::post('/api/espacios/liberacion-masiva', [QuickActionsController::class, 'liberacionMasiva'])->name('api.espacios.liberacion-masiva');
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
-
 
     // API para buscar personas por RUN (autocompletado)
     Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
@@ -527,4 +530,3 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
-

@@ -8,12 +8,12 @@ trait RunNormalizer
      * Normaliza un RUN/RUT chileno eliminando puntos, guiones y espacios,
      * y convirtiéndolo a mayúsculas (para la 'K').
      *
-     * @param string|null $run
+     * @param  string|null  $run
      * @return string|null
      */
     public function normalizeRun($run)
     {
-        if (!$run) {
+        if (! $run) {
             return null;
         }
 
@@ -40,16 +40,14 @@ trait RunNormalizer
             $run = $parts[0];
         }
 
-
         // Eliminar cualquier caracter que no sea número
         $normalized = preg_replace('/[^0-9]/', '', $run);
 
-        // Si el RUN es muy largo (ej: 9 dígitos) y no había guión, 
-        // es posible que el último dígito sea el DV. 
+        // Si el RUN es muy largo (ej: 9 dígitos) y no había guión,
+        // es posible que el último dígito sea el DV.
         // Pero basándonos en el requerimiento del usuario ("7068698" es el ejemplo),
         // simplemente limpiaremos todo lo que no sea número del segmento principal.
-        
+
         return $normalized;
     }
-
 }

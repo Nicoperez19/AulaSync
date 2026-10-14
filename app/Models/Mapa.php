@@ -2,20 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Traits\BelongsToTenant;
 
 class Mapa extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
 
     protected $primaryKey = 'id_mapa';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -23,7 +25,7 @@ class Mapa extends Model
         'nombre_mapa',
         'ruta_mapa',
         'ruta_canvas',
-        'piso_id'
+        'piso_id',
     ];
 
     public function piso(): BelongsTo

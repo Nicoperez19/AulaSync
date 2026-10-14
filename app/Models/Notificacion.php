@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class Notificacion extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'notificaciones';
 
     protected $fillable = [
@@ -33,7 +34,7 @@ class Notificacion extends Model
     /**
      * Relación con el usuario
      */
-    public function usuario()
+    public function usuario(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'run_usuario', 'run');
     }
@@ -102,31 +103,31 @@ class Notificacion extends Model
             $usuarios = User::role(['Supervisor', 'Administrador'])->get();
 
             try {
-                \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
+                \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: '.$usuarios->count());
             } catch (\Throwable $logEx) {
                 // Ignorar errores de log — no bloquear el flujo por permisos de archivo
             }
 
             // Cargar relaciones necesarias con eager loading
             $claseNoRealizada->load(['asignatura', 'profesor', 'espacio', 'modulo']);
-            
+
             $asignatura = $claseNoRealizada->asignatura;
             $profesor = $claseNoRealizada->profesor;
             $espacio = $claseNoRealizada->espacio;
             $modulo = $claseNoRealizada->modulo;
-            
+
             // Obtener nombre completo del profesor con fallback a múltiples campos
             $nombreProfesor = 'Desconocido';
             if ($profesor) {
-                if (isset($profesor->name) && !empty($profesor->name)) {
+                if (isset($profesor->name) && ! empty($profesor->name)) {
                     $nombreProfesor = $profesor->name;
-                } else if (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
-                    $nombreProfesor = trim($profesor->nombres . ' ' . $profesor->apellido_paterno);
-                } else if (isset($profesor->run)) {
-                    $nombreProfesor = 'Profesor RUN: ' . $profesor->run;
+                } elseif (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
+                    $nombreProfesor = trim($profesor->nombres.' '.$profesor->apellido_paterno);
+                } elseif (isset($profesor->run)) {
+                    $nombreProfesor = 'Profesor RUN: '.$profesor->run;
                 }
             }
-            
+
             // Construir hora del módulo
             $horaModulo = 'hora no especificada';
             if ($modulo && $modulo->hora_inicio) {
@@ -164,14 +165,14 @@ class Notificacion extends Model
                 ]);
 
                 try {
-                    \Log::info('Notificación creada para usuario: ' . $usuario->run);
+                    \Log::info('Notificación creada para usuario: '.$usuario->run);
                 } catch (\Throwable $logEx) {
                     // Ignorar errores de log — no bloquear el flujo por permisos de archivo
                 }
             }
         } catch (\Exception $e) {
             try {
-                \Log::error('Error al crear notificación de clase no realizada: ' . $e->getMessage());
+                \Log::error('Error al crear notificación de clase no realizada: '.$e->getMessage());
             } catch (\Throwable $logEx) {
                 // Ignorar errores de log — no bloquear el flujo por permisos de archivo
             }
@@ -233,7 +234,7 @@ class Notificacion extends Model
                     ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
                     ->exists();
 
-                if (!$existe) {
+                if (! $existe) {
                     static::create([
                         'run_usuario' => $usuario->run,
                         'tipo' => 'sala_estudio_advertencia',
@@ -249,7 +250,7 @@ class Notificacion extends Model
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Error al crear notificación de advertencia en sala de estudio: ' . $e->getMessage());
+            \Log::error('Error al crear notificación de advertencia en sala de estudio: '.$e->getMessage());
         }
     }
 
@@ -270,7 +271,7 @@ class Notificacion extends Model
                     ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
                     ->exists();
 
-                if (!$existe) {
+                if (! $existe) {
                     static::create([
                         'run_usuario' => $usuario->run,
                         'tipo' => 'sala_estudio_vencida',
@@ -286,10 +287,9 @@ class Notificacion extends Model
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Error al crear notificación de vencimiento en sala de estudio: ' . $e->getMessage());
+            \Log::error('Error al crear notificación de vencimiento en sala de estudio: '.$e->getMessage());
         }
     }
-
 
     /**
      * Obtener contador de notificaciones no leídas para un usuario

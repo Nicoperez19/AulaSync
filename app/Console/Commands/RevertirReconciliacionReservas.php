@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Reserva;
 use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
+use App\Models\Reserva;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 class RevertirReconciliacionReservas extends Command
@@ -20,16 +20,18 @@ class RevertirReconciliacionReservas extends Command
     {
         $archivo = $this->option('archivo');
 
-        if (!$archivo) {
+        if (! $archivo) {
             $backupDir = storage_path('app/backups');
-            if (!File::exists($backupDir)) {
+            if (! File::exists($backupDir)) {
                 $this->error("No se encontró el directorio de respaldos en: {$backupDir}");
+
                 return 1;
             }
 
-            $archivos = File::glob($backupDir . DIRECTORY_SEPARATOR . 'reconciliacion_backup_*.json');
+            $archivos = File::glob($backupDir.DIRECTORY_SEPARATOR.'reconciliacion_backup_*.json');
             if (empty($archivos)) {
                 $this->error("No se encontraron archivos de respaldo en {$backupDir}.");
+
                 return 1;
             }
 
@@ -38,19 +40,21 @@ class RevertirReconciliacionReservas extends Command
             $archivo = $archivos[0];
         }
 
-        if (!File::exists($archivo)) {
+        if (! File::exists($archivo)) {
             $this->error("El archivo de respaldo especificado no existe: {$archivo}");
+
             return 1;
         }
 
-        $this->warn("==================================================================");
-        $this->warn(" REVERSIÓN DE RECONCILIACIÓN DE RESERVAS");
+        $this->warn('==================================================================');
+        $this->warn(' REVERSIÓN DE RECONCILIACIÓN DE RESERVAS');
         $this->warn(" Archivo de respaldo: {$archivo}");
-        $this->warn("==================================================================");
+        $this->warn('==================================================================');
 
         $contenido = json_decode(File::get($archivo), true);
-        if (!$contenido || !isset($contenido['tenants'])) {
-            $this->error("El archivo de respaldo no tiene una estructura válida o está corrupto.");
+        if (! $contenido || ! isset($contenido['tenants'])) {
+            $this->error('El archivo de respaldo no tiene una estructura válida o está corrupto.');
+
             return 1;
         }
 
@@ -58,8 +62,9 @@ class RevertirReconciliacionReservas extends Command
         $desdeFiltro = $contenido['desde'] ?? 'desconocido';
         $this->line("Respaldo creado el: {$fechaBackup} (Rango desde: {$desdeFiltro})");
 
-        if (!$this->confirm("¿Estás seguro de que deseas revertir todos los cambios de este respaldo?", true)) {
-            $this->info("Operación cancelada por el usuario.");
+        if (! $this->confirm('¿Estás seguro de que deseas revertir todos los cambios de este respaldo?', true)) {
+            $this->info('Operación cancelada por el usuario.');
+
             return 0;
         }
 
@@ -68,12 +73,13 @@ class RevertirReconciliacionReservas extends Command
             $this->info("\nProcesando reversión para: {$tenantName}...");
 
             $tenant = Tenant::find($tenantId);
-            if (!$tenant && !empty($data['tenant_database'])) {
+            if (! $tenant && ! empty($data['tenant_database'])) {
                 $tenant = Tenant::where('database', $data['tenant_database'])->first();
             }
 
-            if (!$tenant) {
+            if (! $tenant) {
                 $this->error("  ⚠ No se pudo encontrar el tenant con ID {$tenantId}. Se omite este tenant.");
+
                 continue;
             }
 
@@ -85,12 +91,12 @@ class RevertirReconciliacionReservas extends Command
                 $clasesRestauradas = 0;
 
                 // 1. Revertir Reservas
-                if (!empty($data['reservas'])) {
+                if (! empty($data['reservas'])) {
                     foreach ($data['reservas'] as $r) {
                         $reserva = Reserva::withoutGlobalScopes()->where('id_reserva', $r['id_reserva'])->first();
                         if ($reserva) {
                             $reserva->update([
-                                'tipo_reserva'  => $r['tipo_reserva'],
+                                'tipo_reserva' => $r['tipo_reserva'],
                                 'id_asignatura' => $r['id_asignatura'],
                                 'observaciones' => $r['observaciones'],
                             ]);
@@ -100,14 +106,14 @@ class RevertirReconciliacionReservas extends Command
                 }
 
                 // 2. Revertir Asistencias
-                if (!empty($data['asistencias_ids'])) {
+                if (! empty($data['asistencias_ids'])) {
                     $asistenciasRevertidas = Asistencia::withoutGlobalScopes()
                         ->whereIn('id', $data['asistencias_ids'])
                         ->update(['id_asignatura' => null]);
                 }
 
                 // 3. Restaurar Clases No Realizadas que habían sido eliminadas
-                if (!empty($data['clases_no_realizadas'])) {
+                if (! empty($data['clases_no_realizadas'])) {
                     foreach ($data['clases_no_realizadas'] as $claseData) {
                         // Verificar que no exista ya para no duplicar
                         $existe = ClaseNoRealizada::withoutGlobalScopes()
@@ -117,7 +123,7 @@ class RevertirReconciliacionReservas extends Command
                             ->where('id_modulo', $claseData['id_modulo'] ?? null)
                             ->exists();
 
-                        if (!$existe) {
+                        if (! $existe) {
                             ClaseNoRealizada::withoutGlobalScopes()->insert($claseData);
                             $clasesRestauradas++;
                         }
@@ -129,12 +135,13 @@ class RevertirReconciliacionReservas extends Command
                 $this->info("  ✓ Registros de clases no realizadas reinsertados: {$clasesRestauradas}");
 
             } catch (\Exception $e) {
-                $this->error("  ⚠ Error al revertir en {$tenantName}: " . $e->getMessage());
+                $this->error("  ⚠ Error al revertir en {$tenantName}: ".$e->getMessage());
             }
         }
 
         $this->newLine();
-        $this->info("Reversión finalizada con éxito.");
+        $this->info('Reversión finalizada con éxito.');
+
         return 0;
     }
 }

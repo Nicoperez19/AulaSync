@@ -45,7 +45,7 @@ class ActualizarHorasAtrasos extends Command
         $atrasos = DB::table('profesor_atrasos')
             ->where(function ($query) {
                 $query->whereNull('hora_programada')
-                      ->orWhere('minutos_atraso', 0);
+                    ->orWhere('minutos_atraso', 0);
             })
             ->get();
 
@@ -53,6 +53,7 @@ class ActualizarHorasAtrasos extends Command
 
         if ($atrasos->isEmpty()) {
             $this->info('No hay registros para actualizar.');
+
             return 0;
         }
 
@@ -68,7 +69,7 @@ class ActualizarHorasAtrasos extends Command
             $modulosStr = $atraso->id_modulo;
             $primerModuloId = null;
 
-            if (!empty($modulosStr)) {
+            if (! empty($modulosStr)) {
                 $modulosArray = explode(',', $modulosStr);
                 $primerModuloId = trim($modulosArray[0]);
             }
@@ -80,6 +81,7 @@ class ActualizarHorasAtrasos extends Command
             } else {
                 $sinModulo++;
                 $this->output->progressAdvance();
+
                 continue;
             }
 
@@ -95,7 +97,7 @@ class ActualizarHorasAtrasos extends Command
                 }
             }
 
-            if (!$dryRun) {
+            if (! $dryRun) {
                 try {
                     DB::table('profesor_atrasos')
                         ->where('id', $atraso->id)
@@ -109,7 +111,7 @@ class ActualizarHorasAtrasos extends Command
                 } catch (\Exception $e) {
                     $errores++;
                     $this->newLine();
-                    $this->error("Error en ID {$atraso->id}: " . $e->getMessage());
+                    $this->error("Error en ID {$atraso->id}: ".$e->getMessage());
                 }
             } else {
                 $actualizados++;

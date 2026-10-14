@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Espacio;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -12,9 +13,8 @@ class EspacioApiController extends Controller
     /**
      * GET /api/espacios
      * Lista todos los espacios con sus detalles
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function listarEspacios(Request $request)
     {
@@ -42,7 +42,7 @@ class EspacioApiController extends Controller
             $espacios = $query->orderBy('id_espacio')->get();
 
             // Formatear la respuesta
-            $espaciosFormateados = $espacios->map(function($espacio) {
+            $espaciosFormateados = $espacios->map(function ($espacio) {
                 return [
                     'id_espacio' => $espacio->id_espacio,
                     'nombre_espacio' => $espacio->nombre_espacio,
@@ -67,13 +67,13 @@ class EspacioApiController extends Controller
             return response()->json([
                 'success' => true,
                 'total' => $espacios->count(),
-                'espacios' => $espaciosFormateados
+                'espacios' => $espaciosFormateados,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener los espacios: ' . $e->getMessage()
+                'message' => 'Error al obtener los espacios: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -81,8 +81,8 @@ class EspacioApiController extends Controller
     /**
      * GET /api/tipos-espacios
      * Lista todos los tipos de espacios disponibles
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function listarTiposEspacios()
     {
@@ -98,7 +98,7 @@ class EspacioApiController extends Controller
                 ->groupBy('tipo_espacio')
                 ->orderBy('tipo_espacio')
                 ->get()
-                ->map(function($item) {
+                ->map(function ($item) {
                     return [
                         'tipo_espacio' => $item->tipo_espacio,
                         'total_espacios' => $item->total,
@@ -108,13 +108,13 @@ class EspacioApiController extends Controller
             return response()->json([
                 'success' => true,
                 'total_tipos' => $tiposEspacios->count(),
-                'tipos_espacios' => $tiposConConteo
+                'tipos_espacios' => $tiposConConteo,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener los tipos de espacios: ' . $e->getMessage()
+                'message' => 'Error al obtener los tipos de espacios: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -122,8 +122,8 @@ class EspacioApiController extends Controller
     /**
      * GET /api/espacios/resumen
      * Obtiene un resumen con espacios agrupados por tipo
-     * 
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function resumenEspacios()
     {
@@ -133,34 +133,34 @@ class EspacioApiController extends Controller
                 'estado',
                 DB::raw('count(*) as cantidad')
             )
-            ->groupBy('tipo_espacio', 'estado')
-            ->orderBy('tipo_espacio')
-            ->orderBy('estado')
-            ->get()
-            ->groupBy('tipo_espacio')
-            ->map(function($items, $tipo) {
-                $estadisticas = [
-                    'tipo' => $tipo,
-                    'total' => $items->sum('cantidad'),
-                    'por_estado' => []
-                ];
+                ->groupBy('tipo_espacio', 'estado')
+                ->orderBy('tipo_espacio')
+                ->orderBy('estado')
+                ->get()
+                ->groupBy('tipo_espacio')
+                ->map(function ($items, $tipo) {
+                    $estadisticas = [
+                        'tipo' => $tipo,
+                        'total' => $items->sum('cantidad'),
+                        'por_estado' => [],
+                    ];
 
-                foreach ($items as $item) {
-                    $estadisticas['por_estado'][$item->estado] = $item->cantidad;
-                }
+                    foreach ($items as $item) {
+                        $estadisticas['por_estado'][$item->estado] = $item->cantidad;
+                    }
 
-                return $estadisticas;
-            })->values();
+                    return $estadisticas;
+                })->values();
 
             return response()->json([
                 'success' => true,
-                'resumen' => $resumen
+                'resumen' => $resumen,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el resumen de espacios: ' . $e->getMessage()
+                'message' => 'Error al obtener el resumen de espacios: '.$e->getMessage(),
             ], 500);
         }
     }

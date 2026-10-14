@@ -2,26 +2,25 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Tenant;
-use App\Models\DataLoad;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Asignatura;
+use App\Models\Espacio;
+use App\Models\Horario;
+use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Profesor;
 use App\Models\ProfesorColaborador;
-use App\Models\PlanificacionProfesorColaborador;
-use App\Models\Planificacion_Asignatura;
-use App\Models\Horario;
-use App\Models\Espacio;
 use App\Models\Sede;
-use App\Helpers\EspacioAliasHelper;
+use App\Models\Tenant;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ReconciliarHorariosDocentesCommand extends Command
 {
     protected $signature = 'horarios:reconciliar-docentes {--tenant= : ID o dominio del tenant específico}';
+
     protected $description = 'Reconcilia las planificaciones de docentes y colaboradores usando la columna HORARIO_PROFESOR del último archivo Excel cargado';
 
     public function handle(): int
@@ -37,13 +36,14 @@ class ReconciliarHorariosDocentesCommand extends Command
 
         if ($tenants->isEmpty()) {
             $this->error('No se encontraron tenants para procesar.');
+
             return 1;
         }
 
         foreach ($tenants as $tenant) {
-            $this->info("═══════════════════════════════════════════════════════════");
+            $this->info('═══════════════════════════════════════════════════════════');
             $this->info("Procesando Tenant: {$tenant->domain} ({$tenant->nombre_sede}) - ID: {$tenant->id}");
-            $this->info("═══════════════════════════════════════════════════════════");
+            $this->info('═══════════════════════════════════════════════════════════');
 
             $tenant->makeCurrent();
 
@@ -53,14 +53,16 @@ class ReconciliarHorariosDocentesCommand extends Command
                 ->orderBy('id', 'desc')
                 ->first();
 
-            if (!$dataLoad || empty($dataLoad->ruta_archivo)) {
-                $this->warn("  -> No se encontró carga de datos para este tenant. Omitiendo.");
+            if (! $dataLoad || empty($dataLoad->ruta_archivo)) {
+                $this->warn('  -> No se encontró carga de datos para este tenant. Omitiendo.');
+
                 continue;
             }
 
-            $filePath = storage_path('app/public/' . $dataLoad->ruta_archivo);
-            if (!file_exists($filePath)) {
+            $filePath = storage_path('app/public/'.$dataLoad->ruta_archivo);
+            if (! file_exists($filePath)) {
                 $this->warn("  -> Archivo no existe: {$filePath}. Omitiendo.");
+
                 continue;
             }
 
@@ -69,27 +71,28 @@ class ReconciliarHorariosDocentesCommand extends Command
 
         // Limpiar cachés
         Cache::flush();
-        $this->info("✓ Caché de planificaciones y dashboard invalidada.");
-        $this->info("✓ Reconciliación completada con éxito.");
+        $this->info('✓ Caché de planificaciones y dashboard invalidada.');
+        $this->info('✓ Reconciliación completada con éxito.');
 
         return 0;
     }
 
     protected function reconciliarTenant(Tenant $tenant, string $filePath): void
     {
-        $this->line("  -> Leyendo archivo Excel: " . basename($filePath));
+        $this->line('  -> Leyendo archivo Excel: '.basename($filePath));
 
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getActiveSheet();
         $rows = $sheet->toArray();
 
         if (empty($rows)) {
-            $this->warn("  -> Archivo vacío.");
+            $this->warn('  -> Archivo vacío.');
+
             return;
         }
 
-        $headers = array_map(function($h) {
-            return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
+        $headers = array_map(function ($h) {
+            return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string) $h)));
         }, $rows[0]);
 
         $colMap = [
@@ -111,15 +114,25 @@ class ReconciliarHorariosDocentesCommand extends Command
         $tieneColumnaHorarioProfesor = false;
 
         foreach ($headers as $colIdx => $headerName) {
-            if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
-            if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
-            if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
+            if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) {
+                $colMap['run_profesor'] = $colIdx;
+            }
+            if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) {
+                $colMap['nombre_profesor'] = $colIdx;
+            }
+            if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) {
+                $colMap['horario'] = $colIdx;
+            }
             if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIOPROFESOR', 'HORARIO_PROF', 'HORARIO_DOCENTE', 'HORARIODOCENTE', 'HORARIO_DOCENTES', 'HORARIODOCENTES', 'HORARIO_PROFESORES', 'HORARIOPROFESORES', 'HORARIO_POR_DOCENTE', 'HORARIOPORDOCENTE', 'HORARIO_POR_PROFESOR', 'HORARIOPORPROFESOR'])) {
                 $colMap['horario_profesor'] = $colIdx;
                 $tieneColumnaHorarioProfesor = true;
             }
-            if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) $colMap['tipo_profesor'] = $colIdx;
-            if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
+            if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) {
+                $colMap['tipo_profesor'] = $colIdx;
+            }
+            if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) {
+                $colMap['sede'] = $colIdx;
+            }
         }
 
         $sedeActual = Sede::find($tenant->sede_id);
@@ -150,22 +163,26 @@ class ReconciliarHorariosDocentesCommand extends Command
         $colaboradoresList = [];
 
         foreach ($rows as $index => $row) {
-            if ($index === 0) continue;
+            if ($index === 0) {
+                continue;
+            }
 
             // Filtrar únicamente filas que correspondan a la sede de este tenant
             $rowSede = trim($row[$colMap['sede']] ?? '');
-            if ($sedeActual && !empty($rowSede)) {
-                $coincideSede = stripos($rowSede, $sedeActual->nombre_sede) !== false 
-                    || stripos($rowSede, $tenant->name) !== false 
+            if ($sedeActual && ! empty($rowSede)) {
+                $coincideSede = stripos($rowSede, $sedeActual->nombre_sede) !== false
+                    || stripos($rowSede, $tenant->name) !== false
                     || strcasecmp($rowSede, $sedeActual->id_sede) === 0;
-                if (!$coincideSede) {
+                if (! $coincideSede) {
                     continue;
                 }
             }
 
             $runRaw = trim($row[$colMap['run_profesor']] ?? '');
             $run = preg_replace('/[^0-9Kk]/', '', strtoupper($runRaw));
-            if (empty($run)) continue;
+            if (empty($run)) {
+                continue;
+            }
 
             $nomProf = trim($row[$colMap['nombre_profesor']] ?? '');
             $tipoProfesor = trim($row[$colMap['tipo_profesor']] ?? 'Profesor Responsable');
@@ -174,14 +191,14 @@ class ReconciliarHorariosDocentesCommand extends Command
 
             // Asegurar que el profesor exista en la tabla profesors del tenant
             $profModel = Profesor::withoutGlobalScope('tenant')->where('run_profesor', $run)->first();
-            if (!$profModel) {
+            if (! $profModel) {
                 $emailProf = trim($row[$colMap['email_profesor']] ?? '');
-                if (empty($emailProf) || !filter_var($emailProf, FILTER_VALIDATE_EMAIL)) {
-                    $emailProf = $run . '@ucsc.cl';
+                if (empty($emailProf) || ! filter_var($emailProf, FILTER_VALIDATE_EMAIL)) {
+                    $emailProf = $run.'@ucsc.cl';
                 }
                 $profModel = Profesor::create([
                     'run_profesor' => $run,
-                    'name' => !empty($nomProf) ? $nomProf : 'Profesor ' . $run,
+                    'name' => ! empty($nomProf) ? $nomProf : 'Profesor '.$run,
                     'email' => $emailProf,
                     'sede_id' => $tenant->sede_id,
                     'tipo_profesor' => $tipoProfesor,
@@ -190,11 +207,13 @@ class ReconciliarHorariosDocentesCommand extends Command
 
             // Horario específico del docente (prioridad) o horario general
             $hUsar = trim($row[$colMap['horario_profesor']] ?? '');
-            if (!$tieneColumnaHorarioProfesor && empty($hUsar)) {
+            if (! $tieneColumnaHorarioProfesor && empty($hUsar)) {
                 $hUsar = trim($row[$colMap['horario']] ?? '');
             }
 
-            if (empty($hUsar)) continue;
+            if (empty($hUsar)) {
+                continue;
+            }
 
             // Extraer slots: DIA.MODULO/G:GRUPO (ESPACIO)
             $hUsar = preg_replace('/[\x00-\x1F\x7F]/u', '', $hUsar);
@@ -214,10 +233,10 @@ class ReconciliarHorariosDocentesCommand extends Command
 
                 // Buscar espacio en BD
                 $espModel = Espacio::withoutGlobalScope('tenant')->where('id_espacio', $espNorm)->first();
-                if (!$espModel && $prefijoTenantFiltro) {
-                    $espModel = Espacio::withoutGlobalScope('tenant')->where('id_espacio', $prefijoTenantFiltro . '-' . $espNorm)->first();
+                if (! $espModel && $prefijoTenantFiltro) {
+                    $espModel = Espacio::withoutGlobalScope('tenant')->where('id_espacio', $prefijoTenantFiltro.'-'.$espNorm)->first();
                 }
-                if (!$espModel) {
+                if (! $espModel) {
                     $espModel = Espacio::withoutGlobalScope('tenant')->where('nombre_espacio', $espNorm)->first();
                 }
 
@@ -225,7 +244,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                     $slots[] = [
                         'dia' => $dia,
                         'modulo_num' => $modNum,
-                        'id_modulo' => $dia . '.' . $modNum,
+                        'id_modulo' => $dia.'.'.$modNum,
                         'id_espacio' => $espModel->id_espacio,
                     ];
                 }
@@ -243,7 +262,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                     'slots' => $slots,
                 ];
             } else {
-                if (!isset($responsablesPorAsignatura[$idAsig])) {
+                if (! isset($responsablesPorAsignatura[$idAsig])) {
                     $responsablesPorAsignatura[$idAsig] = [
                         'run' => $run,
                         'slots' => [],
@@ -255,8 +274,8 @@ class ReconciliarHorariosDocentesCommand extends Command
             }
         }
 
-        $this->line("  -> Encontradas " . count($responsablesPorAsignatura) . " asignaturas con profesor responsable.");
-        $this->line("  -> Encontrados " . count($colaboradoresList) . " registros de profesores colaboradores.");
+        $this->line('  -> Encontradas '.count($responsablesPorAsignatura).' asignaturas con profesor responsable.');
+        $this->line('  -> Encontrados '.count($colaboradoresList).' registros de profesores colaboradores.');
 
         // 1. Reconciliar Planificacion_Asignatura para cada asignatura
         foreach ($responsablesPorAsignatura as $idAsig => $dataResp) {
@@ -278,7 +297,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                     }
                 }
 
-                if (!$esValido) {
+                if (! $esValido) {
                     // Esta planificación era de un espacio/módulo que no le corresponde al responsable (ej. TH-L04 en MI.7)
                     $pActual->delete();
                     $planifsEliminadas++;
@@ -287,7 +306,7 @@ class ReconciliarHorariosDocentesCommand extends Command
 
             // Asegurar que los slots válidos existan en BD
             $asigModel = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsig)->first();
-            $idHorario = 'HOR_' . $dataResp['run'] . '_2026-2'; // periodo activo
+            $idHorario = 'HOR_'.$dataResp['run'].'_2026-2'; // periodo activo
             $horario = Horario::withoutGlobalScope('tenant')->where('id_horario', $idHorario)->first();
 
             if ($asigModel && $horario) {
@@ -298,7 +317,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                         ->where('id_modulo', $sv['id_modulo'])
                         ->exists();
 
-                    if (!$existe) {
+                    if (! $existe) {
                         Planificacion_Asignatura::create([
                             'id_asignatura' => $idAsig,
                             'id_horario' => $horario->id_horario,
@@ -320,7 +339,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                 ->where('id_asignatura', $colabData['id_asignatura'])
                 ->first();
 
-            if (!$pc) {
+            if (! $pc) {
                 $pc = ProfesorColaborador::create([
                     'run_profesor_colaborador' => $colabData['run'],
                     'id_asignatura' => $colabData['id_asignatura'],
@@ -349,7 +368,7 @@ class ReconciliarHorariosDocentesCommand extends Command
                         break;
                     }
                 }
-                if (!$valido) {
+                if (! $valido) {
                     $pca->delete();
                 }
             }

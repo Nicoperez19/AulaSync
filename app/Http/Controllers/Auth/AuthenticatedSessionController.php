@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Providers\RouteServiceProvider;
 use App\Traits\RedirectByRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,10 +34,11 @@ class AuthenticatedSessionController extends Controller
 
         // Verificar si hay una URL guardada por expiración de sesión
         $intendedUrl = $request->session()->get('url.intended');
-        
+
         if ($intendedUrl) {
             // Limpiar la URL guardada
             $request->session()->forget('url.intended');
+
             return redirect($intendedUrl);
         }
 
@@ -77,6 +77,7 @@ class AuthenticatedSessionController extends Controller
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
         }
 
@@ -85,7 +86,7 @@ class AuthenticatedSessionController extends Controller
             Log::info('✅ Superusuario / Administrador Maestro detectado, mostrando selección de sedes', [
                 'run' => $user->run,
             ]);
-            
+
             return redirect()->route('sedes.selection');
         }
 
@@ -95,7 +96,7 @@ class AuthenticatedSessionController extends Controller
                 'run' => $user->run,
                 'id_sede' => $user->id_sede,
             ]);
-            
+
             // Redirigir directamente a la sede asignada
             return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
         }
@@ -109,7 +110,7 @@ class AuthenticatedSessionController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
     }
 

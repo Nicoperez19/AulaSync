@@ -7,10 +7,6 @@ export default {
     './resources/**/*.vue',
     './resources/**/*.ts',
   ],
-  future: {
-    removeDeprecatedGapUtilities: true,
-    purgeLayersByDefault: true,
-  },
   theme: {
     extend: {
       colors: {
@@ -54,12 +50,5 @@ export default {
         128: '32rem',
       },
     },
-  },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-  ],
-  corePlugins: {
-    preflight: true,
   },
 }

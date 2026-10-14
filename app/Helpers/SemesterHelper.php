@@ -2,8 +2,10 @@
 
 namespace App\Helpers;
 
+use App\Models\Horario;
 use App\Models\PeriodoAcademico;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class SemesterHelper
 {
@@ -11,14 +13,14 @@ class SemesterHelper
      * Obtiene el semestre actual basado en la fecha
      * Primero intenta usar los períodos académicos de la BD,
      * si no hay, usa la lógica por defecto (21 de julio)
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return int
      */
     public static function getCurrentSemester($date = null)
     {
         $date = $date ?: Carbon::now();
-        
+
         // Intentar obtener el período académico de la BD
         $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
         if ($periodo) {
@@ -41,14 +43,14 @@ class SemesterHelper
 
     /**
      * Obtiene el año académico actual
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return int
      */
     public static function getCurrentAcademicYear($date = null)
     {
         $date = $date ?: Carbon::now();
-        
+
         // Intentar obtener el período académico de la BD
         $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
         if ($periodo) {
@@ -61,22 +63,22 @@ class SemesterHelper
 
     /**
      * Obtiene el período actual en formato 'año-semestre'
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return string
      */
     public static function getCurrentPeriod($date = null)
     {
         $year = self::getCurrentAcademicYear($date);
         $semester = self::getCurrentSemester($date);
-        
-        return $year . '-' . $semester;
+
+        return $year.'-'.$semester;
     }
 
     /**
      * Verifica si una fecha está en el segundo semestre
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return bool
      */
     public static function isSecondSemester($date = null)
@@ -86,8 +88,8 @@ class SemesterHelper
 
     /**
      * Obtiene la fecha de inicio del segundo semestre para un año específico
-     * 
-     * @param int $year
+     *
+     * @param  int  $year
      * @return Carbon
      */
     public static function getSecondSemesterStartDate($year)
@@ -97,18 +99,18 @@ class SemesterHelper
             ->where('semestre', 2)
             ->where('activo', true)
             ->first();
-        
+
         if ($periodo) {
             return $periodo->fecha_inicio;
         }
-        
+
         return Carbon::create($year, 7, 21);
     }
 
     /**
      * Obtiene la fecha de fin del segundo semestre para un año específico
-     * 
-     * @param int $year
+     *
+     * @param  int  $year
      * @return Carbon
      */
     public static function getSecondSemesterEndDate($year)
@@ -118,18 +120,18 @@ class SemesterHelper
             ->where('semestre', 2)
             ->where('activo', true)
             ->first();
-        
+
         if ($periodo) {
             return $periodo->fecha_fin;
         }
-        
+
         return Carbon::create($year + 1, 2, 28); // Fin de febrero del año siguiente
     }
 
     /**
      * Verifica si hay un período académico activo para la fecha actual
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return bool
      */
     public static function hayPeriodoActivo($date = null)
@@ -139,8 +141,8 @@ class SemesterHelper
 
     /**
      * Obtiene el período académico actual
-     * 
-     * @param Carbon|null $date
+     *
+     * @param  Carbon|null  $date
      * @return PeriodoAcademico|null
      */
     public static function getPeriodoActual($date = null)
@@ -150,13 +152,13 @@ class SemesterHelper
 
     /**
      * Verifica si el período del horario es válido (no ha terminado)
-     * 
-     * @param string $periodoHorario Formato: "año-semestre" ej: "2025-2"
+     *
+     * @param  string  $periodoHorario  Formato: "año-semestre" ej: "2025-2"
      * @return bool
      */
     public static function esPeriodoValido($periodoHorario)
     {
-        if (!$periodoHorario) {
+        if (! $periodoHorario) {
             return false;
         }
 
@@ -174,27 +176,28 @@ class SemesterHelper
             ->where('activo', true)
             ->first();
 
-        if (!$periodo) {
+        if (! $periodo) {
             // Si no hay período configurado, verificar si es el período actual por defecto
             $periodoActual = self::getCurrentPeriod();
+
             return $periodoHorario === $periodoActual;
         }
 
         // El período es válido si no ha finalizado
-        return !$periodo->haFinalizado();
+        return ! $periodo->haFinalizado();
     }
 
     /**
      * Verifica si se necesita nueva programación (el período anterior terminó)
-     * 
+     *
      * @return bool
      */
     public static function necesitaNuevaProgramacion()
     {
         $periodoActual = PeriodoAcademico::obtenerPeriodoActual();
-        
+
         // Si no hay período activo, se necesita configurar uno
-        if (!$periodoActual) {
+        if (! $periodoActual) {
             return true;
         }
 
@@ -203,7 +206,7 @@ class SemesterHelper
 
     /**
      * Obtiene información sobre el estado del período para mostrar al usuario
-     * 
+     *
      * @return array
      */
     public static function getEstadoPeriodo()
@@ -211,7 +214,7 @@ class SemesterHelper
         $periodoActual = PeriodoAcademico::obtenerPeriodoActual();
         $hoy = Carbon::now();
 
-        if (!$periodoActual) {
+        if (! $periodoActual) {
             // Buscar el último período que terminó
             $ultimoPeriodo = PeriodoAcademico::where('activo', true)
                 ->where('fecha_fin', '<', $hoy)
@@ -261,14 +264,14 @@ class SemesterHelper
      * Obtiene los períodos disponibles para selección:
      * El semestre actual y los semestres efectivamente cargados con datos en el sistema.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public static function getPeriodosDisponibles()
     {
         $periodoActualStr = self::getCurrentPeriod();
 
         // Obtener períodos únicos cargados en horarios
-        $periodosCargados = \App\Models\Horario::select('periodo')
+        $periodosCargados = Horario::select('periodo')
             ->whereNotNull('periodo')
             ->where('periodo', '!=', '')
             ->distinct()
@@ -279,25 +282,25 @@ class SemesterHelper
         $codigosValidos = array_unique(array_filter(array_merge([$periodoActualStr], $periodosCargados)));
         $periodosModels = PeriodoAcademico::all();
 
-        return collect($codigosValidos)->map(function($codigo) use ($periodosModels, $periodoActualStr) {
+        return collect($codigosValidos)->map(function ($codigo) use ($periodosModels, $periodoActualStr) {
             $partes = explode('-', $codigo);
-            $anio = (int)($partes[0] ?? 0);
-            $semestre = (int)($partes[1] ?? 0);
-            $model = $periodosModels->first(fn($p) => $p->anio === $anio && $p->semestre === $semestre);
+            $anio = (int) ($partes[0] ?? 0);
+            $semestre = (int) ($partes[1] ?? 0);
+            $model = $periodosModels->first(fn ($p) => $p->anio === $anio && $p->semestre === $semestre);
             $esActual = ($codigo === $periodoActualStr);
 
-            return (object)[
+            return (object) [
                 'codigo' => $codigo,
                 'anio' => $anio,
                 'semestre' => $semestre,
                 'es_actual' => $esActual,
-                'display_label' => $semestre . '° Semestre ' . $anio . ($esActual ? ' (Semestre actual)' : ''),
+                'display_label' => $semestre.'° Semestre '.$anio.($esActual ? ' (Semestre actual)' : ''),
                 'fecha_inicio' => $model ? $model->fecha_inicio : null,
                 'fecha_fin' => $model ? $model->fecha_fin : null,
                 'model' => $model,
             ];
-        })->sortByDesc(function($p) {
+        })->sortByDesc(function ($p) {
             return ($p->anio * 10) + $p->semestre;
         })->values();
     }
-} 
+}

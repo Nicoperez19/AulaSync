@@ -2,22 +2,50 @@
 
 namespace App\Models;
 
+use App\Helpers\ModulosHelper;
+use App\Traits\BelongsToTenant;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Profesor;
-use Illuminate\Support\Str;
-use App\Traits\BelongsToTenant;
 
+/**
+ * @property string $id_reserva
+ * @property string $hora
+ * @property Carbon|string $fecha_reserva
+ * @property string $id_espacio
+ * @property int|string|null $run_profesor
+ * @property string|null $run_solicitante
+ * @property string|null $creado_por
+ * @property string|null $id_asignatura
+ * @property string|int|null $modulos
+ * @property string $tipo_reserva
+ * @property string $estado
+ * @property string|null $hora_salida
+ * @property string|null $observaciones
+ * @property bool $hubo_asistentes
+ * @property string|null $nombre_actividad
+ * @property string|null $descripcion_actividad
+ * @property string|int|null $modulo_inicio
+ * @property string|int|null $modulo_fin
+ * @property bool $clase_finalizada_anticipadamente
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 class Reserva extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'reservas';
 
     protected $primaryKey = 'id_reserva';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $fillable = [
         'id_reserva',
         'hora',
@@ -39,7 +67,7 @@ class Reserva extends Model
         'modulo_fin',
         'clase_finalizada_anticipadamente',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     protected $casts = [
@@ -57,7 +85,7 @@ class Reserva extends Model
         do {
             $timestamp = now()->format('YmdHis'); // YYYYMMDDHHMMSS
             $contador = rand(1, 999); // Número aleatorio de 1-999
-            $idReserva = 'R' . $timestamp . str_pad($contador, 3, '0', STR_PAD_LEFT);
+            $idReserva = 'R'.$timestamp.str_pad($contador, 3, '0', STR_PAD_LEFT);
 
             // Verificar que el ID no exista
             $existe = self::where('id_reserva', $idReserva)->exists();
@@ -66,28 +94,26 @@ class Reserva extends Model
         return $idReserva;
     }
 
-    public function espacio()
+    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function profesor()
+    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con User (mantenida para compatibilidad, pero se recomienda usar profesor)
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'run_profesor', 'run');
     }
 
-
-
     /**
      * Relación con el solicitante (si la reserva es de un solicitante)
      */
-    public function solicitante()
+    public function solicitante(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Solicitante::class, 'run_solicitante', 'run_solicitante');
     }
@@ -102,6 +128,7 @@ class Reserva extends Model
         } elseif ($this->run_solicitante) {
             return $this->solicitante();
         }
+
         return null;
     }
 
@@ -115,6 +142,7 @@ class Reserva extends Model
         } elseif ($this->run_solicitante && $this->solicitante) {
             return $this->solicitante->nombre;
         }
+
         return 'Usuario desconocido';
     }
 
@@ -128,10 +156,11 @@ class Reserva extends Model
         } elseif ($this->run_solicitante) {
             return 'solicitante';
         }
+
         return 'desconocido';
     }
 
-    public function asignatura()
+    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
@@ -139,7 +168,7 @@ class Reserva extends Model
     /**
      * Relación con las asistencias de la reserva
      */
-    public function asistencias()
+    public function asistencias(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Asistencia::class, 'id_reserva', 'id_reserva');
     }
@@ -154,11 +183,11 @@ class Reserva extends Model
         $hora = $hora ?? now()->format('H:i:s');
 
         return $query->where('estado', 'activa')
-                     ->where('fecha_reserva', $fecha)
-                     ->where(function($q) use ($hora) {
-                         $q->where('hora', '<=', $hora)
-                           ->where('hora_salida', '>', $hora);
-                     });
+            ->where('fecha_reserva', $fecha)
+            ->where(function ($q) use ($hora) {
+                $q->where('hora', '<=', $hora)
+                    ->where('hora_salida', '>', $hora);
+            });
     }
 
     /**
@@ -171,9 +200,9 @@ class Reserva extends Model
         $hora = $hora ?? now()->format('H:i:s');
 
         return $query->whereIn('estado', ['activa', 'programada'])
-                     ->where('fecha_reserva', $fecha)
-                     ->where('hora', '>', $hora)
-                     ->orderBy('hora', 'asc');
+            ->where('fecha_reserva', $fecha)
+            ->where('hora', '>', $hora)
+            ->orderBy('hora', 'asc');
     }
 
     /**
@@ -184,7 +213,7 @@ class Reserva extends Model
         $fecha = $fecha ?? now()->toDateString();
 
         return $query->where('estado', 'programada')
-                     ->where('fecha_reserva', $fecha);
+            ->where('fecha_reserva', $fecha);
     }
 
     /**
@@ -192,17 +221,17 @@ class Reserva extends Model
      *
      * Uso: Reserva::activasProfesor($run, $idEspacio)->orderBy('created_at', 'desc')->first()
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $runProfesor  RUN normalizado del docente.
-     * @param string|null $idEspacio  ID del espacio (opcional; si se omite filtra en todos los espacios).
+     * @param  Builder  $query
+     * @param  string  $runProfesor  RUN normalizado del docente.
+     * @param  string|null  $idEspacio  ID del espacio (opcional; si se omite filtra en todos los espacios).
      */
     public function scopeActivasProfesor($query, string $runProfesor, ?string $idEspacio = null)
     {
         $query->where('estado', 'activa')
-              ->where(function ($q) use ($runProfesor) {
-                  $q->where('run_profesor', $runProfesor)
+            ->where(function ($q) use ($runProfesor) {
+                $q->where('run_profesor', $runProfesor)
                     ->orWhere('run_solicitante', $runProfesor);
-              });
+            });
 
         if ($idEspacio !== null) {
             $query->where('id_espacio', $idEspacio);
@@ -215,25 +244,24 @@ class Reserva extends Model
      * Scope: reservas activas en un espacio que NO pertenecen al docente indicado.
      * Útil para detectar si otro usuario ocupa el espacio antes de liberarlo.
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $runProfesor  RUN normalizado del docente que NO debe aparecer.
-     * @param string $idEspacio    ID del espacio a verificar.
+     * @param  Builder  $query
+     * @param  string  $runProfesor  RUN normalizado del docente que NO debe aparecer.
+     * @param  string  $idEspacio  ID del espacio a verificar.
      */
     public function scopeActivasOtrosDocentes($query, string $runProfesor, string $idEspacio)
     {
         return $query->where('id_espacio', $idEspacio)
-                     ->where('estado', 'activa')
-                     ->where(function ($q) use ($runProfesor) {
-                         $q->where('run_profesor', '!=', $runProfesor)
-                           ->orWhereNull('run_profesor');
-                     });
+            ->where('estado', 'activa')
+            ->where(function ($q) use ($runProfesor) {
+                $q->where('run_profesor', '!=', $runProfesor)
+                    ->orWhereNull('run_profesor');
+            });
     }
 
     /**
      * Verifica si el RUN proporcionado es el dueño de esta reserva.
      *
-     * @param string $run  RUN normalizado a comparar.
-     * @return bool
+     * @param  string  $run  RUN normalizado a comparar.
      */
     public function esDueño(string $run): bool
     {
@@ -254,7 +282,7 @@ class Reserva extends Model
             return false;
         }
 
-        $fechaReserva = $this->fecha_reserva instanceof \Carbon\Carbon
+        $fechaReserva = $this->fecha_reserva instanceof Carbon
             ? $this->fecha_reserva->format('Y-m-d')
             : $this->fecha_reserva;
 
@@ -264,20 +292,20 @@ class Reserva extends Model
 
         // Verificar si la hora actual está dentro del rango de módulos de la reserva
         $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-        $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
-        $horariosModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+        $diaNormalizado = ModulosHelper::normalizarDia($diaActual);
+        $horariosModulos = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
         $moduloInicio = $this->modulo_inicio;
         $moduloFin = $this->modulo_fin;
 
-        if (!$moduloInicio || !$moduloFin) {
+        if (! $moduloInicio || ! $moduloFin) {
             return false;
         }
 
         $horaInicioReserva = $horariosModulos[$moduloInicio]['inicio'] ?? null;
         $horaFinReserva = $horariosModulos[$moduloFin]['fin'] ?? null;
 
-        if (!$horaInicioReserva || !$horaFinReserva) {
+        if (! $horaInicioReserva || ! $horaFinReserva) {
             return false;
         }
 

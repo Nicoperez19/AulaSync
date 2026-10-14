@@ -3,16 +3,21 @@
 namespace App\Livewire;
 
 use App\Models\Mapa;
-use Livewire\Component;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Component;
 
 class MapasTable extends Component
 {
     protected $listeners = ['cerrarModal'];
+
     public $mapas;
+
     public $mapaSeleccionado = null;
+
     public $mostrarModal = false;
+
     public $mapaAEliminar = null;
+
     public $mostrarModalEliminar = false;
 
     public function mount()
@@ -49,7 +54,9 @@ class MapasTable extends Component
      */
     public function eliminarMapa()
     {
-        if (!$this->mapaAEliminar) return;
+        if (! $this->mapaAEliminar) {
+            return;
+        }
 
         try {
             $ruta = $this->mapaAEliminar->ruta_mapa ?? null;
@@ -90,7 +97,7 @@ class MapasTable extends Component
     {
         $this->mostrarModal = false;
         $this->mapaSeleccionado = null;
-    $this->dispatch('modalClosed');
+        $this->dispatch('modalClosed');
     }
 
     public function limpiarEstado()

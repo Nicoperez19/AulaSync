@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,7 +20,7 @@ class ProfileUpdateRequest extends FormRequest
             'celular' => ['nullable', 'string', 'regex:/^9\\d{8}$/'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'fecha_nacimiento' => ['nullable', 'date'],
-            'anio_ingreso' => ['nullable', 'integer', 'min:2010', 'max:' . date('Y')],
+            'anio_ingreso' => ['nullable', 'integer', 'min:2010', 'max:'.date('Y')],
         ];
 
         // Solo aplica unique si el email es diferente al actual
@@ -31,7 +30,7 @@ class ProfileUpdateRequest extends FormRequest
                 'string',
                 'email',
                 'max:255',
-                \Illuminate\Validation\Rule::unique('users', 'email')->ignore($userId),
+                Rule::unique('users', 'email')->ignore($userId),
             ];
         } else {
             $rules['email'] = [

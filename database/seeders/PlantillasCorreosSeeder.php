@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\PlantillaCorreo;
 use App\Models\TipoCorreoMasivo;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class PlantillasCorreosSeeder extends Seeder
 {
@@ -15,12 +15,13 @@ class PlantillasCorreosSeeder extends Seeder
     public function run(): void
     {
         // Buscar un usuario admin para asignar como creador
-        $admin = User::whereHas('roles', function($query) {
+        $admin = User::whereHas('roles', function ($query) {
             $query->where('name', 'Administrador');
         })->first();
 
-        if (!$admin) {
+        if (! $admin) {
             $this->command->info('No se encontró un usuario Administrador. Saltando seeder de plantillas.');
+
             return;
         }
 
@@ -79,7 +80,7 @@ Si tiene alguna consulta o necesita más información, no dude en contactarnos.
 Saludos cordiales,
 Equipo Académico',
             'variables_disponibles' => json_encode([
-                'nombre', 'email', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas', 'porcentaje'
+                'nombre', 'email', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas', 'porcentaje',
             ]),
             'activo' => true,
             'creado_por' => $admin->run,
@@ -225,7 +226,7 @@ Equipo Gestor de Aulas IT
 Este es un correo electrónico automático, por favor no responda a este mensaje.
 © 2025 Gestor de Aulas IT. Todos los derechos reservados.',
             'variables_disponibles' => json_encode([
-                'nombre', 'email', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas', 'porcentaje'
+                'nombre', 'email', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas', 'porcentaje',
             ]),
             'activo' => true,
             'creado_por' => $admin->run,
@@ -271,7 +272,7 @@ Información del período:
 Saludos,
 Equipo Gestor de Aulas IT',
             'variables_disponibles' => json_encode([
-                'nombre', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas'
+                'nombre', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas',
             ]),
             'activo' => true,
             'creado_por' => $admin->run,

@@ -1,17 +1,15 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiReservaController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\ProgramacionSemanalController;
+use App\Http\Controllers\EspacioController;
+use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorColaboradorController;
 use App\Models\User;
-use App\Http\Controllers\EspacioController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\PlanoDigitalController;
-use App\Http\Controllers\DashboardController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +42,7 @@ Route::get('/attendance/reservation/{reservationId}', [AttendanceController::cla
 |--------------------------------------------------------------------------
 | Rutas de Asistencia de Alumnos por QR (Student QR Attendance API)
 |--------------------------------------------------------------------------
-| 
+|
 | Endpoints para el escáner QR de alumnos:
 | - POST /student-attendance/entrada: Marcar entrada de alumno
 | - POST /student-attendance/salida: Marcar salida de alumno
@@ -88,7 +86,7 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
         $hora = $request->query('hora');
 
         // Verificar si el profesor tiene clases en este espacio en la hora actual
-        $planificacion = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo'])
+        $planificacion = Planificacion_Asignatura::with(['asignatura', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->whereHas('asignatura', function ($query) use ($profesorId) {
                 $query->where('run', $profesorId);
@@ -110,9 +108,9 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
                     'asignatura' => $planificacion->asignatura->nombre_asignatura,
                     'horario' => [
                         'inicio' => $planificacion->modulo->hora_inicio,
-                        'termino' => $planificacion->modulo->hora_termino
-                    ]
-                ]
+                        'termino' => $planificacion->modulo->hora_termino,
+                    ],
+                ],
             ]);
         }
 
@@ -120,13 +118,13 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
             'esValido' => false,
             'tiene_clase' => false,
             'tieneProgramacion' => false,
-            'mensaje' => 'El profesor no tiene clases asignadas en este espacio en el horario actual'
+            'mensaje' => 'El profesor no tiene clases asignadas en este espacio en el horario actual',
         ]);
 
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'esValido' => false,
-            'mensaje' => 'Error al verificar el espacio: ' . $e->getMessage()
+            'mensaje' => 'Error al verificar el espacio: '.$e->getMessage(),
         ], 500);
     }
 });
@@ -137,7 +135,7 @@ Route::post('/registrar-uso-espacio', [ApiReservaController::class, 'registrarUs
 Route::post('/registrar-salida-clase', [ApiReservaController::class, 'registrarSalidaClase']);
 Route::post('/registrar-reserva-espontanea', [ApiReservaController::class, 'registrarReservaEspontanea']);
 Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarUsoEspacio']);
-Route::get('/reserva-activa/{id}', [App\Http\Controllers\Api\ApiReservaController::class, 'getReservaActiva']);
+Route::get('/reserva-activa/{id}', [ApiReservaController::class, 'getReservaActiva']);
 // 🔑 Nuevo endpoint: Liberar sala bloqueada + registrar nuevo uso (cuando profesor anterior no devolvió llave)
 Route::post('/liberar-y-registrar-uso', [ApiReservaController::class, 'liberarYRegistrarUso']);
 
@@ -159,18 +157,18 @@ Route::get('/user/{run}', function ($run) {
                     'name' => $user->name,
                     'email' => $user->email,
                     'roles' => $user->roles->pluck('name'),
-                ]
+                ],
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'El profesor no se encuentra registrado, contáctese con soporte.'
+                'message' => 'El profesor no se encuentra registrado, contáctese con soporte.',
             ], 404);
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'Error al buscar el profesor, intente nuevamente.'
+            'message' => 'Error al buscar el profesor, intente nuevamente.',
         ], 500);
     }
 });
@@ -203,13 +201,13 @@ Route::get('/verificar-clase-usuario', function ($request) {
             'success' => true,
             'tiene_clase' => true,
             'mensaje' => 'Usted tiene una clase programada en este espacio.',
-            'clase' => $clase
+            'clase' => $clase,
         ]);
     } else {
         return response()->json([
             'success' => true,
             'tiene_clase' => false,
-            'mensaje' => 'No tiene clases asociadas en este espacio en este horario.'
+            'mensaje' => 'No tiene clases asociadas en este espacio en este horario.',
         ]);
     }
 });
@@ -220,22 +218,22 @@ Route::get('/espacio/{id}', function ($id) {
             ->where('id_espacio', $id)
             ->orWhere('nombre_espacio', $id)
             ->first();
-        
+
         if ($espacio) {
             return response()->json([
                 'success' => true,
-                'espacio' => $espacio
+                'espacio' => $espacio,
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Espacio no encontrado'
+                'message' => 'Espacio no encontrado',
             ], 404);
         }
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'success' => false,
-            'message' => 'Error interno del servidor'
+            'message' => 'Error interno del servidor',
         ], 500);
     }
 });
@@ -249,17 +247,17 @@ Route::get('/espacio/{id}/informacion-detallada', [EspacioController::class, 'ge
 
 // Rutas para manejo de caché
 Route::prefix('cache')->group(function () {
-    Route::get('/health', [App\Http\Controllers\CacheHealthController::class, 'healthCheck']);
-    Route::post('/clear', [App\Http\Controllers\CacheHealthController::class, 'clearCache']);
-    Route::post('/create-structure', [App\Http\Controllers\CacheHealthController::class, 'createCacheStructure']);
-    Route::get('/stats', [App\Http\Controllers\CacheHealthController::class, 'stats']);
+    Route::get('/health', [CacheHealthController::class, 'healthCheck']);
+    Route::post('/clear', [CacheHealthController::class, 'clearCache']);
+    Route::post('/create-structure', [CacheHealthController::class, 'createCacheStructure']);
+    Route::get('/stats', [CacheHealthController::class, 'stats']);
 });
 
 // Ruta para verificar si un espacio está ocupado en un módulo específico
 Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_espacio, $id_modulo) {
     try {
         // Extraer el día y número de módulo del id_modulo (ejemplo: "MI.5")
-        list($dia, $numeroModulo) = explode('.', $id_modulo);
+        [$dia, $numeroModulo] = explode('.', $id_modulo);
 
         // Verificar si existe planificación para este espacio y módulo
         $tienePlanificacion = DB::table('planificacion_asignaturas')
@@ -268,12 +266,12 @@ Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_es
             ->exists();
 
         return response()->json([
-            'ocupado' => $tienePlanificacion
+            'ocupado' => $tienePlanificacion,
         ]);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'error' => 'Error al verificar la planificación',
-            'ocupado' => false
+            'ocupado' => false,
         ], 500);
     }
 });
@@ -284,9 +282,9 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
         $id_modulo = $request->query('id_modulo');
         $espacios = explode(',', $request->query('espacios'));
 
-        if (!$id_modulo || empty($espacios)) {
+        if (! $id_modulo || empty($espacios)) {
             return response()->json([
-                'error' => 'Se requieren id_modulo y espacios'
+                'error' => 'Se requieren id_modulo y espacios',
             ], 400);
         }
 
@@ -298,17 +296,15 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
             ->toArray();
 
         return response()->json([
-            'espacios_ocupados' => $planificaciones
+            'espacios_ocupados' => $planificaciones,
         ]);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'error' => 'Error al verificar la planificación',
-            'espacios_ocupados' => []
+            'espacios_ocupados' => [],
         ], 500);
     }
 });
-
-
 
 Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verificarHorario']);
 
@@ -317,17 +313,17 @@ Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verifica
 Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
 
 Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
-Route::post('/crear-reserva-profesor', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesor']);
-Route::post('/crear-reserva-profesor-automatica', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesorAutomatica']);
-Route::get('/profesor/{run}/asignaturas', [App\Http\Controllers\ProfesorController::class, 'getAsignaturasProfesor']);
+Route::post('/crear-reserva-profesor', [ProfesorController::class, 'crearReservaProfesor']);
+Route::post('/crear-reserva-profesor-automatica', [ProfesorController::class, 'crearReservaProfesorAutomatica']);
+Route::get('/profesor/{run}/asignaturas', [ProfesorController::class, 'getAsignaturasProfesor']);
 Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
 Route::post('/devolver-llaves', [PlanoDigitalController::class, 'devolverLlaves']);
 Route::post('/verificar-reserva-activa', [PlanoDigitalController::class, 'verificarReservaActiva']);
 
 // Rutas para solicitantes
-Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarSolicitante']);
-Route::post('/registrar-solicitante', [App\Http\Controllers\SolicitanteController::class, 'registrarSolicitante']);
-Route::post('/crear-reserva-solicitante', [App\Http\Controllers\SolicitanteController::class, 'crearReservaSolicitante']);
+Route::get('/verificar-solicitante/{run}', [SolicitanteController::class, 'verificarSolicitante']);
+Route::post('/registrar-solicitante', [SolicitanteController::class, 'registrarSolicitante']);
+Route::post('/crear-reserva-solicitante', [SolicitanteController::class, 'crearReservaSolicitante']);
 
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
@@ -357,7 +353,7 @@ Route::get('/keep-alive', function () {
     return response()->json([
         'status' => 'ok',
         'timestamp' => now()->format('Y-m-d H:i:s'),
-        'csrf_token' => csrf_token()
+        'csrf_token' => csrf_token(),
     ]);
 });
 
@@ -365,26 +361,26 @@ Route::get('/keep-alive', function () {
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
         // Normalizar el ID del espacio usando la lógica del tenant actual
-        if (!empty($espacio)) {
+        if (! empty($espacio)) {
             $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
-            $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
+            $tenant = Tenant::current() ?? Tenant::find(tenant_id());
             if ($tenant) {
                 $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
                 $normalizedInput = str_replace('-', '', $espacio);
                 if (strpos($normalizedInput, $prefix) === 0) {
                     $normalizedInput = substr($normalizedInput, strlen($prefix));
                 }
-                $espacio = $prefix . '-' . $normalizedInput;
+                $espacio = $prefix.'-'.$normalizedInput;
             }
         }
 
         // Obtener la hora actual
-        $horaActual = \Carbon\Carbon::now();
+        $horaActual = Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
-        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        $diaLimpio = ModulosHelper::normalizarDia($diaActual);
         $diasPosibles = array_unique([$diaActual, $diaLimpio, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
         $horaActualStr = $horaActual->format('H:i:s');
-        
+
         // Margen de 30 minutos para anticipación (docentes que llegan antes a su clase)
         $horaConAnticipacion = $horaActual->copy()->addMinutes(30)->format('H:i:s');
 
@@ -394,37 +390,37 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
 
         // Buscar la clase programada en este espacio usando Eloquent (con coincidencia robusta de espacio)
         $espacioLimpio = str_replace(['-', ' '], '', $espacio);
-        $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+        $programacion = Planificacion_Asignatura::with(['modulo', 'asignatura'])
             ->where(function ($eq) use ($espacio, $espacioLimpio) {
                 $eq->where('id_espacio', $espacio)
-                   ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                    ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
             })
             ->where(function ($qPrincipal) use ($usuario, $runLimpio, $runSinDv) {
                 $qPrincipal->whereHas('asignatura', function ($q) use ($usuario, $runLimpio, $runSinDv) {
                     $q->where('run_profesor', $usuario)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        ->orWhere('run_profesor', $runLimpio)
+                        ->orWhere('run_profesor', $runSinDv)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 })->orWhereHas('horario', function ($q) use ($usuario, $runLimpio, $runSinDv) {
                     $q->where('run_profesor', $usuario)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        ->orWhere('run_profesor', $runLimpio)
+                        ->orWhere('run_profesor', $runSinDv)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 });
             })
             ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
                 $q->whereIn('dia', $diasPosibles)
-                  ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
-                      $subQ->where(function ($sq1) use ($horaActualStr) {
-                          $sq1->where('hora_inicio', '<=', $horaActualStr)
-                              ->where('hora_termino', '>=', $horaActualStr);
-                      })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
-                          $sq2->where('hora_inicio', '>', $horaActualStr)
-                              ->where('hora_inicio', '<=', $horaConAnticipacion);
-                      });
-                  });
+                    ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                        $subQ->where(function ($sq1) use ($horaActualStr) {
+                            $sq1->where('hora_inicio', '<=', $horaActualStr)
+                                ->where('hora_termino', '>=', $horaActualStr);
+                        })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                            $sq2->where('hora_inicio', '>', $horaActualStr)
+                                ->where('hora_inicio', '<=', $horaConAnticipacion);
+                        });
+                    });
             })
             ->first();
 
@@ -438,36 +434,36 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                 'hora_inicio' => $programacion->modulo->hora_inicio,
                 'hora_termino' => $programacion->modulo->hora_termino,
                 'id_asignatura' => $programacion->id_asignatura,
-                'es_temporal' => false
+                'es_temporal' => false,
             ];
         } else {
             // Si no tiene clase regular, buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
-            $hoyFecha = \Carbon\Carbon::today()->toDateString();
-            $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
+            $hoyFecha = Carbon::today()->toDateString();
+            $planColaborador = PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
                 ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
                 ->whereHas('profesorColaborador', function ($q) use ($usuario, $runLimpio, $runSinDv, $hoyFecha) {
                     $q->where('estado', 'activo')
-                      ->where('fecha_inicio', '<=', $hoyFecha)
-                      ->where('fecha_termino', '>=', $hoyFecha)
-                      ->where(function ($subQ) use ($usuario, $runLimpio, $runSinDv) {
-                          $subQ->where('run_profesor_colaborador', $usuario)
-                               ->orWhere('run_profesor_colaborador', $runLimpio)
-                               ->orWhere('run_profesor_colaborador', $runSinDv)
-                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                      });
+                        ->where('fecha_inicio', '<=', $hoyFecha)
+                        ->where('fecha_termino', '>=', $hoyFecha)
+                        ->where(function ($subQ) use ($usuario, $runLimpio, $runSinDv) {
+                            $subQ->where('run_profesor_colaborador', $usuario)
+                                ->orWhere('run_profesor_colaborador', $runLimpio)
+                                ->orWhere('run_profesor_colaborador', $runSinDv)
+                                ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        });
                 })
                 ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
                     $q->whereIn('dia', $diasPosibles)
-                      ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
-                          $subQ->where(function ($sq1) use ($horaActualStr) {
-                              $sq1->where('hora_inicio', '<=', $horaActualStr)
-                                  ->where('hora_termino', '>=', $horaActualStr);
-                          })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
-                              $sq2->where('hora_inicio', '>', $horaActualStr)
-                                  ->where('hora_inicio', '<=', $horaConAnticipacion);
-                          });
-                      });
+                        ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                            $subQ->where(function ($sq1) use ($horaActualStr) {
+                                $sq1->where('hora_inicio', '<=', $horaActualStr)
+                                    ->where('hora_termino', '>=', $horaActualStr);
+                            })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                                $sq2->where('hora_inicio', '>', $horaActualStr)
+                                    ->where('hora_inicio', '<=', $horaConAnticipacion);
+                            });
+                        });
                 })
                 ->first();
 
@@ -494,20 +490,21 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                 'hora_actual' => $horaActualStr,
                 'espacio_id' => $espacio,
                 'usuario_original' => $usuario,
-                'usuario_limpio' => $runLimpio
-            ]
+                'usuario_limpio' => $runLimpio,
+            ],
         ]);
-    } catch (\Exception $e) {
-        \Log::error('Error en verificar-programacion: ' . $e->getMessage(), [
+    } catch (Exception $e) {
+        \Log::error('Error en verificar-programacion: '.$e->getMessage(), [
             'espacio' => $espacio,
             'usuario' => $usuario,
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
         ]);
+
         return response()->json([
             'success' => false,
             'tieneProgramacion' => false,
             'tiene_clase' => false,
-            'message' => 'Error al verificar la programación: ' . $e->getMessage()
+            'message' => 'Error al verificar la programación: '.$e->getMessage(),
         ], 500);
     }
 });
@@ -517,15 +514,15 @@ Route::get('/verificar-clases-programadas/{run}', function ($run) {
     try {
         $horaActual = now()->format('H:i:s');
         $diaActual = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
-        
-        $controller = new PlanoDigitalController();
+
+        $controller = new PlanoDigitalController;
         $resultado = $controller->verificarClasesProgramadas($run, $horaActual, $diaActual);
-        
+
         return response()->json($resultado);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json([
             'tiene_clases' => false,
-            'mensaje' => 'Error al verificar clases programadas: ' . $e->getMessage()
+            'mensaje' => 'Error al verificar clases programadas: '.$e->getMessage(),
         ], 500);
     }
 });
@@ -584,7 +581,18 @@ Route::get('/espacios/resumen', [EspacioApiController::class, 'resumenEspacios']
 // RUTAS DE SALAS DE ESTUDIO
 // ========================================
 
+use App\Helpers\ModulosHelper;
+use App\Http\Controllers\CacheHealthController;
+use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\SalaEstudioController;
+use App\Http\Controllers\SolicitanteController;
+use App\Models\Espacio;
+use App\Models\Modulo;
+use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
+use App\Models\Reserva;
+use App\Models\Tenant;
+use Carbon\Carbon;
 
 // Registrar asistencia grupal en sala de estudio (primer carnet = responsable)
 Route::post('/sala-estudio/registrar-asistencia', [PlanoDigitalController::class, 'registrarAsistenciaSalaEstudio']);
@@ -604,29 +612,30 @@ Route::get('/sala-estudio/vetos', [SalaEstudioController::class, 'listarVetados'
 Route::get('/sala-estudio/vetos/export', [SalaEstudioController::class, 'exportarVetos']);
 
 // Verificar si un RUN existe en solicitantes
-Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarExistencia']);
+Route::get('/verificar-solicitante/{run}', [SolicitanteController::class, 'verificarExistencia']);
 
 // Obtener todos los módulos del sistema
 Route::get('/modulos', function () {
-    $modulos = \App\Models\Modulo::all()
+    $modulos = Modulo::all()
         ->sort(function ($a, $b) {
             $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
             $partsA = explode('.', $a->id_modulo);
             $partsB = explode('.', $b->id_modulo);
             $diaA = $partsA[0];
-            $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+            $numA = isset($partsA[1]) ? (int) $partsA[1] : 0;
             $diaB = $partsB[0];
-            $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+            $numB = isset($partsB[1]) ? (int) $partsB[1] : 0;
             if ($diaA !== $diaB) {
                 return ($dias[$diaA] ?? 99) <=> ($dias[$diaB] ?? 99);
             }
+
             return $numA <=> $numB;
         })
         ->map(function ($modulo) {
             return [
                 'id_modulo' => $modulo->id_modulo,
                 'hora_inicio' => substr($modulo->hora_inicio, 0, 5),
-                'hora_termino' => substr($modulo->hora_termino, 0, 5)
+                'hora_termino' => substr($modulo->hora_termino, 0, 5),
             ];
         })
         ->values()
@@ -639,7 +648,7 @@ Route::get('/modulos', function () {
 Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function ($fecha, $moduloInicio, $moduloFin) {
     try {
         // Obtener todos los espacios disponibles (excluyendo salas de estudio, talleres y laboratorios excepto computación)
-        $espacios = \App\Models\Espacio::where('estado', 'Disponible')
+        $espacios = Espacio::where('estado', 'Disponible')
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%taller%'")
@@ -651,9 +660,9 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
             ->get();
 
         // Convertir fecha a día de la semana
-        $fechaParsed = \Carbon\Carbon::parse($fecha);
+        $fechaParsed = Carbon::parse($fecha);
         $nombreDia = strtolower($fechaParsed->format('l'));
-        
+
         // Mapear nombre del día en inglés a prefijo en BD (mayúsculas)
         $diasMap = [
             'monday' => 'LU',
@@ -662,26 +671,26 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
             'thursday' => 'JU',
             'friday' => 'VI',
             'saturday' => 'SA',
-            'sunday' => 'DO'
+            'sunday' => 'DO',
         ];
         $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
 
         // Crear array de módulos a verificar
-        $modulosAVerificar = range((int)$moduloInicio, (int)$moduloFin);
-        $modulosIds = array_map(function($num) use ($prefijoDia) {
+        $modulosAVerificar = range((int) $moduloInicio, (int) $moduloFin);
+        $modulosIds = array_map(function ($num) use ($prefijoDia) {
             return "{$prefijoDia}.{$num}";
         }, $modulosAVerificar);
 
         // Obtener horarios del primer y último módulo
-        $primerModuloObj = \App\Models\Modulo::find($modulosIds[0]);
-        $ultimoModuloObj = \App\Models\Modulo::find(end($modulosIds));
-        
-        if (!$primerModuloObj || !$ultimoModuloObj) {
+        $primerModuloObj = Modulo::find($modulosIds[0]);
+        $ultimoModuloObj = Modulo::find(end($modulosIds));
+
+        if (! $primerModuloObj || ! $ultimoModuloObj) {
             return response()->json([
                 'error' => 'Módulo no encontrado',
                 'debug' => [
-                    'modulos_construidos' => $modulosIds
-                ]
+                    'modulos_construidos' => $modulosIds,
+                ],
             ], 404);
         }
 
@@ -692,38 +701,38 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar) {
             // Verificar si hay PLANIFICACIÓN (clases programadas) en este espacio para CUALQUIERA de los módulos
             foreach ($modulosIds as $moduloId) {
-                $planificado = \App\Models\Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
+                $planificado = Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
                     ->where('id_modulo', $moduloId)
                     ->exists();
-                
+
                 if ($planificado) {
                     return false; // Si tiene clase planificada en cualquier módulo, no está disponible
                 }
             }
-            
+
             // Verificar si hay RESERVA en este espacio para esta fecha en CUALQUIERA de los módulos
             foreach ($modulosAVerificar as $numModulo) {
-                $reservado = \App\Models\Reserva::where('id_espacio', $espacio->id_espacio)
+                $reservado = Reserva::where('id_espacio', $espacio->id_espacio)
                     ->whereDate('fecha_reserva', $fecha)
-                    ->whereRaw("modulos LIKE ?", ["%{$numModulo}%"])
+                    ->whereRaw('modulos LIKE ?', ["%{$numModulo}%"])
                     ->whereIn('estado', ['confirmada', 'en_curso', 'activa'])
                     ->exists();
-                
+
                 if ($reservado) {
                     return false; // Si está reservado en cualquier módulo, no está disponible
                 }
             }
-            
+
             return true; // Solo está disponible si está libre en TODOS los módulos (sin planificación ni reserva)
         })->values();
 
         return response()->json([
-            'espacios' => $espaciosDisponibles->map(function($espacio) {
+            'espacios' => $espaciosDisponibles->map(function ($espacio) {
                 return [
                     'id_espacio' => $espacio->id_espacio,
                     'nombre_espacio' => $espacio->nombre_espacio,
                     'tipo_espacio' => $espacio->tipo_espacio,
-                    'display_name' => "{$espacio->id_espacio} - {$espacio->nombre_espacio}"
+                    'display_name' => "{$espacio->id_espacio} - {$espacio->nombre_espacio}",
                 ];
             }),
             'modulos_verificados' => $modulosIds,
@@ -731,11 +740,10 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
             'hora_fin' => $horaFin,
             'fecha' => $fecha,
             'total_disponibles' => count($espaciosDisponibles),
-            'total_espacios_base' => $espacios->count()
+            'total_espacios_base' => $espacios->count(),
         ]);
 
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         return response()->json(['error' => $e->getMessage()], 500);
     }
 });
-

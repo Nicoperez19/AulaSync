@@ -46,7 +46,7 @@ class GenerarSnapshotOcupacionSemanal extends Command
         $forzar = (bool) $this->option('forzar');
         $tenantDomain = $this->option('tenant');
 
-        $this->info("Iniciando generación de snapshots de ocupación...");
+        $this->info('Iniciando generación de snapshots de ocupación...');
         $this->info("Semana objetivo: {$lunesDate->format('d/m/Y')} al {$lunesDate->copy()->addDays(5)->format('d/m/Y')}");
 
         $query = Tenant::query();
@@ -58,6 +58,7 @@ class GenerarSnapshotOcupacionSemanal extends Command
         if ($tenants->isEmpty()) {
             $this->warn('No se encontraron tenants. Procesando en contexto actual...');
             $this->procesarSemana($lunesDate, $tipoOpt, $forzar);
+
             return 0;
         }
 
@@ -67,11 +68,12 @@ class GenerarSnapshotOcupacionSemanal extends Command
                 $tenant->makeCurrent();
                 $this->procesarSemana($lunesDate, $tipoOpt, $forzar);
             } catch (\Throwable $e) {
-                $this->error("Error procesando tenant {$tenant->domain}: " . $e->getMessage());
+                $this->error("Error procesando tenant {$tenant->domain}: ".$e->getMessage());
             }
         }
 
-        $this->info("Proceso de snapshots de ocupación finalizado con éxito.");
+        $this->info('Proceso de snapshots de ocupación finalizado con éxito.');
+
         return 0;
     }
 

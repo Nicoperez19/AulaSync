@@ -16,7 +16,7 @@ return new class extends Migration
              || DB::table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
              || str_contains(strtolower(DB::connection()->getDatabaseName()), 'la');
 
-        if (!$isLA) {
+        if (! $isLA) {
             return;
         }
 
@@ -59,7 +59,5 @@ return new class extends Migration
     /**
      * Reverse the migrations.
      */
-    public function down(): void
-    {
-    }
+    public function down(): void {}
 };

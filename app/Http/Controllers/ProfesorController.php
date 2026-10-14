@@ -2,20 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Profesor;
-use App\Models\Universidad;
-use App\Models\Facultad;
-use App\Models\Carrera;
-use App\Models\Reserva;
-use App\Models\Asignatura;
+use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 use App\Models\AreaAcademica;
-use App\Models\Tenant;
-use Illuminate\Http\Request;
+use App\Models\Asignatura;
+use App\Models\Carrera;
+use App\Models\ClaseNoRealizada;
 use App\Models\Espacio;
+use App\Models\Facultad;
+use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
+use App\Models\Profesor;
+use App\Models\Reserva;
+use App\Models\Tenant;
+use App\Models\Universidad;
+use App\Services\ReservaService;
 use App\Traits\RunNormalizer;
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class ProfesorController extends Controller
 {
@@ -37,6 +46,7 @@ class ProfesorController extends Controller
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los profesores.'])->withInput();
         }
     }
+
     /**
      * Crear reserva para profesor
      */
@@ -48,14 +58,14 @@ class ProfesorController extends Controller
 
             $request->validate([
                 'run_profesor' => 'required',
-                'id_espacio' => 'required|string'
+                'id_espacio' => 'required|string',
             ]);
 
             $runProfesor = $this->normalizeRun($request->input('run_profesor'));
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
-            if (!empty($idEspacio)) {
+            if (! empty($idEspacio)) {
                 $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
                 $tenant = Tenant::current() ?? Tenant::find(tenant_id());
                 if ($tenant) {
@@ -64,16 +74,16 @@ class ProfesorController extends Controller
                     if (strpos($normalizedInput, $prefix) === 0) {
                         $normalizedInput = substr($normalizedInput, strlen($prefix));
                     }
-                    $idEspacio = $prefix . '-' . $normalizedInput;
+                    $idEspacio = $prefix.'-'.$normalizedInput;
                 }
             }
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado'
+                    'mensaje' => 'Espacio no encontrado',
                 ], 404);
             }
 
@@ -81,7 +91,7 @@ class ProfesorController extends Controller
             if ($espacio->estado !== 'Disponible') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio no está disponible'
+                    'mensaje' => 'El espacio no está disponible',
                 ], 400);
             }
 
@@ -89,8 +99,8 @@ class ProfesorController extends Controller
             $fechaActual = now()->format('Y-m-d');
 
             // Validar horario académico
-            $hora = (int)now()->format('H');
-            $minutos = (int)now()->format('i');
+            $hora = (int) now()->format('H');
+            $minutos = (int) now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
             $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
@@ -99,16 +109,16 @@ class ProfesorController extends Controller
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).',
                 ], 400);
             }
 
             // Verificar si el profesor existe
             $profesor = Profesor::where('run_profesor', $runProfesor)->first();
-            if (!$profesor) {
+            if (! $profesor) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
+                    'mensaje' => 'Profesor no encontrado',
                 ], 404);
             }
 
@@ -121,34 +131,34 @@ class ProfesorController extends Controller
             if ($reservaExistente) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                    'mensaje' => 'Ya tienes una reserva activa en otro espacio',
                 ], 400);
             }
 
             // Encontrar el módulo actual para asignar como inicio/fin
-            $diaSemanaStr = strtolower(\Carbon\Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
-            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaSemanaStr);
-            $moduloActual = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActual, $diaNormalizado);
-            $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+            $diaSemanaStr = strtolower(Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
+            $diaNormalizado = ModulosHelper::normalizarDia($diaSemanaStr);
+            $moduloActual = ModulosHelper::obtenerModuloActual($horaActual, $diaNormalizado);
+            $horarios = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
             // Crear la reserva espontánea (sin vincular a una asignatura programada)
-            $reserva = new Reserva();
+            $reserva = new Reserva;
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $runProfesor;
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->id_asignatura = null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
-            
+
             if ($moduloActual) {
                 $reserva->modulo_inicio = $moduloActual;
                 $reserva->modulo_fin = $moduloActual;
                 $reserva->hora_salida = $horarios[$moduloActual]['fin'];
                 $reserva->modulos = 1;
             } else {
-                $reserva->hora_salida = \Carbon\Carbon::parse($horaActual)->addHour()->format('H:i:s');
+                $reserva->hora_salida = Carbon::parse($horaActual)->addHour()->format('H:i:s');
             }
-            
+
             $reserva->estado = 'activa';
             $reserva->tipo_reserva = 'espontanea';
             $reserva->save();
@@ -158,7 +168,7 @@ class ProfesorController extends Controller
             $espacio->save();
 
             // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+            ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
                 $horaActual,
@@ -166,7 +176,7 @@ class ProfesorController extends Controller
             );
 
             // Enviar comprobante de reserva por correo
-            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
+            app(ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
 
             return response()->json([
                 'success' => true,
@@ -177,21 +187,23 @@ class ProfesorController extends Controller
                     'run_profesor' => $profesor->run_profesor,
                     'espacio' => $espacio->nombre_espacio,
                     'fecha' => $fechaActual,
-                    'hora_inicio' => $horaActual
-                ]
+                    'hora_inicio' => $horaActual,
+                ],
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error de validación al crear reserva de profesor: ' . json_encode($e->errors()));
+        } catch (ValidationException $e) {
+            Log::error('Error de validación al crear reserva de profesor: '.json_encode($e->errors()));
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error de validación en los datos enviados',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error al crear reserva de profesor: ' . $e->getMessage());
+            Log::error('Error al crear reserva de profesor: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+                'mensaje' => 'Error al crear reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -207,14 +219,14 @@ class ProfesorController extends Controller
 
             $request->validate([
                 'run_profesor' => 'required',
-                'id_espacio' => 'required|string'
+                'id_espacio' => 'required|string',
             ]);
 
             $runProfesor = $this->normalizeRun($request->input('run_profesor'));
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
-            if (!empty($idEspacio)) {
+            if (! empty($idEspacio)) {
                 $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
                 $tenant = Tenant::current() ?? Tenant::find(tenant_id());
                 if ($tenant) {
@@ -223,7 +235,7 @@ class ProfesorController extends Controller
                     if (strpos($normalizedInput, $prefix) === 0) {
                         $normalizedInput = substr($normalizedInput, strlen($prefix));
                     }
-                    $idEspacio = $prefix . '-' . $normalizedInput;
+                    $idEspacio = $prefix.'-'.$normalizedInput;
                 }
             }
 
@@ -236,10 +248,10 @@ class ProfesorController extends Controller
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado'
+                    'mensaje' => 'Espacio no encontrado',
                 ], 404);
             }
 
@@ -247,13 +259,13 @@ class ProfesorController extends Controller
             if ($espacio->estado !== 'Disponible') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio no está disponible'
+                    'mensaje' => 'El espacio no está disponible',
                 ], 400);
             }
 
             // Validar horario académico
-            $hora = (int)now()->format('H');
-            $minutos = (int)now()->format('i');
+            $hora = (int) now()->format('H');
+            $minutos = (int) now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
             $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
@@ -262,7 +274,7 @@ class ProfesorController extends Controller
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).',
                 ], 400);
             }
 
@@ -271,11 +283,11 @@ class ProfesorController extends Controller
                 ->orWhere('run_profesor', $runLimpio)
                 ->orWhere('run_profesor', $runSinDv)
                 ->first();
-            
-            if (!$profesor) {
+
+            if (! $profesor) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
+                    'mensaje' => 'Profesor no encontrado',
                 ], 404);
             }
 
@@ -289,95 +301,95 @@ class ProfesorController extends Controller
             if ($reservaExistente && $reservaExistente->id_espacio != $espacio->id_espacio) {
                 if ($reservaExistente->hora_salida && $reservaExistente->hora_salida < now()->format('H:i:s')) {
                     $reservaExistente->estado = 'finalizada';
-                    $reservaExistente->observaciones = ($reservaExistente->observaciones ?? '') . ' | Auto-finalizada al iniciar clase en ' . $espacio->nombre_espacio;
+                    $reservaExistente->observaciones = ($reservaExistente->observaciones ?? '').' | Auto-finalizada al iniciar clase en '.$espacio->nombre_espacio;
                     $reservaExistente->save();
                     $reservaExistente = null;
                 } else {
                     return response()->json([
                         'success' => false,
-                        'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                        'mensaje' => 'Ya tienes una reserva activa en otro espacio',
                     ], 400);
                 }
             }
 
             // Obtener la programación del profesor para este espacio (usando Eloquent para respetar la conexión 'tenant')
             $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
-            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diaNormalizado = ModulosHelper::normalizarDia($diaActual);
             $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
             $horaConAnticipacion = now()->copy()->addMinutes(30)->format('H:i:s');
             $espacioLimpio = str_replace(['-', ' '], '', $espacio->id_espacio);
 
-            $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+            $programacion = Planificacion_Asignatura::with(['modulo', 'asignatura'])
                 ->where(function ($eq) use ($espacio, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
-                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($qPrincipal) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
                     $qPrincipal->whereHas('asignatura', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
                         $q->where('run_profesor', $profesor->run_profesor)
-                          ->orWhere('run_profesor', $runProfesor)
-                          ->orWhere('run_profesor', $runLimpio)
-                          ->orWhere('run_profesor', $runSinDv)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                            ->orWhere('run_profesor', $runProfesor)
+                            ->orWhere('run_profesor', $runLimpio)
+                            ->orWhere('run_profesor', $runSinDv)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                     })->orWhereHas('horario', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
                         $q->where('run_profesor', $profesor->run_profesor)
-                          ->orWhere('run_profesor', $runProfesor)
-                          ->orWhere('run_profesor', $runLimpio)
-                          ->orWhere('run_profesor', $runSinDv)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                            ->orWhere('run_profesor', $runProfesor)
+                            ->orWhere('run_profesor', $runLimpio)
+                            ->orWhere('run_profesor', $runSinDv)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                     });
                 })
                 ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActual, $horaConAnticipacion) {
                     $q->whereIn('dia', $diasPosibles)
-                      ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
-                          $subQ->where(function ($sq1) use ($horaActual) {
-                              $sq1->where('hora_inicio', '<=', $horaActual)
-                                  ->where('hora_termino', '>=', $horaActual);
-                          })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
-                              $sq2->where('hora_inicio', '>', $horaActual)
-                                  ->where('hora_inicio', '<=', $horaConAnticipacion);
-                          });
-                      });
+                        ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
+                            $subQ->where(function ($sq1) use ($horaActual) {
+                                $sq1->where('hora_inicio', '<=', $horaActual)
+                                    ->where('hora_termino', '>=', $horaActual);
+                            })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
+                                $sq2->where('hora_inicio', '>', $horaActual)
+                                    ->where('hora_inicio', '<=', $horaConAnticipacion);
+                            });
+                        });
                 })
                 ->first();
 
             $esTemporal = false;
             $planColaborador = null;
 
-            if (!$programacion) {
+            if (! $programacion) {
                 // Buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
                 $hoyFecha = $fechaActual;
-                $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
+                $planColaborador = PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
                     ->where(function ($eq) use ($espacio, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
-                           ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->whereHas('profesorColaborador', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv, $hoyFecha) {
                         $q->where('estado', 'activo')
-                          ->where('fecha_inicio', '<=', $hoyFecha)
-                          ->where('fecha_termino', '>=', $hoyFecha)
-                          ->where(function ($subQ) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
-                              $subQ->where('run_profesor_colaborador', $profesor->run_profesor)
-                                   ->orWhere('run_profesor_colaborador', $runProfesor)
-                                   ->orWhere('run_profesor_colaborador', $runLimpio)
-                                   ->orWhere('run_profesor_colaborador', $runSinDv)
-                                   ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                                   ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                          });
+                            ->where('fecha_inicio', '<=', $hoyFecha)
+                            ->where('fecha_termino', '>=', $hoyFecha)
+                            ->where(function ($subQ) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                                $subQ->where('run_profesor_colaborador', $profesor->run_profesor)
+                                    ->orWhere('run_profesor_colaborador', $runProfesor)
+                                    ->orWhere('run_profesor_colaborador', $runLimpio)
+                                    ->orWhere('run_profesor_colaborador', $runSinDv)
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                            });
                     })
                     ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActual, $horaConAnticipacion) {
                         $q->whereIn('dia', $diasPosibles)
-                          ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
-                              $subQ->where(function ($sq1) use ($horaActual) {
-                                  $sq1->where('hora_inicio', '<=', $horaActual)
-                                      ->where('hora_termino', '>=', $horaActual);
-                              })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
-                                  $sq2->where('hora_inicio', '>', $horaActual)
-                                      ->where('hora_inicio', '<=', $horaConAnticipacion);
-                              });
-                          });
+                            ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
+                                $subQ->where(function ($sq1) use ($horaActual) {
+                                    $sq1->where('hora_inicio', '<=', $horaActual)
+                                        ->where('hora_termino', '>=', $horaActual);
+                                })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
+                                    $sq2->where('hora_inicio', '>', $horaActual)
+                                        ->where('hora_inicio', '<=', $horaConAnticipacion);
+                                });
+                            });
                     })
                     ->first();
 
@@ -386,53 +398,53 @@ class ProfesorController extends Controller
                 }
             }
 
-            if (!$programacion && !$planColaborador) {
+            if (! $programacion && ! $planColaborador) {
                 // Si no encuentra programación ni regular ni temporal, retornar error
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No se encontró programación para este profesor en este espacio'
+                    'mensaje' => 'No se encontró programación para este profesor en este espacio',
                 ], 400);
             }
 
             // Encontrar bloques consecutivos de planificación
-            $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+            $periodo = SemesterHelper::getCurrentPeriod();
             $idAsignatura = null;
             $moduloFinalObj = null;
             $moduloInicioObj = null;
             $nombreAsignaturaResp = '';
 
-            if (!$esTemporal && $programacion) {
-                $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+            if (! $esTemporal && $programacion) {
+                $planificacionesMismoBloque = Planificacion_Asignatura::with('modulo')
                     ->where('id_espacio', $espacio->id_espacio)
                     ->where('id_asignatura', $programacion->id_asignatura)
                     ->where(function ($q) use ($periodo, $programacion) {
                         $q->where('id_horario', $programacion->id_horario)
-                          ->orWhereHas('horario', function ($hq) use ($periodo) {
-                              $hq->where('periodo', $periodo);
-                          });
+                            ->orWhereHas('horario', function ($hq) use ($periodo) {
+                                $hq->where('periodo', $periodo);
+                            });
                     })
                     ->whereHas('modulo', function ($q) use ($diasPosibles) {
                         $q->whereIn('dia', $diasPosibles);
                     })
                     ->get();
 
-                $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($programacion->id_modulo);
+                $numModuloActual = ModulosHelper::getNumeroModulo($programacion->id_modulo);
                 $moduloFin = $numModuloActual;
-                
+
                 $modulosAsociados = [];
                 foreach ($planificacionesMismoBloque as $planItem) {
                     if ($planItem->modulo) {
-                        $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                        $num = ModulosHelper::getNumeroModulo($planItem->id_modulo);
                         $modulosAsociados[$num] = $planItem->modulo;
                     }
                 }
-                
+
                 $cantidadModulos = 1;
                 while (isset($modulosAsociados[$moduloFin + 1])) {
                     $moduloFin++;
                     $cantidadModulos++;
                 }
-                
+
                 $moduloFinalObj = $modulosAsociados[$moduloFin] ?? $programacion->modulo;
                 $moduloInicioObj = $programacion->modulo;
                 $idAsignatura = $programacion->id_asignatura;
@@ -440,7 +452,7 @@ class ProfesorController extends Controller
             } else {
                 // Clases temporales (colaborador)
                 $idColab = $planColaborador->id_profesor_colaborador;
-                $planificacionesMismoBloque = \App\Models\PlanificacionProfesorColaborador::with('modulo')
+                $planificacionesMismoBloque = PlanificacionProfesorColaborador::with('modulo')
                     ->where('id_espacio', $espacio->id_espacio)
                     ->where('id_profesor_colaborador', $idColab)
                     ->whereHas('modulo', function ($q) use ($diasPosibles) {
@@ -448,23 +460,23 @@ class ProfesorController extends Controller
                     })
                     ->get();
 
-                $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($planColaborador->id_modulo);
+                $numModuloActual = ModulosHelper::getNumeroModulo($planColaborador->id_modulo);
                 $moduloFin = $numModuloActual;
-                
+
                 $modulosAsociados = [];
                 foreach ($planificacionesMismoBloque as $planItem) {
                     if ($planItem->modulo) {
-                        $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                        $num = ModulosHelper::getNumeroModulo($planItem->id_modulo);
                         $modulosAsociados[$num] = $planItem->modulo;
                     }
                 }
-                
+
                 $cantidadModulos = 1;
                 while (isset($modulosAsociados[$moduloFin + 1])) {
                     $moduloFin++;
                     $cantidadModulos++;
                 }
-                
+
                 $moduloFinalObj = $modulosAsociados[$moduloFin] ?? $planColaborador->modulo;
                 $moduloInicioObj = $planColaborador->modulo;
                 $idAsignatura = $planColaborador->profesorColaborador->id_asignatura ?? null;
@@ -478,16 +490,16 @@ class ProfesorController extends Controller
                 ->where('estado', 'programada')
                 ->where(function ($q) use ($profesor, $runProfesor, $runLimpio) {
                     $q->where('run_profesor', $profesor->run_profesor)
-                      ->orWhere('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_solicitante', $profesor->run_profesor)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        ->orWhere('run_profesor', $runProfesor)
+                        ->orWhere('run_profesor', $runLimpio)
+                        ->orWhere('run_solicitante', $profesor->run_profesor)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->first();
 
             // Crear o actualizar la reserva con la programación encontrada
-            $reserva = $reservaProgramadaExistente ?? new Reserva();
-            if (!$reservaProgramadaExistente) {
+            $reserva = $reservaProgramadaExistente ?? new Reserva;
+            if (! $reservaProgramadaExistente) {
                 $reserva->id_reserva = Reserva::generarIdUnico();
             }
             $reserva->run_profesor = $profesor->run_profesor;
@@ -510,7 +522,7 @@ class ProfesorController extends Controller
             $espacio->save();
 
             // Limpiar registros incorrectos de clases no realizadas
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+            ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
                 $moduloInicioObj->hora_inicio ?? null,
@@ -521,30 +533,32 @@ class ProfesorController extends Controller
                 'success' => true,
                 'mensaje' => 'Reserva creada automáticamente según programación',
                 'reserva' => [
-                    'id'          => $reserva->id_reserva,
-                    'profesor'    => $profesor->name,
-                    'run_profesor'=> $profesor->run_profesor,
-                    'espacio'     => $espacio->nombre_espacio,
-                    'fecha'       => $fechaActual,
-                    'asignatura'  => $nombreAsignaturaResp,
+                    'id' => $reserva->id_reserva,
+                    'profesor' => $profesor->name,
+                    'run_profesor' => $profesor->run_profesor,
+                    'espacio' => $espacio->nombre_espacio,
+                    'fecha' => $fechaActual,
+                    'asignatura' => $nombreAsignaturaResp,
                     'hora_inicio' => $moduloInicioObj->hora_inicio ?? null,
-                    'hora_termino'=> $moduloFinalObj->hora_termino ?? null,
-                ]
+                    'hora_termino' => $moduloFinalObj->hora_termino ?? null,
+                ],
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error de validación al crear reserva automática: ' . json_encode($e->errors()));
+        } catch (ValidationException $e) {
+            Log::error('Error de validación al crear reserva automática: '.json_encode($e->errors()));
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error de validación en los datos enviados',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error al crear reserva automática de profesor: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            Log::error('Error al crear reserva automática de profesor: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+                'mensaje' => 'Error al crear reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -562,7 +576,7 @@ class ProfesorController extends Controller
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'direccion' => 'nullable|string|max:255',
                 'fecha_nacimiento' => 'nullable|date',
-                'anio_ingreso' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
+                'anio_ingreso' => 'nullable|integer|min:1900|max:'.(date('Y') + 1),
                 'tipo_profesor' => 'required|in:Profesor Colaborador,Profesor Responsable,Ayudante',
                 'id_universidad' => 'nullable|exists:universidades,id_universidad',
                 'id_facultad' => 'nullable|exists:facultades,id_facultad',
@@ -597,7 +611,7 @@ class ProfesorController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
-            
+
             // Cargar clases temporales donde es colaborador
             $clasesTemporales = $profesor->clasesTemporalesColaborador()
                 ->with(['asignatura', 'planificaciones.modulo'])
@@ -605,10 +619,10 @@ class ProfesorController extends Controller
                 ->get();
 
             return view('profesores.edit', compact('profesor', 'universidades', 'facultades', 'carreras', 'areasAcademicas', 'clasesTemporales'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('professors.index')->withErrors(['error' => 'Profesor no encontrado.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar el profesor: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar el profesor: '.$e->getMessage()]);
         }
     }
 
@@ -620,7 +634,7 @@ class ProfesorController extends Controller
         try {
             $request->validate([
                 'run_profesor' => 'required|string',
-                'id_espacio' => 'required|string'
+                'id_espacio' => 'required|string',
             ]);
 
             $runProfesor = $request->input('run_profesor');
@@ -628,13 +642,13 @@ class ProfesorController extends Controller
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            if (!$espacio) {
+            if (! $espacio) {
                 return redirect()->route('professors.index')->withErrors(['error' => 'Espacio no encontrado.']);
             }
 
             // Aquí iría la lógica de actualización del profesor
             return redirect()->route('professors.index')->with('success', 'Profesor actualizado exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('professors.index')->withErrors(['error' => 'Profesor no encontrado.']);
         } catch (\Exception $e) {
             return redirect()->route('professors.index')->withErrors(['error' => 'Error al actualizar el profesor.']);
@@ -649,11 +663,12 @@ class ProfesorController extends Controller
         try {
             $profesor = Profesor::findOrFail($id);
             $profesor->delete();
+
             return redirect()->route('professors.index')->with('success', 'Profesor eliminado exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Profesor no encontrado.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el profesor: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar el profesor: '.$e->getMessage()], 500);
         }
     }
 
@@ -664,26 +679,26 @@ class ProfesorController extends Controller
     {
         try {
             $profesor = Profesor::where('run_profesor', $run)->first();
-            if (!$profesor) {
+            if (! $profesor) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
+                    'mensaje' => 'Profesor no encontrado',
                 ], 404);
             }
 
             // Aquí deberías obtener el espacio, por ejemplo por id_espacio (ajusta según tu lógica):
             $espacio = Espacio::where('id_espacio', $profesor->id_espacio ?? null)->first();
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado'
+                    'mensaje' => 'Espacio no encontrado',
                 ], 404);
             }
 
             if ($espacio->estado !== 'Disponible') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio no está disponible'
+                    'mensaje' => 'El espacio no está disponible',
                 ], 400);
             }
 
@@ -691,8 +706,8 @@ class ProfesorController extends Controller
             $fechaActual = now()->format('Y-m-d');
 
             // Validar horario académico
-            $hora = (int)now()->format('H');
-            $minutos = (int)now()->format('i');
+            $hora = (int) now()->format('H');
+            $minutos = (int) now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
             $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
@@ -701,7 +716,7 @@ class ProfesorController extends Controller
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).',
                 ], 400);
             }
 
@@ -714,7 +729,7 @@ class ProfesorController extends Controller
             if ($reservaExistente) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                    'mensaje' => 'Ya tienes una reserva activa en otro espacio',
                 ], 400);
             }
 
@@ -723,7 +738,7 @@ class ProfesorController extends Controller
             $asignatura = $profesor ? $profesor->asignaturas()->first() : null;
 
             // Crear la reserva
-            $reserva = new Reserva();
+            $reserva = new Reserva;
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $run;
             $reserva->id_espacio = $espacio->id_espacio;
@@ -738,7 +753,7 @@ class ProfesorController extends Controller
             $espacio->save();
 
             // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+            ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
                 $horaActual,
@@ -754,22 +769,24 @@ class ProfesorController extends Controller
                     'run_profesor' => $profesor->run_profesor,
                     'espacio' => $espacio->nombre_espacio,
                     'fecha' => $fechaActual,
-                    'hora_inicio' => $horaActual
-                ]
+                    'hora_inicio' => $horaActual,
+                ],
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error de validación al crear reserva de profesor: ' . json_encode($e->errors()));
+        } catch (ValidationException $e) {
+            Log::error('Error de validación al crear reserva de profesor: '.json_encode($e->errors()));
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error de validación en los datos enviados',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error al crear reserva de profesor: ' . $e->getMessage());
+            Log::error('Error al crear reserva de profesor: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+                'mensaje' => 'Error al crear reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -783,26 +800,24 @@ class ProfesorController extends Controller
         try {            // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
 
-
             // Buscar profesor con eager loading de asignaturas
             // IMPORTANTE: Incluir run_profesor en el select para que funcione el eager loading
-            $profesor = Profesor::with(['asignaturas' => function($query) {
+            $profesor = Profesor::with(['asignaturas' => function ($query) {
                 $query->select('asignaturas.id_asignatura', 'asignaturas.codigo_asignatura', 'asignaturas.nombre_asignatura', 'asignaturas.run_profesor')
-                      ->orderBy('asignaturas.codigo_asignatura');
+                    ->orderBy('asignaturas.codigo_asignatura');
             }])->where('run_profesor', $run)->first();
 
-            if (!$profesor) {
-                Log::warning('⚠️ Profesor no encontrado: ' . $run);
+            if (! $profesor) {
+                Log::warning('⚠️ Profesor no encontrado: '.$run);
+
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
+                    'mensaje' => 'Profesor no encontrado',
                 ], 404);
             }
 
             // Obtener asignaturas - usar la relación cargada
             $asignaturas = $profesor->asignaturas;
-
-
 
             return response()->json([
                 'success' => true,
@@ -810,17 +825,18 @@ class ProfesorController extends Controller
                 'count' => $asignaturas->count(),
                 'profesor' => [
                     'run' => $profesor->run_profesor,
-                    'nombre' => $profesor->name
-                ]
+                    'nombre' => $profesor->name,
+                ],
             ]);
 
         } catch (\Exception $e) {
-            Log::error('❌ Error al obtener asignaturas del profesor: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('❌ Error al obtener asignaturas del profesor: '.$e->getMessage());
+            Log::error('Stack trace: '.$e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al obtener asignaturas: ' . $e->getMessage(),
-                'asignaturas' => []
+                'mensaje' => 'Error al obtener asignaturas: '.$e->getMessage(),
+                'asignaturas' => [],
             ], 500);
         }
     }
@@ -831,13 +847,13 @@ class ProfesorController extends Controller
     private function establecerContextoTenant()
     {
         $tenantId = tenant_id() ?? null;
-        
-        if (!$tenantId) {
+
+        if (! $tenantId) {
             $host = request()->getHost();
             $tenant = Tenant::where('domain', $host)
-                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->orWhere('domain', 'LIKE', '%'.$host.'%')
                 ->first();
-            
+
             if ($tenant) {
                 Config::set('database.connections.tenant.database', $tenant->database);
                 DB::purge('tenant');

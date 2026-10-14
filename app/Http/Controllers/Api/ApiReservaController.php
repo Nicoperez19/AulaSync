@@ -2,17 +2,24 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Helpers\EspacioAliasHelper;
+use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 use App\Http\Controllers\Controller;
+use App\Models\ClaseNoRealizada;
 use App\Models\Espacio;
 use App\Models\Modulo;
+use App\Models\Planificacion_Asignatura;
 use App\Models\Profesor;
 use App\Models\Reserva;
 use App\Models\Solicitante;
 use App\Models\User;
+use App\Services\ReservaService;
+use App\Traits\RunNormalizer;
 use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Traits\RunNormalizer;
 
 class ApiReservaController extends Controller
 {
@@ -31,7 +38,7 @@ class ApiReservaController extends Controller
             // Obtener la hora actual y variantes del día
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diaLimpio = ModulosHelper::normalizarDia($diaActual);
             $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
             // Verificar si el espacio está ocupado
@@ -45,7 +52,7 @@ class ApiReservaController extends Controller
                 return response()->json([
                     'estado' => 'ocupado',
                     'profesor_nombre' => $reservaActiva->profesor->name ?? ($reservaActiva->user->name ?? 'N/A'),
-                    'hora_entrada' => $reservaActiva->hora
+                    'hora_entrada' => $reservaActiva->hora,
                 ]);
             }
 
@@ -60,15 +67,15 @@ class ApiReservaController extends Controller
                 ->where('pa.id_espacio', $espacioId)
                 ->where(function ($q) use ($run, $runLimpio) {
                     $q->where('h.run_profesor', $run)
-                      ->orWhere('h.run_profesor', $runLimpio)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        ->orWhere('h.run_profesor', $runLimpio)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereIn('m.dia', $diasPosibles)
                 ->where('m.hora_inicio', '<=', $ahoraMas60)
                 ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
                 ->exists();
 
-            if (!$tieneClaseProgramada) {
+            if (! $tieneClaseProgramada) {
                 $tieneClaseProgramada = DB::connection('tenant')
                     ->table('planificaciones_profesores_colaboradores as ppc')
                     ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
@@ -76,8 +83,8 @@ class ApiReservaController extends Controller
                     ->where('ppc.id_espacio', $espacioId)
                     ->where(function ($q) use ($run, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $run)
-                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
                     ->whereIn('m.dia', $diasPosibles)
@@ -86,7 +93,7 @@ class ApiReservaController extends Controller
                     ->exists();
             }
 
-            if (!$tieneClaseProgramada) {
+            if (! $tieneClaseProgramada) {
                 $tieneClaseProgramada = DB::connection('tenant')
                     ->table('planificacion_asignaturas as pa')
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
@@ -95,8 +102,8 @@ class ApiReservaController extends Controller
                     ->where('pa.id_espacio', $espacioId)
                     ->where(function ($q) use ($run, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $run)
-                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
                     ->whereIn('m.dia', $diasPosibles)
@@ -107,11 +114,11 @@ class ApiReservaController extends Controller
 
             return response()->json([
                 'estado' => 'disponible',
-                'tieneClaseProgramada' => $tieneClaseProgramada
+                'tieneClaseProgramada' => $tieneClaseProgramada,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Error al verificar el espacio: ' . $e->getMessage()
+                'error' => 'Error al verificar el espacio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -122,23 +129,22 @@ class ApiReservaController extends Controller
             // Validar datos de entrada
             $request->validate([
                 'run' => 'required',
-                'espacio_id' => 'required|exists:tenant.espacios,id_espacio'
+                'espacio_id' => 'required|exists:tenant.espacios,id_espacio',
             ]);
 
             // Normalizar RUN
             $runNormalizado = $this->normalizeRun($request->run);
 
-
             // Obtener la hora actual y normalizar día (soportando tildes y variantes)
             $horaActual = Carbon::now();
             $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
-            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diaLimpio = ModulosHelper::normalizarDia($diaActual);
             $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
             $horaActualStr = $horaActual->format('H:i:s');
             $runLimpio = preg_replace('/[^0-9kK]/', '', $request->run);
 
             $espacio = Espacio::findOrFail($request->espacio_id);
-            $espaciosEquivalentes = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($request->espacio_id);
+            $espaciosEquivalentes = EspacioAliasHelper::obtenerEquivalentes($request->espacio_id);
 
             // 1. Verificar si tiene clase programada (antes del check de ocupado para permitir el cierre forzado)
             // Ventana: permite que el profesor llegue hasta 60 min antes del inicio del módulo
@@ -153,9 +159,9 @@ class ApiReservaController extends Controller
                 ->whereIn('pa.id_espacio', $espaciosEquivalentes)
                 ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                     $q->where('h.run_profesor', $runNormalizado)
-                      ->orWhere('h.run_profesor', $request->run)
-                      ->orWhere('h.run_profesor', $runLimpio)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        ->orWhere('h.run_profesor', $request->run)
+                        ->orWhere('h.run_profesor', $runLimpio)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereIn('m.dia', $diasPosibles)
                 ->where('m.hora_inicio', '<=', $horaMaximaInicio)
@@ -165,7 +171,7 @@ class ApiReservaController extends Controller
                 ->first();
 
             // 1.b. Si no se encontró en planificación regular, verificar si es Profesor Colaborador en este espacio
-            if (!$tieneClase) {
+            if (! $tieneClase) {
                 $tieneClase = DB::connection('tenant')
                     ->table('planificaciones_profesores_colaboradores as ppc')
                     ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
@@ -174,9 +180,9 @@ class ApiReservaController extends Controller
                     ->whereIn('ppc.id_espacio', $espaciosEquivalentes)
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
-                          ->orWhere('pc.run_profesor_colaborador', $request->run)
-                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            ->orWhere('pc.run_profesor_colaborador', $request->run)
+                            ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
                     ->whereIn('m.dia', $diasPosibles)
@@ -193,7 +199,7 @@ class ApiReservaController extends Controller
             }
 
             // 1.c. Si aún no se encuentra, verificar si está registrado como colaborador de la asignatura dictada en este espacio
-            if (!$tieneClase) {
+            if (! $tieneClase) {
                 $tieneClase = DB::connection('tenant')
                     ->table('planificacion_asignaturas as pa')
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
@@ -202,9 +208,9 @@ class ApiReservaController extends Controller
                     ->whereIn('pa.id_espacio', $espaciosEquivalentes)
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
-                          ->orWhere('pc.run_profesor_colaborador', $request->run)
-                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            ->orWhere('pc.run_profesor_colaborador', $request->run)
+                            ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
                     ->whereIn('m.dia', $diasPosibles)
@@ -229,20 +235,20 @@ class ApiReservaController extends Controller
                     if ($tieneClase && $reservaMismoProfesor->tipo_reserva === 'espontanea') {
                         // El docente tenía una reserva espontánea y ahora inicia una clase programada.
                         // Finalizamos la espontánea limpiamente antes de crear la nueva.
-                        $reservaMismoProfesor->estado      = 'finalizada';
+                        $reservaMismoProfesor->estado = 'finalizada';
                         $reservaMismoProfesor->hora_salida = $horaActualStr;
                         $reservaMismoProfesor->observaciones = trim(
-                            ($reservaMismoProfesor->observaciones ?? '') .
-                            "\nFinalizada automáticamente al iniciar clase programada: " . $tieneClase->nombre_asignatura .
-                            " (" . $horaActual->format('d/m/Y H:i:s') . ")"
+                            ($reservaMismoProfesor->observaciones ?? '').
+                            "\nFinalizada automáticamente al iniciar clase programada: ".$tieneClase->nombre_asignatura.
+                            ' ('.$horaActual->format('d/m/Y H:i:s').')'
                         );
                         $reservaMismoProfesor->save();
 
                         \Log::info('Reserva espontánea cerrada al iniciar clase programada del mismo docente', [
                             'reserva_cerrada' => $reservaMismoProfesor->id_reserva,
-                            'run_profesor'    => $runNormalizado,
-                            'espacio_id'      => $request->espacio_id,
-                            'clase'           => $tieneClase->nombre_asignatura,
+                            'run_profesor' => $runNormalizado,
+                            'espacio_id' => $request->espacio_id,
+                            'clase' => $tieneClase->nombre_asignatura,
                         ]);
                         // Continúa para crear la nueva reserva de tipo 'clase'.
 
@@ -251,22 +257,23 @@ class ApiReservaController extends Controller
                         // No se crea duplicado; se retorna éxito con la información existente.
                         \Log::info('Registro entrada evitado: el docente ya tiene clase activa registrada', [
                             'reserva_existente' => $reservaMismoProfesor->id_reserva,
-                            'run_profesor'      => $runNormalizado,
-                            'espacio_id'        => $request->espacio_id,
+                            'run_profesor' => $runNormalizado,
+                            'espacio_id' => $request->espacio_id,
                         ]);
+
                         return response()->json([
-                            'success'        => true,
-                            'message'        => 'Ya tiene una clase activa registrada en este espacio.',
+                            'success' => true,
+                            'message' => 'Ya tiene una clase activa registrada en este espacio.',
                             'espacio_nombre' => $espacio->nombre_espacio,
-                            'hora_termino'   => $tieneClase->hora_termino,
-                            'asignatura'     => $tieneClase->nombre_asignatura,
+                            'hora_termino' => $tieneClase->hora_termino,
+                            'asignatura' => $tieneClase->nombre_asignatura,
                         ]);
 
                     } else {
                         // El espacio está ocupado por el mismo docente con uso libre y no tiene clase programada.
                         return response()->json([
                             'success' => false,
-                            'message' => 'Ya tiene un uso activo registrado en este espacio.'
+                            'message' => 'Ya tiene un uso activo registrado en este espacio.',
                         ], 400);
                     }
 
@@ -279,12 +286,12 @@ class ApiReservaController extends Controller
                             ->first();
 
                         if ($reservaAnterior) {
-                            $reservaAnterior->estado      = 'finalizada';
+                            $reservaAnterior->estado = 'finalizada';
                             $reservaAnterior->hora_salida = $horaActualStr;
-                            $mensajeForzado = 'Cierre forzado por Docente ' . $request->run .
-                                ' al iniciar clase programada: ' . $tieneClase->nombre_asignatura;
+                            $mensajeForzado = 'Cierre forzado por Docente '.$request->run.
+                                ' al iniciar clase programada: '.$tieneClase->nombre_asignatura;
                             $reservaAnterior->observaciones = trim(
-                                ($reservaAnterior->observaciones ?? '') . "\n" . $mensajeForzado
+                                ($reservaAnterior->observaciones ?? '')."\n".$mensajeForzado
                             );
                             $reservaAnterior->save();
                             $forzado = true;
@@ -292,24 +299,24 @@ class ApiReservaController extends Controller
                     } else {
                         return response()->json([
                             'success' => false,
-                            'message' => 'El espacio se encuentra ocupado'
+                            'message' => 'El espacio se encuentra ocupado',
                         ], 400);
                     }
                 }
             }
 
-            if (!$tieneClase) {
+            if (! $tieneClase) {
                 $profesor = Profesor::where('run_profesor', $runNormalizado)->first();
 
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
 
                 // Buscar el módulo actual usando ModulosHelper (maneja recesos automáticamente)
-                $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
-                $moduloNum = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActualStr, $diaLimpio);
-                
+                $diaLimpio = ModulosHelper::normalizarDia($diaActual);
+                $moduloNum = ModulosHelper::obtenerModuloActual($horaActualStr, $diaLimpio);
+
                 $moduloActual = null;
                 if ($moduloNum) {
-                    $horario = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaLimpio][$moduloNum];
+                    $horario = ModulosHelper::getHorariosModulos()[$diaLimpio][$moduloNum];
                     // Recuperar el modelo Modulo de la BD usando la hora exacta para evitar el gap
                     $moduloActual = Modulo::where('dia', $diaActual)
                         ->where('hora_inicio', $horario['inicio'])
@@ -324,14 +331,14 @@ class ApiReservaController extends Controller
                     'id_asignatura' => $asignaturaLibre ? $asignaturaLibre->id_asignatura : null,
                     'nombre_asignatura' => 'Uso libre',
                     'hora_inicio' => $horaInicio,
-                    'hora_termino' => $horaTermino
+                    'hora_termino' => $horaTermino,
                 ];
             }
 
             DB::connection('tenant')->beginTransaction();
             try {
                 // Crear la reserva
-                $reserva = new Reserva();
+                $reserva = new Reserva;
                 $reserva->id_reserva = Reserva::generarIdUnico();
                 $reserva->run_profesor = $runNormalizado;
 
@@ -349,7 +356,7 @@ class ApiReservaController extends Controller
                 $espacio->estado = 'Ocupado';
                 $espacio->save();
 
-                \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                ClaseNoRealizada::limpiarRegistrosIncorrectos(
                     $request->espacio_id,
                     $horaActual->format('Y-m-d'),
                     $horaActual->format('H:i:s'),
@@ -365,17 +372,18 @@ class ApiReservaController extends Controller
                         : 'Uso del espacio registrado correctamente',
                     'espacio_nombre' => $espacio->nombre_espacio,
                     'hora_termino' => $tieneClase->hora_termino,
-                    'asignatura' => $tieneClase->nombre_asignatura
+                    'asignatura' => $tieneClase->nombre_asignatura,
                 ]);
             } catch (\Exception $e) {
                 DB::connection('tenant')->rollback();
                 throw $e;
             }
         } catch (\Exception $e) {
-            \Log::error('Error en registrarUsoEspacio: ' . $e->getMessage());
+            \Log::error('Error en registrarUsoEspacio: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar el uso del espacio: ' . $e->getMessage()
+                'message' => 'Error al registrar el uso del espacio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -384,16 +392,14 @@ class ApiReservaController extends Controller
     {
         try {
 
-
             // Validar los datos de entrada
             $request->validate([
                 'run' => 'required',
-                'espacio_id' => 'required'
+                'espacio_id' => 'required',
             ]);
 
             // Normalizar RUN
             $runNormalizado = $this->normalizeRun($request->run);
-
 
             DB::connection('tenant')->beginTransaction();
 
@@ -404,7 +410,7 @@ class ApiReservaController extends Controller
                 ->first();
 
             // Si no hay reserva del propio docente, verificar si el espacio tiene reserva de otro usuario
-            if (!$reserva) {
+            if (! $reserva) {
                 $reservaAjena = Reserva::activasOtrosDocentes($runNormalizado, $request->espacio_id)
                     ->first();
 
@@ -413,19 +419,20 @@ class ApiReservaController extends Controller
                 if ($reservaAjena) {
                     \Log::warning('Intento de salida sobre reserva ajena', [
                         'run_solicitante' => $runNormalizado,
-                        'run_dueño'       => $reservaAjena->run_profesor ?? $reservaAjena->run_solicitante,
-                        'id_reserva'      => $reservaAjena->id_reserva,
-                        'id_espacio'      => $request->espacio_id,
+                        'run_dueño' => $reservaAjena->run_profesor ?? $reservaAjena->run_solicitante,
+                        'id_reserva' => $reservaAjena->id_reserva,
+                        'id_espacio' => $request->espacio_id,
                     ]);
+
                     return response()->json([
                         'success' => false,
-                        'message' => 'No tiene una reserva activa en este espacio. El espacio está ocupado por otro usuario.'
+                        'message' => 'No tiene una reserva activa en este espacio. El espacio está ocupado por otro usuario.',
                     ], 403);
                 }
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se encontró una reserva activa para este espacio'
+                    'message' => 'No se encontró una reserva activa para este espacio',
                 ], 404);
             }
 
@@ -460,8 +467,8 @@ class ApiReservaController extends Controller
             if ($reservaAutoFinalizada) {
                 // El profesor está devolviendo la llave después de que la reserva fue auto-finalizada
                 $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
-                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . Carbon::now()->format('H:i:s') . '.';
-                $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
+                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las ".Carbon::now()->format('H:i:s').'.';
+                $reservaAutoFinalizada->observaciones = $observacionActual.$nuevaObservacion;
                 $reservaAutoFinalizada->save();
 
             }
@@ -470,15 +477,16 @@ class ApiReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Salida registrada correctamente'
+                'message' => 'Salida registrada correctamente',
             ]);
         } catch (\Exception $e) {
             DB::connection('tenant')->rollBack();
-            \Log::error('Error al registrar salida: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            \Log::error('Error al registrar salida: '.$e->getMessage());
+            \Log::error('Stack trace: '.$e->getTraceAsString());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la salida: ' . $e->getMessage()
+                'message' => 'Error al registrar la salida: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -490,7 +498,7 @@ class ApiReservaController extends Controller
                 'user_id' => 'required',
                 'espacio_id' => 'required|exists:tenant.espacios,id_espacio',
                 'modulos' => 'required|array|min:1',
-                'modulos.*' => 'required|string'
+                'modulos.*' => 'required|string',
             ]);
 
             // Normalizar RUN
@@ -524,7 +532,7 @@ class ApiReservaController extends Controller
             if ($existeReserva) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El espacio no está disponible en el horario seleccionado'
+                    'message' => 'El espacio no está disponible en el horario seleccionado',
                 ], 400);
             }
 
@@ -532,8 +540,8 @@ class ApiReservaController extends Controller
             $numModuloInicio = 1;
             $numModuloFin = 1;
             if ($modulos->isNotEmpty()) {
-                $numModuloInicio = \App\Helpers\ModulosHelper::getNumeroModulo($modulos->first()->id_modulo);
-                $numModuloFin = \App\Helpers\ModulosHelper::getNumeroModulo($modulos->last()->id_modulo);
+                $numModuloInicio = ModulosHelper::getNumeroModulo($modulos->first()->id_modulo);
+                $numModuloFin = ModulosHelper::getNumeroModulo($modulos->last()->id_modulo);
             }
 
             $reserva = Reserva::create([
@@ -547,21 +555,21 @@ class ApiReservaController extends Controller
                 'modulo_inicio' => $numModuloInicio,
                 'modulo_fin' => $numModuloFin,
                 'modulos' => count($idsModulos),
-                'estado' => 'activa'
+                'estado' => 'activa',
             ]);
 
             // Enviar comprobante de reserva por correo
-            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
+            app(ReservaService::class)->enviarCorreoReserva($reserva);
 
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva espontánea registrada correctamente',
-                'espacio_nombre' => $reserva->espacio->nombre_espacio ?? ''
+                'espacio_nombre' => $reserva->espacio->nombre_espacio ?? '',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la reserva: ' . $e->getMessage()
+                'message' => 'Error al registrar la reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -570,14 +578,15 @@ class ApiReservaController extends Controller
     {
         try {
             $espacio = Espacio::findOrFail($id);
+
             return response()->json([
                 'success' => true,
-                'estado' => $espacio->estado
+                'estado' => $espacio->estado,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener el estado del espacio: ' . $e->getMessage()
+                'message' => 'Error al obtener el estado del espacio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -674,10 +683,10 @@ class ApiReservaController extends Controller
         try {
             $espacio = Espacio::where('id_espacio', $id)->first();
 
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Espacio no encontrado'
+                    'message' => 'Espacio no encontrado',
                 ], 404);
             }
 
@@ -712,8 +721,8 @@ class ApiReservaController extends Controller
                             'fecha' => $ultimaReserva->fecha_reserva,
                             'espacio_nombre' => $espacio->nombre_espacio,
                             'tipo_reserva' => 'Ocupación sin reserva',
-                            'estado_espacio' => 'Ocupado'
-                        ]
+                            'estado_espacio' => 'Ocupado',
+                        ],
                     ]);
                 }
 
@@ -728,8 +737,8 @@ class ApiReservaController extends Controller
                         'fecha' => null,
                         'espacio_nombre' => $espacio->nombre_espacio,
                         'tipo_reserva' => 'Ocupación sin reserva',
-                        'estado_espacio' => 'Ocupado'
-                    ]
+                        'estado_espacio' => 'Ocupado',
+                    ],
                 ]);
             }
 
@@ -741,10 +750,10 @@ class ApiReservaController extends Controller
                 ->with(['user', 'espacio'])
                 ->first();
 
-            if (!$reserva) {
+            if (! $reserva) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No hay reserva activa para este espacio'
+                    'message' => 'No hay reserva activa para este espacio',
                 ]);
             }
 
@@ -773,33 +782,33 @@ class ApiReservaController extends Controller
                     'fecha' => $reserva->fecha_reserva,
                     'espacio_nombre' => $reserva->espacio->nombre_espacio,
                     'tipo_reserva' => $reserva->tipo_reserva,
-                    'estado_espacio' => $espacio->estado
-                ]
+                    'estado_espacio' => $espacio->estado,
+                ],
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al obtener reserva activa: ' . $e->getMessage());
+            \Log::error('Error al obtener reserva activa: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener la reserva activa'
+                'message' => 'Error al obtener la reserva activa',
             ], 500);
         }
     }
 
     /**
      * Liberar espacio bloqueado + Registrar nuevo uso
-     * 
+     *
      * Permite que un profesor con clase programada libere un espacio
      * que está ocupado por un profesor anterior que no devolvió la llave.
-     * 
+     *
      * Flujo:
      * 1. Validar que el profesor tiene clase programada en ese espacio/horario
      * 2. Finalizar la reserva anterior con anotación
      * 3. Crear nueva reserva para el profesor actual
      * 4. Cambiar estado del espacio a "Ocupado"
      * 5. Registrar todo en logs y observaciones para auditoría
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function liberarYRegistrarUso(Request $request)
     {
@@ -807,7 +816,7 @@ class ApiReservaController extends Controller
             // Validar datos de entrada
             $request->validate([
                 'run' => 'required',
-                'espacio_id' => 'required|exists:tenant.espacios,id_espacio'
+                'espacio_id' => 'required|exists:tenant.espacios,id_espacio',
             ]);
 
             $runNormalizado = $this->normalizeRun($request->run);
@@ -825,18 +834,18 @@ class ApiReservaController extends Controller
                 ->where(function ($query) use ($horaActualStr, $horaActual) {
                     $tiempoMas20 = $horaActual->copy()->addMinutes(20)->toTimeString();
                     $tiempoMas40 = $horaActual->copy()->addMinutes(40)->toTimeString();
-                    
+
                     $query->whereRaw("m.hora_inicio <= CASE WHEN m.hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas40, $tiempoMas20])
-                          ->where('m.hora_termino', '>=', $horaActualStr);
+                        ->where('m.hora_termino', '>=', $horaActualStr);
                 })
                 ->select('pa.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino', 'pa.id_modulo')
                 ->first();
 
-            if (!$tieneClaseProgramada) {
+            if (! $tieneClaseProgramada) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No tiene clase programada en este espacio a esta hora. No puede liberar la sala.',
-                    'error_code' => 'no_scheduled_class'
+                    'error_code' => 'no_scheduled_class',
                 ], 403);
             }
 
@@ -856,13 +865,14 @@ class ApiReservaController extends Controller
                     DB::connection('tenant')->rollBack();
                     \Log::warning('liberarYRegistrarUso: docente intenta liberar su propia reserva activa', [
                         'run_profesor' => $runNormalizado,
-                        'id_reserva'   => $reservaMismoProfesor->id_reserva,
+                        'id_reserva' => $reservaMismoProfesor->id_reserva,
                         'tipo_reserva' => $reservaMismoProfesor->tipo_reserva,
-                        'espacio_id'   => $request->espacio_id,
+                        'espacio_id' => $request->espacio_id,
                     ]);
+
                     return response()->json([
-                        'success'    => false,
-                        'message'    => 'Usted ya tiene una reserva activa en este espacio. Use la opción de salida para finalizarla primero.',
+                        'success' => false,
+                        'message' => 'Usted ya tiene una reserva activa en este espacio. Use la opción de salida para finalizarla primero.',
                         'error_code' => 'own_active_reservation',
                     ], 409);
                 }
@@ -871,7 +881,7 @@ class ApiReservaController extends Controller
                     ->where('estado', 'activa')
                     ->where(function ($q) use ($runNormalizado) {
                         $q->where('run_profesor', '!=', $runNormalizado)
-                          ->orWhereNull('run_profesor');
+                            ->orWhereNull('run_profesor');
                     })
                     ->first();
 
@@ -883,13 +893,13 @@ class ApiReservaController extends Controller
                     $profesorAnterior = $reservaAnterior->profesor ? $reservaAnterior->profesor->name : 'Desconocido';
 
                     // Anotar la causa de la finalización
-                    $motivoLiberacion = "LIBERADA: Profesor {$profesorAnterior} no devolvió la llave. " .
-                        "Liberada por profesor con clase programada ({$tieneClaseProgramada->nombre_asignatura}) " .
-                        "el " . $horaActual->format('d/m/Y H:i:s');
+                    $motivoLiberacion = "LIBERADA: Profesor {$profesorAnterior} no devolvió la llave. ".
+                        "Liberada por profesor con clase programada ({$tieneClaseProgramada->nombre_asignatura}) ".
+                        'el '.$horaActual->format('d/m/Y H:i:s');
 
                     $reservaAnterior->estado = 'finalizada';
                     $reservaAnterior->hora_salida = $horaActualStr;
-                    $reservaAnterior->observaciones = ($reservaAnterior->observaciones ?? '') . " | {$motivoLiberacion}";
+                    $reservaAnterior->observaciones = ($reservaAnterior->observaciones ?? '')." | {$motivoLiberacion}";
                     $reservaAnterior->save();
 
                     \Log::warning('🔑 LIBERACIÓN DE LLAVE', [
@@ -899,12 +909,12 @@ class ApiReservaController extends Controller
                         'espacio_id' => $request->espacio_id,
                         'espacio_nombre' => $espacio->nombre_espacio,
                         'motivo' => 'Llave no devuelta',
-                        'timestamp' => $horaActual->format('Y-m-d H:i:s')
+                        'timestamp' => $horaActual->format('Y-m-d H:i:s'),
                     ]);
                 }
 
                 // 3️⃣ CREAR NUEVA RESERVA PARA PROFESOR ACTUAL
-                $nuevaReserva = new Reserva();
+                $nuevaReserva = new Reserva;
                 $nuevaReserva->id_reserva = Reserva::generarIdUnico();
                 $nuevaReserva->run_profesor = $runNormalizado;
                 $nuevaReserva->id_espacio = $request->espacio_id;
@@ -916,9 +926,9 @@ class ApiReservaController extends Controller
                 $cantidadModulos = 1;
                 $horaSalidaBloque = $tieneClaseProgramada->hora_termino ?? null;
 
-                if ($tieneClaseProgramada && !empty($tieneClaseProgramada->id_modulo)) {
-                    $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
-                    $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                if ($tieneClaseProgramada && ! empty($tieneClaseProgramada->id_modulo)) {
+                    $periodo = SemesterHelper::getCurrentPeriod();
+                    $planificacionesMismoBloque = Planificacion_Asignatura::with('modulo')
                         ->where('id_espacio', $request->espacio_id)
                         ->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
                         ->whereHas('horario', function ($q) use ($periodo) {
@@ -929,22 +939,22 @@ class ApiReservaController extends Controller
                         })
                         ->get();
 
-                    $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($tieneClaseProgramada->id_modulo);
+                    $numModuloActual = ModulosHelper::getNumeroModulo($tieneClaseProgramada->id_modulo);
                     $moduloFin = $numModuloActual;
-                    
+
                     $modulosAsociados = [];
                     foreach ($planificacionesMismoBloque as $planItem) {
                         if ($planItem->modulo) {
-                            $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                            $num = ModulosHelper::getNumeroModulo($planItem->id_modulo);
                             $modulosAsociados[$num] = $planItem->modulo;
                         }
                     }
-                    
+
                     while (isset($modulosAsociados[$moduloFin + 1])) {
                         $moduloFin++;
                         $cantidadModulos++;
                     }
-                    
+
                     $moduloFinalObj = $modulosAsociados[$moduloFin] ?? null;
                     if ($moduloFinalObj) {
                         $horaSalidaBloque = $moduloFinalObj->hora_termino;
@@ -959,7 +969,7 @@ class ApiReservaController extends Controller
                 $nuevaReserva->modulo_fin = $moduloFin;
                 $nuevaReserva->hora_salida = $horaSalidaBloque;
                 $nuevaReserva->modulos = $cantidadModulos;
-                $nuevaReserva->observaciones = "REGISTRADA CON LIBERACIÓN: El espacio fue liberado de la reserva anterior " .
+                $nuevaReserva->observaciones = 'REGISTRADA CON LIBERACIÓN: El espacio fue liberado de la reserva anterior '.
                     "por no devolución de llave. Profesor tiene clase programada: {$tieneClaseProgramada->nombre_asignatura}";
                 $nuevaReserva->created_at = $horaActual;
                 $nuevaReserva->updated_at = $horaActual;
@@ -970,8 +980,8 @@ class ApiReservaController extends Controller
                 $espacio->save();
 
                 // 5️⃣ LIMPIAR REGISTROS DE CLASES NO REALIZADAS (si aplica)
-                if (method_exists(\App\Models\ClaseNoRealizada::class, 'limpiarRegistrosIncorrectos')) {
-                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                if (method_exists(ClaseNoRealizada::class, 'limpiarRegistrosIncorrectos')) {
+                    ClaseNoRealizada::limpiarRegistrosIncorrectos(
                         $request->espacio_id,
                         $horaActual->format('Y-m-d'),
                         $horaActual->format('H:i:s'),
@@ -987,7 +997,7 @@ class ApiReservaController extends Controller
                     'profesor' => $runNormalizado,
                     'espacio_id' => $request->espacio_id,
                     'asignatura' => $tieneClaseProgramada->nombre_asignatura,
-                    'timestamp' => $horaActual->format('Y-m-d H:i:s')
+                    'timestamp' => $horaActual->format('Y-m-d H:i:s'),
                 ]);
 
                 return response()->json([
@@ -1001,31 +1011,32 @@ class ApiReservaController extends Controller
                             'espacio' => $espacio->nombre_espacio,
                             'asignatura' => $tieneClaseProgramada->nombre_asignatura,
                             'hora_inicio' => $horaActualStr,
-                            'hora_termino' => $tieneClaseProgramada->hora_termino
+                            'hora_termino' => $tieneClaseProgramada->hora_termino,
                         ],
                         'reserva_liberada' => $reservaAnteriorFinalizadaId ? [
                             'id' => $reservaAnteriorFinalizadaId,
                             'profesor' => $profesorAnterior,
-                            'motivo' => 'Llave no devuelta'
+                            'motivo' => 'Llave no devuelta',
                         ] : null,
                         'auditoria' => [
                             'timestamp' => $horaActual->format('Y-m-d H:i:s'),
-                            'razon' => 'Profesor anterior no devolvió llave'
-                        ]
-                    ]
+                            'razon' => 'Profesor anterior no devolvió llave',
+                        ],
+                    ],
                 ], 201);
 
             } catch (\Exception $e) {
                 DB::connection('tenant')->rollBack();
-                \Log::error('❌ Error al liberar y registrar uso: ' . $e->getMessage());
+                \Log::error('❌ Error al liberar y registrar uso: '.$e->getMessage());
                 throw $e;
             }
 
         } catch (\Exception $e) {
-            \Log::error('Error en liberarYRegistrarUso: ' . $e->getMessage());
+            \Log::error('Error en liberarYRegistrarUso: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al liberar y registrar el uso del espacio: ' . $e->getMessage()
+                'message' => 'Error al liberar y registrar el uso del espacio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1043,7 +1054,7 @@ class ApiReservaController extends Controller
 
             $reserva = Reserva::with(['profesor', 'solicitante', 'espacio'])->findOrFail($id);
 
-            if (!in_array($reserva->estado, ['programada', 'activa'])) {
+            if (! in_array($reserva->estado, ['programada', 'activa'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Solo se puede registrar entrada para reservas programadas o activas.',
@@ -1052,16 +1063,16 @@ class ApiReservaController extends Controller
 
             $admin = auth()->user();
             $horaReal = $request->input('hora_inicio_real')
-                ? $request->input('hora_inicio_real') . ':00'
+                ? $request->input('hora_inicio_real').':00'
                 : Carbon::now()->format('H:i:s');
 
             $observacionAdmin = "\n[ADMIN] Entrada registrada por {$admin->name} ({$admin->run}) "
-                . "el " . Carbon::now()->format('d/m/Y') . " a las " . Carbon::now()->format('H:i:s')
-                . ". Hora real de inicio indicada: " . substr($horaReal, 0, 5) . ".";
+                .'el '.Carbon::now()->format('d/m/Y').' a las '.Carbon::now()->format('H:i:s')
+                .'. Hora real de inicio indicada: '.substr($horaReal, 0, 5).'.';
 
             $reserva->estado = 'activa';
             $reserva->hora = $horaReal;
-            $reserva->observaciones = ($reserva->observaciones ?? '') . $observacionAdmin;
+            $reserva->observaciones = ($reserva->observaciones ?? '').$observacionAdmin;
             $reserva->save();
 
             // Marcar espacio como Ocupado
@@ -1082,10 +1093,11 @@ class ApiReservaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('[ADMIN] Error al registrar entrada: ' . $e->getMessage());
+            \Log::error('[ADMIN] Error al registrar entrada: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la entrada: ' . $e->getMessage(),
+                'message' => 'Error al registrar la entrada: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1110,11 +1122,11 @@ class ApiReservaController extends Controller
             $horaSalida = Carbon::now()->format('H:i:s');
 
             $observacionAdmin = "\n[ADMIN] Salida registrada por {$admin->name} ({$admin->run}) "
-                . "el " . Carbon::now()->format('d/m/Y') . " a las {$horaSalida}.";
+                .'el '.Carbon::now()->format('d/m/Y')." a las {$horaSalida}.";
 
             $reserva->estado = 'finalizada';
             $reserva->hora_salida = $horaSalida;
-            $reserva->observaciones = ($reserva->observaciones ?? '') . $observacionAdmin;
+            $reserva->observaciones = ($reserva->observaciones ?? '').$observacionAdmin;
             $reserva->save();
 
             // Liberar espacio
@@ -1135,10 +1147,11 @@ class ApiReservaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('[ADMIN] Error al registrar salida: ' . $e->getMessage());
+            \Log::error('[ADMIN] Error al registrar salida: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar la salida: ' . $e->getMessage(),
+                'message' => 'Error al registrar la salida: '.$e->getMessage(),
             ], 500);
         }
     }

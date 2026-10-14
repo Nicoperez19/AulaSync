@@ -11,7 +11,9 @@ class PermissionsTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'name';
+
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -54,9 +56,9 @@ class PermissionsTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id', 'like', '%' . $searchTerm . '%');
+                    $q->where('id', 'like', '%'.$searchTerm.'%');
                     foreach ($terms as $t) {
-                        $q->orWhere('name', 'like', '%' . $t . '%');
+                        $q->orWhere('name', 'like', '%'.$t.'%');
                     }
                 });
             })

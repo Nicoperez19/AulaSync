@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class LlaveNoDevuelta extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'llaves_no_devueltas';
 
     protected $fillable = [
@@ -26,27 +27,27 @@ class LlaveNoDevuelta extends Model
 
     protected $casts = [
         'fecha_clase' => 'date',
-        'cerrado_en'  => 'datetime',
+        'cerrado_en' => 'datetime',
     ];
 
     // Relaciones
 
-    public function espacio()
+    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function profesor()
+    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
-    public function asignatura()
+    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
 
-    public function reserva()
+    public function reserva(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Reserva::class, 'id_reserva', 'id_reserva');
     }

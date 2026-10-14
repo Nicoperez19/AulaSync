@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\DataLoad;
+use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -11,13 +13,16 @@ class DataLoadTable extends Component
     use WithPagination;
 
     protected $listeners = ['fileUploaded' => '$refresh'];
-    
+
     public $search = '';
+
     public $sortField = 'created_at';
+
     public $sortDirection = 'desc';
 
     // Para la selección masiva
     public $selected = [];
+
     public $selectAll = false;
 
     public function updatingSearch()
@@ -68,17 +73,17 @@ class DataLoadTable extends Component
         return DataLoad::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($query) {
-                    $query->where('nombre_archivo', 'like', '%' . $this->search . '%')
+                    $query->where('nombre_archivo', 'like', '%'.$this->search.'%')
                         ->orWhereHas('user', function ($query) {
-                            $query->where('name', 'like', '%' . $this->search . '%')
-                                ->orWhere('run', 'like', '%' . $this->search . '%');
+                            $query->where('name', 'like', '%'.$this->search.'%')
+                                ->orWhere('run', 'like', '%'.$this->search.'%');
                         });
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10)
             ->pluck('id')
-            ->map(fn($id) => (string)$id)
+            ->map(fn ($id) => (string) $id)
             ->toArray();
     }
 
@@ -92,8 +97,8 @@ class DataLoadTable extends Component
         $dataLoads = DataLoad::whereIn('id', $this->selected)->get();
 
         foreach ($dataLoads as $dataLoad) {
-            if ($dataLoad->ruta_archivo && \Illuminate\Support\Facades\Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($dataLoad->ruta_archivo);
+            if ($dataLoad->ruta_archivo && Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+                Storage::disk('public')->delete($dataLoad->ruta_archivo);
             }
             // Elimina el registro, y gracias al cascade delete, se eliminan las planificaciones
             $dataLoad->delete();
@@ -110,14 +115,14 @@ class DataLoadTable extends Component
     {
         $dataLoad = DataLoad::find($id);
         if ($dataLoad) {
-            if ($dataLoad->ruta_archivo && \Illuminate\Support\Facades\Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($dataLoad->ruta_archivo);
+            if ($dataLoad->ruta_archivo && Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+                Storage::disk('public')->delete($dataLoad->ruta_archivo);
             }
             $dataLoad->delete();
-            
+
             // Quitar de los seleccionados si estaba
             $this->selected = array_values(array_diff($this->selected, [$id]));
-            
+
             $this->dispatch('show-success', ['message' => 'El registro y su información asociada han sido eliminados correctamente.']);
         }
     }
@@ -128,8 +133,8 @@ class DataLoadTable extends Component
         $dataLoads = DataLoad::all();
 
         foreach ($dataLoads as $dataLoad) {
-            if ($dataLoad->ruta_archivo && \Illuminate\Support\Facades\Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($dataLoad->ruta_archivo);
+            if ($dataLoad->ruta_archivo && Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+                Storage::disk('public')->delete($dataLoad->ruta_archivo);
             }
             $dataLoad->delete();
         }
@@ -161,14 +166,14 @@ class DataLoadTable extends Component
             $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
             try {
-                $matchingUserRuns = \App\Models\User::on('mysql')
-                    ->where(function($uq) use ($terms, $searchTerm) {
+                $matchingUserRuns = User::on('mysql')
+                    ->where(function ($uq) use ($terms, $searchTerm) {
                         $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
-                        if (!empty($cleanRun)) {
-                            $uq->where('run', 'like', '%' . $cleanRun . '%');
+                        if (! empty($cleanRun)) {
+                            $uq->where('run', 'like', '%'.$cleanRun.'%');
                         }
                         foreach ($terms as $t) {
-                            $uq->orWhere('name', 'like', '%' . $t . '%');
+                            $uq->orWhere('name', 'like', '%'.$t.'%');
                         }
                     })
                     ->pluck('run')
@@ -181,8 +186,8 @@ class DataLoadTable extends Component
         $dataLoads = DataLoad::query()
             ->when($searchTerm !== '', function ($query) use ($searchTerm, $matchingUserRuns) {
                 $query->where(function ($q) use ($searchTerm, $matchingUserRuns) {
-                    $q->where('nombre_archivo', 'like', '%' . $searchTerm . '%');
-                    if (!empty($matchingUserRuns)) {
+                    $q->where('nombre_archivo', 'like', '%'.$searchTerm.'%');
+                    if (! empty($matchingUserRuns)) {
                         $q->orWhereIn('usuario', $matchingUserRuns);
                     }
                 });
@@ -191,7 +196,7 @@ class DataLoadTable extends Component
             ->paginate(10);
 
         return view('livewire.data-load-table', [
-            'dataLoads' => $dataLoads
+            'dataLoads' => $dataLoads,
         ]);
     }
 }

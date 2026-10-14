@@ -2,17 +2,19 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\URL;
-use App\Models\Sede;
-use App\Models\Profesor;
 use App\Models\Espacio;
-use App\Models\Tenant;
 use App\Models\LicenciaProfesor;
+use App\Models\Profesor;
+use App\Models\Sede;
+use App\Models\Tenant;
 use App\Observers\LicenciaProfesorObserver;
 use App\View\Composers\LogoComposer;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Force HTTPS in non-local environments if configured or accessed via HTTPS
         if (env('APP_ENV') !== 'local') {
-            if (str_starts_with(config('app.url'), 'https://') || 
+            if (str_starts_with(config('app.url'), 'https://') ||
                 (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
                 (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')) {
                 URL::forceScheme('https');
@@ -47,8 +49,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Listen to the response event to replace Vite URLs in production
         if (config('app.env') !== 'local') {
-            app('events')->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) {
-                if ($event->response instanceof \Illuminate\Http\Response ||
+            app('events')->listen(RequestHandled::class, function ($event) {
+                if ($event->response instanceof Response ||
                     $event->response instanceof \Symfony\Component\HttpFoundation\Response) {
 
                     $content = $event->response->getContent();
@@ -66,8 +68,9 @@ class AppServiceProvider extends ServiceProvider
                             function ($matches) use ($manifestData) {
                                 $asset = str_replace('resources/', '', $matches[1]);
                                 if (isset($manifestData[$asset])) {
-                                    return 'href="' . asset("build/" . $manifestData[$asset]['file']) . '"';
+                                    return 'href="'.asset('build/'.$manifestData[$asset]['file']).'"';
                                 }
+
                                 return $matches[0];
                             },
                             $content
@@ -79,8 +82,9 @@ class AppServiceProvider extends ServiceProvider
                             function ($matches) use ($manifestData) {
                                 $asset = str_replace('resources/', '', $matches[1]);
                                 if (isset($manifestData[$asset])) {
-                                    return 'src="' . asset("build/" . $manifestData[$asset]['file']) . '"';
+                                    return 'src="'.asset('build/'.$manifestData[$asset]['file']).'"';
                                 }
+
                                 return $matches[0];
                             },
                             $content
@@ -110,8 +114,8 @@ class AppServiceProvider extends ServiceProvider
             }
 
             if ($sede) {
-                $primerMapa = $sede->facultades->flatMap(function($facultad) {
-                    return $facultad->pisos->flatMap(function($piso) {
+                $primerMapa = $sede->facultades->flatMap(function ($facultad) {
+                    return $facultad->pisos->flatMap(function ($piso) {
                         return $piso->mapas;
                     });
                 })->first();
@@ -135,7 +139,7 @@ class AppServiceProvider extends ServiceProvider
         // Registrar el ViewComposer para el logo institucional
         View::composer([
             'components.application-logo-navbar',
-            'components.application-logo-navbar-bot'
+            'components.application-logo-navbar-bot',
         ], LogoComposer::class);
     }
 }

@@ -11,8 +11,11 @@ class EscuelasTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'nombre_area_academica';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -57,13 +60,13 @@ class EscuelasTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_area_academica', 'like', '%' . $searchTerm . '%');
+                    $q->where('id_area_academica', 'like', '%'.$searchTerm.'%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_area_academica', 'like', '%' . $t . '%')
-                          ->orWhereHas('facultad', function ($fq) use ($t) {
-                              $fq->where('nombre_facultad', 'like', '%' . $t . '%');
-                          });
+                        $q->orWhere('nombre_area_academica', 'like', '%'.$t.'%')
+                            ->orWhereHas('facultad', function ($fq) use ($t) {
+                                $fq->where('nombre_facultad', 'like', '%'.$t.'%');
+                            });
                     }
                 });
             })

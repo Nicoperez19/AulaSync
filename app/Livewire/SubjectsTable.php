@@ -2,17 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Models\Asignatura;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Asignatura; 
 
 class SubjectsTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'id_asignatura';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -54,21 +57,21 @@ class SubjectsTable extends Component
                 );
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
-                $query->where(function($q) use ($terms, $searchTerm) {
-                    $q->where('id_asignatura', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('codigo_asignatura', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('seccion', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('periodo', 'like', '%' . $searchTerm . '%');
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_asignatura', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('codigo_asignatura', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('seccion', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('periodo', 'like', '%'.$searchTerm.'%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_asignatura', 'like', '%' . $t . '%')
-                          ->orWhere('area_conocimiento', 'like', '%' . $t . '%')
-                          ->orWhereHas('profesor', function($pq) use ($t) {
-                              $pq->where('name', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('carrera', function($cq) use ($t) {
-                              $cq->where('nombre', 'like', '%' . $t . '%');
-                          });
+                        $q->orWhere('nombre_asignatura', 'like', '%'.$t.'%')
+                            ->orWhere('area_conocimiento', 'like', '%'.$t.'%')
+                            ->orWhereHas('profesor', function ($pq) use ($t) {
+                                $pq->where('name', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('carrera', function ($cq) use ($t) {
+                                $cq->where('nombre', 'like', '%'.$t.'%');
+                            });
                     }
                 });
             })

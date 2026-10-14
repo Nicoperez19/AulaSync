@@ -3,17 +3,17 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 trait SafeCacheTrait
 {
     /**
      * Almacenar un valor en caché de forma segura
      *
-     * @param string $key
-     * @param mixed $value
-     * @param int $ttl Tiempo de vida en segundos
+     * @param  string  $key
+     * @param  mixed  $value
+     * @param  int  $ttl  Tiempo de vida en segundos
      * @return bool
      */
     protected function safeCache($key, $value, $ttl = 3600)
@@ -21,10 +21,11 @@ trait SafeCacheTrait
         try {
             // Verificar que el directorio de caché existe
             $this->ensureCacheDirectoryExists();
-            
+
             return Cache::put($key, $value, $ttl);
         } catch (\Exception $e) {
-            Log::warning("Error al guardar en caché la clave '{$key}': " . $e->getMessage());
+            Log::warning("Error al guardar en caché la clave '{$key}': ".$e->getMessage());
+
             return false;
         }
     }
@@ -32,8 +33,8 @@ trait SafeCacheTrait
     /**
      * Obtener un valor del caché de forma segura
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  string  $key
+     * @param  mixed  $default
      * @return mixed
      */
     protected function safeGet($key, $default = null)
@@ -41,7 +42,8 @@ trait SafeCacheTrait
         try {
             return Cache::get($key, $default);
         } catch (\Exception $e) {
-            Log::warning("Error al obtener del caché la clave '{$key}': " . $e->getMessage());
+            Log::warning("Error al obtener del caché la clave '{$key}': ".$e->getMessage());
+
             return $default;
         }
     }
@@ -49,9 +51,9 @@ trait SafeCacheTrait
     /**
      * Recordar un valor en caché de forma segura
      *
-     * @param string $key
-     * @param int $ttl
-     * @param callable $callback
+     * @param  string  $key
+     * @param  int  $ttl
+     * @param  callable  $callback
      * @return mixed
      */
     protected function safeRemember($key, $ttl, $callback)
@@ -59,16 +61,17 @@ trait SafeCacheTrait
         try {
             // Verificar que el directorio de caché existe
             $this->ensureCacheDirectoryExists();
-            
+
             return Cache::remember($key, $ttl, $callback);
         } catch (\Exception $e) {
-            Log::warning("Error al recordar en caché la clave '{$key}': " . $e->getMessage());
-            
+            Log::warning("Error al recordar en caché la clave '{$key}': ".$e->getMessage());
+
             // Si falla el caché, ejecutar el callback directamente
             try {
                 return $callback();
             } catch (\Exception $callbackException) {
-                Log::error("Error al ejecutar callback para la clave '{$key}': " . $callbackException->getMessage());
+                Log::error("Error al ejecutar callback para la clave '{$key}': ".$callbackException->getMessage());
+
                 return null;
             }
         }
@@ -77,7 +80,7 @@ trait SafeCacheTrait
     /**
      * Olvida un valor del caché de forma segura
      *
-     * @param string $key
+     * @param  string  $key
      * @return bool
      */
     protected function safeForget($key)
@@ -85,7 +88,8 @@ trait SafeCacheTrait
         try {
             return Cache::forget($key);
         } catch (\Exception $e) {
-            Log::warning("Error al olvidar del caché la clave '{$key}': " . $e->getMessage());
+            Log::warning("Error al olvidar del caché la clave '{$key}': ".$e->getMessage());
+
             return false;
         }
     }
@@ -93,7 +97,7 @@ trait SafeCacheTrait
     /**
      * Limpiar caché de forma segura con patrón
      *
-     * @param string $pattern
+     * @param  string  $pattern
      * @return bool
      */
     protected function safeClearPattern($pattern)
@@ -111,9 +115,11 @@ trait SafeCacheTrait
                     }
                 }
             }
+
             return true;
         } catch (\Exception $e) {
-            Log::warning("Error al limpiar caché con patrón '{$pattern}': " . $e->getMessage());
+            Log::warning("Error al limpiar caché con patrón '{$pattern}': ".$e->getMessage());
+
             return false;
         }
     }
@@ -126,12 +132,12 @@ trait SafeCacheTrait
     private function ensureCacheDirectoryExists()
     {
         $cacheDir = storage_path('framework/cache/data');
-        
-        if (!File::exists($cacheDir)) {
+
+        if (! File::exists($cacheDir)) {
             try {
                 File::makeDirectory($cacheDir, 0755, true);
             } catch (\Exception $e) {
-                Log::warning("No se pudo crear el directorio de caché: " . $e->getMessage());
+                Log::warning('No se pudo crear el directorio de caché: '.$e->getMessage());
             }
         }
     }
@@ -147,14 +153,14 @@ trait SafeCacheTrait
             'status' => 'ok',
             'writable' => false,
             'space_available' => false,
-            'errors' => []
+            'errors' => [],
         ];
 
         try {
             // Verificar si podemos escribir en el directorio de caché
-            $testKey = 'cache_health_test_' . time();
+            $testKey = 'cache_health_test_'.time();
             $testValue = 'test_value';
-            
+
             if ($this->safeCache($testKey, $testValue, 60)) {
                 $health['writable'] = true;
                 $this->safeForget($testKey);
@@ -167,18 +173,18 @@ trait SafeCacheTrait
             if (File::exists($cacheDir)) {
                 $freeBytes = disk_free_space($cacheDir);
                 $health['space_available'] = $freeBytes > (50 * 1024 * 1024); // 50MB mínimo
-                
-                if (!$health['space_available']) {
+
+                if (! $health['space_available']) {
                     $health['errors'][] = 'Espacio insuficiente en disco';
                 }
             }
 
             // Determinar estado general
-            if (!empty($health['errors'])) {
+            if (! empty($health['errors'])) {
                 $health['status'] = 'warning';
             }
 
-            if (!$health['writable']) {
+            if (! $health['writable']) {
                 $health['status'] = 'error';
             }
 
@@ -193,7 +199,7 @@ trait SafeCacheTrait
     /**
      * Limpiar caché relacionado con espacios
      *
-     * @param string|null $espacioId
+     * @param  string|null  $espacioId
      * @return bool
      */
     protected function clearEspacioCache($espacioId = null)
@@ -205,7 +211,7 @@ trait SafeCacheTrait
                     "espacio_{$espacioId}",
                     "informacion_detallada_{$espacioId}",
                     "estado_espacio_{$espacioId}",
-                    "reservas_espacio_{$espacioId}"
+                    "reservas_espacio_{$espacioId}",
                 ];
 
                 foreach ($patterns as $pattern) {
@@ -221,7 +227,8 @@ trait SafeCacheTrait
 
             return true;
         } catch (\Exception $e) {
-            Log::warning("Error al limpiar caché de espacios: " . $e->getMessage());
+            Log::warning('Error al limpiar caché de espacios: '.$e->getMessage());
+
             return false;
         }
     }

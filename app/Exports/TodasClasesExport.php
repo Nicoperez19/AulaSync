@@ -2,26 +2,31 @@
 
 namespace App\Exports;
 
+use App\Services\TodasClasesService;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use Carbon\Carbon;
-use App\Services\TodasClasesService;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $fechaInicio;
+
     protected $fechaFin;
+
     protected $periodo;
+
     protected $search;
+
     protected $estado;
+
     protected $ua;
 
     public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null)
@@ -36,7 +41,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function collection()
     {
-        $servicio = new TodasClasesService();
+        $servicio = new TodasClasesService;
         $clases = $servicio->obtenerTodasLasClases(
             $this->fechaInicio,
             $this->fechaFin,
@@ -45,7 +50,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             $this->estado,
             $this->ua
         );
-        
+
         // El Excel los ordena por fecha asc
         return $clases->sortBy([
             ['fecha', 'asc'],
@@ -81,12 +86,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     {
         // Optimizar formato de fecha (evitar parsear si ya es string)
         $fecha = 'N/A';
-        if (!empty($clase['fecha'])) {
-            $fecha = is_string($clase['fecha']) 
+        if (! empty($clase['fecha'])) {
+            $fecha = is_string($clase['fecha'])
                 ? Carbon::parse($clase['fecha'])->format('d/m/Y')
                 : $clase['fecha']->format('d/m/Y');
         }
-            
+
         return [
             $fecha,
             $clase['dia'],
@@ -111,28 +116,28 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function styles(Worksheet $sheet)
     {
         $lastRow = $sheet->getHighestRow();
-        
+
         // Aplicar colores según el estado
         for ($row = 2; $row <= $lastRow; $row++) {
-            $estado = $sheet->getCell('M' . $row)->getValue(); // Columna Estado (M tras añadir UA)
-            
-            $fillColor = match($estado) {
-                'Realizada'           => 'D1FAE5', // Verde claro
-                'No Registrada'       => 'FEE2E2', // Rojo claro
-                'Justificada'         => 'FEF3C7', // Amarillo claro
-                'Recuperada'          => 'DBEAFE', // Azul claro
+            $estado = $sheet->getCell('M'.$row)->getValue(); // Columna Estado (M tras añadir UA)
+
+            $fillColor = match ($estado) {
+                'Realizada' => 'D1FAE5', // Verde claro
+                'No Registrada' => 'FEE2E2', // Rojo claro
+                'Justificada' => 'FEF3C7', // Amarillo claro
+                'Recuperada' => 'DBEAFE', // Azul claro
                 'Feriado/Justificado' => 'EDE9FE', // Violeta claro
-                default               => 'FFFFFF', // Blanco
+                default => 'FFFFFF', // Blanco
             };
-            
-            $sheet->getStyle('M' . $row)->applyFromArray([
+
+            $sheet->getStyle('M'.$row)->applyFromArray([
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],
                 ],
             ]);
         }
-        
+
         return [
             // Estilo para el encabezado
             1 => [
@@ -158,7 +163,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:Q' . $lastRow => [
+            'A2:Q'.$lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -199,15 +204,15 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function title(): string
     {
         $titulo = 'Todas las Clases';
-        
+
         if ($this->fechaInicio && $this->fechaFin) {
             $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
             $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
-            $titulo .= ' ' . $inicio->format('d-m-Y') . ' a ' . $fin->format('d-m-Y');
+            $titulo .= ' '.$inicio->format('d-m-Y').' a '.$fin->format('d-m-Y');
         } elseif ($this->periodo) {
-            $titulo .= ' ' . $this->periodo;
+            $titulo .= ' '.$this->periodo;
         }
-        
+
         return substr($titulo, 0, 31); // Excel limita a 31 caracteres
     }
 }

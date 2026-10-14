@@ -2,23 +2,26 @@
 
 namespace App\Exports;
 
+use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+class ReservasExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected $reservas;
+
     protected $tipoEspacio;
+
     protected $fechaInicio;
+
     protected $fechaFin;
 
     public function __construct($reservas, $tipoEspacio = null, $fechaInicio = null, $fechaFin = null)
@@ -59,7 +62,7 @@ class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithS
     public function map($reserva): array
     {
         $fecha = 'N/A';
-        if (!empty($reserva->fecha_reserva)) {
+        if (! empty($reserva->fecha_reserva)) {
             $fecha = is_string($reserva->fecha_reserva)
                 ? Carbon::parse($reserva->fecha_reserva)->format('d/m/Y')
                 : $reserva->fecha_reserva->format('d/m/Y');
@@ -83,9 +86,9 @@ class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithS
 
         $piso = 'N/A';
         if ($reserva->espacio && $reserva->espacio->piso) {
-            $piso = 'Piso ' . $reserva->espacio->piso->numero_piso;
+            $piso = 'Piso '.$reserva->espacio->piso->numero_piso;
             if ($reserva->espacio->piso->facultad) {
-                $piso .= ' (' . ($reserva->espacio->piso->facultad->nombre_facultad ?? '') . ')';
+                $piso .= ' ('.($reserva->espacio->piso->facultad->nombre_facultad ?? '').')';
             }
         }
 
@@ -115,17 +118,17 @@ class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithS
 
         // Aplicar colores según el estado (Columna N = Estado)
         for ($row = 2; $row <= $lastRow; $row++) {
-            $estado = strtolower((string)$sheet->getCell('N' . $row)->getValue());
+            $estado = strtolower((string) $sheet->getCell('N'.$row)->getValue());
 
-            $fillColor = match($estado) {
-                'activa'     => 'D1FAE5', // Verde claro
+            $fillColor = match ($estado) {
+                'activa' => 'D1FAE5', // Verde claro
                 'finalizada' => 'E2E8F0', // Gris claro / azul pizarra
                 'programada' => 'FEF3C7', // Amarillo claro
-                'cancelada'  => 'FEE2E2', // Rojo claro
-                default      => 'FFFFFF', // Blanco
+                'cancelada' => 'FEE2E2', // Rojo claro
+                default => 'FFFFFF', // Blanco
             };
 
-            $sheet->getStyle('N' . $row)->applyFromArray([
+            $sheet->getStyle('N'.$row)->applyFromArray([
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],
@@ -161,7 +164,7 @@ class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithS
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:P' . $lastRow => [
+            'A2:P'.$lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                 ],
@@ -202,11 +205,11 @@ class ReservasExport implements FromCollection, WithHeadings, WithMapping, WithS
         $titulo = 'Reservas';
 
         if ($this->tipoEspacio) {
-            $titulo .= ' ' . $this->tipoEspacio;
+            $titulo .= ' '.$this->tipoEspacio;
         }
 
         if ($this->fechaInicio && $this->fechaFin) {
-            $titulo .= ' ' . $this->fechaInicio->format('d-m-Y') . ' a ' . $this->fechaFin->format('d-m-Y');
+            $titulo .= ' '.$this->fechaInicio->format('d-m-Y').' a '.$this->fechaFin->format('d-m-Y');
         }
 
         return substr($titulo, 0, 31);

@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\AttendanceRegistered;
 use App\Http\Controllers\Controller;
 use App\Models\Asistencia;
-use App\Models\Reserva;
 use App\Models\Espacio;
+use App\Models\Reserva;
 use App\Models\User;
-use App\Events\AttendanceRegistered;
+use App\Traits\RunNormalizer;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
-use App\Traits\RunNormalizer;
 
 /**
  * Controlador para registro de asistencia de estudiantes
- * 
+ *
  * Este controlador maneja el registro de asistencia de estudiantes
  * en clases activas, validando la existencia de reservas activas
  * y evitando duplicados.
@@ -28,12 +29,11 @@ class AttendanceController extends Controller
 
     /**
      * Registrar la asistencia de un estudiante
-     * 
+     *
      * Valida que exista una reserva activa en la sala en el momento actual
      * y registra la asistencia del estudiante evitando duplicados.
-     * 
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -55,7 +55,7 @@ class AttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error de validación',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -67,13 +67,12 @@ class AttendanceController extends Controller
             $reservationId = $request->reservation_id;
             $now = Carbon::now();
 
-
             // Log para debugging
             Log::info('Registro de asistencia iniciado', [
                 'student_id' => $studentId,
                 'room_id' => $roomId,
                 'reservation_id' => $reservationId,
-                'timestamp' => $now->toDateTimeString()
+                'timestamp' => $now->toDateTimeString(),
             ]);
 
             // Buscar reserva activa
@@ -86,10 +85,10 @@ class AttendanceController extends Controller
                     ->with(['espacio', 'profesor', 'solicitante'])
                     ->first();
 
-                if (!$reserva) {
+                if (! $reserva) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La reserva especificada no existe o no está activa'
+                        'message' => 'La reserva especificada no existe o no está activa',
                     ], 404);
                 }
 
@@ -103,33 +102,33 @@ class AttendanceController extends Controller
                     ->get()
                     ->filter(function ($res) use ($now) {
                         // Validar que la hora actual esté dentro del rango de la reserva
-                        $horaReserva = Carbon::parse($res->fecha_reserva . ' ' . $res->hora);
+                        $horaReserva = Carbon::parse($res->fecha_reserva.' '.$res->hora);
                         $duracionModulos = $res->modulos ?? 1;
                         $horaFin = $horaReserva->copy()->addMinutes(50 * $duracionModulos);
-                        
+
                         return $now->between($horaReserva, $horaFin);
                     })
                     ->first();
 
-                if (!$reserva) {
+                if (! $reserva) {
                     return response()->json([
                         'success' => false,
                         'message' => 'No hay una reserva activa en esta sala en este momento',
                         'details' => [
                             'room_id' => $roomId,
                             'current_time' => $now->format('H:i:s'),
-                            'current_date' => $now->format('Y-m-d')
-                        ]
+                            'current_date' => $now->format('Y-m-d'),
+                        ],
                     ], 404);
                 }
             }
 
             // Verificar si el espacio existe
             $espacio = Espacio::find($roomId);
-            if (!$espacio) {
+            if (! $espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La sala especificada no existe'
+                    'message' => 'La sala especificada no existe',
                 ], 404);
             }
 
@@ -145,16 +144,16 @@ class AttendanceController extends Controller
                     'attendance' => [
                         'id' => $asistenciaExistente->id,
                         'registered_at' => $asistenciaExistente->hora_llegada,
-                        'created_at' => $asistenciaExistente->created_at->format('Y-m-d H:i:s')
-                    ]
+                        'created_at' => $asistenciaExistente->created_at->format('Y-m-d H:i:s'),
+                    ],
                 ], 409); // 409 Conflict
             }
 
             // Obtener nombre del estudiante (si existe en la tabla users)
             $studentName = $request->student_name;
-            if (!$studentName) {
+            if (! $studentName) {
                 $user = User::where('run', $studentId)->first();
-                $studentName = $user ? $user->name : 'Estudiante #' . $studentId;
+                $studentName = $user ? $user->name : 'Estudiante #'.$studentId;
             }
 
             // Determinar la asignatura asociada si existe
@@ -185,13 +184,13 @@ class AttendanceController extends Controller
                 $instructorInfo = [
                     'type' => 'profesor',
                     'name' => $reserva->profesor->name,
-                    'id' => $reserva->run_profesor
+                    'id' => $reserva->run_profesor,
                 ];
             } elseif ($reserva->run_solicitante && $reserva->solicitante) {
                 $instructorInfo = [
                     'type' => 'solicitante',
                     'name' => $reserva->solicitante->nombre,
-                    'id' => $reserva->run_solicitante
+                    'id' => $reserva->run_solicitante,
                 ];
             }
 
@@ -212,7 +211,7 @@ class AttendanceController extends Controller
                 'student_id' => $studentId,
                 'room_id' => $roomId,
                 'reservation_id' => $reserva->id_reserva,
-                'current_occupancy' => $currentOccupancy
+                'current_occupancy' => $currentOccupancy,
             ]);
 
             return response()->json([
@@ -224,7 +223,7 @@ class AttendanceController extends Controller
                         'student_id' => $asistencia->rut_asistente,
                         'student_name' => $asistencia->nombre_asistente,
                         'arrival_time' => $asistencia->hora_llegada,
-                        'registered_at' => $asistencia->created_at->format('Y-m-d H:i:s')
+                        'registered_at' => $asistencia->created_at->format('Y-m-d H:i:s'),
                     ],
                     'reservation' => [
                         'id' => $reserva->id_reserva,
@@ -233,42 +232,42 @@ class AttendanceController extends Controller
                         'date' => $reserva->fecha_reserva,
                         'start_time' => $reserva->hora,
                         'type' => $reserva->tipo_reserva,
-                        'instructor' => $instructorInfo
+                        'instructor' => $instructorInfo,
                     ],
                     'occupancy' => [
                         'current' => $currentOccupancy,
-                        'capacity' => $espacio->puestos_disponibles
+                        'capacity' => $espacio->puestos_disponibles,
                     ],
                     'subject' => $asignaturaId ? [
-                        'id' => $asignaturaId
-                    ] : null
-                ]
+                        'id' => $asignaturaId,
+                    ] : null,
+                ],
             ], 201);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Error al registrar asistencia', [
                 'student_id' => $request->student_id ?? null,
                 'room_id' => $request->room_id ?? null,
                 'reservation_id' => $request->reservation_id ?? null,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar la asistencia',
-                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
             ], 500);
         }
     }
 
     /**
      * Obtener el listado de asistencias de una reserva específica
-     * 
-     * @param string $reservationId
-     * @return \Illuminate\Http\JsonResponse
+     *
+     * @param  string  $reservationId
+     * @return JsonResponse
      */
     public function show($reservationId)
     {
@@ -276,10 +275,10 @@ class AttendanceController extends Controller
             $reserva = Reserva::with(['espacio', 'profesor', 'solicitante'])
                 ->find($reservationId);
 
-            if (!$reserva) {
+            if (! $reserva) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Reserva no encontrada'
+                    'message' => 'Reserva no encontrada',
                 ], 404);
             }
 
@@ -296,8 +295,8 @@ class AttendanceController extends Controller
                         'registered_at' => $asistencia->created_at->format('Y-m-d H:i:s'),
                         'subject' => $asistencia->asignatura ? [
                             'id' => $asistencia->asignatura->id_asignatura,
-                            'name' => $asistencia->asignatura->nombre_asignatura
-                        ] : null
+                            'name' => $asistencia->asignatura->nombre_asignatura,
+                        ] : null,
                     ];
                 });
 
@@ -310,24 +309,24 @@ class AttendanceController extends Controller
                         'room_name' => $reserva->espacio->nombre_espacio,
                         'date' => $reserva->fecha_reserva,
                         'start_time' => $reserva->hora,
-                        'status' => $reserva->estado
+                        'status' => $reserva->estado,
                     ],
                     'attendances' => $asistencias,
                     'total_attendances' => $asistencias->count(),
-                    'capacity' => $reserva->espacio->puestos_disponibles
-                ]
+                    'capacity' => $reserva->espacio->puestos_disponibles,
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             Log::error('Error al obtener asistencias', [
                 'reservation_id' => $reservationId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener las asistencias',
-                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor'
+                'error' => config('app.debug') ? $e->getMessage() : 'Error interno del servidor',
             ], 500);
         }
     }

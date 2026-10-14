@@ -4,11 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\ClaseNoRealizada;
 use App\Models\Planificacion_Asignatura;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 
 class MigrarAtrasosHistoricos extends Command
 {
@@ -37,31 +37,32 @@ class MigrarAtrasosHistoricos extends Command
         $this->info('Buscando registros con [Auto-corregido] en observaciones...');
 
         // Buscar registros que tienen "[Auto-corregido" en observaciones (estado justificado)
-        $registrosAutocorregidos = ClaseNoRealizada::where(function($q) {
-                $q->where('observaciones', 'like', '%[Auto-corregido%')
-                  ->orWhere('observaciones', 'like', '%auto-corregido%')
-                  ->orWhere('observaciones', 'like', '%autocorregido%')
-                  ->orWhere('observaciones', 'like', '%profesor registró entrada tarde%');
-            })
+        $registrosAutocorregidos = ClaseNoRealizada::where(function ($q) {
+            $q->where('observaciones', 'like', '%[Auto-corregido%')
+                ->orWhere('observaciones', 'like', '%auto-corregido%')
+                ->orWhere('observaciones', 'like', '%autocorregido%')
+                ->orWhere('observaciones', 'like', '%profesor registró entrada tarde%');
+        })
             ->get();
 
         $this->info("Se encontraron {$registrosAutocorregidos->count()} registros autocorregidos para procesar.");
 
         if ($registrosAutocorregidos->isEmpty()) {
             $this->info('No hay registros para migrar.');
+
             return 0;
         }
 
         $dryRun = $this->option('dry-run');
-        
+
         if ($dryRun) {
             $this->warn('⚠️  Modo DRY-RUN: No se realizarán cambios reales.');
         }
 
         // Manejar backup (solo si no es dry-run)
-        if (!$dryRun) {
+        if (! $dryRun) {
             $hacerBackup = $this->determinarBackup();
-            
+
             if ($hacerBackup) {
                 $this->crearBackup($registrosAutocorregidos);
             }
@@ -72,8 +73,8 @@ class MigrarAtrasosHistoricos extends Command
         $errores = 0;
 
         // Agrupar por asignatura + espacio + fecha para procesar juntos
-        $agrupados = $registrosAutocorregidos->groupBy(function($r) {
-            return $r->id_asignatura . '-' . $r->id_espacio . '-' . $r->fecha_clase->format('Y-m-d');
+        $agrupados = $registrosAutocorregidos->groupBy(function ($r) {
+            return $r->id_asignatura.'-'.$r->id_espacio.'-'.$r->fecha_clase->format('Y-m-d');
         });
 
         $this->info("Procesando {$agrupados->count()} clases únicas...");
@@ -82,7 +83,7 @@ class MigrarAtrasosHistoricos extends Command
         foreach ($agrupados as $key => $registrosGrupo) {
             try {
                 $primerRegistro = $registrosGrupo->first();
-                
+
                 // Buscar TODOS los registros relacionados (incluyendo los "no_realizada")
                 $todosRegistros = ClaseNoRealizada::where('id_asignatura', $primerRegistro->id_asignatura)
                     ->where('id_espacio', $primerRegistro->id_espacio)
@@ -126,7 +127,7 @@ class MigrarAtrasosHistoricos extends Command
                     $minutosAtraso = Carbon::parse($horaProgramada)->diffInMinutes(Carbon::parse($horaLlegada));
                 }
 
-                if (!$dryRun) {
+                if (! $dryRun) {
                     // Verificar si ya existe en profesor_atrasos
                     $existeAtraso = DB::table('profesor_atrasos')
                         ->where('id_asignatura', $primerRegistro->id_asignatura)
@@ -134,7 +135,7 @@ class MigrarAtrasosHistoricos extends Command
                         ->where('fecha', $primerRegistro->fecha_clase)
                         ->exists();
 
-                    if (!$existeAtraso) {
+                    if (! $existeAtraso) {
                         // Insertar en profesor_atrasos (solo una vez por clase)
                         DB::table('profesor_atrasos')->insert([
                             'id_planificacion' => $planificacion ? $planificacion->id : 0,
@@ -156,7 +157,7 @@ class MigrarAtrasosHistoricos extends Command
                         $migrados++;
                         $this->line("     ✅ Atraso registrado ({$minutosAtraso} min)");
                     } else {
-                        $this->line("     ⏭️  Ya existe atraso, solo eliminando registros");
+                        $this->line('     ⏭️  Ya existe atraso, solo eliminando registros');
                     }
 
                     // Eliminar TODOS los registros relacionados de clases_no_realizadas
@@ -171,8 +172,8 @@ class MigrarAtrasosHistoricos extends Command
 
             } catch (\Exception $e) {
                 $errores++;
-                Log::error("Error migrando clase $key: " . $e->getMessage());
-                $this->error("Error en clase $key: " . $e->getMessage());
+                Log::error("Error migrando clase $key: ".$e->getMessage());
+                $this->error("Error en clase $key: ".$e->getMessage());
             }
 
             $this->output->progressAdvance();
@@ -181,10 +182,10 @@ class MigrarAtrasosHistoricos extends Command
         $this->output->progressFinish();
 
         $this->newLine(2);
-        $this->info("═══════════════════════════════════════");
+        $this->info('═══════════════════════════════════════');
         $this->info("✅ Atrasos creados: $migrados");
         $this->info("🗑️  Registros eliminados de clases_no_realizadas: $eliminados");
-        
+
         if ($errores > 0) {
             $this->error("❌ Errores: $errores");
         }
@@ -225,9 +226,9 @@ class MigrarAtrasosHistoricos extends Command
 
         // Buscar todos los registros relacionados (incluyendo los no_realizada)
         $todosRegistros = collect();
-        
-        $agrupados = $registrosAutocorregidos->groupBy(function($r) {
-            return $r->id_asignatura . '-' . $r->id_espacio . '-' . $r->fecha_clase->format('Y-m-d');
+
+        $agrupados = $registrosAutocorregidos->groupBy(function ($r) {
+            return $r->id_asignatura.'-'.$r->id_espacio.'-'.$r->fecha_clase->format('Y-m-d');
         });
 
         foreach ($agrupados as $key => $grupo) {
@@ -236,7 +237,7 @@ class MigrarAtrasosHistoricos extends Command
                 ->where('id_espacio', $primerRegistro->id_espacio)
                 ->where('fecha_clase', $primerRegistro->fecha_clase)
                 ->get();
-            
+
             $todosRegistros = $todosRegistros->merge($relacionados);
         }
 
@@ -245,7 +246,7 @@ class MigrarAtrasosHistoricos extends Command
             'fecha_backup' => now()->toIso8601String(),
             'total_registros' => $todosRegistros->count(),
             'descripcion' => 'Backup antes de migrar registros autocorregidos a tabla profesor_atrasos',
-            'registros' => $todosRegistros->map(function($r) {
+            'registros' => $todosRegistros->map(function ($r) {
                 return [
                     'id' => $r->id,
                     'id_asignatura' => $r->id_asignatura,

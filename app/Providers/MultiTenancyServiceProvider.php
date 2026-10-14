@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Models\Tenant;
+use Illuminate\Support\ServiceProvider;
 
 class MultiTenancyServiceProvider extends ServiceProvider
 {

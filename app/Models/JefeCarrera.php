@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class JefeCarrera extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
 
@@ -21,7 +21,7 @@ class JefeCarrera extends Model
         'id_carrera',
     ];
 
-    public function carrera()
+    public function carrera(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Carrera::class, 'id_carrera', 'id_carrera');
     }

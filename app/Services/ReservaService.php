@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
+use App\Mail\ConfirmacionReserva;
 use App\Models\Asignatura;
 use App\Models\Espacio;
 use App\Models\Modulo;
@@ -36,14 +37,14 @@ class ReservaService
             $tenant = Tenant::find(session('tenant_id'));
         }
 
-        if (!$tenant) {
+        if (! $tenant) {
             $tenant = Tenant::where('is_active', true)->first();
             if ($tenant) {
                 $tenant->makeCurrent();
             }
         }
 
-        if (!$tenant) {
+        if (! $tenant) {
             return [
                 'success' => false,
                 'message' => 'No se encontró tenant configurado',
@@ -72,7 +73,7 @@ class ReservaService
 
             if ($reserva->run_profesor) {
                 $profesor = $reserva->profesor;
-                $nombreResponsable = $profesor ? ($profesor->name ?? ($profesor->nombres . ' ' . $profesor->apellidos)) : $reserva->run_profesor;
+                $nombreResponsable = $profesor ? ($profesor->name ?? ($profesor->nombres.' '.$profesor->apellidos)) : $reserva->run_profesor;
                 $runResponsable = $reserva->run_profesor;
                 $tipoResponsable = 'profesor';
             } elseif ($reserva->run_solicitante) {
@@ -87,8 +88,8 @@ class ReservaService
 
             $asignaturaInfo = 'Sin asignatura';
             if ($reserva->asignatura) {
-                $asignaturaInfo = $reserva->asignatura->codigo_asignatura . ' - ' . $reserva->asignatura->nombre_asignatura;
-            } elseif (!empty($reserva->nombre_actividad)) {
+                $asignaturaInfo = $reserva->asignatura->codigo_asignatura.' - '.$reserva->asignatura->nombre_asignatura;
+            } elseif (! empty($reserva->nombre_actividad)) {
                 $asignaturaInfo = $reserva->nombre_actividad;
             } elseif ($reserva->id_asignatura) {
                 $asignaturaInfo = $reserva->id_asignatura;
@@ -151,8 +152,8 @@ class ReservaService
 
         $personas = [];
 
-        $profesores = Profesor::where('run_profesor', 'LIKE', '%' . $termino . '%')
-            ->orWhere('name', 'LIKE', '%' . $termino . '%')
+        $profesores = Profesor::where('run_profesor', 'LIKE', '%'.$termino.'%')
+            ->orWhere('name', 'LIKE', '%'.$termino.'%')
             ->limit(10)
             ->get();
 
@@ -163,13 +164,13 @@ class ReservaService
                 'email' => $profesor->email ?? '',
                 'telefono' => $profesor->celular ?? '',
                 'tipo' => 'profesor',
-                'display' => $profesor->run_profesor . ' - ' . $profesor->name . ' (Profesor)',
+                'display' => $profesor->run_profesor.' - '.$profesor->name.' (Profesor)',
             ];
         }
 
         $solicitantes = Solicitante::on('tenant')
-            ->where('run_solicitante', 'LIKE', '%' . $termino . '%')
-            ->orWhere('nombre', 'LIKE', '%' . $termino . '%')
+            ->where('run_solicitante', 'LIKE', '%'.$termino.'%')
+            ->orWhere('nombre', 'LIKE', '%'.$termino.'%')
             ->where('activo', true)
             ->limit(10)
             ->get();
@@ -181,7 +182,7 @@ class ReservaService
                 'email' => $solicitante->correo ?? '',
                 'telefono' => $solicitante->telefono ?? '',
                 'tipo' => 'solicitante',
-                'display' => $solicitante->run_solicitante . ' - ' . $solicitante->nombre . ' (Solicitante)',
+                'display' => $solicitante->run_solicitante.' - '.$solicitante->nombre.' (Solicitante)',
             ];
         }
 
@@ -197,8 +198,8 @@ class ReservaService
             return [];
         }
 
-        $asignaturas = Asignatura::where('codigo_asignatura', 'LIKE', '%' . $termino . '%')
-            ->orWhere('nombre_asignatura', 'LIKE', '%' . $termino . '%')
+        $asignaturas = Asignatura::where('codigo_asignatura', 'LIKE', '%'.$termino.'%')
+            ->orWhere('nombre_asignatura', 'LIKE', '%'.$termino.'%')
             ->limit(20)
             ->get();
 
@@ -207,7 +208,7 @@ class ReservaService
                 'id_asignatura' => $asignatura->id_asignatura,
                 'codigo_asignatura' => $asignatura->codigo_asignatura,
                 'nombre_asignatura' => $asignatura->nombre_asignatura,
-                'display' => $asignatura->codigo_asignatura . ' - ' . $asignatura->nombre_asignatura,
+                'display' => $asignatura->codigo_asignatura.' - '.$asignatura->nombre_asignatura,
             ];
         })->toArray();
     }
@@ -229,8 +230,8 @@ class ReservaService
         $prefijoDia = $prefijosDias[$fechaReserva->dayOfWeek];
         $periodo = SemesterHelper::getCurrentPeriod($fechaReserva);
 
-        for ($modulo = $moduloInicial; $modulo <= $moduloFinal; ++$modulo) {
-            $idModulo = $prefijoDia . '.' . $modulo;
+        for ($modulo = $moduloInicial; $modulo <= $moduloFinal; $modulo++) {
+            $idModulo = $prefijoDia.'.'.$modulo;
 
             $planificacion = Planificacion_Asignatura::with(['asignatura.profesor', 'asignatura.carrera', 'modulo'])
                 ->where('id_espacio', $espacioCodigo)
@@ -260,7 +261,7 @@ class ReservaService
             ->where(function ($q) use ($moduloInicial, $moduloFinal) {
                 $q->where(function ($inner) use ($moduloInicial, $moduloFinal) {
                     $inner->where('modulo_inicio', '<=', $moduloFinal)
-                          ->where('modulo_fin', '>=', $moduloInicial);
+                        ->where('modulo_fin', '>=', $moduloInicial);
                 });
             })
             ->get();
@@ -295,7 +296,7 @@ class ReservaService
             $idAsignatura = null;
         }
 
-        if ($idAsignatura && !Asignatura::where('id_asignatura', $idAsignatura)->exists()) {
+        if ($idAsignatura && ! Asignatura::where('id_asignatura', $idAsignatura)->exists()) {
             return [
                 'success' => false,
                 'status' => 422,
@@ -303,7 +304,7 @@ class ReservaService
             ];
         }
 
-        if (($data['tipo'] ?? '') === 'colaborador' && !$idAsignatura) {
+        if (($data['tipo'] ?? '') === 'colaborador' && ! $idAsignatura) {
             return [
                 'success' => false,
                 'status' => 400,
@@ -331,7 +332,7 @@ class ReservaService
         }
 
         $espacio = Espacio::where('id_espacio', $data['espacio'])->first();
-        if (!$espacio) {
+        if (! $espacio) {
             return [
                 'success' => false,
                 'status' => 400,
@@ -345,7 +346,7 @@ class ReservaService
         $duracionModulos = $moduloFinal - $moduloInicial + 1;
 
         $fechasASerReservadas = [];
-        $esRecurrente = (($data['tipo_frecuencia'] ?? '') === 'recurrente' && !empty($data['fecha_fin']));
+        $esRecurrente = (($data['tipo_frecuencia'] ?? '') === 'recurrente' && ! empty($data['fecha_fin']));
 
         if ($esRecurrente) {
             $inicio = Carbon::parse($data['fecha']);
@@ -393,19 +394,19 @@ class ReservaService
         }
 
         $reservasCreadas = [];
-        $esForzado = !empty($data['forzar']);
+        $esForzado = ! empty($data['forzar']);
 
         foreach ($fechasASerReservadas as $indexFecha => $fechaObjStr) {
             $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
             $prefijoReserva = $prefijosDias[Carbon::parse($fechaObjStr)->dayOfWeek];
 
             $modulosReserva = [];
-            for ($i = $moduloInicial; $i <= $moduloFinal; ++$i) {
-                $modulosReserva[] = $prefijoReserva . '.' . $i;
+            for ($i = $moduloInicial; $i <= $moduloFinal; $i++) {
+                $modulosReserva[] = $prefijoReserva.'.'.$i;
             }
             $idModuloString = implode(',', $modulosReserva);
-            $idModuloInicial = $prefijoReserva . '.' . $moduloInicial;
-            $idModuloFinal = $prefijoReserva . '.' . $moduloFinal;
+            $idModuloInicial = $prefijoReserva.'.'.$moduloInicial;
+            $idModuloFinal = $prefijoReserva.'.'.$moduloFinal;
 
             $moduloInicialObj = Modulo::where('id_modulo', $idModuloInicial)->first();
             $moduloFinalObj = Modulo::where('id_modulo', $idModuloFinal)->first();
@@ -420,26 +421,27 @@ class ReservaService
                 ->where(function ($q) use ($moduloInicial, $moduloFinal) {
                     $q->where(function ($inner) use ($moduloInicial, $moduloFinal) {
                         $inner->where('modulo_inicio', '<=', $moduloFinal)
-                              ->where('modulo_fin', '>=', $moduloInicial);
+                            ->where('modulo_fin', '>=', $moduloInicial);
                     });
                 })
                 ->first();
 
-            if ($reservaExistente && !$esForzado) {
-                if (!$esRecurrente) {
+            if ($reservaExistente && ! $esForzado) {
+                if (! $esRecurrente) {
                     return [
                         'success' => false,
                         'status' => 409,
                         'tipo_error' => 'reserva_existente',
-                        'mensaje' => 'Ya existe una reserva activa para el espacio ' . $data['espacio'] . ' el día ' . $fechaObjStr . ' en los módulos solicitados.',
+                        'mensaje' => 'Ya existe una reserva activa para el espacio '.$data['espacio'].' el día '.$fechaObjStr.' en los módulos solicitados.',
                         'reserva_conflicto' => $reservaExistente->id_reserva,
                     ];
                 }
+
                 continue;
             }
 
             // Validar clases programadas
-            if (!$esForzado) {
+            if (! $esForzado) {
                 $periodoActual = SemesterHelper::getCurrentPeriod(Carbon::parse($fechaObjStr));
                 $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo'])
                     ->where('id_espacio', $data['espacio'])
@@ -451,7 +453,7 @@ class ReservaService
                     $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
                     $idMod = $claseConflicto->modulo->id_modulo ?? '-';
 
-                    if (!$esRecurrente) {
+                    if (! $esRecurrente) {
                         return [
                             'success' => false,
                             'status' => 409,
@@ -464,17 +466,18 @@ class ReservaService
                             ],
                         ];
                     }
+
                     continue;
                 }
             }
 
-            $idReserva = 'RES-' . strtoupper(uniqid());
+            $idReserva = 'RES-'.strtoupper(uniqid());
 
-            $rangoModulos = 'Módulos: ' . $moduloInicial . '-' . $moduloFinal . ' | ';
+            $rangoModulos = 'Módulos: '.$moduloInicial.'-'.$moduloFinal.' | ';
             $forzadoTag = $esForzado ? '⚠️ RESERVA FORZADA | ' : '';
             $tipoTag = $esRecurrente ? '🔁 RESERVA RECURRENTE SEMESTRAL | ' : '';
-            $observacionesAutomaticas = $tipoTag . $forzadoTag . 'RESERVA CREADA MANUALMENTE por ' . ($usuario->name ?? 'Administrador') . ' el ' . now()->format('d/m/Y H:i:s') . ' | ' . $rangoModulos;
-            $observacionesCompletas = $observacionesAutomaticas . ($data['observaciones'] ?? '');
+            $observacionesAutomaticas = $tipoTag.$forzadoTag.'RESERVA CREADA MANUALMENTE por '.($usuario->name ?? 'Administrador').' el '.now()->format('d/m/Y H:i:s').' | '.$rangoModulos;
+            $observacionesCompletas = $observacionesAutomaticas.($data['observaciones'] ?? '');
 
             $fechaActual = now()->format('Y-m-d');
             $horaActualStr = now()->format('H:i:s');
@@ -510,7 +513,7 @@ class ReservaService
                 'descripcion_actividad' => $data['descripcion_actividad'] ?? null,
                 'run_profesor' => $runProfesor,
                 'run_solicitante' => $runSolicitante,
-                'creado_por' => $usuario ? $usuario->name . ' (' . ($usuario->run ?? 'Admin') . ')' : 'Sistema',
+                'creado_por' => $usuario ? $usuario->name.' ('.($usuario->run ?? 'Admin').')' : 'Sistema',
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
@@ -577,7 +580,7 @@ class ReservaService
     {
         $reserva = Reserva::where('id_reserva', $id)->first();
 
-        if (!$reserva) {
+        if (! $reserva) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -630,7 +633,7 @@ class ReservaService
     {
         $reserva = Reserva::where('id_reserva', $id)->first();
 
-        if (!$reserva) {
+        if (! $reserva) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -669,7 +672,7 @@ class ReservaService
     {
         $reserva = Reserva::where('id_reserva', $id)->first();
 
-        if (!$reserva) {
+        if (! $reserva) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -686,7 +689,7 @@ class ReservaService
         }
 
         $espacio = Espacio::where('id_espacio', $data['id_espacio'])->first();
-        if (!$espacio) {
+        if (! $espacio) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -703,7 +706,7 @@ class ReservaService
             ->whereIn('estado', ['activa', 'programada'])
             ->where(function ($q) use ($moduloInicio, $moduloFin) {
                 $q->where('modulo_inicio', '<=', $moduloFin)
-                  ->where('modulo_fin', '>=', $moduloInicio);
+                    ->where('modulo_fin', '>=', $moduloInicio);
             })
             ->exists();
 
@@ -716,12 +719,12 @@ class ReservaService
         }
 
         $adminNota = '';
-        if (!empty($data['nuevo_run_profesor'])) {
+        if (! empty($data['nuevo_run_profesor'])) {
             $nuevoRun = $data['nuevo_run_profesor'];
             $nuevoProfesor = Profesor::where('run_profesor', $nuevoRun)->first()
                 ?? User::where('run', $nuevoRun)->first();
 
-            if (!$nuevoProfesor) {
+            if (! $nuevoProfesor) {
                 return [
                     'success' => false,
                     'status' => 422,
@@ -734,20 +737,20 @@ class ReservaService
             $reserva->run_solicitante = null;
 
             $admin = $usuario ?? auth()->user();
-            $adminNota = "\n[ADMIN] Docente reasignado de {$anteriorRun} a {$nuevoRun} por " . ($admin->name ?? 'Admin') . ' (' . ($admin->run ?? '') . ') el ' . now()->format('d/m/Y H:i') . '.';
+            $adminNota = "\n[ADMIN] Docente reasignado de {$anteriorRun} a {$nuevoRun} por ".($admin->name ?? 'Admin').' ('.($admin->run ?? '').') el '.now()->format('d/m/Y H:i').'.';
         }
 
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $data['fecha'];
         $reserva->hora = $data['hora'];
         $reserva->modulos = $data['modulos'];
-        if (!empty($data['modulo_inicio'])) {
+        if (! empty($data['modulo_inicio'])) {
             $reserva->modulo_inicio = $data['modulo_inicio'];
         }
-        if (!empty($data['modulo_fin'])) {
+        if (! empty($data['modulo_fin'])) {
             $reserva->modulo_fin = $data['modulo_fin'];
         }
-        $reserva->observaciones = ($data['observaciones'] ?? '') . $adminNota;
+        $reserva->observaciones = ($data['observaciones'] ?? '').$adminNota;
 
         $reserva->touch();
         $reserva->save();
@@ -792,7 +795,7 @@ class ReservaService
         $diaNormalizado = ModulosHelper::normalizarDia(Carbon::parse($reserva->fecha_reserva)->locale('es')->isoFormat('dddd'));
         $horariosModulos = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
-        if (!$moduloInicio && $reserva->hora) {
+        if (! $moduloInicio && $reserva->hora) {
             $horaReserva = substr($reserva->hora, 0, 5);
             foreach ($horariosModulos as $modulo => $horario) {
                 if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
@@ -815,7 +818,7 @@ class ReservaService
                 'hora_inicio' => $horaInicio,
                 'hora_fin' => $horaFin,
                 'rango_horario' => "{$horaInicio} - {$horaFin}",
-                'texto_completo' => "Módulos {$moduloInicio}-{$moduloFin} ({$horaInicio} - {$horaFin}) • {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : ''),
+                'texto_completo' => "Módulos {$moduloInicio}-{$moduloFin} ({$horaInicio} - {$horaFin}) • {$cantidadModulos} módulo".($cantidadModulos > 1 ? 's' : ''),
             ];
         }
 
@@ -826,7 +829,7 @@ class ReservaService
             'hora_inicio' => substr($reserva->hora, 0, 5),
             'hora_fin' => 'Desconocido',
             'rango_horario' => substr($reserva->hora, 0, 5),
-            'texto_completo' => 'Hora: ' . substr($reserva->hora, 0, 5) . " • Duración: {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : ''),
+            'texto_completo' => 'Hora: '.substr($reserva->hora, 0, 5)." • Duración: {$cantidadModulos} módulo".($cantidadModulos > 1 ? 's' : ''),
         ];
     }
 
@@ -840,15 +843,16 @@ class ReservaService
 
             $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
 
-            if (!$destinatario) {
+            if (! $destinatario) {
                 Log::info("ℹ️ Reserva {$reserva->id_reserva}: no se encontró correo para enviar comprobante.");
+
                 return;
             }
 
-            Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
+            Mail::to($destinatario)->send(new ConfirmacionReserva($reserva));
             Log::info("📧 Comprobante de reserva {$reserva->id_reserva} enviado a {$destinatario}");
         } catch (\Throwable $e) {
-            Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
+            Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: ".$e->getMessage());
         }
     }
 
@@ -861,7 +865,7 @@ class ReservaService
             $profesor = $reserva->relationLoaded('profesor') && $reserva->profesor
                 ? $reserva->profesor
                 : Profesor::on('tenant')->where('run_profesor', $reserva->run_profesor)->first();
-            if ($profesor && !empty($profesor->email)) {
+            if ($profesor && ! empty($profesor->email)) {
                 return $profesor->email;
             }
         }
@@ -870,7 +874,7 @@ class ReservaService
             $solicitante = $reserva->relationLoaded('solicitante') && $reserva->solicitante
                 ? $reserva->solicitante
                 : Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
-            if ($solicitante && !empty($solicitante->correo)) {
+            if ($solicitante && ! empty($solicitante->correo)) {
                 return $solicitante->correo;
             }
         }
@@ -883,7 +887,7 @@ class ReservaService
      */
     public function normalizeRun(?string $run): string
     {
-        if (!$run) {
+        if (! $run) {
             return '';
         }
 

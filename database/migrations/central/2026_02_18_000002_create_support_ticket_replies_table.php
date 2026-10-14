@@ -21,9 +21,9 @@ return new class extends Migration
 
             $table->index('ticket_id');
             $table->foreign('ticket_id')
-                  ->references('id')
-                  ->on('support_tickets')
-                  ->onDelete('cascade');
+                ->references('id')
+                ->on('support_tickets')
+                ->onDelete('cascade');
         });
     }
 

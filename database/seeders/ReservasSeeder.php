@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Reserva;
+use Illuminate\Database\Seeder;
 
 class ReservasSeeder extends Seeder
 {

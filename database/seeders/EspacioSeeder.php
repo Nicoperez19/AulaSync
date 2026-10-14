@@ -6,7 +6,6 @@ use App\Models\Espacio;
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class EspacioSeeder extends Seeder
 {
@@ -17,16 +16,18 @@ class EspacioSeeder extends Seeder
     {
         $tenant = Tenant::current();
 
-        if (!$tenant) {
+        if (! $tenant) {
             $this->command->error('No se encontró tenant activo para el seeder.');
+
             return;
         }
 
         $sedeId = $tenant->sede_id;
-        $file = __DIR__ . "/Data/Espacios/{$sedeId}.php";
+        $file = __DIR__."/Data/Espacios/{$sedeId}.php";
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             $this->command->warn("No hay archivo de definición de espacios para la sede: {$sedeId}");
+
             return;
         }
 
@@ -50,9 +51,10 @@ class EspacioSeeder extends Seeder
                 unset($espacio['id_sede']);
 
                 // Si capacidad_maxima es null, usar puestos_disponibles o 0
-                if (!isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
+                if (! isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
                     $espacio['capacidad_maxima'] = $espacio['puestos_disponibles'] ?? 0;
                 }
+
                 return $espacio;
             })
             ->all();
@@ -77,7 +79,7 @@ class EspacioSeeder extends Seeder
             }
         }
 
-        $this->command->info('Proceso completado para ' . count($espacios) . ' espacios potenciales.');
+        $this->command->info('Proceso completado para '.count($espacios).' espacios potenciales.');
     }
 
     /**
@@ -85,7 +87,7 @@ class EspacioSeeder extends Seeder
      */
     private function buildPisoMap($tenant)
     {
-        if (!$tenant) {
+        if (! $tenant) {
             return [];
         }
 
@@ -100,7 +102,7 @@ class EspacioSeeder extends Seeder
             $pisosQuery->whereIn('id_facultad', $facultadIds);
         }
         $pisos = collect($pisosQuery->get());
-        $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: " . $pisos->count());
+        $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: ".$pisos->count());
 
         $map = [];
 
@@ -120,8 +122,9 @@ class EspacioSeeder extends Seeder
             $piso2 = $pisos->where('numero_piso', 2)->first();
             $piso3 = $pisos->where('numero_piso', 3)->where('nombre_piso', 'Taller Gastronómico')->first();
             // Fallback si no encuentra por nombre específico, intentar mapear por número lógico
-            if (!$piso3)
+            if (! $piso3) {
                 $piso3 = $pisos->where('numero_piso', 3)->first();
+            }
 
             $map[3] = data_get($piso1, 'id');
             $map[4] = data_get($piso2, 'id');
@@ -138,7 +141,7 @@ class EspacioSeeder extends Seeder
         }
         // Mapeo para Los Ángeles (LA) - 3 edificios
         elseif ($tenant->sede_id === 'LA') {
-            $piso8 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276')->first() 
+            $piso8 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276')->first()
                   ?? $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first()
                   ?? $pisos->where('numero_piso', 1)->first();
 

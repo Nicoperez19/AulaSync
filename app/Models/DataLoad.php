@@ -23,12 +23,11 @@ class DataLoad extends Model
     protected $casts = [
         'registros_cargados' => 'integer',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime'
+        'updated_at' => 'datetime',
     ];
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'user_run', 'run');
     }
-    
 }

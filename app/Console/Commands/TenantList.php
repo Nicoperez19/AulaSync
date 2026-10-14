@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
 
 class TenantList extends Command
 {
@@ -36,6 +36,7 @@ class TenantList extends Command
 
         if ($tenants->isEmpty()) {
             $this->info('No tenants found.');
+
             return 0;
         }
 

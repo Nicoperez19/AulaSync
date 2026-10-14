@@ -13,12 +13,12 @@ trait RedirectByRole
     protected function redirectByRole()
     {
         $user = Auth::user();
-        
+
         // Control Docente redirige al Plano Digital
         if ($user->hasRole('Control Docente')) {
             return redirect()->route('plano.index');
         }
-        
+
         // Verificar si el usuario tiene el permiso dashboard
         $hasDashboardPermission = false;
         try {
@@ -28,7 +28,7 @@ trait RedirectByRole
             $hasDashboardPermission = false;
         }
 
-        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor')) {
+        if ($user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor')) {
             return redirect(RouteServiceProvider::HOME);
         } elseif ($user->hasRole('Usuario')) {
             return redirect()->route('espacios.show');

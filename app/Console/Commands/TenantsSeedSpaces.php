@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
 
 class TenantsSeedSpaces extends Command
 {
@@ -42,6 +42,7 @@ class TenantsSeedSpaces extends Command
 
         if ($tenants->isEmpty()) {
             $this->error('No tenants found.');
+
             return 1;
         }
 
@@ -69,14 +70,14 @@ class TenantsSeedSpaces extends Command
                 }
 
                 // Seed spaces
-                $this->info("Seeding floors and spaces...");
+                $this->info('Seeding floors and spaces...');
                 // First seed floors, then spaces
                 Artisan::call('db:seed', [
                     '--database' => 'tenant',
                     '--class' => 'Database\\Seeders\\PisoSeeder',
                     '--force' => true,
                 ], $this->output);
-                
+
                 Artisan::call('db:seed', [
                     '--database' => 'tenant',
                     '--class' => 'Database\\Seeders\\EspacioSeeder',
@@ -86,7 +87,7 @@ class TenantsSeedSpaces extends Command
                 $this->info(Artisan::output());
 
             } catch (\Exception $e) {
-                $this->error("Error seeding spaces for tenant {$tenant->domain}: " . $e->getMessage());
+                $this->error("Error seeding spaces for tenant {$tenant->domain}: ".$e->getMessage());
             } finally {
                 // Restore default connection
                 Config::set('database.default', $defaultConnection);
@@ -96,6 +97,7 @@ class TenantsSeedSpaces extends Command
         }
 
         $this->info('Spaces seeding completed for all tenants.');
+
         return 0;
     }
 }

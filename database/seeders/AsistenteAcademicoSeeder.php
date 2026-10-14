@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\AsistenteAcademico;
 use App\Models\AreaAcademica;
+use App\Models\AsistenteAcademico;
 use Illuminate\Database\Seeder;
 
 class AsistenteAcademicoSeeder extends Seeder
@@ -34,9 +34,10 @@ class AsistenteAcademicoSeeder extends Seeder
         foreach ($asistentes as $asistenteData) {
             // Verificar que la escuela existe
             $escuela = AreaAcademica::find($asistenteData['id_area_academica']);
-            
-            if (!$escuela) {
+
+            if (! $escuela) {
                 $this->command->warn("⚠ Escuela '{$asistenteData['id_area_academica']}' no encontrada para {$asistenteData['nombre']}");
+
                 continue;
             }
 

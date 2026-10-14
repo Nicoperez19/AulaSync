@@ -2,19 +2,21 @@
 
 namespace App\Livewire;
 
+use App\Models\Campus;
+use App\Models\Facultad;
+use App\Models\Sede;
+use App\Models\Universidad;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Facultad;
-use App\Models\Universidad;
-use App\Models\Sede;
-use App\Models\Campus;
 
 class FacultiesTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $perPage = 10;
+
     public $paginationOptions = [5, 10, 50];
 
     protected $updatesQueryString = ['search', 'perPage'];
@@ -47,21 +49,21 @@ class FacultiesTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 try {
-                    $universidadIds = Universidad::where(function($uq) use ($terms) {
+                    $universidadIds = Universidad::where(function ($uq) use ($terms) {
                         foreach ($terms as $t) {
-                            $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
+                            $uq->orWhere('nombre_universidad', 'like', '%'.$t.'%');
                         }
                     })->pluck('id_universidad');
 
-                    $sedeIds = Sede::where(function($sq) use ($terms) {
+                    $sedeIds = Sede::where(function ($sq) use ($terms) {
                         foreach ($terms as $t) {
-                            $sq->orWhere('nombre_sede', 'like', '%' . $t . '%');
+                            $sq->orWhere('nombre_sede', 'like', '%'.$t.'%');
                         }
                     })->pluck('id_sede');
 
-                    $campusIds = Campus::where(function($cq) use ($terms) {
+                    $campusIds = Campus::where(function ($cq) use ($terms) {
                         foreach ($terms as $t) {
-                            $cq->orWhere('nombre_campus', 'like', '%' . $t . '%');
+                            $cq->orWhere('nombre_campus', 'like', '%'.$t.'%');
                         }
                     })->pluck('id_campus');
                 } catch (\Throwable $e) {
@@ -72,10 +74,10 @@ class FacultiesTable extends Component
 
                 // Apply tenant-side filters while honoring central search matches.
                 $query->where(function ($innerQuery) use ($terms, $searchTerm, $universidadIds, $sedeIds, $campusIds) {
-                    $innerQuery->where('id_facultad', 'like', '%' . $searchTerm . '%');
+                    $innerQuery->where('id_facultad', 'like', '%'.$searchTerm.'%');
 
                     foreach ($terms as $t) {
-                        $innerQuery->orWhere('nombre_facultad', 'like', '%' . $t . '%');
+                        $innerQuery->orWhere('nombre_facultad', 'like', '%'.$t.'%');
                     }
 
                     if ($universidadIds->isNotEmpty()) {

@@ -4,9 +4,9 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
 
 class ReporteMensualClasesNoRealizadas extends Mailable
@@ -14,6 +14,7 @@ class ReporteMensualClasesNoRealizadas extends Mailable
     use Queueable, SerializesModels;
 
     public $datos;
+
     public $pdf;
 
     /**
@@ -31,7 +32,7 @@ class ReporteMensualClasesNoRealizadas extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reporte Mensual - Clases No Realizadas (' . ucfirst($this->datos['periodo']['mes']) . ' ' . $this->datos['periodo']['anio'] . ')',
+            subject: 'Reporte Mensual - Clases No Realizadas ('.ucfirst($this->datos['periodo']['mes']).' '.$this->datos['periodo']['anio'].')',
         );
     }
 
@@ -49,7 +50,7 @@ class ReporteMensualClasesNoRealizadas extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

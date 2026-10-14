@@ -1,7 +1,15 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use App\Providers\AuthServiceProvider;
+use App\Providers\BroadcastServiceProvider;
+use App\Providers\EventServiceProvider;
+use App\Providers\MultiTenancyServiceProvider;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
+use Maatwebsite\Excel\ExcelServiceProvider;
+use Maatwebsite\Excel\Facades\Excel;
 
 return [
 
@@ -71,7 +79,6 @@ return [
     */
 
     'timezone' => 'America/Santiago',
-
 
     /*
     |--------------------------------------------------------------------------
@@ -160,17 +167,17 @@ return [
         /*
          * Package Service Providers...
          */
-        Maatwebsite\Excel\ExcelServiceProvider::class,
+        ExcelServiceProvider::class,
 
         /*
          * Application Service Providers...
          */
-        App\Providers\AppServiceProvider::class,
-        App\Providers\AuthServiceProvider::class,
-        App\Providers\BroadcastServiceProvider::class,
-        App\Providers\EventServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
-        App\Providers\MultiTenancyServiceProvider::class,
+        AppServiceProvider::class,
+        AuthServiceProvider::class,
+        BroadcastServiceProvider::class,
+        EventServiceProvider::class,
+        RouteServiceProvider::class,
+        MultiTenancyServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -186,10 +193,9 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
-        'Excel' => Maatwebsite\Excel\Facades\Excel::class,
+        'Excel' => Excel::class,
     ])->toArray(),
 
     'dark_mode' => env('APP_DARK_MODE', false),
-
 
 ];

@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -13,14 +13,15 @@ use Illuminate\Support\Facades\Log;
 class NormalizarEstadosEspacios extends Command
 {
     protected $signature = 'espacios:normalizar-estados {--tenant=* : IDs de tenants a normalizar (vacío = todos)}';
+
     protected $description = 'Normaliza todos los estados de espacios y reservas a minúsculas en la base de datos';
 
     public function handle()
     {
         $this->info('=== NORMALIZANDO ESTADOS A MINÚSCULAS ===');
-        
+
         $tenantIds = $this->option('tenant');
-        
+
         if (empty($tenantIds)) {
             // Normalizar todos los tenants
             $tenants = Tenant::all();
@@ -31,6 +32,7 @@ class NormalizarEstadosEspacios extends Command
 
         if ($tenants->isEmpty()) {
             $this->warn('No se encontraron tenants a procesar.');
+
             return 0;
         }
 
@@ -52,7 +54,7 @@ class NormalizarEstadosEspacios extends Command
 
             // 1. Normalizar tabla 'espacios'
             $this->line("  📦 Normalizando tabla 'espacios'...");
-            
+
             // Obtener todos los espacios con estados diferentes a minúsculas
             $espacios = Espacio::on('tenant')->get();
             $espaciosActualizados = 0;
@@ -65,7 +67,7 @@ class NormalizarEstadosEspacios extends Command
                     $espacio->estado = $estadoNormalizado;
                     $espacio->save();
                     $espaciosActualizados++;
-                    
+
                     $this->line("    ✓ {$espacio->id_espacio}: '{$estadoAnterior}' → '{$estadoNormalizado}'");
                 }
             }
@@ -78,7 +80,7 @@ class NormalizarEstadosEspacios extends Command
 
             // 2. Normalizar tabla 'reservas' (campo 'estado')
             $this->line("  📋 Normalizando tabla 'reservas'...");
-            
+
             $reservas = Reserva::on('tenant')->get();
             $reservasActualizadas = 0;
 
@@ -90,7 +92,7 @@ class NormalizarEstadosEspacios extends Command
                     $reserva->estado = $estadoNormalizado;
                     $reserva->save();
                     $reservasActualizadas++;
-                    
+
                     $this->line("    ✓ {$reserva->id_reserva}: '{$estadoAnterior}' → '{$estadoNormalizado}'");
                 }
             }
@@ -104,15 +106,15 @@ class NormalizarEstadosEspacios extends Command
             Log::info('Normalización de estados completada', [
                 'tenant' => $tenant->domain,
                 'espacios_actualizados' => $espaciosActualizados,
-                'reservas_actualizadas' => $reservasActualizadas
+                'reservas_actualizadas' => $reservasActualizadas,
             ]);
 
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            $this->error("  Error procesando tenant {$tenant->name}: ".$e->getMessage());
             Log::error("Error en NormalizarEstadosEspacios para tenant {$tenant->name}", [
                 'tenant' => $tenant->domain,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

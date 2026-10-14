@@ -64,10 +64,11 @@ class PeriodoAcademico extends Model
 
         if ($periodo) {
             // Auto-reparación: si el período en curso no estaba activo en BD, o hay anteriores activos, auto-sincronizar
-            if (!$periodo->activo) {
+            if (! $periodo->activo) {
                 static::sincronizarEstadosSegunFechas($fecha);
                 $periodo->activo = true;
             }
+
             return $periodo;
         }
 
@@ -88,7 +89,7 @@ class PeriodoAcademico extends Model
      * Esto garantiza que la base de datos siempre tenga activo exactamente el semestre
      * que corresponde, de forma 100% desatendida.
      *
-     * @param string|Carbon|null $fecha
+     * @param  string|Carbon|null  $fecha
      * @return PeriodoAcademico|null El período que quedó activo
      */
     public static function sincronizarEstadosSegunFechas($fecha = null)
@@ -113,7 +114,7 @@ class PeriodoAcademico extends Model
             ->orderBy('semestre', 'desc')
             ->first();
 
-        if ($periodoEnCurso && !$periodoEnCurso->activo) {
+        if ($periodoEnCurso && ! $periodoEnCurso->activo) {
             $periodoEnCurso->update(['activo' => true]);
         }
 
@@ -149,6 +150,7 @@ class PeriodoAcademico extends Model
     public function getNombreCompletoAttribute()
     {
         $ordinal = $this->semestre == 1 ? 'Primer' : 'Segundo';
+
         return "{$ordinal} Semestre {$this->anio}";
     }
 
@@ -182,6 +184,7 @@ class PeriodoAcademico extends Model
     public function estaEnCurso()
     {
         $hoy = Carbon::now();
+
         return $hoy->gte($this->fecha_inicio) && $hoy->lte($this->fecha_fin);
     }
 
@@ -200,7 +203,7 @@ class PeriodoAcademico extends Model
      */
     public function tieneCursosVerano()
     {
-        return !is_null($this->inicio_verano) && !is_null($this->fin_verano);
+        return ! is_null($this->inicio_verano) && ! is_null($this->fin_verano);
     }
 
     /**
@@ -208,18 +211,18 @@ class PeriodoAcademico extends Model
      */
     public function getEstadoTextoAttribute()
     {
-        if (!$this->activo) {
+        if (! $this->activo) {
             return 'Inactivo';
         }
-        
+
         if ($this->noHaIniciado()) {
             return 'Por iniciar';
         }
-        
+
         if ($this->haFinalizado()) {
             return 'Finalizado';
         }
-        
+
         return 'En curso';
     }
 
@@ -228,18 +231,18 @@ class PeriodoAcademico extends Model
      */
     public function getEstadoColorAttribute()
     {
-        if (!$this->activo) {
+        if (! $this->activo) {
             return 'gray';
         }
-        
+
         if ($this->noHaIniciado()) {
             return 'yellow';
         }
-        
+
         if ($this->haFinalizado()) {
             return 'red';
         }
-        
+
         return 'green';
     }
 
@@ -257,6 +260,7 @@ class PeriodoAcademico extends Model
     public function scopeEnCurso($query)
     {
         $hoy = Carbon::now();
+
         return $query->where('activo', true)
             ->where('fecha_inicio', '<=', $hoy)
             ->where('fecha_fin', '>=', $hoy);

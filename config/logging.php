@@ -1,9 +1,9 @@
 <?php
 
+use Monolog\Formatter\SyslogUdpFormatter;
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
-use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
 
@@ -80,13 +80,13 @@ return [
         'papertrail' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => env('LOG_PAPERTRAIL_HANDLER', Monolog\Handler\SyslogUdpHandler::class),
+            'handler' => env('LOG_PAPERTRAIL_HANDLER', SyslogUdpHandler::class),
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
                 'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
             ],
-            'formatter' => env('LOG_PAPERTRAIL_FORMATTER', Monolog\Formatter\SyslogUdpFormatter::class),
+            'formatter' => env('LOG_PAPERTRAIL_FORMATTER', SyslogUdpFormatter::class),
             'formatter_with' => [
                 'format' => '[%datetime%] %channel%.%level_name%: %message% %context% %extra%',
             ],
@@ -96,7 +96,7 @@ return [
         'stderr' => [
             'driver' => 'monolog',
             'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => Monolog\Handler\StreamHandler::class,
+            'handler' => StreamHandler::class,
             'formatter' => env('LOG_STDERR_FORMATTER'),
             'formatter_with' => [
                 'format' => '[%datetime%] %channel%.%level_name%: %message% %context% %extra%',
@@ -120,7 +120,7 @@ return [
 
         'null' => [
             'driver' => 'monolog',
-            'handler' => Monolog\Handler\NullHandler::class,
+            'handler' => NullHandler::class,
         ],
 
         'emergency' => [

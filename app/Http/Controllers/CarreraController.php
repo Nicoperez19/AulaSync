@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Carrera;
 use App\Models\AreaAcademica;
+use App\Models\Carrera;
 use App\Models\Facultad;
 use App\Models\Universidad;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 
 class CarreraController extends Controller
 {
@@ -20,7 +21,7 @@ class CarreraController extends Controller
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
-            
+
             return view('carreras.index', compact('carreras', 'areasAcademicas', 'facultades', 'universidades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las carreras.'])->withInput();
@@ -73,12 +74,12 @@ class CarreraController extends Controller
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
-            
+
             return view('carreras.edit', compact('carrera', 'areasAcademicas', 'facultades', 'universidades'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('careers.index')->withErrors(['error' => 'Carrera no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar la carrera: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar la carrera: '.$e->getMessage()]);
         }
     }
 
@@ -89,7 +90,7 @@ class CarreraController extends Controller
     {
         try {
             $request->validate([
-                'id_carrera' => 'required|string|max:20|unique:carreras,id_carrera,' . $id . ',id_carrera',
+                'id_carrera' => 'required|string|max:20|unique:carreras,id_carrera,'.$id.',id_carrera',
                 'nombre' => 'required|string|max:100',
                 'id_area_academica' => 'required|exists:area_academicas,id_area_academica',
             ]);
@@ -102,10 +103,10 @@ class CarreraController extends Controller
             ]);
 
             return redirect()->route('careers.index')->with('success', 'Carrera actualizada exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('careers.index')->withErrors(['error' => 'Carrera no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la carrera: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la carrera: '.$e->getMessage()]);
         }
     }
 
@@ -117,12 +118,13 @@ class CarreraController extends Controller
         try {
             $carrera = Carrera::findOrFail($id);
             $carrera->delete();
+
             return redirect()->route('careers.index')->with('success', 'Carrera eliminada exitosamente.');
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Carrera no encontrada.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar la carrera: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar la carrera: '.$e->getMessage()], 500);
         }
     }
 }

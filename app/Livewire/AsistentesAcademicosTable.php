@@ -11,8 +11,11 @@ class AsistentesAcademicosTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $sortField = 'nombre';
+
     public $sortDirection = 'asc';
+
     public $perPage = 10;
 
     protected $queryString = [
@@ -57,12 +60,12 @@ class AsistentesAcademicosTable extends Component
 
                 $query->where(function ($q) use ($terms) {
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre', 'like', '%' . $t . '%')
-                          ->orWhere('email', 'like', '%' . $t . '%')
-                          ->orWhereHas('areaAcademica', function ($aq) use ($t) {
-                              $aq->where('nombre_area_academica', 'like', '%' . $t . '%')
-                                 ->where('tipo_area_academica', 'escuela');
-                          });
+                        $q->orWhere('nombre', 'like', '%'.$t.'%')
+                            ->orWhere('email', 'like', '%'.$t.'%')
+                            ->orWhereHas('areaAcademica', function ($aq) use ($t) {
+                                $aq->where('nombre_area_academica', 'like', '%'.$t.'%')
+                                    ->where('tipo_area_academica', 'escuela');
+                            });
                     }
                 });
             })

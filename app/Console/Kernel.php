@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Models\PeriodoAcademico;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -16,87 +17,87 @@ class Kernel extends ConsoleKernel
 
         // Actualizar estados de espacios cada 15 minutos
         $schedule->command('espacios:actualizar-estado')
-                ->everyFifteenMinutes()
-                ->withoutOverlapping()
-                ->runInBackground();
+            ->everyFifteenMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
 
         // Finalizar reservas al término de cada módulo (cada 5 minutos para mayor precisión)
         $schedule->command('reservas:finalizar-expiradas')
-                ->everyFiveMinutes()
-                ->withoutOverlapping()
-                ->runInBackground();
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
 
         // Limpiar sesiones expiradas cada hora
         $schedule->command('sessions:clean')
-                ->hourly()
-                ->withoutOverlapping()
-                ->runInBackground();
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground();
 
         // Liberar todos los espacios a las 12 de la noche para el día siguiente
         $schedule->command('espacios:liberar')
-                ->dailyAt('00:00')
-                ->withoutOverlapping()
-                ->runInBackground();
+            ->dailyAt('00:00')
+            ->withoutOverlapping()
+            ->runInBackground();
 
         // Sincronizar automáticamente el período académico activo según el calendario (00:01 cada día)
         $schedule->call(function () {
-            \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
+            PeriodoAcademico::sincronizarEstadosSegunFechas();
         })->dailyAt('00:01')->name('sincronizar-periodo-academico');
 
         // Verificar inconsistencias del sistema cada 30 minutos
         $schedule->command('sistema:verificar-estado')
-                ->everyThirtyMinutes()
-                ->withoutOverlapping()
-                ->runInBackground();
+            ->everyThirtyMinutes()
+            ->withoutOverlapping()
+            ->runInBackground();
 
         // Optimización de base de datos cada 6 horas
         $schedule->command('app:optimize-db')
-                ->everySixHours()
-                ->withoutOverlapping()
-                ->runInBackground()
-                ->appendOutputTo(storage_path('logs/optimization.log'));
+            ->everySixHours()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/optimization.log'));
 
         // Opcional: Verificación diaria a las 23:55 (5 minutos antes de liberar)
         $schedule->command('sistema:verificar-estado')
-                ->dailyAt('23:55')
-                ->withoutOverlapping()
-                ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
+            ->dailyAt('23:55')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
 
         // Generar snapshot semanal de ocupación cada domingo a las 23:50
         $schedule->command('ocupacion:snapshot-semanal')
-                ->weeklyOn(0, '23:50') // Domingo a las 23:50
-                ->withoutOverlapping()
-                ->appendOutputTo(storage_path('logs/ocupacion-snapshot.log'));
+            ->weeklyOn(0, '23:50') // Domingo a las 23:50
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/ocupacion-snapshot.log'));
 
         // Enviar reporte semanal de clases no realizadas cada lunes a las 8:00 AM
         $schedule->command('reportes:clases-no-realizadas-semanal')
-                ->weeklyOn(1, '08:00') // Lunes a las 8:00 AM
-                ->withoutOverlapping()
-                ->appendOutputTo(storage_path('logs/reporte-semanal.log'));
+            ->weeklyOn(1, '08:00') // Lunes a las 8:00 AM
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/reporte-semanal.log'));
 
         // Enviar reporte mensual de clases no realizadas el primer día del mes a las 9:00 AM
         $schedule->command('reportes:clases-no-realizadas-mensual')
-                ->monthlyOn(1, '09:00') // Día 1 de cada mes a las 9:00 AM
-                ->withoutOverlapping()
-                ->appendOutputTo(storage_path('logs/reporte-mensual.log'));
+            ->monthlyOn(1, '09:00') // Día 1 de cada mes a las 9:00 AM
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/reporte-mensual.log'));
 
         // Detectar clases no realizadas 15 minutos después del inicio de cada módulo
         // Se ejecuta cada 5 minutos de lunes a sábado, desde las 8:00 AM hasta las 23:00 PM
         $schedule->command('clases:detectar-no-realizadas')
-                ->everyFiveMinutes()
-                ->between('08:00', '23:00')
-                ->days([1, 2, 3, 4, 5, 6]) // Lunes a Sábado
-                ->withoutOverlapping()
-                ->runInBackground()
-                ->appendOutputTo(storage_path('logs/clases-no-realizadas.log'));
+            ->everyFiveMinutes()
+            ->between('08:00', '23:00')
+            ->days([1, 2, 3, 4, 5, 6]) // Lunes a Sábado
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/clases-no-realizadas.log'));
 
         // Finalizar reservas sin devolución de llave después de 1 hora del término del módulo
         // Se ejecuta cada 5 minutos para verificar las reservas que han excedido la hora de gracia
         $schedule->command('reservas:finalizar-no-devueltas')
-                ->everyFiveMinutes()
-                ->withoutOverlapping()
-                ->runInBackground()
-                ->appendOutputTo(storage_path('logs/reservas-no-devueltas.log'));
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/reservas-no-devueltas.log'));
     }
 
     /**

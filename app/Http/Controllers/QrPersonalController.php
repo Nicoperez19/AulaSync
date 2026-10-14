@@ -33,7 +33,7 @@ class QrPersonalController extends Controller
 
         return response($png, 200, [
             'Content-Type' => 'image/png',
-            'Content-Disposition' => 'inline; filename="qr-personal-' . $run . '.png"',
+            'Content-Disposition' => 'inline; filename="qr-personal-'.$run.'.png"',
         ]);
     }
 
@@ -44,7 +44,7 @@ class QrPersonalController extends Controller
 
         return response($png, 200, [
             'Content-Type' => 'image/png',
-            'Content-Disposition' => 'attachment; filename="qr-personal-' . $run . '.png"',
+            'Content-Disposition' => 'attachment; filename="qr-personal-'.$run.'.png"',
         ]);
     }
 
@@ -77,7 +77,7 @@ class QrPersonalController extends Controller
         $qrData = $request->input('qr_data');
 
         [$run, $sig] = $this->extractRunAndSig($qrData);
-        if (!$run || !$sig) {
+        if (! $run || ! $sig) {
             return response()->json([
                 'success' => false,
                 'puede_liberar' => false,
@@ -85,7 +85,7 @@ class QrPersonalController extends Controller
             ], 200);
         }
 
-        if (!$this->isValidSignature($run, $sig)) {
+        if (! $this->isValidSignature($run, $sig)) {
             return response()->json([
                 'success' => false,
                 'puede_liberar' => false,
@@ -94,7 +94,7 @@ class QrPersonalController extends Controller
         }
 
         $user = $this->findUserByRun($run);
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'puede_liberar' => false,
@@ -103,7 +103,7 @@ class QrPersonalController extends Controller
         }
 
         // Permitir a Administrador, Super Admin o Superusuario
-        $puedeLiberar = $user->is_superuser || (string)$user->run === '19716146' || (method_exists($user, 'hasRole') && ($user->hasRole('Administrador') || $user->hasRole('Super Admin')));
+        $puedeLiberar = $user->is_superuser || (string) $user->run === '19716146' || (method_exists($user, 'hasRole') && ($user->hasRole('Administrador') || $user->hasRole('Super Admin')));
 
         return response()->json([
             'success' => true,
@@ -127,8 +127,8 @@ class QrPersonalController extends Controller
         $idEspacio = strtoupper(str_replace("'", '-', $request->input('id_espacio')));
 
         $admin = $this->findUserByRun($runAdministrador);
-        $esAdminOValido = $admin && ($admin->is_superuser || (string)$admin->run === '19716146' || (method_exists($admin, 'hasRole') && ($admin->hasRole('Administrador') || $admin->hasRole('Super Admin'))));
-        if (!$esAdminOValido) {
+        $esAdminOValido = $admin && ($admin->is_superuser || (string) $admin->run === '19716146' || (method_exists($admin, 'hasRole') && ($admin->hasRole('Administrador') || $admin->hasRole('Super Admin'))));
+        if (! $esAdminOValido) {
             return response()->json([
                 'success' => false,
                 'message' => 'Administrador inválido o sin permisos.',
@@ -136,7 +136,7 @@ class QrPersonalController extends Controller
         }
 
         $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-        if (!$espacio) {
+        if (! $espacio) {
             return response()->json([
                 'success' => false,
                 'message' => 'Espacio no encontrado.',
@@ -152,10 +152,10 @@ class QrPersonalController extends Controller
             $reserva->hora_salida = now()->format('H:i:s');
             $reserva->estado = 'finalizada';
             $reserva->observaciones = ($reserva->observaciones ?? '')
-                . '; LIBERACIÓN FORZADA (QR PERSONAL) por administrador RUN: '
-                . $admin->run
-                . ' el '
-                . now()->format('Y-m-d H:i:s');
+                .'; LIBERACIÓN FORZADA (QR PERSONAL) por administrador RUN: '
+                .$admin->run
+                .' el '
+                .now()->format('Y-m-d H:i:s');
             $reserva->save();
 
             $finalizadas[] = [
@@ -179,13 +179,13 @@ class QrPersonalController extends Controller
         $sig = $this->signatureForRun($runLimpio);
 
         // Formato simple: coincide con el "includes('qr_personal_aulasync')" del frontend.
-        return self::QR_PREFIX . '?run=' . $runLimpio . '&sig=' . $sig;
+        return self::QR_PREFIX.'?run='.$runLimpio.'&sig='.$sig;
     }
 
     private function qrPng(string $text): string
     {
         $qrCode = new QrCode($text);
-        $writer = new PngWriter();
+        $writer = new PngWriter;
         $result = $writer->write($qrCode);
 
         return $result->getString();
@@ -199,6 +199,7 @@ class QrPersonalController extends Controller
     private function isValidSignature(string $run, string $sig): bool
     {
         $expected = $this->signatureForRun($run);
+
         return hash_equals($expected, $sig);
     }
 
@@ -214,6 +215,7 @@ class QrPersonalController extends Controller
             $sig = $decoded['sig'] ?? null;
             if (is_string($run) && is_string($sig)) {
                 $runLimpio = preg_replace('/[^0-9]/', '', $run);
+
                 return [$runLimpio ?: null, $sig];
             }
         }
@@ -226,6 +228,7 @@ class QrPersonalController extends Controller
             $sig = isset($params['sig']) ? (string) $params['sig'] : null;
             if ($run && $sig) {
                 $runLimpio = preg_replace('/[^0-9]/', '', $run);
+
                 return [$runLimpio ?: null, $sig];
             }
         }
@@ -251,6 +254,7 @@ class QrPersonalController extends Controller
     private function findUserByRun(string $run): ?User
     {
         $runLimpio = preg_replace('/[^0-9]/', '', $run);
+
         return User::where('run', $run)
             ->orWhere('run', $runLimpio)
             ->first();

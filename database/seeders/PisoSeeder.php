@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use App\Models\Piso;
 use App\Models\Tenant;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class PisoSeeder extends Seeder
 {
@@ -16,18 +16,19 @@ class PisoSeeder extends Seeder
     {
         // Intentar obtener el tenant actual de varias formas
         $tenant = Tenant::current();
-        
-        if (!$tenant && app()->bound('tenant')) {
+
+        if (! $tenant && app()->bound('tenant')) {
             $tenant = app('tenant');
         }
-        
-        if (!$tenant) {
+
+        if (! $tenant) {
             $this->command->error('No se pudo determinar el tenant actual');
+
             return;
         }
-        
+
         $this->command->info("PisoSeeder ejecutándose para tenant: {$tenant->name} (Sede: {$tenant->sede_id})");
-        
+
         // Mapeo de sede a id_facultad
         $sedeToFacultad = [
             'TH' => 'IT_TH',
@@ -36,57 +37,58 @@ class PisoSeeder extends Seeder
             'LA' => 'IT_LA',
             'CCP' => 'IT_CCP',
         ];
-        
+
         $idFacultad = $tenant ? $sedeToFacultad[$tenant->sede_id] ?? null : null;
-        
-        if (!$idFacultad) {
+
+        if (! $idFacultad) {
             $this->command->warn('No se pudo determinar la facultad para la sede actual');
+
             return;
         }
-        
+
         $this->command->info("Creando pisos para sede {$tenant->sede_id} (Facultad: {$idFacultad})");
-        
+
         // Definir todos los pisos por facultad (sin IDs, se asignarán automáticamente)
         $pisosPorFacultad = [
             'IT_TH' => [
-            ['numero_piso' => 1],
-            ['numero_piso' => 2],
+                ['numero_piso' => 1],
+                ['numero_piso' => 2],
             ],
             'IT_CT' => [
-            ['numero_piso' => 1],
-            ['numero_piso' => 2],
-            ['numero_piso' => 3, 'nombre_piso' => 'Taller Gastronómico'],
+                ['numero_piso' => 1],
+                ['numero_piso' => 2],
+                ['numero_piso' => 3, 'nombre_piso' => 'Taller Gastronómico'],
             ],
             'IT_CH' => [
-            ['numero_piso' => 1],
-            ['numero_piso' => 2],
-            ['numero_piso' => 3], // Gimnasio
+                ['numero_piso' => 1],
+                ['numero_piso' => 2],
+                ['numero_piso' => 3], // Gimnasio
             ],
             'IT_LA' => [
-            ['numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276'],
-            ['numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220'],
-            ['numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251'],
+                ['numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276'],
+                ['numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220'],
+                ['numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251'],
             ],
             'IT_CCP' => [
-            ['numero_piso' => 1, 'nombre_piso' => 'Piso 1'],
-            ['numero_piso' => 2, 'nombre_piso' => 'Piso 2'],
+                ['numero_piso' => 1, 'nombre_piso' => 'Piso 1'],
+                ['numero_piso' => 2, 'nombre_piso' => 'Piso 2'],
             ],
         ];
-        
+
         $pisosACrear = $pisosPorFacultad[$idFacultad] ?? [];
-        
+
         $creados = 0;
         foreach ($pisosACrear as $pisoData) {
             // Verificar si ya existe un piso con los mismos datos
             $exists = DB::connection('tenant')->table('pisos')
                 ->where('numero_piso', $pisoData['numero_piso'])
                 ->where('id_facultad', $idFacultad)
-                ->when(isset($pisoData['nombre_piso']), function($query) use ($pisoData) {
+                ->when(isset($pisoData['nombre_piso']), function ($query) use ($pisoData) {
                     return $query->where('nombre_piso', $pisoData['nombre_piso']);
                 })
                 ->exists();
-            
-            if (!$exists) {
+
+            if (! $exists) {
                 DB::connection('tenant')->table('pisos')->insert(array_merge($pisoData, [
                     'id_facultad' => $idFacultad,
                     'created_at' => now(),
@@ -95,8 +97,8 @@ class PisoSeeder extends Seeder
                 $creados++;
             }
         }
-        
-        $this->command->info("Creados {$creados} pisos para {$idFacultad} (de " . count($pisosACrear) . " intentados)");
+
+        $this->command->info("Creados {$creados} pisos para {$idFacultad} (de ".count($pisosACrear).' intentados)');
     }
 }
 

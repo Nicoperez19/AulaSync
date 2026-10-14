@@ -2,17 +2,17 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\WithPagination;
-use App\Models\TipoCorreoMasivo;
+use App\Mail\CorreoPersonalizado;
+use App\Models\AsistenteAcademico;
 use App\Models\DestinatarioCorreo;
 use App\Models\PlantillaCorreo;
+use App\Models\TipoCorreoMasivo;
 use App\Models\User;
-use App\Models\AsistenteAcademico;
-use App\Mail\CorreoPersonalizado;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Livewire\Component;
+use Livewire\WithPagination;
 
 class CorreosMasivosManager extends Component
 {
@@ -23,46 +23,75 @@ class CorreosMasivosManager extends Component
 
     // Variables para Tipos de Correos
     public $tipoSearch = '';
+
     public $tipoNombre = '';
+
     public $tipoCodigo = '';
+
     public $tipoDescripcion = '';
+
     public $tipoFrecuencia = 'manual';
+
     public $tipoActivo = true;
+
     public $editingTipoId = null;
 
     // Variables para Destinatarios
     public $destinatarioSearch = '';
+
     public $destinatarioUserId = '';
+
     public $destinatarioEsExterno = false;
+
     public $destinatarioEmailExterno = '';
+
     public $destinatarioNombreExterno = '';
+
     public $destinatarioRol = '';
+
     public $destinatarioCargo = '';
+
     public $destinatarioActivo = true;
+
     public $editingDestinatarioId = null;
+
     public $filtroTipoUsuario = ''; // Para filtrar por rol (Profesor, Usuario, etc)
 
     // Variables para Plantillas
     public $plantillaSearch = '';
+
     public $plantillaNombre = '';
+
     public $plantillaAsunto = '';
+
     public $plantillaContenidoHtml = '';
+
     public $plantillaContenidoTexto = '';
+
     public $plantillaTipoCorreoId = null;
+
     public $plantillaActivo = true;
+
     public $editingPlantillaId = null;
+
     public $showPlantillaEditor = false;
 
     // Variables para Envío de Correos
     public $envioPlantillaId = null;
+
     public $envioDestinatariosSeleccionados = [];
+
     public $envioAsunto = '';
+
     public $envioContenido = '';
+
     public $envioDestinatariosExternos = ''; // Emails separados por comas
 
     // Variables para asignación
     public $selectedTipoId = null;
+
     public $selectedDestinatarioId = null;
+
     public $showAsignacionModal = false;
 
     protected $rules = [
@@ -92,22 +121,20 @@ class CorreosMasivosManager extends Component
     {
         // Verificar que el usuario sea Administrador, Supervisor o Superusuario
         $user = auth()->user();
-        if (!$user->is_superuser && (string)$user->run !== '19716146' && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin'])) {
+        if (! $user->is_superuser && (string) $user->run !== '19716146' && ! $user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin'])) {
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
     }
 
     /**
      * Obtiene el ID del área académica del asistente si el usuario autenticado es uno
-     * 
-     * @return string|null
      */
     private function obtenerAreaAcademicaAsistente(): ?string
     {
         $userEmail = auth()->user()->email;
-        
+
         $asistente = AsistenteAcademico::where('email', $userEmail)->first();
-        
+
         return $asistente ? $asistente->id_area_academica : null;
     }
 
@@ -117,7 +144,7 @@ class CorreosMasivosManager extends Component
     {
         // Si estamos editando, modificar regla de unique
         if ($this->editingTipoId) {
-            $this->rules['tipoCodigo'] = 'required|string|max:255|unique:tipos_correos_masivos,codigo,' . $this->editingTipoId;
+            $this->rules['tipoCodigo'] = 'required|string|max:255|unique:tipos_correos_masivos,codigo,'.$this->editingTipoId;
         }
 
         $this->validate([
@@ -173,6 +200,7 @@ class CorreosMasivosManager extends Component
         // No permitir eliminar tipos del sistema
         if ($tipo->tipo === 'sistema') {
             $this->dispatch('show-error', ['message' => 'No se pueden eliminar tipos de correos del sistema']);
+
             return;
         }
 
@@ -237,12 +265,14 @@ class CorreosMasivosManager extends Component
                 $existente = DestinatarioCorreo::where('email_externo', $this->destinatarioEmailExterno)->first();
                 if ($existente) {
                     $this->addError('destinatarioEmailExterno', 'Este email ya está registrado como destinatario');
+
                     return;
                 }
             } else {
                 $existente = DestinatarioCorreo::where('user_id', $this->destinatarioUserId)->first();
                 if ($existente) {
                     $this->addError('destinatarioUserId', 'Este usuario ya está registrado como destinatario');
+
                     return;
                 }
             }
@@ -280,14 +310,14 @@ class CorreosMasivosManager extends Component
     public function deleteDestinatario($id)
     {
         $destinatario = DestinatarioCorreo::with('user')->findOrFail($id);
-        $nombre = $destinatario->es_externo 
+        $nombre = $destinatario->es_externo
             ? ($destinatario->nombre_externo ?? $destinatario->email_externo)
             : ($destinatario->user->name ?? 'N/A');
-            
+
         $this->dispatch('confirm-delete-destinatario', [
             'id' => $id,
             'nombre' => $nombre,
-            'rol' => $destinatario->rol
+            'rol' => $destinatario->rol,
         ]);
     }
 
@@ -307,7 +337,7 @@ class CorreosMasivosManager extends Component
             'destinatarioRol',
             'destinatarioCargo',
             'destinatarioActivo',
-            'editingDestinatarioId'
+            'editingDestinatarioId',
         ]);
         $this->resetValidation();
     }
@@ -331,10 +361,10 @@ class CorreosMasivosManager extends Component
         if ($exists) {
             // Obtener el estado actual y togglearlo
             $pivot = $tipo->destinatarios()->where('destinatario_correo_id', $destinatarioId)->first()->pivot;
-            $nuevoEstado = !$pivot->habilitado;
+            $nuevoEstado = ! $pivot->habilitado;
 
             $tipo->destinatarios()->updateExistingPivot($destinatarioId, [
-                'habilitado' => $nuevoEstado
+                'habilitado' => $nuevoEstado,
             ]);
         } else {
             // Crear la relación habilitada
@@ -366,10 +396,12 @@ class CorreosMasivosManager extends Component
         }
 
         $this->showPlantillaEditor = true;
-        
+
         // Emitir evento para inicializar TinyMCE
         $this->dispatch('plantilla-editor-opened');
-    }    public function savePlantilla()
+    }
+
+    public function savePlantilla()
     {
         $this->validate([
             'plantillaNombre' => $this->rules['plantillaNombre'],
@@ -431,14 +463,14 @@ class CorreosMasivosManager extends Component
             'plantillaTipoCorreoId',
             'plantillaActivo',
             'editingPlantillaId',
-            'showPlantillaEditor'
+            'showPlantillaEditor',
         ]);
         $this->resetValidation();
     }
 
     public function insertarVariable($variable)
     {
-        $this->plantillaContenidoHtml .= '{{' . $variable . '}}';
+        $this->plantillaContenidoHtml .= '{{'.$variable.'}}';
     }
 
     // ============ MÉTODOS PARA ENVÍO DE CORREOS ============
@@ -469,7 +501,7 @@ class CorreosMasivosManager extends Component
     public function cargarPlantillaParaEnvio($plantillaId)
     {
         $plantilla = PlantillaCorreo::findOrFail($plantillaId);
-        
+
         $this->envioPlantillaId = $plantillaId;
         $this->envioAsunto = $plantilla->asunto;
         $this->envioContenido = $plantilla->contenido_html;
@@ -487,11 +519,12 @@ class CorreosMasivosManager extends Component
         $destinatariosInternos = $this->envioDestinatariosSeleccionados ?? [];
         $emailsExternos = array_filter(
             array_map('trim', explode(',', $this->envioDestinatariosExternos)),
-            fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
+            fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
         );
 
         if (empty($destinatariosInternos) && empty($emailsExternos)) {
             $this->addError('envioDestinatariosSeleccionados', 'Debe seleccionar al menos un destinatario o ingresar un email externo');
+
             return;
         }
 
@@ -505,10 +538,10 @@ class CorreosMasivosManager extends Component
                 $destinatario = DestinatarioCorreo::with('user')->find($destinatarioId);
                 if ($destinatario) {
                     $email = $destinatario->es_externo ? $destinatario->email_externo : $destinatario->user->email;
-                    $nombre = $destinatario->es_externo 
-                        ? $destinatario->nombre_externo 
+                    $nombre = $destinatario->es_externo
+                        ? $destinatario->nombre_externo
                         : $destinatario->user->name;
-                    
+
                     if ($email) {
                         try {
                             // Preparar datos para reemplazo de variables
@@ -538,7 +571,7 @@ class CorreosMasivosManager extends Component
                             $emailsEnviados++;
                         } catch (\Exception $e) {
                             $emailsErrores++;
-                            Log::error("Error al enviar correo a {$email}: " . $e->getMessage());
+                            Log::error("Error al enviar correo a {$email}: ".$e->getMessage());
                         }
                     }
                 }
@@ -574,19 +607,19 @@ class CorreosMasivosManager extends Component
                     $emailsEnviados++;
                 } catch (\Exception $e) {
                     $emailsErrores++;
-                    Log::error("Error al enviar correo a {$email}: " . $e->getMessage());
+                    Log::error("Error al enviar correo a {$email}: ".$e->getMessage());
                 }
             }
 
             $this->resetEnvioForm();
-            
+
             if ($emailsErrores > 0) {
                 $this->dispatch('show-error', ['message' => "Se enviaron {$emailsEnviados} correos. {$emailsErrores} fallaron. Revisa los logs para más detalles."]);
             } else {
                 $this->dispatch('show-success', ['message' => "Se enviaron {$emailsEnviados} correos exitosamente"]);
             }
         } catch (\Exception $e) {
-            $this->dispatch('show-error', ['message' => 'Error al enviar correos: ' . $e->getMessage()]);
+            $this->dispatch('show-error', ['message' => 'Error al enviar correos: '.$e->getMessage()]);
         }
     }
 
@@ -594,11 +627,12 @@ class CorreosMasivosManager extends Component
     {
         $emailsExternos = array_filter(
             array_map('trim', explode(',', $this->envioDestinatariosExternos)),
-            fn($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
+            fn ($email) => filter_var($email, FILTER_VALIDATE_EMAIL)
         );
 
         if (empty($emailsExternos)) {
             $this->dispatch('show-error', ['message' => 'No hay emails válidos para guardar']);
+
             return;
         }
 
@@ -606,7 +640,7 @@ class CorreosMasivosManager extends Component
         foreach ($emailsExternos as $email) {
             // Verificar si ya existe
             $existe = DestinatarioCorreo::where('email_externo', $email)->exists();
-            if (!$existe) {
+            if (! $existe) {
                 DestinatarioCorreo::create([
                     'es_externo' => true,
                     'email_externo' => $email,
@@ -631,7 +665,7 @@ class CorreosMasivosManager extends Component
             'envioDestinatariosSeleccionados',
             'envioAsunto',
             'envioContenido',
-            'envioDestinatariosExternos'
+            'envioDestinatariosExternos',
         ]);
         $this->resetValidation();
     }
@@ -641,11 +675,11 @@ class CorreosMasivosManager extends Component
     public function render()
     {
         $tiposCorreos = TipoCorreoMasivo::query()
-            ->when($this->tipoSearch, function($query) {
-                $query->where(function($q) {
-                    $q->where('nombre', 'like', '%' . $this->tipoSearch . '%')
-                      ->orWhere('codigo', 'like', '%' . $this->tipoSearch . '%')
-                      ->orWhere('descripcion', 'like', '%' . $this->tipoSearch . '%');
+            ->when($this->tipoSearch, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nombre', 'like', '%'.$this->tipoSearch.'%')
+                        ->orWhere('codigo', 'like', '%'.$this->tipoSearch.'%')
+                        ->orWhere('descripcion', 'like', '%'.$this->tipoSearch.'%');
                 });
             })
             ->orderBy('tipo', 'asc')
@@ -654,17 +688,17 @@ class CorreosMasivosManager extends Component
 
         $destinatarios = DestinatarioCorreo::with('user')
             ->buscar($this->destinatarioSearch)
-            ->when($this->filtroTipoUsuario, function($query) {
+            ->when($this->filtroTipoUsuario, function ($query) {
                 $query->porTipoUsuario($this->filtroTipoUsuario);
             })
             ->orderBy('created_at', 'desc')
             ->paginate(10, ['*'], 'destinatariosPage');
 
         $plantillas = PlantillaCorreo::with(['tipoCorreo', 'creador'])
-            ->when($this->plantillaSearch, function($query) {
-                $query->where(function($q) {
-                    $q->where('nombre', 'like', '%' . $this->plantillaSearch . '%')
-                      ->orWhere('asunto', 'like', '%' . $this->plantillaSearch . '%');
+            ->when($this->plantillaSearch, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('nombre', 'like', '%'.$this->plantillaSearch.'%')
+                        ->orWhere('asunto', 'like', '%'.$this->plantillaSearch.'%');
                 });
             })
             ->orderBy('created_at', 'desc')
@@ -678,7 +712,7 @@ class CorreosMasivosManager extends Component
             : null;
 
         $todosDestinatarios = DestinatarioCorreo::with('user')->activos()->get();
-        
+
         $tiposCorreosParaPlantilla = TipoCorreoMasivo::activos()->orderBy('nombre')->get();
 
         return view('livewire.correos-masivos-manager', [

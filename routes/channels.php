@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
-use App\Models\Reserva;
 use App\Models\Espacio;
+use App\Models\Reserva;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +37,7 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 Broadcast::channel('room.{roomId}', function ($user, $roomId) {
     // Verificar si el espacio existe
     $espacio = Espacio::find($roomId);
-    if (!$espacio) {
+    if (! $espacio) {
         return false;
     }
 
@@ -46,7 +46,7 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
         return [
             'id' => $user->run,
             'name' => $user->name,
-            'role' => 'admin'
+            'role' => 'admin',
         ];
     }
 
@@ -56,7 +56,7 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
         ->where('fecha_reserva', now()->toDateString())
         ->where(function ($query) use ($user) {
             $query->where('run_profesor', $user->run)
-                  ->orWhere('run_solicitante', $user->run);
+                ->orWhere('run_solicitante', $user->run);
         })
         ->exists();
 
@@ -64,7 +64,7 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
         return [
             'id' => $user->run,
             'name' => $user->name,
-            'role' => 'instructor'
+            'role' => 'instructor',
         ];
     }
 
@@ -73,7 +73,7 @@ Broadcast::channel('room.{roomId}', function ($user, $roomId) {
         return [
             'id' => $user->run,
             'name' => $user->name,
-            'role' => 'viewer'
+            'role' => 'viewer',
         ];
     }
 

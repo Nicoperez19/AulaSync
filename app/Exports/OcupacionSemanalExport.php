@@ -12,9 +12,10 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class OcupacionSemanalExport implements FromArray, WithStyles, WithColumnWidths, WithTitle
+class OcupacionSemanalExport implements FromArray, WithColumnWidths, WithStyles, WithTitle
 {
     protected array $datos;
+
     protected string $titulo;
 
     public function __construct(array $datos, string $titulo = 'Ocupación Semanal')

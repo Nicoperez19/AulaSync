@@ -26,7 +26,7 @@ class VerifyOccupancyCoherence extends Command
         foreach ($espacios as $espacio) {
             $reporte = $occupancyService->verificarCoherenciaEspacio($espacio->id_espacio);
 
-            if (!$reporte['coherente']) {
+            if (! $reporte['coherente']) {
                 $problemasEncontrados++;
             }
 

@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Traits\RunNormalizer;
 use Illuminate\Auth\Events\Lockout;
+use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Traits\RunNormalizer;
 
 class LoginRequest extends FormRequest
 {
@@ -25,6 +26,7 @@ class LoginRequest extends FormRequest
             ]);
         }
     }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -36,13 +38,13 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * @return array<string, Rule|array|string>
      */
     public function rules(): array
     {
         return [
             'run' => ['required', 'string', function ($attribute, $value, $fail) {
-                if (!preg_match('/^\d{7,8}$/', $value)) {
+                if (! preg_match('/^\d{7,8}$/', $value)) {
                     $fail('El RUN debe tener entre 7 y 8 dígitos');
                 }
             }],
@@ -53,7 +55,7 @@ class LoginRequest extends FormRequest
     /**
      * Attempt to authenticate the request's credentials.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function authenticate(): void
     {
@@ -73,7 +75,7 @@ class LoginRequest extends FormRequest
     /**
      * Ensure the login request is not rate limited.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function ensureIsNotRateLimited(): void
     {

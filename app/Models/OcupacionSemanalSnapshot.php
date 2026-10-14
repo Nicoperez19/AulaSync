@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class OcupacionSemanalSnapshot extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
 
@@ -39,7 +39,7 @@ class OcupacionSemanalSnapshot extends Model
         'total_espacios' => 'integer',
     ];
 
-    public function generador()
+    public function generador(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'generado_por');
     }

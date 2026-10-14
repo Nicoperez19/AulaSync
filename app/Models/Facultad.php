@@ -2,18 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class Facultad extends Model
 {
-    use HasFactory, BelongsToTenant;
-    
+    use BelongsToTenant, HasFactory;
+
     protected $table = 'facultades';
+
     protected $primaryKey = 'id_facultad';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     protected $fillable = [
         'id_facultad',
         'nombre_facultad',
@@ -22,26 +26,27 @@ class Facultad extends Model
         'id_campus',
     ];
 
-    public function sede()
+    public function sede(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Sede::class, 'id_sede');
     }
 
-    public function campus()
+    public function campus(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Campus::class, 'id_campus');
     }
 
-    public function universidad()
+    public function universidad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Universidad::class, 'id_universidad');
     }
 
-    public function areaAcademicas()
+    public function areaAcademicas(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(AreaAcademica::class, 'id_facultad');
     }
-    public function pisos()
+
+    public function pisos(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Piso::class, 'id_facultad');
     }

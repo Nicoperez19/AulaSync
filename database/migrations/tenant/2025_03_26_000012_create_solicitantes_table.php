@@ -21,7 +21,7 @@ return new class extends Migration
             $table->boolean('activo')->default(true); // Si el solicitante está activo
             $table->timestamp('fecha_registro')->useCurrent(); // Fecha de registro
             $table->timestamps();
-            
+
             // Índices para optimizar consultas
             $table->index('run_solicitante');
             $table->index('tipo_solicitante');
@@ -36,4 +36,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('solicitantes');
     }
-}; 
+};

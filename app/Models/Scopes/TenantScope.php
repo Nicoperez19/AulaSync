@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Facades\Cache;
 
 class TenantScope implements Scope
 {
@@ -22,8 +23,8 @@ class TenantScope implements Scope
         $connectionName = $model->getConnectionName() ?: config('database.default');
         $cacheKey = "tenant_scope_cols_{$connectionName}_{$table}";
 
-        if (!isset(static::$columnCache[$cacheKey])) {
-            static::$columnCache[$cacheKey] = \Illuminate\Support\Facades\Cache::remember(
+        if (! isset(static::$columnCache[$cacheKey])) {
+            static::$columnCache[$cacheKey] = Cache::remember(
                 $cacheKey,
                 86400, // 24 horas
                 function () use ($model, $table) {
@@ -46,7 +47,7 @@ class TenantScope implements Scope
     {
         $tenant = Tenant::current();
 
-        if (!$tenant) {
+        if (! $tenant) {
             return;
         }
 
@@ -61,15 +62,17 @@ class TenantScope implements Scope
             return;
         }
 
-        $hasColumn = fn(string $col) => $this->hasColumnCached($model, $table, $col);
+        $hasColumn = fn (string $col) => $this->hasColumnCached($model, $table, $col);
 
         // 1. Si la tabla tiene tenant_id o id_tenant directo
         if ($hasColumn('tenant_id')) {
-            $builder->where($table . '.tenant_id', $tenant->id);
+            $builder->where($table.'.tenant_id', $tenant->id);
+
             return;
         }
         if ($hasColumn('id_tenant')) {
-            $builder->where($table . '.id_tenant', $tenant->id);
+            $builder->where($table.'.id_tenant', $tenant->id);
+
             return;
         }
 
@@ -77,17 +80,20 @@ class TenantScope implements Scope
         // NOTA: solo aplica si la tabla realmente corresponde a espacios físicos,
         // no a tablas que casualmente tienen una columna id_espacio como FK.
         if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
-            $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+            $builder->whereRaw('LOWER('.$table.'.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios).'%']);
+
             return;
         }
 
         // 3. Si el modelo tiene sede_id o id_sede directa
         if ($hasColumn('sede_id') && $tenant->sede_id) {
-            $builder->where($table . '.sede_id', $tenant->sede_id);
+            $builder->where($table.'.sede_id', $tenant->sede_id);
+
             return;
         }
         if ($hasColumn('id_sede') && $tenant->sede_id) {
-            $builder->where($table . '.id_sede', $tenant->sede_id);
+            $builder->where($table.'.id_sede', $tenant->sede_id);
+
             return;
         }
 
@@ -96,16 +102,18 @@ class TenantScope implements Scope
             $builder->whereHas('profesor', function ($query) use ($tenant) {
                 $query->where('sede_id', $tenant->sede_id);
             });
+
             return;
         }
 
         // 5. Filtrar por relación con espacio si no tiene id_espacio directo
-        if (method_exists($model, 'espacio') && !$hasColumn('id_espacio')) {
+        if (method_exists($model, 'espacio') && ! $hasColumn('id_espacio')) {
             if ($tenant->prefijo_espacios) {
                 $builder->whereHas('espacio', function ($query) use ($tenant) {
-                    $query->whereRaw('LOWER(espacios.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+                    $query->whereRaw('LOWER(espacios.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios).'%']);
                 });
             }
+
             return;
         }
 
@@ -114,6 +122,7 @@ class TenantScope implements Scope
             $builder->whereHas('facultad', function ($query) use ($tenant) {
                 $query->where('id_sede', $tenant->sede_id);
             });
+
             return;
         }
 
@@ -122,6 +131,7 @@ class TenantScope implements Scope
             $builder->whereHas('areaAcademica.facultad', function ($query) use ($tenant) {
                 $query->where('id_sede', $tenant->sede_id);
             });
+
             return;
         }
 
@@ -130,6 +140,7 @@ class TenantScope implements Scope
             $builder->whereHas('carrera.areaAcademica.facultad', function ($query) use ($tenant) {
                 $query->where('id_sede', $tenant->sede_id);
             });
+
             return;
         }
 
@@ -138,14 +149,16 @@ class TenantScope implements Scope
             $builder->whereHas('piso.facultad', function ($query) use ($tenant) {
                 $query->where('id_sede', $tenant->sede_id);
             });
+
             return;
         }
 
         // 10. Filtrar por relación con reserva origen (ej. vetos)
         if (method_exists($model, 'reservaOrigen') && $tenant->prefijo_espacios) {
             $builder->whereHas('reservaOrigen', function ($query) use ($tenant) {
-                $query->whereRaw('LOWER(reservas.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+                $query->whereRaw('LOWER(reservas.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios).'%']);
             });
+
             return;
         }
     }

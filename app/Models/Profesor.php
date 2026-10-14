@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class Profesor extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $connection = 'tenant';
+
     protected $table = 'profesors';
+
     protected $primaryKey = 'run_profesor';
+
     public $incrementing = false;
 
     protected $fillable = [
@@ -28,86 +31,81 @@ class Profesor extends Model
         'id_facultad',
         'id_carrera',
         'id_area_academica',
-        'sede_id'
+        'sede_id',
     ];
 
-
-
-
-
     // Relación con Universidad
-    public function universidad()
+    public function universidad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Universidad::class, 'id_universidad');
     }
 
     // Relación con Facultad
-    public function facultad()
+    public function facultad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Facultad::class, 'id_facultad');
     }
 
     // Relación con Carrera
-    public function carrera()
+    public function carrera(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Carrera::class, 'id_carrera');
     }
 
     // Relación con Area Académica
-    public function areaAcademica()
+    public function areaAcademica(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
 
     // Relación con Sede
-    public function sede()
+    public function sede(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Sede::class, 'sede_id', 'id_sede');
     }
 
     // Relación con Horarios
-    public function horarios()
+    public function horarios(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Horario::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con Asignaturas
-    public function asignaturas()
+    public function asignaturas(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Asignatura::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con Reservas
-    public function reservas()
+    public function reservas(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Reserva::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con DataLoads
-    public function dataLoads()
+    public function dataLoads(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(DataLoad::class, 'profesor_run', 'run_profesor');
     }
 
     // Relación con Licencias
-    public function licencias()
+    public function licencias(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(LicenciaProfesor::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con Recuperaciones de Clases
-    public function recuperaciones()
+    public function recuperaciones(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(RecuperacionClase::class, 'run_profesor', 'run_profesor');
     }
 
     // Relación con Clases Temporales (como colaborador)
-    public function clasesTemporalesColaborador()
+    public function clasesTemporalesColaborador(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ProfesorColaborador::class, 'id_profesor', 'run_profesor');
     }
 
-  
     // Método para obtener el nombre completo
     public function getNombreCompleto()
     {
@@ -143,6 +141,4 @@ class Profesor extends Model
     {
         return $this->esTipo('Ayudante');
     }
-
-  
 }

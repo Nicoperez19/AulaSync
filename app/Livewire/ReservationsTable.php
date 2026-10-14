@@ -2,7 +2,7 @@
 
 namespace App\Livewire;
 
-use App\Models\Reserva; 
+use App\Models\Reserva;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -11,12 +11,19 @@ class ReservationsTable extends Component
     use WithPagination;
 
     public $search = '';
+
     public $tipoEspacio = '';
+
     public $fechaInicio = '';
+
     public $fechaFin = '';
+
     public $estado = '';
+
     public $sortField = 'fecha_reserva';
+
     public $sortDirection = 'desc';
+
     public $perPage = 20;
 
     protected $queryString = [
@@ -82,7 +89,7 @@ class ReservationsTable extends Component
         $baseQuery = Reserva::query()
             ->whereHas('espacio', function ($eq) {
                 $eq->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
-                   ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
+                    ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
             })
             ->when($this->fechaInicio, function ($q) {
                 $q->whereDate('fecha_reserva', '>=', $this->fechaInicio);
@@ -103,29 +110,29 @@ class ReservationsTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm, $cleanRun) {
-                    $q->where('id_reserva', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('id_espacio', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('fecha_reserva', 'like', '%' . $searchTerm . '%');
+                    $q->where('id_reserva', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('id_espacio', 'like', '%'.$searchTerm.'%')
+                        ->orWhere('fecha_reserva', 'like', '%'.$searchTerm.'%');
 
-                    if (!empty($cleanRun)) {
-                        $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
-                          ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
+                    if (! empty($cleanRun)) {
+                        $q->orWhere('run_profesor', 'like', '%'.$cleanRun.'%')
+                            ->orWhere('run_solicitante', 'like', '%'.$cleanRun.'%');
                     }
 
                     foreach ($terms as $t) {
-                        $q->orWhere('estado', 'like', '%' . $t . '%')
-                          ->orWhereHas('profesor', function ($pq) use ($t) {
-                              $pq->where('name', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('solicitante', function ($sq) use ($t) {
-                              $sq->where('nombre', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('espacio', function ($eq) use ($t) {
-                              $eq->where('nombre_espacio', 'like', '%' . $t . '%');
-                          })
-                          ->orWhereHas('asignatura', function ($aq) use ($t) {
-                              $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
-                          });
+                        $q->orWhere('estado', 'like', '%'.$t.'%')
+                            ->orWhereHas('profesor', function ($pq) use ($t) {
+                                $pq->where('name', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('solicitante', function ($sq) use ($t) {
+                                $sq->where('nombre', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('espacio', function ($eq) use ($t) {
+                                $eq->where('nombre_espacio', 'like', '%'.$t.'%');
+                            })
+                            ->orWhereHas('asignatura', function ($aq) use ($t) {
+                                $aq->where('nombre_asignatura', 'like', '%'.$t.'%');
+                            });
                     }
                 });
             });
@@ -133,9 +140,9 @@ class ReservationsTable extends Component
         // KPIs calculados sobre el filtro general de fecha/búsqueda
         $kpis = [
             'total' => (clone $baseQuery)->count(),
-            'auditorio' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Auditorio'))->count(),
-            'salas_estudio' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Sala de Estudio'))->count(),
-            'laboratorios' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'like', 'Laboratorio%'))->count(),
+            'auditorio' => (clone $baseQuery)->whereHas('espacio', fn ($q) => $q->where('tipo_espacio', 'Auditorio'))->count(),
+            'salas_estudio' => (clone $baseQuery)->whereHas('espacio', fn ($q) => $q->where('tipo_espacio', 'Sala de Estudio'))->count(),
+            'laboratorios' => (clone $baseQuery)->whereHas('espacio', fn ($q) => $q->where('tipo_espacio', 'like', 'Laboratorio%'))->count(),
         ];
 
         // Consulta final aplicando tipo de espacio

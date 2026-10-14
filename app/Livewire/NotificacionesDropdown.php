@@ -45,7 +45,7 @@ class NotificacionesDropdown extends Component
                 } else {
                     $notificacion->url = route('recuperacion-clases.index');
                 }
-                
+
                 // Reconstruir mensaje con ID de espacio si está disponible
                 if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
                     $datos = $notificacion->datos_adicionales;
@@ -63,7 +63,6 @@ class NotificacionesDropdown extends Component
                     );
                 }
 
-                
                 return $notificacion;
             });
 

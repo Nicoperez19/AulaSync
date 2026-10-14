@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\BelongsToTenant;
 
 class LicenciaProfesor extends Model
 {
-    use HasFactory, BelongsToTenant;
-    
+    use BelongsToTenant, HasFactory;
+
     protected $connection = 'tenant';
+
     protected $table = 'licencias_profesores';
+
     protected $primaryKey = 'id_licencia';
 
     protected $fillable = [
@@ -34,7 +36,7 @@ class LicenciaProfesor extends Model
     /**
      * Relación con Profesor
      */
-    public function profesor()
+    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
@@ -42,7 +44,7 @@ class LicenciaProfesor extends Model
     /**
      * Relación con recuperaciones de clases
      */
-    public function recuperaciones()
+    public function recuperaciones(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(RecuperacionClase::class, 'id_licencia', 'id_licencia');
     }
@@ -50,7 +52,7 @@ class LicenciaProfesor extends Model
     /**
      * Usuario que creó la licencia
      */
-    public function creador()
+    public function creador(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'run');
     }
@@ -60,8 +62,8 @@ class LicenciaProfesor extends Model
      */
     public function estaActivaEn($fecha)
     {
-        return $this->estado === 'activa' 
-            && $fecha >= $this->fecha_inicio 
+        return $this->estado === 'activa'
+            && $fecha >= $this->fecha_inicio
             && $fecha <= $this->fecha_fin;
     }
 
@@ -88,11 +90,11 @@ class LicenciaProfesor extends Model
     {
         return $query->where(function ($q) use ($fechaInicio, $fechaFin) {
             $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin])
-              ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
-              ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
-                  $q2->where('fecha_inicio', '<=', $fechaInicio)
-                     ->where('fecha_fin', '>=', $fechaFin);
-              });
+                ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
+                ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
+                    $q2->where('fecha_inicio', '<=', $fechaInicio)
+                        ->where('fecha_fin', '>=', $fechaFin);
+                });
         });
     }
 }

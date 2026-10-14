@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Helpers\SemesterHelper;
+use App\Models\ClaseNoRealizada;
 use App\Models\LicenciaProfesor;
 use App\Models\RecuperacionClase;
-use App\Models\ClaseNoRealizada;
-use App\Models\Planificacion_Asignatura;
-use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -15,19 +15,19 @@ class LicenciaRecuperacionService
 {
     /**
      * Genera automáticamente las clases a recuperar para una licencia
-     * 
-     * @param LicenciaProfesor $licencia
+     *
      * @return int Número de clases generadas
      */
     public function generarClasesARecuperar(LicenciaProfesor $licencia)
     {
         Log::info("=== INICIO: Generando clases a recuperar para licencia ID: {$licencia->id_licencia} ===");
-        Log::info("Genera recuperación: " . ($licencia->genera_recuperacion ? 'SI' : 'NO'));
+        Log::info('Genera recuperación: '.($licencia->genera_recuperacion ? 'SI' : 'NO'));
         Log::info("Profesor: {$licencia->run_profesor}");
         Log::info("Rango: {$licencia->fecha_inicio} a {$licencia->fecha_fin}");
-        
-        if (!$licencia->genera_recuperacion) {
-            Log::info("Licencia no genera recuperación. Saliendo.");
+
+        if (! $licencia->genera_recuperacion) {
+            Log::info('Licencia no genera recuperación. Saliendo.');
+
             return 0;
         }
 
@@ -38,7 +38,7 @@ class LicenciaRecuperacionService
 
             // Obtener todas las planificaciones del profesor en el rango de fechas de la licencia
             $planificaciones = $this->obtenerPlanificacionesEnRango($licencia);
-            Log::info("Planificaciones encontradas: " . $planificaciones->count());
+            Log::info('Planificaciones encontradas: '.$planificaciones->count());
 
             foreach ($planificaciones as $planificacion) {
                 // Verificar si ya existe una recuperación para esta clase
@@ -49,7 +49,7 @@ class LicenciaRecuperacionService
                     ->where('id_modulo_original', $planificacion->id_modulo)
                     ->exists();
 
-                if (!$existeRecuperacion) {
+                if (! $existeRecuperacion) {
                     RecuperacionClase::create([
                         'id_licencia' => $licencia->id_licencia,
                         'run_profesor' => $licencia->run_profesor,
@@ -64,7 +64,7 @@ class LicenciaRecuperacionService
                     // También crear en clases_no_realizadas para que aparezca en el listado de reagendar
                     $periodo = SemesterHelper::getCurrentPeriod();
                     $tipoAusencia = $this->obtenerTipoAusencia($licencia);
-                    
+
                     ClaseNoRealizada::updateOrCreate(
                         [
                             'id_asignatura' => $planificacion->id_asignatura,
@@ -88,10 +88,10 @@ class LicenciaRecuperacionService
             DB::commit();
 
             Log::info("Generadas {$clasesGeneradas} clases a recuperar para licencia ID: {$licencia->id_licencia}");
-            
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error generando clases a recuperar: " . $e->getMessage());
+            Log::error('Error generando clases a recuperar: '.$e->getMessage());
             throw $e;
         }
 
@@ -100,17 +100,16 @@ class LicenciaRecuperacionService
 
     /**
      * Obtiene las planificaciones de clases del profesor en el rango de la licencia
-     * 
-     * @param LicenciaProfesor $licencia
-     * @return \Illuminate\Support\Collection
+     *
+     * @return Collection
      */
     protected function obtenerPlanificacionesEnRango(LicenciaProfesor $licencia)
     {
         $fechaInicio = Carbon::parse($licencia->fecha_inicio);
         $fechaFin = Carbon::parse($licencia->fecha_fin);
-        
+
         Log::info("Obteniendo planificaciones para profesor: {$licencia->run_profesor}, desde {$fechaInicio} hasta {$fechaFin}");
-        
+
         $planificaciones = collect();
 
         // Obtener todos los horarios del profesor
@@ -118,7 +117,7 @@ class LicenciaRecuperacionService
             ->where('run_profesor', $licencia->run_profesor)
             ->get();
 
-        Log::info("Horarios encontrados: " . $horarios->count());
+        Log::info('Horarios encontrados: '.$horarios->count());
 
         foreach ($horarios as $horario) {
             // Para cada horario, obtener sus planificaciones
@@ -133,20 +132,20 @@ class LicenciaRecuperacionService
                 )
                 ->get();
 
-            Log::info("Planificaciones en horario {$horario->id_horario}: " . $planificacionesHorario->count());
+            Log::info("Planificaciones en horario {$horario->id_horario}: ".$planificacionesHorario->count());
 
             // Para cada planificación, generar las fechas específicas en el rango
             foreach ($planificacionesHorario as $plan) {
                 $fechasClases = $this->generarFechasClases(
-                    $plan->dia, 
-                    $fechaInicio, 
+                    $plan->dia,
+                    $fechaInicio,
                     $fechaFin
                 );
 
-                Log::info("Fechas generadas para día '{$plan->dia}': " . count($fechasClases));
+                Log::info("Fechas generadas para día '{$plan->dia}': ".count($fechasClases));
 
                 foreach ($fechasClases as $fechaClase) {
-                    $planificaciones->push((object)[
+                    $planificaciones->push((object) [
                         'id_asignatura' => $plan->id_asignatura,
                         'id_modulo' => $plan->id_modulo,
                         'id_espacio' => $plan->id_espacio,
@@ -157,26 +156,26 @@ class LicenciaRecuperacionService
             }
         }
 
-        Log::info("Total de clases a recuperar: " . $planificaciones->count());
+        Log::info('Total de clases a recuperar: '.$planificaciones->count());
 
         return $planificaciones;
     }
 
     /**
      * Genera las fechas de clases para un día de la semana específico en un rango
-     * 
-     * @param string $diaSemana Puede venir como "lunes", "Lunes", "L", etc.
-     * @param Carbon $fechaInicio
-     * @param Carbon $fechaFin
+     *
+     * @param  string  $diaSemana  Puede venir como "lunes", "Lunes", "L", etc.
+     * @param  Carbon  $fechaInicio
+     * @param  Carbon  $fechaFin
      * @return array
      */
     protected function generarFechasClases($diaSemana, $fechaInicio, $fechaFin)
     {
         $fechas = [];
-        
+
         // Normalizar el día (convertir a minúsculas y sin acentos)
         $diaNormalizado = strtolower(trim($diaSemana));
-        
+
         // Mapeo de días en español a números (1 = Lunes, 7 = Domingo)
         $diasMap = [
             'lunes' => 1,
@@ -203,9 +202,10 @@ class LicenciaRecuperacionService
         ];
 
         $numeroDia = $diasMap[$diaNormalizado] ?? null;
-        
-        if (!$numeroDia) {
+
+        if (! $numeroDia) {
             Log::warning("Día de semana no reconocido: {$diaSemana}");
+
             return $fechas;
         }
 
@@ -227,8 +227,7 @@ class LicenciaRecuperacionService
 
     /**
      * Determina el tipo de ausencia basado en la licencia
-     * 
-     * @param LicenciaProfesor $licencia
+     *
      * @return string
      */
     protected function obtenerTipoAusencia(LicenciaProfesor $licencia)
@@ -242,15 +241,14 @@ class LicenciaRecuperacionService
             'personal' => 'Permiso Personal',
             'otro' => 'Ausencia Programada',
         ];
-        
+
         return $tiposAusencia[$licencia->tipo_licencia] ?? 'Ausencia del Profesor';
     }
 
     /**
      * Elimina las clases a recuperar pendientes de una licencia
      * (No elimina las que ya están en proceso o reagendadas)
-     * 
-     * @param LicenciaProfesor $licencia
+     *
      * @return int Número de clases eliminadas
      */
     public function eliminarClasesARecuperar(LicenciaProfesor $licencia)
@@ -259,7 +257,7 @@ class LicenciaRecuperacionService
         $clasesRecuperacion = RecuperacionClase::where('id_licencia', $licencia->id_licencia)
             ->where('estado', 'pendiente')
             ->get();
-        
+
         // Eliminar los registros correspondientes en clases_no_realizadas
         foreach ($clasesRecuperacion as $clase) {
             ClaseNoRealizada::where('id_asignatura', $clase->id_asignatura)
@@ -273,7 +271,7 @@ class LicenciaRecuperacionService
                 ->orWhere('motivo', 'LIKE', '%Ausencia%')
                 ->delete();
         }
-        
+
         return RecuperacionClase::where('id_licencia', $licencia->id_licencia)
             ->where('estado', 'pendiente')
             ->delete();
@@ -282,8 +280,7 @@ class LicenciaRecuperacionService
     /**
      * Regenera las clases a recuperar para una licencia
      * (Útil cuando se edita una licencia)
-     * 
-     * @param LicenciaProfesor $licencia
+     *
      * @return int Número de clases generadas
      */
     public function regenerarClasesARecuperar(LicenciaProfesor $licencia)

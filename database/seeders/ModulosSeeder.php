@@ -39,14 +39,14 @@ class ModulosSeeder extends Seeder
         foreach ($dias as $codigoDia => $nombreDia) {
             foreach ($modulosBase as $index => $modulo) {
                 $numeroModulo = $index + 1;
-                $idModulo = $codigoDia . '.' . $numeroModulo;
+                $idModulo = $codigoDia.'.'.$numeroModulo;
 
                 Modulo::withoutGlobalScopes()->updateOrCreate(
                     ['id_modulo' => $idModulo],
                     [
-                        'dia'           => $nombreDia,
-                        'hora_inicio'   => $modulo['hora_inicio'],
-                        'hora_termino'  => $modulo['hora_termino'],
+                        'dia' => $nombreDia,
+                        'hora_inicio' => $modulo['hora_inicio'],
+                        'hora_termino' => $modulo['hora_termino'],
                     ]
                 );
             }

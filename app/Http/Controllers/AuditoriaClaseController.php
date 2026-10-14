@@ -48,7 +48,7 @@ class AuditoriaClaseController extends Controller
     {
         $query = $this->buildFilteredQuery($request)->orderBy('created_at', 'desc');
 
-        $fileName = 'auditoria_clases_' . now()->format('Y-m-d_His');
+        $fileName = 'auditoria_clases_'.now()->format('Y-m-d_His');
 
         if (strtolower($format) === 'excel' || strtolower($format) === 'xlsx') {
             return Excel::download(new AuditoriaClasesExport($query), "{$fileName}.xlsx");
@@ -58,6 +58,7 @@ class AuditoriaClaseController extends Controller
             $registros = $query->limit(300)->get();
             $pdf = Pdf::loadView('pdf.auditoria-clases', ['registros' => $registros]);
             $pdf->setPaper('a4', 'landscape');
+
             return $pdf->download("{$fileName}.pdf");
         }
 
@@ -117,15 +118,15 @@ class AuditoriaClaseController extends Controller
             $search = trim($request->query('search'));
             $query->where(function ($q) use ($search) {
                 $q->where('run_profesor', 'like', "%{$search}%")
-                  ->orWhere('user_nombre', 'like', "%{$search}%")
-                  ->orWhere('motivo', 'like', "%{$search}%")
-                  ->orWhere('observaciones', 'like', "%{$search}%")
-                  ->orWhereHas('profesor', function ($pq) use ($search) {
-                      $pq->where('name', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('asignatura', function ($aq) use ($search) {
-                      $aq->where('nombre_asignatura', 'like', "%{$search}%");
-                  });
+                    ->orWhere('user_nombre', 'like', "%{$search}%")
+                    ->orWhere('motivo', 'like', "%{$search}%")
+                    ->orWhere('observaciones', 'like', "%{$search}%")
+                    ->orWhereHas('profesor', function ($pq) use ($search) {
+                        $pq->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('asignatura', function ($aq) use ($search) {
+                        $aq->where('nombre_asignatura', 'like', "%{$search}%");
+                    });
             });
         }
 

@@ -2,11 +2,12 @@
 
 namespace App\View\Composers;
 
-use Illuminate\View\View;
-use Illuminate\Support\Facades\Cache;
 use App\Models\Configuracion;
 use App\Models\Sede;
 use App\Models\Tenant;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class LogoComposer
 {
@@ -17,7 +18,7 @@ class LogoComposer
     {
         // Try to get the current tenant first
         $tenant = Tenant::current();
-        
+
         if ($tenant && $tenant->sede) {
             $sedeActual = $tenant->sede;
             $idSede = $sedeActual->id_sede;
@@ -33,23 +34,23 @@ class LogoComposer
         $logoPath = Cache::remember($cacheKey, 3600, function () use ($idSede, $sedeActual) {
             // First check if sede has logo in its own field
             if ($sedeActual && $sedeActual->logo) {
-                $path = 'sedes/logos/' . $sedeActual->logo;
-                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                     return asset('storage/' . $path);
+                $path = 'sedes/logos/'.$sedeActual->logo;
+                if (Storage::disk('public')->exists($path)) {
+                    return asset('storage/'.$path);
                 }
             }
-            
+
             // Fallback to configuration table (solo si hay sede activa)
             if ($idSede) {
                 $logoInstitucional = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
                 if ($logoInstitucional && $logoInstitucional->valor) {
-                    $path = 'images/logo/' . $logoInstitucional->valor;
-                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                        return asset('storage/' . $path);
+                    $path = 'images/logo/'.$logoInstitucional->valor;
+                    if (Storage::disk('public')->exists($path)) {
+                        return asset('storage/'.$path);
                     }
                 }
             }
-            
+
             // Verificar si el fallback por defecto existe
             if (file_exists(public_path('images/logo_IT_talcahuano.png'))) {
                 return asset('images/logo_IT_talcahuano.png');
