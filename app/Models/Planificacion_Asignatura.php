@@ -37,9 +37,28 @@ class Planificacion_Asignatura extends Model
         'es_espacio_externo' => 'boolean',
     ];
 
+    protected static array $vigenciaColumnCache = [];
+
+    public static function tieneColumnaVigencia(): bool
+    {
+        try {
+            $dbName = config('database.connections.tenant.database') ?? 'default';
+            if (!array_key_exists($dbName, static::$vigenciaColumnCache)) {
+                static::$vigenciaColumnCache[$dbName] = \Illuminate\Support\Facades\Schema::connection('tenant')
+                    ->hasColumn('planificacion_asignaturas', 'fecha_fin_vigencia');
+            }
+            return static::$vigenciaColumnCache[$dbName];
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     protected static function booted()
     {
         static::addGlobalScope('vigencia_activa', function ($builder) {
+            if (!static::tieneColumnaVigencia()) {
+                return;
+            }
             $hoy = \Carbon\Carbon::today()->toDateString();
             $table = $builder->getModel()->getTable();
             $builder->where(function ($q) use ($table, $hoy) {
@@ -51,10 +70,14 @@ class Planificacion_Asignatura extends Model
 
     public function scopeVigentesEn($query, $fecha = null)
     {
+        $query = $query->withoutGlobalScope('vigencia_activa');
+        if (!static::tieneColumnaVigencia()) {
+            return $query;
+        }
+
         $fechaStr = $fecha ? \Carbon\Carbon::parse($fecha)->toDateString() : \Carbon\Carbon::today()->toDateString();
 
-        return $query->withoutGlobalScope('vigencia_activa')
-            ->where(function ($q) use ($fechaStr) {
+        return $query->where(function ($q) use ($fechaStr) {
                 $q->whereNull('fecha_inicio_vigencia')
                   ->orWhere('fecha_inicio_vigencia', '<=', $fechaStr);
             })->where(function ($q) use ($fechaStr) {

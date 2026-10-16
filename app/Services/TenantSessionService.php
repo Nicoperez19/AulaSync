@@ -17,10 +17,14 @@ class TenantSessionService
     public function activar(Sede $sede): bool
     {
         if (!$sede->tenant || !$sede->tenant->is_active) {
-            Log::warning('⚠️ TenantSessionService: Sede sin tenant o tenant inactivo', [
-                'id_sede' => $sede->id_sede,
-                'nombre' => $sede->nombre_sede,
-            ]);
+            try {
+                Log::warning('⚠️ TenantSessionService: Sede sin tenant o tenant inactivo', [
+                    'id_sede' => $sede->id_sede,
+                    'nombre' => $sede->nombre_sede,
+                ]);
+            } catch (\Throwable $e) {
+                // Ignorar error de permisos de log
+            }
             return false;
         }
 
@@ -29,11 +33,15 @@ class TenantSessionService
 
         $sede->tenant->makeCurrent();
 
-        Log::info('🏢 TenantSessionService: Tenant activado en sesión', [
-            'tenant_id' => $sede->tenant->id,
-            'tenant_name' => $sede->tenant->name,
-            'id_sede' => $sede->id_sede,
-        ]);
+        try {
+            Log::info('🏢 TenantSessionService: Tenant activado en sesión', [
+                'tenant_id' => $sede->tenant->id,
+                'tenant_name' => $sede->tenant->name,
+                'id_sede' => $sede->id_sede,
+            ]);
+        } catch (\Throwable $e) {
+            // Ignorar error de permisos de log
+        }
 
         return true;
     }

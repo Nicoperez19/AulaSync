@@ -62,9 +62,13 @@ class SedeSelectionController extends Controller
         // Si es Profesor, NUNCA debe ver el wizard
         if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
             if ($sede->tenant->needsInitialization()) {
-                return redirect()->route('docente.sede-no-inicializada');
+                return \Illuminate\Support\Facades\Route::has('docente.sede-no-inicializada')
+                    ? redirect()->route('docente.sede-no-inicializada')
+                    : redirect('/docente/sede-no-inicializada');
             }
-            return redirect()->route('docente.dashboard');
+            return \Illuminate\Support\Facades\Route::has('docente.dashboard')
+                ? redirect()->route('docente.dashboard')
+                : redirect('/docente');
         }
 
         // Verificar si el tenant necesita inicialización (para otros roles)

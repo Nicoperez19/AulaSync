@@ -21,10 +21,21 @@ class ClasesDocenteService
      * @param string $runDocente
      * @return Collection
      */
+    protected function tieneTablasAsistencia(): bool
+    {
+        try {
+            return \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('inscripciones')
+                && \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('sesiones_asistencia');
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     public function getClasesDocente(string $runDocente): Collection
     {
         $hoy = Carbon::today();
         $diaSemana = $this->obtenerDiaSemanaEspanol($hoy);
+        $tieneTablas = $this->tieneTablasAsistencia();
 
         // 1. Reservas activas del docente hoy (ingreso registrado a sala)
         $reservasActivas = Reserva::where('fecha_reserva', $hoy->format('Y-m-d'))
@@ -34,38 +45,48 @@ class ClasesDocenteService
             ->with(['espacio'])
             ->get();
 
+        $relacionesAsig = ['carrera', 'planificaciones.modulo', 'planificaciones.espacio'];
+        if ($tieneTablas) {
+            $relacionesAsig[] = 'estudiantes';
+        }
+
         // 2. Asignaturas como titular
         $asignaturasTitular = Asignatura::where('run_profesor', $runDocente)
-            ->with(['carrera', 'planificaciones.modulo', 'planificaciones.espacio', 'estudiantes'])
+            ->with($relacionesAsig)
             ->get();
 
         // 3. Asignaturas como reemplazo
         $asignaturasReemplazo = Asignatura::where('run_profesor_reemplazo', $runDocente)
             ->where('run_profesor', '!=', $runDocente)
-            ->with(['carrera', 'planificaciones.modulo', 'planificaciones.espacio', 'estudiantes'])
+            ->with($relacionesAsig)
             ->get();
+
+        $relacionesColab = ['asignatura.carrera', 'planificaciones.modulo', 'planificaciones.espacio'];
+        if ($tieneTablas) {
+            $relacionesColab[] = 'asignatura.estudiantes';
+        }
 
         // 4. Colaboraciones activas y vigentes
         $colaboraciones = ProfesorColaborador::where('run_profesor_colaborador', $runDocente)
             ->activosYVigentes($hoy)
-            ->with(['asignatura.carrera', 'asignatura.estudiantes', 'planificaciones.modulo', 'planificaciones.espacio'])
+            ->with($relacionesColab)
             ->get();
 
         $clases = collect();
 
         // Procesar Titular
         foreach ($asignaturasTitular as $asig) {
-            $clases->push($this->formatearClaseAsignatura($asig, 'titular', $diaSemana, $reservasActivas, $hoy));
+            $clases->push($this->formatearClaseAsignatura($asig, 'titular', $diaSemana, $reservasActivas, $hoy, $tieneTablas));
         }
 
         // Procesar Reemplazo
         foreach ($asignaturasReemplazo as $asig) {
-            $clases->push($this->formatearClaseAsignatura($asig, 'reemplazo', $diaSemana, $reservasActivas, $hoy));
+            $clases->push($this->formatearClaseAsignatura($asig, 'reemplazo', $diaSemana, $reservasActivas, $hoy, $tieneTablas));
         }
 
         // Procesar Colaboraciones (con o sin asignatura)
         foreach ($colaboraciones as $colab) {
-            $clases->push($this->formatearClaseColaborador($colab, $diaSemana, $reservasActivas, $hoy));
+            $clases->push($this->formatearClaseColaborador($colab, $diaSemana, $reservasActivas, $hoy, $tieneTablas));
         }
 
         return $clases;
@@ -74,7 +95,7 @@ class ClasesDocenteService
     /**
      * Formatea los datos de una asignatura regular para la vista del dashboard.
      */
-    protected function formatearClaseAsignatura(Asignatura $asig, string $rol, string $diaSemana, Collection $reservasActivas, Carbon $hoy): array
+    protected function formatearClaseAsignatura(Asignatura $asig, string $rol, string $diaSemana, Collection $reservasActivas, Carbon $hoy, bool $tieneTablas = true): array
     {
         // Buscar planificación para el día de hoy
         $planHoy = $asig->planificaciones->first(function ($p) use ($diaSemana) {
@@ -101,10 +122,12 @@ class ClasesDocenteService
         });
 
         // Verificar si ya se pasó asistencia hoy para esta asignatura
-        $sesionHoy = SesionAsistencia::where('id_asignatura', $asig->id_asignatura)
-            ->where('fecha', $hoy->format('Y-m-d'))
-            ->latest()
-            ->first();
+        $sesionHoy = $tieneTablas
+            ? SesionAsistencia::where('id_asignatura', $asig->id_asignatura)
+                ->where('fecha', $hoy->format('Y-m-d'))
+                ->latest()
+                ->first()
+            : null;
 
         return [
             'id' => $asig->id_asignatura,
@@ -119,7 +142,7 @@ class ClasesDocenteService
             'carrera' => $asig->carrera?->nombre ?? ($asig->id_carrera ? 'Carrera ' . $asig->id_carrera : 'Sin carrera'),
             'id_carrera' => $asig->id_carrera,
             'area_academica' => $asig->carrera?->id_area_academica,
-            'total_inscritos' => $asig->estudiantes->count(),
+            'total_inscritos' => $tieneTablas && $asig->relationLoaded('estudiantes') ? $asig->estudiantes->count() : 0,
             'tiene_clase_hoy' => $planHoy !== null,
             'espacio_planificado' => $this->obtenerEspacioFormateado($espacioPlanificado),
             'espacio_id' => $espacioPlanificado?->id_espacio,
@@ -136,7 +159,7 @@ class ClasesDocenteService
     /**
      * Formatea los datos de una colaboración o clase temporal.
      */
-    protected function formatearClaseColaborador(ProfesorColaborador $colab, string $diaSemana, Collection $reservasActivas, Carbon $hoy): array
+    protected function formatearClaseColaborador(ProfesorColaborador $colab, string $diaSemana, Collection $reservasActivas, Carbon $hoy, bool $tieneTablas = true): array
     {
         $planHoy = $colab->planificaciones->first(function ($p) use ($diaSemana) {
             return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
@@ -159,13 +182,17 @@ class ClasesDocenteService
             return false;
         });
 
-        $sesionHoy = SesionAsistencia::where('id_profesor_colaborador', $colab->id)
-            ->where('fecha', $hoy->format('Y-m-d'))
-            ->latest()
-            ->first();
+        $sesionHoy = $tieneTablas
+            ? SesionAsistencia::where('id_profesor_colaborador', $colab->id)
+                ->where('fecha', $hoy->format('Y-m-d'))
+                ->latest()
+                ->first()
+            : null;
 
         $nombre = $colab->nombre_asignatura;
-        $totalInscritos = $colab->asignatura ? $colab->asignatura->estudiantes->count() : $colab->cantidad_inscritos;
+        $totalInscritos = ($colab->asignatura && $tieneTablas && $colab->asignatura->relationLoaded('estudiantes'))
+            ? $colab->asignatura->estudiantes->count()
+            : $colab->cantidad_inscritos;
 
         return [
             'id' => 'colab_' . $colab->id,
