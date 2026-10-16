@@ -90,6 +90,45 @@ class OcupacionSemanalService
 
         $periodoActual = SemesterHelper::getCurrentPeriod($lunes);
 
+        // Pre-cargar feriados o semanas de receso/ajuste académico activos en la semana
+        $fechasFeriadoOReceso = [];
+        try {
+            $feriadosSemana = \App\Models\DiaFeriado::activos()
+                ->enRango($fechaInicioSemana, $fechaFinSemana)
+                ->get();
+            foreach ($feriadosSemana as $feriado) {
+                $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
+                $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
+                while ($cursor <= $fin) {
+                    $fechasFeriadoOReceso[$cursor->format('Y-m-d')] = true;
+                    $cursor->addDay();
+                }
+            }
+        } catch (\Throwable $e) {
+            $fechasFeriadoOReceso = [];
+        }
+
+        // Pre-cargar clases no realizadas de la semana para no inflar la ocupación teórica
+        $espaciosNoRealizados = [];
+        try {
+            $cnrsSemana = \App\Models\ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioSemana, $fechaFinSemana])
+                ->whereNotIn('estado', ['realizada', 'registrada', 'recuperada'])
+                ->get(['fecha_clase', 'id_espacio', 'id_modulo']);
+            foreach ($cnrsSemana as $cnr) {
+                $fechaCnr = $cnr->fecha_clase instanceof Carbon
+                    ? $cnr->fecha_clase->format('Y-m-d')
+                    : Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
+                foreach (explode(',', (string) $cnr->id_modulo) as $modItem) {
+                    $modTrim = trim($modItem);
+                    if ($modTrim !== '' && $cnr->id_espacio) {
+                        $espaciosNoRealizados["{$fechaCnr}_{$modTrim}_{$cnr->id_espacio}"] = true;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            $espaciosNoRealizados = [];
+        }
+
         $planificacionesSemana = Planificacion_Asignatura::whereIn('id_espacio', $espaciosIds)
             ->whereHas('horario', function ($q) use ($periodoActual) {
                 $q->where('periodo', $periodoActual);
@@ -145,6 +184,7 @@ class OcupacionSemanalService
 
         foreach (self::DIAS_SEMANA as $dia) {
             $fechaDelDia = $fechasSemana[$dia];
+            $esDiaFeriadoOReceso = isset($fechasFeriadoOReceso[$fechaDelDia]);
             $ocupacion[$dia] = [];
             $maxModulos = ($dia === 'sabado') ? 6 : 15;
             $prefijo = self::PREFIJOS_DIAS[$dia] ?? 'LU';
@@ -160,10 +200,15 @@ class OcupacionSemanalService
                 $idModuloStr = $prefijo . '.' . $moduloNum;
                 $espaciosUsados = [];
 
-                // 1. Programación de clases
-                if (isset($planificacionesSemana[$idModuloStr])) {
-                    $espaciosProgramados = $planificacionesSemana[$idModuloStr]->pluck('id_espacio')->toArray();
-                    $espaciosUsados = array_merge($espaciosUsados, $espaciosProgramados);
+                // 1. Programación de clases (sólo en días hábiles regulares sin feriado/receso activo,
+                // y descontando salas cuya clase fue registrada como no realizada en ese módulo)
+                if (!$esDiaFeriadoOReceso && isset($planificacionesSemana[$idModuloStr])) {
+                    foreach ($planificacionesSemana[$idModuloStr] as $planItem) {
+                        $keyNoRealizada = "{$fechaDelDia}_{$idModuloStr}_{$planItem->id_espacio}";
+                        if (!isset($espaciosNoRealizados[$keyNoRealizada])) {
+                            $espaciosUsados[] = $planItem->id_espacio;
+                        }
+                    }
                 }
 
                 // 2. Reservas de uso real

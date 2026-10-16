@@ -748,8 +748,14 @@ class DashboardController extends Controller
             $fechaYmd = $fechaObj->format('Y-m-d');
             $diaNombre = $diasSemana[$fechaObj->dayOfWeek];
 
-            // Si es día feriado, no cuenta como clase fallida
+            // Si es día feriado o receso con horario flexible:
+            // no exigir la planificación teórica ni contar no_realizadas, pero sí sumar las clases efectivamente realizadas (Reserva) ese día
             if (isset($fechasFeriado[$fechaYmd])) {
+                foreach ($reservasCache as $claveRes => $listaRes) {
+                    if (str_starts_with($claveRes, $fechaYmd . '_')) {
+                        $realizadas += $listaRes->count();
+                    }
+                }
                 continue;
             }
 
@@ -879,13 +885,14 @@ class DashboardController extends Controller
 
         foreach ($cnrsBloques as $bloqueKey => $items) {
             $primerItem = $items->first();
+            $fechaItemYmd = Carbon::parse($primerItem->fecha_clase)->format('Y-m-d');
             if ($primerItem->estado === 'recuperada') {
                 $cnrBloquesRecuperadas++;
             } elseif ($primerItem->estado === 'justificado') {
                 $cnrBloquesJustificadas++;
             } elseif (in_array($primerItem->estado, ['realizada', 'registrada'], true)) {
                 $cnrBloquesRealizadas++;
-            } else {
+            } elseif (!isset($fechasFeriado[$fechaItemYmd])) {
                 $cnrBloquesNoRegistradas++;
             }
         }
