@@ -57,6 +57,7 @@ class ClasesNoRealizadasController extends Controller
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
+            'ua' => 'nullable|string|max:100',
         ]);
 
         $search = $request->input('search');
@@ -64,10 +65,15 @@ class ClasesNoRealizadasController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $periodo = $request->input('periodo');
+        $ua = $request->input('ua');
 
         // Generar nombre de archivo descriptivo
         $nombreArchivo = 'Control_De_Clases';
         
+        if ($ua) {
+            $nombreArchivo .= '_UA_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $ua);
+        }
+
         if ($fechaInicio && $fechaFin) {
             $nombreArchivo .= '_' . Carbon::parse($fechaInicio)->format('d-m-Y');
             $nombreArchivo .= '_a_' . Carbon::parse($fechaFin)->format('d-m-Y');
@@ -80,7 +86,7 @@ class ClasesNoRealizadasController extends Controller
         $nombreArchivo .= '.xlsx';
 
         return Excel::download(
-            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado),
+            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado, $ua),
             $nombreArchivo
         );
     }

@@ -136,7 +136,7 @@ function updateCarouselState(container, current, total) {
             if (i === current) {
                 ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
             } else {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-gray-300 w-2 hover:bg-gray-400';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-slate-200 w-2 hover:bg-slate-300';
             }
         }
     }
@@ -271,6 +271,24 @@ function cambiarTabOcupacion(tipo) {
         selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
         selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
     }
+
+    // Actualizar parámetros de tipo en los botones de exportación
+    const excelBtn = document.getElementById('btn-export-ocupacion-excel');
+    if (excelBtn) {
+        try {
+            const url = new URL(excelBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            excelBtn.href = url.toString();
+        } catch (e) {}
+    }
+    const pdfBtn = document.getElementById('btn-export-ocupacion-pdf');
+    if (pdfBtn) {
+        try {
+            const url = new URL(pdfBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            pdfBtn.href = url.toString();
+        } catch (e) {}
+    }
     
     activeTabOcupacion = tipo;
     cargarOcupacionGrid(tipo, false);
@@ -294,13 +312,16 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     
     fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar ocupación');
-            }
-            return response.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
+            return response.text().then(text => {
+                if (!response.ok) {
+                    if (text && text.includes('Error al calcular')) {
+                        container.innerHTML = text;
+                        return;
+                    }
+                    throw new Error(text || 'Error al cargar ocupación');
+                }
+                container.innerHTML = text;
+            });
         })
         .catch(error => {
             console.error('Error:', error);

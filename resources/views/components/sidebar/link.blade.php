@@ -5,56 +5,46 @@
 ])
 
 @php
-    $isActiveClasses =  $isActive ? 'text-black bg-white shadow-lg hover:bg-white' : 'text-black-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-dark-eval-2';
+    $isActiveClasses = $isActive
+        ? 'text-gray-900 bg-white font-semibold shadow-md'
+        : 'text-white/90 hover:text-white hover:bg-white/15 dark:hover:text-white dark:hover:bg-white/10';
 
-    $classes = 'flex-shrink-0 flex items-center gap-2 p-2 transition-colors rounded-md overflow-hidden ' . $isActiveClasses;
+    $classes = 'flex-shrink-0 flex items-center gap-3 px-3 py-2.5 transition-colors duration-150 rounded-lg overflow-hidden ' . $isActiveClasses;
 
-    if($collapsible) $classes .= ' w-full';
+    if($collapsible) $classes .= ' w-full text-left';
 @endphp
 
 @if ($collapsible)
-    <button type="button" {{ $attributes->merge(['class' => $classes]) }} >
+    <button type="button" {{ $attributes->merge(['class' => $classes]) }}>
         @if ($icon ?? false)
-            {{ $icon }}
+            <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                {{ $icon }}
+            </div>
         @else
             <x-icons.empty-circle class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         @endif
 
-        <span
-            class="text-base font-medium whitespace-nowrap"
-            x-show="isSidebarOpen || isSidebarHovered"
-        >
+        <span class="flex-1 text-sm font-medium truncate">
             {{ $title }}
         </span>
 
-        <span
-            x-show="isSidebarOpen || isSidebarHovered"
-            aria-hidden="true"
-            class="relative block w-6 h-6 ml-auto"
-        >
-            <span
-                :class="open ? '-rotate-45' : 'rotate-45'"
-                class="absolute right-[9px] bg-white mt-[-5px] h-2 w-[2px] top-1/2 transition-all duration-200"
-            ></span>
-
-            <span
-                :class="open ? 'rotate-45' : '-rotate-45'"
-                class="absolute left-[9px] bg-white mt-[-5px] h-2 w-[2px] top-1/2 transition-all duration-200"
-            ></span>
+        <span aria-hidden="true" class="flex-shrink-0 ml-auto transition-transform duration-200 ease-out" :class="{ 'rotate-180': open }">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+            </svg>
         </span>
     </button>
 @else
     <a {{ $attributes->merge(['class' => $classes]) }}>
         @if ($icon ?? false)
-            {{ $icon }}
+            <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                {{ $icon }}
+            </div>
         @else
             <x-icons.empty-circle class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         @endif
 
-        <span
-            class="text-base font-medium"
-            x-show="isSidebarOpen || isSidebarHovered"
-        >
+        <span class="flex-1 text-sm font-medium truncate">
             {{ $title }}
         </span>
     </a>

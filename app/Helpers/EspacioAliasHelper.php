@@ -35,15 +35,33 @@ class EspacioAliasHelper
      * @param string|null $sedeId
      * @return array
      */
-    public static function obtenerEquivalentes(string $espacioId, ?string $sedeId = 'TH'): array
+    public static function obtenerEquivalentes(string $espacioId, ?string $sedeId = null): array
     {
         $espacioUpper = strtoupper(trim($espacioId));
+        $sedeUpper    = strtoupper(trim($sedeId ?? ''));
 
-        // Grupo Termodinámica / Refrigeración: TH-30 <-> TH-L09
-        if (in_array($espacioUpper, ['TH-30', '30', 'TH30', 'TH-L09', 'L09', 'TH-LAB09', 'TH-LAB9'])) {
-            return ['TH-L09', 'TH-30'];
+        // ── Aliases para Talcahuano (TH) ────────────────────────────────────
+        // TH-30 (nombre en programación académica) ↔ TH-L09 (id en AulaSync)
+        if ($sedeUpper === 'TH' || str_starts_with($espacioUpper, 'TH-')) {
+            if (in_array($espacioUpper, ['TH-30', 'TH30', 'TH-L09', 'L09', 'TH-LAB09', 'TH-LAB9'])) {
+                return ['TH-L09', 'TH-30'];
+            }
         }
 
+        // ── Aliases para Chillán (CH) ─────────────────────────────────────
+        // Agregar aquí equivalencias propias de CH cuando se conozcan.
+        // Ejemplo futuro:
+        // if ($sedeUpper === 'CH' || str_starts_with($espacioUpper, 'CH-')) {
+        //     if (in_array($espacioUpper, ['CH-GIMN', 'CH-GYM'])) return ['CH-GIM'];
+        // }
+
+        // ── Aliases para Los Ángeles (LA) ────────────────────────────────────
+        // Agregar aquí equivalencias propias de LA cuando se conozcan.
+
+        // ── Aliases para Cañete (CT) ─────────────────────────────────────────
+        // Agregar aquí equivalencias propias de CT cuando se conozcan.
+
+        // Sin alias: retornar el espacio tal como viene
         return [$espacioId];
     }
 

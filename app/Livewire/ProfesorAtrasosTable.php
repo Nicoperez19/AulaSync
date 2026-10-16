@@ -104,15 +104,28 @@ class ProfesorAtrasosTable extends Component
                 $q->whereBetween('fecha', [$this->fecha_inicio, $this->fecha_fin]);
             })
             ->when($this->search, function($q) {
-                $searchTerm = '%' . $this->search . '%';
-                $q->where(function($subQ) use ($searchTerm) {
-                    $subQ->whereHas('profesor', function($pq) use ($searchTerm) {
-                        $pq->where('name', 'like', $searchTerm);
+                $rawSearch = trim($this->search);
+                $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+
+                $q->where(function($subQ) use ($rawSearch, $words, $cleanRun) {
+                    if (!empty($words)) {
+                        $subQ->whereHas('profesor', function($pq) use ($words) {
+                            foreach ($words as $word) {
+                                $pq->where('name', 'like', '%' . $word . '%');
+                            }
+                        });
+                    }
+                    $subQ->orWhereHas('asignatura', function($aq) use ($rawSearch) {
+                        $aq->where('nombre_asignatura', 'like', '%' . $rawSearch . '%');
                     })
-                    ->orWhereHas('asignatura', function($aq) use ($searchTerm) {
-                        $aq->where('nombre_asignatura', 'like', $searchTerm);
-                    })
-                    ->orWhere('id_espacio', 'like', $searchTerm);
+                    ->orWhere('id_espacio', 'like', '%' . $rawSearch . '%');
+
+                    if (!empty($cleanRun)) {
+                        $subQ->orWhereHas('profesor', function($pq) use ($cleanRun) {
+                            $pq->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                        });
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection);

@@ -38,6 +38,11 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground();
 
+        // Sincronizar automáticamente el período académico activo según el calendario (00:01 cada día)
+        $schedule->call(function () {
+            \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
+        })->dailyAt('00:01')->name('sincronizar-periodo-academico');
+
         // Verificar inconsistencias del sistema cada 30 minutos
         $schedule->command('sistema:verificar-estado')
                 ->everyThirtyMinutes()
@@ -56,6 +61,12 @@ class Kernel extends ConsoleKernel
                 ->dailyAt('23:55')
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
+
+        // Generar snapshot semanal de ocupación cada domingo a las 23:50
+        $schedule->command('ocupacion:snapshot-semanal')
+                ->weeklyOn(0, '23:50') // Domingo a las 23:50
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/ocupacion-snapshot.log'));
 
         // Enviar reporte semanal de clases no realizadas cada lunes a las 8:00 AM
         $schedule->command('reportes:clases-no-realizadas-semanal')

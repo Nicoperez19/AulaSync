@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Página Expirada - SIA | AulaSync</title>
+    <title>Página Expirada - SIA | Sistema de Información de Aulas</title>
 
     <!-- Fuentes & Iconos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,16 +30,10 @@
                 Tu sesión ha caducado por inactividad o la solicitud ha expirado por motivos de seguridad.
             </p>
 
-            <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                <button onclick="window.location.reload()" 
-                   class="inline-flex items-center justify-center px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-lg shadow transition-colors duration-200 gap-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate-right"></i>
-                    Recargar Página
-                </button>
-
+            <div class="flex justify-center pt-2">
                 <a href="{{ route('login') }}" 
-                   class="inline-flex items-center justify-center px-5 py-2.5 bg-gray-600 hover:bg-gray-700 text-white font-medium text-sm rounded-lg shadow transition-colors duration-200 gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i>
+                   class="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3 bg-[#D2091E] hover:bg-[#B50718] text-white font-semibold text-sm rounded-xl shadow-md hover:shadow-lg transition-all duration-200 gap-2.5">
+                    <i class="fa-solid fa-right-to-bracket text-base"></i>
                     Iniciar Sesión
                 </a>
             </div>
@@ -47,7 +41,7 @@
 
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-400">
-            AulaSync &bull; Sistema de Información de Aulas
+            SIA &bull; Sistema de Información de Aulas
         </div>
     </div>
 </body>

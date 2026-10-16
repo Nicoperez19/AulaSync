@@ -66,7 +66,7 @@
 
                 <div class="flex justify-end mt-6">
                     <x-button variant="success">
-                        <x-icons.ajust class="w-6 h-6" aria-hidden="true" />
+                        <x-icons.adjust class="w-6 h-6" aria-hidden="true" />
                         <span>{{ __('Guardar Cambios') }}</span>
                     </x-button>
                 </div>

@@ -162,7 +162,7 @@ class ComprobanteReservaService
             // 1. Verificar si hay un tenant/sede activo
             $tenant = class_exists(Tenant::class) ? Tenant::current() : null;
             $sedeActual = $tenant?->sede;
-            $idSede = $sedeActual?->id_sede ?? 'TH';
+            $idSede = $sedeActual?->id_sede;
 
             if ($sedeActual && $sedeActual->logo) {
                 $path = 'sedes/logos/' . $sedeActual->logo;

@@ -67,7 +67,7 @@
             </div>
 
             <!-- Detalle interno -->
-            <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-emerald-200/60 text-xs">
+            <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-emerald-200/60 text-xs">
                 <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
                     <span class="text-slate-500 font-bold block text-[11px]">Realizadas Normales</span>
                     <span class="text-sm font-black text-emerald-800">{{ $realizadas }}</span>
@@ -77,6 +77,11 @@
                     <span class="text-slate-500 font-bold block text-[11px]">Recuperadas</span>
                     <span class="text-sm font-black text-amber-700">{{ $recuperadas }}</span>
                     <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_recuperadas }}%)</span>
+                </div>
+                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
+                    <span class="text-slate-500 font-bold block text-[11px]">Justificadas</span>
+                    <span class="text-sm font-black text-blue-700">{{ $justificadas }}</span>
+                    <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_justificadas ?? 0 }}%)</span>
                 </div>
             </div>
         </div>

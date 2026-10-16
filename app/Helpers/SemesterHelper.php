@@ -20,9 +20,13 @@ class SemesterHelper
         $date = $date ?: Carbon::now();
         
         // Intentar obtener el período académico de la BD
-        $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
-        if ($periodo) {
-            return $periodo->semestre;
+        try {
+            $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
+            if ($periodo) {
+                return $periodo->semestre;
+            }
+        } catch (\Throwable $e) {
+            // Continuar con lógica de calendario
         }
 
         // Fallback: lógica por defecto
@@ -50,9 +54,13 @@ class SemesterHelper
         $date = $date ?: Carbon::now();
         
         // Intentar obtener el período académico de la BD
-        $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
-        if ($periodo) {
-            return $periodo->anio;
+        try {
+            $periodo = PeriodoAcademico::obtenerPeriodoActual($date);
+            if ($periodo) {
+                return $periodo->anio;
+            }
+        } catch (\Throwable $e) {
+            // Continuar con año por calendario
         }
 
         // Fallback: lógica por defecto
