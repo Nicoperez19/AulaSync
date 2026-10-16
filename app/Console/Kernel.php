@@ -62,9 +62,14 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
 
-        // Generar snapshot semanal de ocupación cada domingo a las 23:50
-        $schedule->command('ocupacion:snapshot-semanal')
-                ->weeklyOn(0, '23:50') // Domingo a las 23:50
+        // Generar snapshot semanal de ocupación automáticamente al cierre de la semana académica (Sábado 23:50 y respaldo Domingo 23:50)
+        $schedule->command('ocupacion:snapshot-semanal --forzar')
+                ->weeklyOn(6, '23:50') // Sábado a las 23:50 (término de jornada semanal Lunes-Sábado)
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/ocupacion-snapshot.log'));
+
+        $schedule->command('ocupacion:snapshot-semanal --forzar')
+                ->weeklyOn(0, '23:50') // Domingo a las 23:50 (respaldo cierre de semana)
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/ocupacion-snapshot.log'));
 
