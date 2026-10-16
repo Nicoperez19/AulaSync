@@ -6,9 +6,9 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 8mm 12mm 8mm 12mm;
+            margin: 12mm 16mm 12mm 16mm;
         }
-        * {
+        body, div, table, thead, tbody, tr, th, td, h1, h2, p, span {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -18,6 +18,7 @@
             font-size: 8px;
             color: #1e293b;
             background-color: #ffffff;
+            padding: 14px 20px 10px 20px;
         }
         .header {
             margin-bottom: 10px;
