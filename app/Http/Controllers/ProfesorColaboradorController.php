@@ -282,28 +282,99 @@ class ProfesorColaboradorController extends Controller
         try {
             DB::beginTransaction();
 
-            // Actualizar el profesor colaborador
-            $profesorColaborador->update([
-                'run_profesor_colaborador' => $request->run_profesor_colaborador,
-                'id_asignatura' => $request->id_asignatura,
-                'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
-                'descripcion' => $request->descripcion,
-                'tipo_clase' => $request->tipo_clase,
-                'fecha_inicio' => $request->fecha_inicio,
-                'fecha_termino' => $request->fecha_termino,
-                'estado' => $request->estado,
-            ]);
+            $hoy = Carbon::today();
+            $ayer = Carbon::yesterday()->toDateString();
+            $inicioOriginal = $profesorColaborador->fecha_inicio ? Carbon::parse($profesorColaborador->fecha_inicio)->startOfDay() : null;
+            $cambioDocente = (string) $profesorColaborador->run_profesor_colaborador !== (string) $request->run_profesor_colaborador;
+            $yaIniciado = $inicioOriginal && $inicioOriginal->lt($hoy);
 
-            // Eliminar planificaciones existentes
-            $profesorColaborador->planificaciones()->delete();
-
-            // Crear nuevas planificaciones
-            foreach ($request->planificaciones as $planificacion) {
-                PlanificacionProfesorColaborador::create([
-                    'id_profesor_colaborador' => $profesorColaborador->id,
-                    'id_modulo' => $planificacion['id_modulo'],
-                    'id_espacio' => $planificacion['id_espacio'],
+            if ($cambioDocente && $yaIniciado) {
+                // Conservar el registro del docente colaborador anterior cerrado hasta ayer para no perder su historial
+                $profesorColaborador->update([
+                    'fecha_termino' => $ayer,
                 ]);
+                $profesorColaborador->planificaciones()
+                    ->whereNull('fecha_fin_vigencia')
+                    ->update(['fecha_fin_vigencia' => $ayer]);
+
+                // Crear nuevo registro para el nuevo colaborador desde hoy (o desde la fecha indicada si es posterior)
+                $nuevaFechaInicio = Carbon::parse($request->fecha_inicio)->gt($hoy)
+                    ? $request->fecha_inicio
+                    : $hoy->toDateString();
+
+                $nuevoColaborador = ProfesorColaborador::create([
+                    'run_profesor_colaborador' => $request->run_profesor_colaborador,
+                    'id_asignatura' => $request->id_asignatura,
+                    'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
+                    'descripcion' => $request->descripcion,
+                    'cantidad_inscritos' => $profesorColaborador->cantidad_inscritos,
+                    'tipo_clase' => $request->tipo_clase,
+                    'fecha_inicio' => $nuevaFechaInicio,
+                    'fecha_termino' => $request->fecha_termino,
+                    'estado' => $request->estado,
+                ]);
+
+                foreach ($request->planificaciones as $planificacion) {
+                    PlanificacionProfesorColaborador::create([
+                        'id_profesor_colaborador' => $nuevoColaborador->id,
+                        'id_modulo' => $planificacion['id_modulo'],
+                        'id_espacio' => $planificacion['id_espacio'],
+                        'fecha_inicio_vigencia' => $nuevaFechaInicio,
+                    ]);
+                }
+            } else {
+                // Actualizar el profesor colaborador manteniendo su inicio original si ya había comenzado
+                $profesorColaborador->update([
+                    'run_profesor_colaborador' => $request->run_profesor_colaborador,
+                    'id_asignatura' => $request->id_asignatura,
+                    'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
+                    'descripcion' => $request->descripcion,
+                    'tipo_clase' => $request->tipo_clase,
+                    'fecha_inicio' => $yaIniciado ? $inicioOriginal->toDateString() : $request->fecha_inicio,
+                    'fecha_termino' => $request->fecha_termino,
+                    'estado' => $request->estado,
+                ]);
+
+                $nuevasClaves = collect($request->planificaciones)->map(fn($p) => $p['id_modulo'] . '_' . $p['id_espacio'])->all();
+                $existentesActivas = $profesorColaborador->planificaciones()
+                    ->whereNull('fecha_fin_vigencia')
+                    ->get();
+
+                if ($yaIniciado) {
+                    // Cerrar vigencia de bloques que se quitaron o cambiaron en vez de borrarlos físicamente
+                    $clavesExistentes = [];
+                    foreach ($existentesActivas as $planExistente) {
+                        $clave = $planExistente->id_modulo . '_' . $planExistente->id_espacio;
+                        if (!in_array($clave, $nuevasClaves, true)) {
+                            $planExistente->update(['fecha_fin_vigencia' => $ayer]);
+                        } else {
+                            $clavesExistentes[] = $clave;
+                        }
+                    }
+
+                    // Crear solo los bloques nuevos con vigencia desde hoy
+                    foreach ($request->planificaciones as $planificacion) {
+                        $clave = $planificacion['id_modulo'] . '_' . $planificacion['id_espacio'];
+                        if (!in_array($clave, $clavesExistentes, true)) {
+                            PlanificacionProfesorColaborador::create([
+                                'id_profesor_colaborador' => $profesorColaborador->id,
+                                'id_modulo' => $planificacion['id_modulo'],
+                                'id_espacio' => $planificacion['id_espacio'],
+                                'fecha_inicio_vigencia' => $hoy->toDateString(),
+                            ]);
+                        }
+                    }
+                } else {
+                    // Si aún no iniciaba, reemplazar normalmente
+                    $profesorColaborador->planificaciones()->delete();
+                    foreach ($request->planificaciones as $planificacion) {
+                        PlanificacionProfesorColaborador::create([
+                            'id_profesor_colaborador' => $profesorColaborador->id,
+                            'id_modulo' => $planificacion['id_modulo'],
+                            'id_espacio' => $planificacion['id_espacio'],
+                        ]);
+                    }
+                }
             }
 
             DB::commit();

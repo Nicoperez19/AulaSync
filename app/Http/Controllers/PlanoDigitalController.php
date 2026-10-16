@@ -2772,14 +2772,7 @@ class PlanoDigitalController extends Controller
      */
     private function enviarCorreoReserva(Reserva $reserva): void
     {
-        try {
-            $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = $this->resolverEmailReserva($reserva);
-            if ($email) {
-                Mail::to($email)->send(new ConfirmacionReserva($reserva));
-            }
-        } catch (\Exception $e) {
-        }
+        app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
     }
 
     /**
@@ -2789,11 +2782,12 @@ class PlanoDigitalController extends Controller
     {
         try {
             $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = $this->resolverEmailReserva($reserva);
+            $email = app(\App\Services\ReservaService::class)->resolverEmailReserva($reserva) ?: $this->resolverEmailReserva($reserva);
             if ($email) {
                 Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("⚠️ No se pudo enviar correo de devolución para reserva {$reserva->id_reserva}: " . $e->getMessage());
         }
     }
 

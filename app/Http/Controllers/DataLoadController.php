@@ -251,16 +251,24 @@ class DataLoadController extends Controller
                 'registros_cargados' => 0
             ]);
 
-            // LIMPIEZA PREVIA TOTAL: Eliminar planificaciones y horarios del período seleccionado
-            Log::info('Iniciando limpieza previa total del período: ' . $periodoSeleccionado);
+            // PRESERVACIÓN DE HISTORIAL EN RECARGAS: Cerrar vigencia de planificaciones previas en lugar de borrarlas físicamente
+            Log::info('Iniciando cierre de vigencia previa del período: ' . $periodoSeleccionado);
+            $ayerVigencia = \Carbon\Carbon::yesterday()->toDateString();
+            $hoyVigencia = \Carbon\Carbon::today()->toDateString();
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
-            $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
-            $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
+            $planificacionesCerradas = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                ->whereIn('id_horario', $horariosDelPeriodo)
+                ->whereNull('fecha_fin_vigencia')
+                ->update(['fecha_fin_vigencia' => $ayerVigencia]);
+            $esRecargaPeriodo = $planificacionesCerradas > 0;
 
-            // Limpiar también planificaciones de colaboradores previas para evitar duplicados en recargas
+            // Cerrar vigencia de planificaciones de colaboradores previas para preservar historial de cambios
             $colabsTenantIds = ProfesorColaborador::pluck('id');
-            $planifColabsEliminadas = \App\Models\PlanificacionProfesorColaborador::whereIn('id_profesor_colaborador', $colabsTenantIds)->delete();
-            Log::info("Limpieza previa del período {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones titulares, {$planifColabsEliminadas} planificaciones de colaboradores y {$horariosEliminados} horarios eliminados.");
+            $planifColabsCerradas = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                ->whereIn('id_profesor_colaborador', $colabsTenantIds)
+                ->whereNull('fecha_fin_vigencia')
+                ->update(['fecha_fin_vigencia' => $ayerVigencia]);
+            Log::info("Vigencia previa cerrada en {$periodoSeleccionado}: {$planificacionesCerradas} planificaciones titulares y {$planifColabsCerradas} de colaboradores marcadas hasta {$ayerVigencia}.");
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
             $modulosExistentes = Modulo::count();
@@ -643,17 +651,29 @@ class DataLoadController extends Controller
                                         continue; // Omitir salas de teoría para el docente de taller
                                     }
 
-                                    \App\Models\PlanificacionProfesorColaborador::firstOrCreate([
-                                        'id_profesor_colaborador' => $colaboradorModel->id,
-                                        'id_modulo'               => $slotC['id_modulo'],
-                                        'id_espacio'              => $slotC['id_espacio'],
-                                    ]);
+                                    $planColabExistente = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                                        ->where('id_profesor_colaborador', $colaboradorModel->id)
+                                        ->where('id_modulo', $slotC['id_modulo'])
+                                        ->where('id_espacio', $slotC['id_espacio'])
+                                        ->orderByDesc('id')
+                                        ->first();
+
+                                    if ($planColabExistente) {
+                                        $planColabExistente->update(['fecha_fin_vigencia' => null]);
+                                    } else {
+                                        \App\Models\PlanificacionProfesorColaborador::create([
+                                            'id_profesor_colaborador' => $colaboradorModel->id,
+                                            'id_modulo'               => $slotC['id_modulo'],
+                                            'id_espacio'              => $slotC['id_espacio'],
+                                            'fecha_inicio_vigencia'   => !empty($esRecargaPeriodo) ? $hoyVigencia : null,
+                                        ]);
+                                    }
 
                                     // Separar al titular solo en bloques prácticos asignados al colaborador.
                                     if (!empty($idAsignaturaColaborador) && $slotC['es_practico']) {
                                         $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
 
-                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura, eliminar el duplicado
+                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura, cerrar o eliminar el duplicado activo
                                         Planificacion_Asignatura::where('id_asignatura', $idAsignaturaColaborador)
                                             ->where('id_modulo', $slotC['id_modulo'])
                                             ->where('id_espacio', $slotC['id_espacio'])
@@ -859,15 +879,25 @@ class DataLoadController extends Controller
                                     continue;
                                 }
 
-                                // CREAR planificación (verificando duplicados exactos)
+                                // CREAR o REACTIVAR planificación (conservando historial de bloques previos)
                                 try {
-                                    $existePlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
+                                    $planExistente = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                                        ->where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
                                         ->where('id_modulo', $idModulo)
                                         ->where('id_espacio', $espacioIdFinal)
-                                        ->exists();
+                                        ->orderByDesc('id')
+                                        ->first();
 
-                                    if (!$existePlanificacion) {
+                                    if ($planExistente) {
+                                        $planExistente->update([
+                                            'fecha_fin_vigencia' => null,
+                                            'inscritos' => $inscritos,
+                                            'data_load_id' => $dataLoad->id,
+                                        ]);
+                                        $processedHorariosCount++;
+                                        $planificacionesGuardadas++;
+                                    } else {
                                         $planificacion = new Planificacion_Asignatura();
                                         $planificacion->id_asignatura = $idAsignatura;
                                         $planificacion->id_horario = $horario->id_horario;
@@ -875,6 +905,8 @@ class DataLoadController extends Controller
                                         $planificacion->id_espacio = $espacioIdFinal;
                                         $planificacion->inscritos = $inscritos;
                                         $planificacion->data_load_id = $dataLoad->id;
+                                        $planificacion->fecha_inicio_vigencia = !empty($esRecargaPeriodo) ? $hoyVigencia : null;
+                                        $planificacion->es_espacio_externo = $espacioModel->esEspacioExterno();
                                         $planificacion->save();
 
                                         $processedHorariosCount++;

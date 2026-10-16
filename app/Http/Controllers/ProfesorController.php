@@ -509,6 +509,9 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
+            // Enviar correo de confirmación de uso de sala
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
+
             // Limpiar registros incorrectos de clases no realizadas
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
@@ -736,6 +739,9 @@ class ProfesorController extends Controller
             // Cambiar estado del espacio
             $espacio->estado = 'Ocupado';
             $espacio->save();
+
+            // Enviar correo de confirmación de uso de sala
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
 
             // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(

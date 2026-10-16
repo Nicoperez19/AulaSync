@@ -17,12 +17,28 @@ class PlanificacionProfesorColaborador extends Model
         'id_profesor_colaborador',
         'id_modulo',
         'id_espacio',
+        'fecha_inicio_vigencia',
+        'fecha_fin_vigencia',
     ];
 
     protected $casts = [
         'id_modulo' => 'string',
         'id_espacio' => 'string',
+        'fecha_inicio_vigencia' => 'date',
+        'fecha_fin_vigencia' => 'date',
     ];
+
+    protected static function booted()
+    {
+        static::addGlobalScope('vigencia_activa', function ($builder) {
+            $hoy = \Carbon\Carbon::today()->toDateString();
+            $table = $builder->getModel()->getTable();
+            $builder->where(function ($q) use ($table, $hoy) {
+                $q->whereNull("{$table}.fecha_fin_vigencia")
+                  ->orWhere("{$table}.fecha_fin_vigencia", '>=', $hoy);
+            });
+        });
+    }
 
     /**
      * Relación con ProfesorColaborador

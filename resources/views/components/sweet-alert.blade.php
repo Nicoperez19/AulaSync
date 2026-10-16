@@ -358,11 +358,11 @@
         // Validaciones de formularios (excepto data.index)
         @if ($errors->any() && !request()->routeIs('data.index'))
             Swal.fire({
-                title: '¡Error de Validación!',
+                title: '{{ request()->routeIs('login') ? '¡Error de Inicio de Sesión!' : '¡Error de Validación!' }}',
                 html: `
                     <ul class="text-left list-disc pl-5 space-y-1">
                         @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
+                            <li>{{ $error === 'auth.failed' ? 'El usuario o la contraseña ingresada son incorrectos.' : $error }}</li>
                         @endforeach
                     </ul>
                 `,

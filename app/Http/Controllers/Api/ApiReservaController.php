@@ -358,6 +358,8 @@ class ApiReservaController extends Controller
 
                 DB::connection('tenant')->commit();
 
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
+
                 return response()->json([
                     'success' => true,
                     'message' => $forzado
@@ -968,6 +970,8 @@ class ApiReservaController extends Controller
                 // 4️⃣ ACTUALIZAR ESTADO DEL ESPACIO
                 $espacio->estado = 'Ocupado';
                 $espacio->save();
+
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($nuevaReserva);
 
                 // 5️⃣ LIMPIAR REGISTROS DE CLASES NO REALIZADAS (si aplica)
                 if (method_exists(\App\Models\ClaseNoRealizada::class, 'limpiarRegistrosIncorrectos')) {
