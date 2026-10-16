@@ -626,79 +626,107 @@ class DashboardController extends Controller
         $fechaFinYmd = $fechaFin->format('Y-m-d');
 
         $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
-        $ultimaActualizacionCnr = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
-            ->max('updated_at') ?? 'sin-cambios';
+        try {
+            $ultimaActualizacionCnr = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
+                ->max('updated_at') ?? 'sin-cambios';
+        } catch (\Throwable $e) {
+            $ultimaActualizacionCnr = 'sin-cambios';
+        }
         $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}_{$ultimaActualizacionCnr}";
 
-        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use (
+        $computeStatusData = function () use (
             $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
         ) {
             $ahora = Carbon::now();
             $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 
-            // 1. Pre-cargar feriados en el rango
-            $feriadosEnRango = DiaFeriado::activos()
-                ->enRango($fechaInicioYmd, $fechaFinYmd)
-                ->get();
+            // 1. Pre-cargar feriados en el rango (protegido por si la tabla no existe aún en el tenant)
             $fechasFeriado = [];
-            foreach ($feriadosEnRango as $feriado) {
-                $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
-                $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
-                while ($cursor <= $fin) {
-                    $fechasFeriado[$cursor->format('Y-m-d')] = true;
-                    $cursor->addDay();
+            try {
+                $feriadosEnRango = DiaFeriado::activos()
+                    ->enRango($fechaInicioYmd, $fechaFinYmd)
+                    ->get();
+                foreach ($feriadosEnRango as $feriado) {
+                    $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
+                    $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
+                    while ($cursor <= $fin) {
+                        $fechasFeriado[$cursor->format('Y-m-d')] = true;
+                        $cursor->addDay();
+                    }
                 }
+            } catch (\Throwable $e) {
+                $fechasFeriado = [];
             }
 
             // 2. Pre-cargar clases no realizadas en mapa por módulo individual
-            $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+            $clasesNoRealizadas = collect();
             $clasesNoRealizadasCache = [];
-            foreach ($clasesNoRealizadas as $cnr) {
-                $fecha = Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
-                $modulos = explode(',', $cnr->id_modulo);
-                foreach ($modulos as $mod) {
-                    $modTrim = trim($mod);
-                    $clasesNoRealizadasCache["{$fecha}_{$cnr->id_espacio}_{$modTrim}"] = $cnr;
-                    $clasesNoRealizadasCache["{$fecha}_{$cnr->id_asignatura}_{$modTrim}"] = $cnr;
+            try {
+                $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+                foreach ($clasesNoRealizadas as $cnr) {
+                    $fecha = Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
+                    $modulos = explode(',', (string) $cnr->id_modulo);
+                    foreach ($modulos as $mod) {
+                        $modTrim = trim($mod);
+                        $clasesNoRealizadasCache["{$fecha}_{$cnr->id_espacio}_{$modTrim}"] = $cnr;
+                        $clasesNoRealizadasCache["{$fecha}_{$cnr->id_asignatura}_{$modTrim}"] = $cnr;
+                    }
                 }
+            } catch (\Throwable $e) {
+                $clasesNoRealizadas = collect();
+                $clasesNoRealizadasCache = [];
             }
 
             // 3. Pre-cargar reservas efectivas de clase en el rango
-            $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
-                ->whereIn('estado', ['activa', 'finalizada'])
-                ->where(function ($q) {
-                    $q->whereNull('hubo_asistentes')
-                      ->orWhere('hubo_asistentes', true);
-                })
-                ->where(function ($q) {
-                    $q->whereNotNull('run_profesor')
-                      ->orWhereNotNull('run_solicitante');
-                })
-                ->get()
-                ->groupBy(function ($reserva) {
-                    return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . $reserva->id_espacio;
-                });
+            try {
+                $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->where(function ($q) {
+                        $q->whereNull('hubo_asistentes')
+                          ->orWhere('hubo_asistentes', true);
+                    })
+                    ->where(function ($q) {
+                        $q->whereNotNull('run_profesor')
+                          ->orWhereNotNull('run_solicitante');
+                    })
+                    ->get()
+                    ->groupBy(function ($reserva) {
+                        try {
+                            return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . $reserva->id_espacio;
+                        } catch (\Throwable $e) {
+                            return '';
+                        }
+                    });
+            } catch (\Throwable $e) {
+                $reservasCache = collect();
+            }
 
-            // 4. Pre-cargar planificaciones vigentes (cacheadas por período)
+            // 4. Pre-cargar planificaciones vigentes (cacheadas por período con fallback si falla permisos de caché)
             $periodo = SemesterHelper::getCurrentPeriod();
-            $planificaciones = \Illuminate\Support\Facades\Cache::remember(
-                "dash_planif_{$tenantId}_{$periodo}",
-                300,
-                function () use ($periodo) {
-                    return Planificacion_Asignatura::with([
-                            'modulo:id_modulo,dia,hora_inicio,hora_termino',
-                            'horario:id_horario,run_profesor,periodo',
-                            'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,run_profesor'
-                        ])
-                        ->whereHas('modulo')
-                        ->whereHas('horario', function ($hq) use ($periodo) {
-                            if ($periodo) {
-                                $hq->where('periodo', $periodo);
-                            }
-                        })
-                        ->get();
-                }
-            );
+            $fetchPlanificaciones = function () use ($periodo) {
+                return Planificacion_Asignatura::with([
+                        'modulo:id_modulo,dia,hora_inicio,hora_termino',
+                        'horario:id_horario,run_profesor,periodo',
+                        'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,run_profesor'
+                    ])
+                    ->whereHas('modulo')
+                    ->whereHas('horario', function ($hq) use ($periodo) {
+                        if ($periodo) {
+                            $hq->where('periodo', $periodo);
+                        }
+                    })
+                    ->get();
+            };
+
+            try {
+                $planificaciones = \Illuminate\Support\Facades\Cache::remember(
+                    "dash_planif_{$tenantId}_{$periodo}",
+                    300,
+                    $fetchPlanificaciones
+                );
+            } catch (\Throwable $e) {
+                $planificaciones = $fetchPlanificaciones();
+            }
 
             // 5. Generar lista de días válidos (lunes a sábado) dentro del rango
             $fechasAEvaluar = [];
@@ -727,7 +755,7 @@ class DashboardController extends Controller
 
             // Filtrar planificaciones del día
             $planificacionesDelDia = $planificaciones->filter(function ($plan) use ($diaNombre) {
-                return ModulosHelper::normalizarDia($plan->modulo->dia) === $diaNombre;
+                return $plan->modulo && ModulosHelper::normalizarDia($plan->modulo->dia) === $diaNombre;
             });
 
             // Agrupar por Espacio y Asignatura (1 clase = 1 bloque docente consecutivo)
@@ -736,16 +764,23 @@ class DashboardController extends Controller
             });
 
             foreach ($clasesAgrupadas as $grupoKey => $modulosClase) {
-                $primerModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_inicio)->first();
-                $ultimoModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_termino)->last();
+                $primerModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_inicio ?? '')->first();
+                $ultimoModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_termino ?? '')->last();
 
                 if (!$primerModulo || !$primerModulo->modulo || !$ultimoModulo || !$ultimoModulo->modulo) {
                     continue;
                 }
+                if (empty($primerModulo->modulo->hora_inicio) || empty($ultimoModulo->modulo->hora_termino)) {
+                    continue;
+                }
 
-                $horaInicioClase = Carbon::parse($primerModulo->modulo->hora_inicio);
-                $horaFinClase    = Carbon::parse($ultimoModulo->modulo->hora_termino);
-                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFinClase->format('H:i:s'));
+                try {
+                    $horaInicioClase = Carbon::parse($primerModulo->modulo->hora_inicio);
+                    $horaFinClase    = Carbon::parse($ultimoModulo->modulo->hora_termino);
+                    $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFinClase->format('H:i:s'));
+                } catch (\Throwable $e) {
+                    continue;
+                }
 
                 // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
                 $registroCNR = null;
@@ -798,10 +833,17 @@ class DashboardController extends Controller
 
                         // Coincidencia por horario
                         foreach ($reservasDelDia as $r) {
-                            $horaAcceso = Carbon::parse($r->hora);
-                            if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
-                                $reservaEncontrada = $r;
-                                break 2;
+                            if (empty($r->hora)) {
+                                continue;
+                            }
+                            try {
+                                $horaAcceso = Carbon::parse($r->hora);
+                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
+                                    $reservaEncontrada = $r;
+                                    break 2;
+                                }
+                            } catch (\Throwable $e) {
+                                continue;
                             }
                         }
                     }
@@ -889,7 +931,13 @@ class DashboardController extends Controller
             'pct_justificadas'   => $pctJustificadas,
             'pct_no_registradas' => $pctNoRegistradas,
         ];
-        });
+        };
+
+        try {
+            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, $computeStatusData);
+        } catch (\Throwable $e) {
+            $data = $computeStatusData();
+        }
 
         if ($request->wantsJson() || $request->has('json')) {
             return response()->json($data);

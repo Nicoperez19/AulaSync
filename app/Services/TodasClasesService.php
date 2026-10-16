@@ -214,22 +214,20 @@ class TodasClasesService
         }
 
         // ── 5. PROCESAR PLANIFICACIONES DE TITULARES (INCLUYENDO HISTÓRICAS CON VIGENCIA) ──
+        $tieneVigenciaPlan = Planificacion_Asignatura::tieneColumnaVigencia();
+        $colsPlan = ['id', 'id_asignatura', 'id_espacio', 'id_modulo', 'id_horario'];
+        if ($tieneVigenciaPlan) {
+            $colsPlan = array_merge($colsPlan, ['fecha_inicio_vigencia', 'fecha_fin_vigencia', 'es_espacio_externo']);
+        }
+        $relEspacio = $tieneVigenciaPlan ? 'espacio:id_espacio,nombre_espacio,tipo_espacio,es_externo' : 'espacio:id_espacio,nombre_espacio,tipo_espacio';
+
         $query = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
-            ->select([
-                'id',
-                'id_asignatura', 
-                'id_espacio', 
-                'id_modulo', 
-                'id_horario',
-                'fecha_inicio_vigencia',
-                'fecha_fin_vigencia',
-                'es_espacio_externo',
-            ])
+            ->select($colsPlan)
             ->with([
                 'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,run_profesor_reemplazo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
-                'espacio:id_espacio,nombre_espacio,tipo_espacio,es_externo',
+                $relEspacio,
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
                 'horario' => function($query) {
                     $query->select('id_horario', 'run_profesor', 'periodo')
@@ -505,18 +503,17 @@ class TodasClasesService
         });
 
         // ── 6. PROCESAR PLANIFICACIONES DE PROFESORES COLABORADORES (INCLUYENDO HISTÓRICAS CON VIGENCIA) ──
+        $tieneVigenciaColab = PlanificacionProfesorColaborador::tieneColumnaVigencia();
+        $colsColab = ['id', 'id_profesor_colaborador', 'id_espacio', 'id_modulo'];
+        if ($tieneVigenciaColab) {
+            $colsColab = array_merge($colsColab, ['fecha_inicio_vigencia', 'fecha_fin_vigencia']);
+        }
+
         $queryColab = PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
-            ->select([
-                'id',
-                'id_profesor_colaborador',
-                'id_espacio',
-                'id_modulo',
-                'fecha_inicio_vigencia',
-                'fecha_fin_vigencia',
-            ])
+            ->select($colsColab)
             ->with([
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
-                'espacio:id_espacio,nombre_espacio,tipo_espacio,es_externo',
+                $relEspacio,
                 'profesorColaborador' => function($q) {
                     $q->select('id', 'run_profesor_colaborador', 'id_asignatura', 'nombre_asignatura_temporal', 'fecha_inicio', 'fecha_termino', 'estado', 'tipo_clase')
                       ->with([
