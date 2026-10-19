@@ -64,15 +64,17 @@ class ClasesNoRealizadasTable extends Component
 
     public function mount()
     {
-        $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
-        
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
+        $this->periodo = request()->query('periodo', SemesterHelper::getCurrentPeriod());
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $defaultInicio = $limites['inicio']->format('Y-m-d');
+        $defaultFin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
+
+        $this->fecha_inicio = request()->query('fecha_inicio', $this->fecha_inicio ?: $defaultInicio);
+        $this->fecha_fin = request()->query('fecha_fin', $this->fecha_fin ?: $defaultFin);
+        $this->estado = request()->query('estado', $this->estado);
+        $this->search = request()->query('search', $this->search);
         
         // Si viene un reagendar_id desde URL, abrir modal automáticamente
         if ($this->reagendar_id) {
@@ -115,17 +117,11 @@ class ClasesNoRealizadasTable extends Component
         $this->resetPage();
 
         if ($value) {
-            $partes = explode('-', $value);
-            if (count($partes) === 2) {
-                $periodoModel = PeriodoAcademico::where('anio', (int)$partes[0])
-                    ->where('semestre', (int)$partes[1])
-                    ->first();
-                if ($periodoModel) {
-                    $this->fecha_inicio = Carbon::parse($periodoModel->fecha_inicio)->format('Y-m-d');
-                    $fin = Carbon::parse($periodoModel->fecha_fin);
-                    $this->fecha_fin = $fin->gt(Carbon::today()) ? Carbon::today()->format('Y-m-d') : $fin->format('Y-m-d');
-                }
-            }
+            $limites = SemesterHelper::getLimitesPeriodo($value);
+            $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+            $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+                ? Carbon::today()->format('Y-m-d')
+                : $limites['fin']->format('Y-m-d');
         } else {
             $this->fecha_inicio = '';
             $this->fecha_fin = Carbon::today()->format('Y-m-d');
@@ -152,7 +148,7 @@ class ClasesNoRealizadasTable extends Component
         $this->todasLasClasesFiltradasCache = null;
 
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $estados = ['', 'no_realizada', 'realizada', 'justificado', 'pendiente'];
+        $estados = ['', 'no_realizada', 'realizada', 'recuperada', 'impartidas', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
             $key = "clases_no_realizadas_coll_{$tenantId}_" . md5(json_encode([
                 $this->fecha_inicio,
@@ -170,6 +166,8 @@ class ClasesNoRealizadasTable extends Component
         return match($this->estado) {
             'no_realizada' => 'No registradas',
             'realizada' => 'Registradas',
+            'recuperada' => 'Recuperadas',
+            'impartidas' => 'Impartidas / Efectivas',
             'justificado' => 'Justificadas',
             'pendiente' => 'Pendientes de recuperación',
             default => 'Todos los estados'
@@ -205,14 +203,11 @@ class ClasesNoRealizadasTable extends Component
         $this->estado = '';
         $this->ua = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
-        
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
 
         $this->cachedEstadisticas = null; // Limpiar cache
         $this->todasLasClasesFiltradasCache = null;
@@ -650,18 +645,23 @@ class ClasesNoRealizadasTable extends Component
 
             // Aplicar filtro de estado en memoria
             if ($this->estado) {
-                $estadoStr = match($this->estado) {
-                    'no_realizada' => 'No Registrada',
-                    'realizada', 'registrada' => 'Realizada',
-                    'justificado' => 'Justificada',
-                    'pendiente' => 'Pendiente de Recuperación',
-                    default => null
-                };
-                if ($estadoStr) {
-                    if ($estadoStr === 'Realizada') {
-                        $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
-                    } else {
-                        $clases = $clases->where('estado', $estadoStr);
+                if ($this->estado === 'impartidas') {
+                    $clases = $clases->whereIn('estado', ['Realizada', 'Registrada', 'Recuperada', 'Justificada']);
+                } else {
+                    $estadoStr = match($this->estado) {
+                        'no_realizada' => 'No Registrada',
+                        'realizada', 'registrada' => 'Realizada',
+                        'recuperada' => 'Recuperada',
+                        'justificado' => 'Justificada',
+                        'pendiente' => 'Pendiente de Recuperación',
+                        default => null
+                    };
+                    if ($estadoStr) {
+                        if ($estadoStr === 'Realizada') {
+                            $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
+                        } else {
+                            $clases = $clases->where('estado', $estadoStr);
+                        }
                     }
                 }
             }

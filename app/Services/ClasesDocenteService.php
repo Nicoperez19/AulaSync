@@ -45,19 +45,41 @@ class ClasesDocenteService
             ->with(['espacio'])
             ->get();
 
-        $relacionesAsig = ['carrera', 'planificaciones.modulo', 'planificaciones.espacio'];
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+
+        $filtroPlanificacionesPeriodo = function ($q) use ($periodoActual) {
+            $q->whereHas('horario', function ($hq) use ($periodoActual) {
+                $hq->where('periodo', $periodoActual);
+            })->with(['modulo', 'espacio']);
+        };
+
+        $relacionesAsig = [
+            'carrera',
+            'planificaciones' => $filtroPlanificacionesPeriodo,
+        ];
         if ($tieneTablas) {
             $relacionesAsig[] = 'estudiantes';
         }
 
-        // 2. Asignaturas como titular
+        $filtroAsignaturaPeriodo = function ($q) use ($periodoActual) {
+            $q->where(function ($sub) use ($periodoActual) {
+                $sub->where('periodo', $periodoActual)
+                    ->orWhereHas('planificaciones.horario', function ($hq) use ($periodoActual) {
+                        $hq->where('periodo', $periodoActual);
+                    });
+            });
+        };
+
+        // 2. Asignaturas como titular (solo del semestre activo)
         $asignaturasTitular = Asignatura::where('run_profesor', $runDocente)
+            ->where($filtroAsignaturaPeriodo)
             ->with($relacionesAsig)
             ->get();
 
-        // 3. Asignaturas como reemplazo
+        // 3. Asignaturas como reemplazo (solo del semestre activo)
         $asignaturasReemplazo = Asignatura::where('run_profesor_reemplazo', $runDocente)
             ->where('run_profesor', '!=', $runDocente)
+            ->where($filtroAsignaturaPeriodo)
             ->with($relacionesAsig)
             ->get();
 

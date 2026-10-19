@@ -53,7 +53,7 @@ class ClasesNoRealizadasController extends Controller
         
         $request->validate([
             'search' => 'nullable|string|max:255',
-            'estado' => 'nullable|in:no_realizada,justificado,recuperada,pendiente',
+            'estado' => 'nullable|in:no_realizada,realizada,registrada,justificado,recuperada,pendiente',
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
@@ -70,6 +70,10 @@ class ClasesNoRealizadasController extends Controller
         // Generar nombre de archivo descriptivo
         $nombreArchivo = 'Control_De_Clases';
         
+        if ($periodo) {
+            $nombreArchivo .= '_Semestre_' . str_replace('/', '-', $periodo);
+        }
+
         if ($ua) {
             $nombreArchivo .= '_UA_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $ua);
         }
@@ -77,9 +81,7 @@ class ClasesNoRealizadasController extends Controller
         if ($fechaInicio && $fechaFin) {
             $nombreArchivo .= '_' . Carbon::parse($fechaInicio)->format('d-m-Y');
             $nombreArchivo .= '_a_' . Carbon::parse($fechaFin)->format('d-m-Y');
-        } elseif ($periodo) {
-            $nombreArchivo .= '_Periodo_' . str_replace('/', '-', $periodo);
-        } else {
+        } elseif (!$periodo) {
             $nombreArchivo .= '_' . Carbon::now()->format('d-m-Y');
         }
         

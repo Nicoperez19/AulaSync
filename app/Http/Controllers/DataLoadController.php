@@ -152,18 +152,18 @@ class DataLoadController extends Controller
             $colPeriodoAcademicoIdx = null;
             $headerPeriodoAcademicoEncontrado = null;
             $headersPeriodoAcademico = [
-                'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
-                'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
+                'SEMESTRE', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
+                'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
                 'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
                 'ANIO_SEMESTRE', 'ANIOSEMESTRE'
             ];
             foreach ($headers as $colIdx => $headerName) {
-            foreach ($headers as $colIdx => $headerName) {
-                    $colSemestreIdx = $colIdx;
+                if ($colSemestreIdx === null && in_array($headerName, $posiblesHeadersSemestre)) {
                     $colSemestreIdx = $colIdx;
                 }
 
-                // "SEMESTRE" a secas suele indicar el nivel curricular de la asignatura.
+                // Nota: si "SEMESTRE" contiene niveles curriculares (3, 4, 5...), $esMallaCurricular lo descarta más abajo.
+                // En planificaciones UCSC la columna se llama "SEMESTRE" y trae "2026-1" o "2026-2".
                 if ($colPeriodoAcademicoIdx === null && in_array($headerName, $headersPeriodoAcademico)) {
                     $colPeriodoAcademicoIdx = $colIdx;
                     $headerPeriodoAcademicoEncontrado = $headerName;
@@ -251,10 +251,14 @@ class DataLoadController extends Controller
                 'registros_cargados' => 0
             ]);
 
-            // PRESERVACIÓN DE HISTORIAL EN RECARGAS: Cerrar vigencia de planificaciones previas en lugar de borrarlas físicamente
+            // Asegurar separación de semestres previos antes de procesar la carga
+            SemesterHelper::asegurarSeparacionSemestres($periodoSeleccionado, true);
+
+            // PRESERVACIÓN DE HISTORIAL EN RECARGAS: Cerrar vigencia de planificaciones previas del mismo período en lugar de borrarlas físicamente
             Log::info('Iniciando cierre de vigencia previa del período: ' . $periodoSeleccionado);
             $ayerVigencia = \Carbon\Carbon::yesterday()->toDateString();
             $hoyVigencia = \Carbon\Carbon::today()->toDateString();
+            $limitesCarga = SemesterHelper::getLimitesPeriodo($periodoSeleccionado);
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
             $planificacionesCerradas = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
                 ->whereIn('id_horario', $horariosDelPeriodo)
@@ -262,8 +266,10 @@ class DataLoadController extends Controller
                 ->update(['fecha_fin_vigencia' => $ayerVigencia]);
             $esRecargaPeriodo = $planificacionesCerradas > 0;
 
-            // Cerrar vigencia de planificaciones de colaboradores previas para preservar historial de cambios
-            $colabsTenantIds = ProfesorColaborador::pluck('id');
+            // Cerrar vigencia de planificaciones de colaboradores previas de este mismo período
+            $colabsTenantIds = ProfesorColaborador::where('fecha_inicio', '>=', $limitesCarga['inicio']->toDateString())
+                ->where('fecha_termino', '<=', $limitesCarga['fin']->toDateString())
+                ->pluck('id');
             $planifColabsCerradas = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
                 ->whereIn('id_profesor_colaborador', $colabsTenantIds)
                 ->whereNull('fecha_fin_vigencia')
@@ -556,11 +562,16 @@ class DataLoadController extends Controller
                                     'codigo_asignatura' => $codigoAsignaturaColab,
                                     'nombre_asignatura' => $nombreAsignaturaColaborador,
                                     'seccion'           => $numeroSeccionColab,
+                                    'periodo'           => $periodoSeleccionado,
                                     'run_profesor'      => null, // El titular asignará su RUN al procesar su fila
                                     'id_carrera'        => !empty($idCarrera) ? $idCarrera : null
                                 ]);
-                            } elseif (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
-                                $asigExistente->update(['id_carrera' => $idCarrera]);
+                            } else {
+                                $datosUpdateAsig = ['periodo' => $periodoSeleccionado];
+                                if (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
+                                    $datosUpdateAsig['id_carrera'] = $idCarrera;
+                                }
+                                $asigExistente->update($datosUpdateAsig);
                             }
                         }
 
@@ -570,16 +581,17 @@ class DataLoadController extends Controller
                         }
 
                         try {
+                            $limitesPeriodoColab = SemesterHelper::getLimitesPeriodo($periodoSeleccionado);
                             $colaboradorModel = ProfesorColaborador::updateOrCreate(
                                 [
                                     'run_profesor_colaborador' => $run,
                                     'id_asignatura'           => !empty($idAsignaturaColaborador) ? $idAsignaturaColaborador : null,
+                                    'fecha_inicio'            => $limitesPeriodoColab['inicio']->toDateString(),
                                 ],
                                 [
                                     'nombre_asignatura_temporal' => $nombreAsignaturaColaborador ?: null,
                                     'cantidad_inscritos'        => $inscritosColaborador,
-                                    'fecha_inicio'              => now()->startOfYear(),
-                                    'fecha_termino'             => now()->endOfYear(),
+                                    'fecha_termino'             => $limitesPeriodoColab['fin']->toDateString(),
                                     'estado'                    => 'activo',
                                 ]
                             );
@@ -673,10 +685,13 @@ class DataLoadController extends Controller
                                     if (!empty($idAsignaturaColaborador) && $slotC['es_practico']) {
                                         $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
 
-                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura, cerrar o eliminar el duplicado activo
+                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura en este mismo período, eliminar el duplicado activo
                                         Planificacion_Asignatura::where('id_asignatura', $idAsignaturaColaborador)
                                             ->where('id_modulo', $slotC['id_modulo'])
                                             ->where('id_espacio', $slotC['id_espacio'])
+                                            ->whereHas('horario', function ($hq) use ($periodoSeleccionado) {
+                                                $hq->where('periodo', $periodoSeleccionado);
+                                            })
                                             ->delete();
                                     }
                                 }
@@ -716,6 +731,7 @@ class DataLoadController extends Controller
                             'codigo_asignatura' => $codigoAsignatura,
                             'nombre_asignatura' => $nombreAsignatura,
                             'seccion' => $numeroSeccion,
+                            'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
                             'id_carrera' => !empty($idCarrera) ? $idCarrera : null
                         ]);
@@ -725,6 +741,7 @@ class DataLoadController extends Controller
                             'codigo_asignatura' => !empty($codigoAsignatura) ? $codigoAsignatura : $existingAsignatura->codigo_asignatura,
                             'nombre_asignatura' => !empty($nombreAsignatura) ? $nombreAsignatura : $existingAsignatura->nombre_asignatura,
                             'seccion' => $numeroSeccion,
+                            'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
                             'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingAsignatura->id_carrera
                         ]);

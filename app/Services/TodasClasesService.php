@@ -37,30 +37,47 @@ class TodasClasesService
         
         $clasesData = new Collection();
 
-        if (!$fechaInicio || !$fechaFin) {
-            if ($periodo) {
-                $partes = explode('-', $periodo);
-                if (count($partes) === 2) {
-                    $anio = (int)$partes[0];
-                    $semestre = (int)$partes[1];
-                    
-                    $periodoModel = \App\Models\PeriodoAcademico::where('anio', $anio)
-                        ->where('semestre', $semestre)
-                        ->first();
-                        
-                    if ($periodoModel) {
-                        if (!$fechaInicio) {
-                            $fechaInicio = Carbon::parse($periodoModel->fecha_inicio)->startOfDay();
-                        }
-                        if (!$fechaFin) {
-                            $fechaFin = Carbon::parse($periodoModel->fecha_fin)->endOfDay();
-                        }
-                    }
+        \App\Helpers\SemesterHelper::asegurarSeparacionSemestres();
+
+        try {
+            $periodosModels = \App\Models\PeriodoAcademico::orderBy('anio')->orderBy('semestre')->get();
+        } catch (\Throwable $e) {
+            $periodosModels = collect();
+        }
+
+        // Si no se especificó período explícito, inferirlo de las fechas o usar el semestre activo actual
+        if (!$periodo) {
+            if ($fechaInicio && $fechaFin) {
+                $pIni = $this->resolverPeriodoParaFecha($fechaInicio->format('Y-m-d'), $periodosModels);
+                $pFin = $this->resolverPeriodoParaFecha($fechaFin->format('Y-m-d'), $periodosModels);
+                if ($pIni === $pFin) {
+                    $periodo = $pIni;
                 }
+            } else {
+                $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod($fechaInicio ?: null);
             }
-            
-            $fechaInicio = $fechaInicio ?? Carbon::now()->startOfMonth();
-            $fechaFin = $fechaFin ?? Carbon::now()->endOfMonth();
+        }
+
+        if ($periodo) {
+            $limitesSemestre = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodo, $periodosModels);
+            $inicioSemestre = $limitesSemestre['inicio'];
+            $finSemestre = $limitesSemestre['fin'];
+
+            if (!$fechaInicio || $fechaInicio->lt($inicioSemestre) || $fechaInicio->gt($finSemestre)) {
+                $fechaInicio = $inicioSemestre->copy();
+            }
+            if (!$fechaFin || $fechaFin->gt($finSemestre) || $fechaFin->lt($inicioSemestre)) {
+                $fechaFin = $finSemestre->copy();
+            }
+        } else {
+            if (!$fechaInicio) {
+                $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                $limitesActual = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodoActual, $periodosModels);
+                $fechaInicio = $limitesActual['inicio']->copy();
+            }
+            if (!$fechaFin) {
+                $fechaFin = Carbon::today()->endOfDay();
+            }
         }
 
         $hoy = Carbon::today()->endOfDay();
@@ -70,9 +87,9 @@ class TodasClasesService
 
         $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-        $feriadosEnRango = DiaFeriado::activos()
-            ->enRango($fechaInicio->toDateString(), $fechaFin->toDateString())
-            ->get();
+        $feriadosEnRango = $fechaInicio->lte($fechaFin)
+            ? DiaFeriado::activos()->enRango($fechaInicio->toDateString(), $fechaFin->toDateString())->get()
+            : collect();
 
         $fechasFeriado = [];
         foreach ($feriadosEnRango as $feriado) {
@@ -85,11 +102,17 @@ class TodasClasesService
         }
 
         $fechas = [];
+        $periodoPorFecha = [];
         $currentDate = $fechaInicio->copy()->startOfDay();
         $fechaFinDia = $fechaFin->copy()->startOfDay();
         while ($currentDate <= $fechaFinDia) {
             if ($currentDate->dayOfWeek >= 1 && $currentDate->dayOfWeek <= 6) {
-                $fechas[] = $currentDate->format('Y-m-d');
+                $fStr = $currentDate->format('Y-m-d');
+                $pFecha = $this->resolverPeriodoParaFecha($fStr, $periodosModels);
+                if (!$periodo || $pFecha === $periodo) {
+                    $fechas[] = $fStr;
+                    $periodoPorFecha[$fStr] = $pFecha;
+                }
             }
             $currentDate->addDay();
         }
@@ -213,6 +236,23 @@ class TodasClasesService
             }
         }
 
+        // Mapa de semestres asociados a cada asignatura según sus horarios titulares
+        $periodosPorAsignatura = [];
+        try {
+            $asigPeriodosRows = \Illuminate\Support\Facades\DB::connection('tenant')
+                ->table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->whereNotNull('pa.id_asignatura')
+                ->whereNotNull('h.periodo')
+                ->select('pa.id_asignatura', 'h.periodo')
+                ->distinct()
+                ->get();
+            foreach ($asigPeriodosRows as $apr) {
+                $periodosPorAsignatura[$apr->id_asignatura][$apr->periodo] = true;
+            }
+        } catch (\Throwable $e) {
+        }
+
         // ── 5. PROCESAR PLANIFICACIONES DE TITULARES (INCLUYENDO HISTÓRICAS CON VIGENCIA) ──
         $tieneVigenciaPlan = Planificacion_Asignatura::tieneColumnaVigencia();
         $colsPlan = ['id', 'id_asignatura', 'id_espacio', 'id_modulo', 'id_horario'];
@@ -284,6 +324,8 @@ class TodasClasesService
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
             $fechas,
+            $periodoPorFecha,
+            $periodosModels,
             $dias,
             $fechasFeriado,
             $periodo,
@@ -291,6 +333,14 @@ class TodasClasesService
         ) {
             foreach ($planificaciones as $planificacion) {
                 if (!$planificacion->modulo || !$planificacion->horario || !$planificacion->horario->profesor) {
+                    continue;
+                }
+
+                $periodoPlan = $planificacion->horario->periodo ?? null;
+                if (empty($periodoPlan) && !empty($planificacion->id_horario) && preg_match('/(\d{4}-[12])$/', (string) $planificacion->id_horario, $mP)) {
+                    $periodoPlan = $mP[1];
+                }
+                if ($periodo && $periodoPlan && $periodoPlan !== $periodo) {
                     continue;
                 }
 
@@ -306,9 +356,30 @@ class TodasClasesService
                 $diaModulo = ModulosHelper::normalizarDia($planificacion->modulo->dia);
                 $inicioVigencia = $planificacion->fecha_inicio_vigencia ? Carbon::parse($planificacion->fecha_inicio_vigencia)->format('Y-m-d') : null;
                 $finVigencia = $planificacion->fecha_fin_vigencia ? Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d') : null;
+
+                // Acotar siempre la vigencia máxima del horario a los límites de su propio semestre
+                if ($periodoPlan) {
+                    $limPlan = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodoPlan, $periodosModels);
+                    $iniSemPlan = $limPlan['inicio']->format('Y-m-d');
+                    $finSemPlan = $limPlan['fin']->format('Y-m-d');
+                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan) {
+                        $inicioVigencia = $iniSemPlan;
+                    }
+                    if (!$finVigencia || $finVigencia > $finSemPlan) {
+                        $finVigencia = $finSemPlan;
+                    }
+                }
+
                 $esExterno = (bool) ($planificacion->es_espacio_externo || ($planificacion->espacio && $planificacion->espacio->esEspacioExterno()));
 
                 foreach ($fechas as $fechaStr) {
+                    $periodoFecha = $periodoPorFecha[$fechaStr] ?? $periodo;
+
+                    // No mezclar semestres: el horario de un semestre solo aplica en fechas de ese mismo semestre
+                    if ($periodoPlan && $periodoFecha && $periodoPlan !== $periodoFecha) {
+                        continue;
+                    }
+
                     // Respetar vigencia de horario (cuando hubo ajustes durante el semestre)
                     if ($inicioVigencia && $fechaStr < $inicioVigencia) {
                         continue;
@@ -362,7 +433,7 @@ class TodasClasesService
                                 'id'                => $claseId,
                                 'fecha'             => clone $fecha,
                                 'dia'               => ucfirst($diaFecha),
-                                'periodo'           => $periodo ?? $planificacion->horario->periodo ?? 'N/A',
+                                'periodo'           => $periodoPlan ?: ($periodoFecha ?: 'N/A'),
                                 'profesor'          => $planificacion->horario->profesor->name,
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
@@ -489,7 +560,7 @@ class TodasClasesService
                             'id' => $claseId,
                             'fecha' => clone $fecha,
                             'dia' => ucfirst($diaFecha),
-                            'periodo' => $periodo ?? $planificacion->horario->periodo ?? 'N/A',
+                            'periodo' => $periodoPlan ?: ($periodoFecha ?: 'N/A'),
                             'profesor' => $planificacion->horario->profesor->name,
                             'run_profesor' => $runProfesor,
                             'ua' => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
@@ -520,7 +591,7 @@ class TodasClasesService
 
         // ── 6. PROCESAR PLANIFICACIONES DE PROFESORES COLABORADORES (INCLUYENDO HISTÓRICAS CON VIGENCIA) ──
         $tieneVigenciaColab = PlanificacionProfesorColaborador::tieneColumnaVigencia();
-        $colsColab = ['id', 'id_profesor_colaborador', 'id_espacio', 'id_modulo'];
+        $colsColab = ['id', 'id_profesor_colaborador', 'id_espacio', 'id_modulo', 'created_at', 'updated_at'];
         if ($tieneVigenciaColab) {
             $colsColab = array_merge($colsColab, ['fecha_inicio_vigencia', 'fecha_fin_vigencia']);
         }
@@ -531,7 +602,7 @@ class TodasClasesService
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
                 $relEspacio,
                 'profesorColaborador' => function($q) {
-                    $q->select('id', 'run_profesor_colaborador', 'id_asignatura', 'nombre_asignatura_temporal', 'fecha_inicio', 'fecha_termino', 'estado', 'tipo_clase')
+                    $q->select('id', 'run_profesor_colaborador', 'id_asignatura', 'nombre_asignatura_temporal', 'fecha_inicio', 'fecha_termino', 'estado', 'tipo_clase', 'created_at', 'updated_at')
                       ->with([
                           'profesor:run_profesor,name,id_carrera,id_area_academica',
                           'profesor.carrera:id_carrera,nombre',
@@ -584,7 +655,10 @@ class TodasClasesService
             &$clasesNoRealizadasUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
+            $periodosPorAsignatura,
+            $periodosModels,
             $fechas,
+            $periodoPorFecha,
             $dias,
             $fechasFeriado,
             $periodo,
@@ -593,6 +667,11 @@ class TodasClasesService
             foreach ($planificacionesColab as $planificacion) {
                 $colab = $planificacion->profesorColaborador;
                 if (!$planificacion->modulo || !$colab || !$colab->profesor) {
+                    continue;
+                }
+
+                $periodosColab = $this->resolverPeriodosColaborador($planificacion, $colab, $periodosPorAsignatura, $periodosModels);
+                if ($periodo && !empty($periodosColab) && !isset($periodosColab[$periodo])) {
                     continue;
                 }
 
@@ -608,12 +687,38 @@ class TodasClasesService
                 $inicioPlan = $planificacion->fecha_inicio_vigencia ? Carbon::parse($planificacion->fecha_inicio_vigencia)->format('Y-m-d') : null;
                 $finPlan = $planificacion->fecha_fin_vigencia ? Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d') : null;
 
+                // Acotar estrictamente la vigencia del colaborador al semestre al que pertenece
+                $periodoUnicoColab = (!empty($periodosColab) && count($periodosColab) === 1)
+                    ? (string) array_key_first($periodosColab)
+                    : ($periodo ?: null);
+                if ($periodoUnicoColab) {
+                    $limColab = SemesterHelper::getLimitesPeriodo($periodoUnicoColab, $periodosModels);
+                    $limColabIni = $limColab['inicio']->format('Y-m-d');
+                    $limColabFin = $limColab['fin']->format('Y-m-d');
+                    if (!$inicioColab || $inicioColab < $limColabIni) {
+                        $inicioColab = $limColabIni;
+                    }
+                    if (!$finColab || $finColab > $limColabFin) {
+                        $finColab = $limColabFin;
+                    }
+                }
+
                 $esExterno = (bool) (
                     $colab->tipo_clase === 'actividad_externa' ||
                     ($planificacion->espacio && $planificacion->espacio->esEspacioExterno())
                 );
 
                 foreach ($fechas as $fechaStr) {
+                    $periodoFecha = $periodoPorFecha[$fechaStr] ?? $periodo;
+
+                    // No mezclar semestres: validar que el bloque colaborador pertenezca al semestre de la fecha
+                    if ($periodo && $periodoFecha !== $periodo) {
+                        continue;
+                    }
+                    if (!empty($periodosColab) && !isset($periodosColab[$periodoFecha])) {
+                        continue;
+                    }
+
                     // Respetar rango de fechas del colaborador y vigencia de su bloque
                     if ($inicioColab && $fechaStr < $inicioColab) {
                         continue;
@@ -676,7 +781,7 @@ class TodasClasesService
                                 'id'                => $claseId,
                                 'fecha'             => clone $fecha,
                                 'dia'               => ucfirst($diaFecha),
-                                'periodo'           => $periodo ?? ($fecha->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
+                                'periodo'           => $periodoFecha,
                                 'profesor'          => $profesorModel->name,
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
@@ -807,7 +912,7 @@ class TodasClasesService
                             'id'                => $claseId,
                             'fecha'             => clone $fecha,
                             'dia'               => ucfirst($diaFecha),
-                            'periodo'           => $periodo ?? ($fecha->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
+                            'periodo'           => $periodoFecha,
                             'profesor'          => $profesorModel->name,
                             'run_profesor'      => $runProfesor,
                             'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
@@ -841,7 +946,15 @@ class TodasClasesService
             if (isset($clasesNoRealizadasUsadasIds[$cnr->id])) {
                 continue;
             }
-            if ($periodo && !empty($cnr->periodo) && $cnr->periodo !== $periodo) {
+
+            $fechaCnr = Carbon::parse($cnr->fecha_clase);
+            $fechaCnrStr = $fechaCnr->format('Y-m-d');
+            $periodoFechaCnr = $periodoPorFecha[$fechaCnrStr] ?? $this->resolverPeriodoParaFecha($fechaCnrStr, $periodosModels);
+
+            if ($periodo && $periodoFechaCnr !== $periodo) {
+                continue;
+            }
+            if ($periodo && !empty($cnr->periodo) && $cnr->periodo !== $periodo && $periodoFechaCnr !== $periodo) {
                 continue;
             }
 
@@ -858,7 +971,6 @@ class TodasClasesService
                 continue;
             }
 
-            $fechaCnr = Carbon::parse($cnr->fecha_clase);
             $diaFecha = ModulosHelper::normalizarDia($dias[$fechaCnr->dayOfWeek] ?? '');
             $runProfNorm = $this->normalizeRun($cnr->run_profesor);
             $modNumStr = preg_replace('/^[A-Z]{2}\./', '', (string) $cnr->id_modulo);
@@ -873,7 +985,7 @@ class TodasClasesService
                 'id'                => $cnr->id,
                 'fecha'             => clone $fechaCnr,
                 'dia'               => ucfirst($diaFecha),
-                'periodo'           => $cnr->periodo ?? $periodo ?? ($fechaCnr->year . '-' . ($fechaCnr->month <= 6 ? '1' : '2')),
+                'periodo'           => $periodoFechaCnr,
                 'profesor'          => $cnr->profesor->name ?? $cnr->run_profesor,
                 'run_profesor'      => $runProfNorm,
                 'ua'                => $this->resolverUa($cnr->asignatura, $cnr->profesor),
@@ -927,6 +1039,12 @@ class TodasClasesService
             if ($fechaRes->dayOfWeek < 1 || $fechaRes->dayOfWeek > 6) {
                 continue;
             }
+            $fechaResStr = $fechaRes->format('Y-m-d');
+            $periodoFechaRes = $periodoPorFecha[$fechaResStr] ?? $this->resolverPeriodoParaFecha($fechaResStr, $periodosModels);
+            if ($periodo && $periodoFechaRes !== $periodo) {
+                continue;
+            }
+
             $diaFecha = ModulosHelper::normalizarDia($dias[$fechaRes->dayOfWeek]);
             $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
             $prefijoDia = $prefijosDias[$fechaRes->dayOfWeek];
@@ -950,7 +1068,7 @@ class TodasClasesService
             foreach ($rangoModulos as $numMod) {
                 $horarioCanon = ModulosHelper::getHorarioModulo($diaFecha, (int) $numMod);
                 $idModRaw = "{$prefijoDia}.{$numMod}";
-                $claveCnrRes = $fechaRes->format('Y-m-d') . "_{$res->id_espacio}_{$idModRaw}_{$runProfNorm}";
+                $claveCnrRes = $fechaResStr . "_{$res->id_espacio}_{$idModRaw}_{$runProfNorm}";
                 $cnrRes = $this->clasesNoRealizadasCache[$claveCnrRes] ?? null;
 
                 $estadoFinalRes = $estadoReservaStr;
@@ -974,13 +1092,13 @@ class TodasClasesService
                 }
 
                 $horaDeteccionRes = $cnrRes?->hora_deteccion
-                    ?? ($res->hora ? Carbon::parse($fechaRes->format('Y-m-d') . ' ' . $res->hora) : $fechaRes);
+                    ?? ($res->hora ? Carbon::parse($fechaResStr . ' ' . $res->hora) : $fechaRes);
 
                 $clasesData->push([
                     'id'                => $idFinalRes,
                     'fecha'             => clone $fechaRes,
                     'dia'               => ucfirst($diaFecha),
-                    'periodo'           => $periodo ?? ($fechaRes->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
+                    'periodo'           => $periodoFechaRes,
                     'profesor'          => $nombreProfesor,
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($res->asignatura, $res->profesor),
@@ -1545,5 +1663,84 @@ class TodasClasesService
             return (string) $profesor->areaAcademica->nombre_area_academica;
         }
         return '';
+    }
+
+    /**
+     * Determina a qué período académico ('YYYY-1' o 'YYYY-2') pertenece una fecha ('Y-m-d').
+     */
+    private function resolverPeriodoParaFecha(string $fechaYmd, $periodosModels = null): string
+    {
+        $anio = (int) substr($fechaYmd, 0, 4);
+        $lim1 = \App\Helpers\SemesterHelper::getLimitesPeriodo($anio . '-1', $periodosModels);
+        $lim2 = \App\Helpers\SemesterHelper::getLimitesPeriodo($anio . '-2', $periodosModels);
+
+        if ($fechaYmd >= $lim2['inicio']->format('Y-m-d')) {
+            return $anio . '-2';
+        }
+        if ($fechaYmd <= $lim1['fin']->format('Y-m-d')) {
+            return $anio . '-1';
+        }
+
+        return substr($fechaYmd, 5, 5) >= '07-21' ? ($anio . '-2') : ($anio . '-1');
+    }
+
+    /**
+     * Determina el semestre único en el que aplica una planificación de profesor colaborador,
+     * evitando que colaboradores del 1° semestre se proyecten en el 2° semestre o viceversa.
+     */
+    private function resolverPeriodosColaborador($planificacion, $colab, array $periodosPorAsignatura, $periodosModels = null): array
+    {
+        if (!empty($planificacion->fecha_fin_vigencia)) {
+            $pFinPlan = $this->resolverPeriodoParaFecha(Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d'), $periodosModels);
+            return [$pFinPlan => true];
+        }
+
+        if (!empty($planificacion->fecha_inicio_vigencia)) {
+            $pIniPlan = $this->resolverPeriodoParaFecha(Carbon::parse($planificacion->fecha_inicio_vigencia)->format('Y-m-d'), $periodosModels);
+            return [$pIniPlan => true];
+        }
+
+        $iniColab = $colab->fecha_inicio ? Carbon::parse($colab->fecha_inicio)->format('Y-m-d') : null;
+        $finColab = $colab->fecha_termino ? Carbon::parse($colab->fecha_termino)->format('Y-m-d') : null;
+        $esRangoAnualGenerico = $iniColab && $finColab
+            && str_ends_with($iniColab, '-01-01')
+            && str_ends_with($finColab, '-12-31');
+
+        if (!$esRangoAnualGenerico && ($iniColab || $finColab)) {
+            $pIni = $iniColab ? $this->resolverPeriodoParaFecha($iniColab, $periodosModels) : null;
+            $pFin = $finColab ? $this->resolverPeriodoParaFecha($finColab, $periodosModels) : null;
+            if ($pIni && $pFin && $pIni === $pFin) {
+                return [$pIni => true];
+            }
+            if ($pFin) {
+                return [$pFin => true];
+            }
+            if ($pIni) {
+                return [$pIni => true];
+            }
+        }
+
+        if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+            return [(string) $colab->asignatura->periodo => true];
+        }
+
+        if (!empty($colab->id_asignatura) && !empty($periodosPorAsignatura[$colab->id_asignatura])) {
+            if (count($periodosPorAsignatura[$colab->id_asignatura]) === 1) {
+                return $periodosPorAsignatura[$colab->id_asignatura];
+            }
+        }
+
+        $fechaRef = $planificacion->updated_at ?? $planificacion->created_at ?? $colab->updated_at ?? $colab->created_at;
+        if ($fechaRef) {
+            $pRef = $this->resolverPeriodoParaFecha(Carbon::parse($fechaRef)->format('Y-m-d'), $periodosModels);
+            return [$pRef => true];
+        }
+
+        if (!empty($colab->id_asignatura) && !empty($periodosPorAsignatura[$colab->id_asignatura])) {
+            $ultimoPeriodo = (string) array_key_last($periodosPorAsignatura[$colab->id_asignatura]);
+            return [$ultimoPeriodo => true];
+        }
+
+        return [];
     }
 }

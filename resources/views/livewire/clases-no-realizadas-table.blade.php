@@ -29,23 +29,25 @@
         </span>
     </div>
 
-    <!-- Navpills / Estadísticas (por fuera) -->
+    <!-- Navpills / Estadísticas (interactivas al hacer clic) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <!-- Total realizadas -->
-        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+        <!-- Total realizadas / Evaluadas -->
+        <button type="button" wire:click="$set('estado', '')"
+                class="text-left stat-card bg-blue-50 hover:bg-blue-100/70 border {{ $estado === '' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-blue-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total realizadas</p>
+                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total clases</p>
                     <p class="text-3xl font-black text-blue-950 mt-1">{{ $estadisticas['total'] }}</p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
                     <i class="fas fa-calendar-check text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- No registradas -->
-        <div class="stat-card bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'no_realizada')"
+                class="text-left stat-card bg-red-50 hover:bg-red-100/70 border {{ $estado === 'no_realizada' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-red-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-red-700 text-xs font-semibold uppercase tracking-wider">No registradas</p>
@@ -55,23 +57,25 @@
                     <i class="fas fa-times-circle text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- Registradas -->
-        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'impartidas')"
+                class="text-left stat-card bg-indigo-50 hover:bg-indigo-100/70 border {{ in_array($estado, ['realizada', 'impartidas']) ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-indigo-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Registradas</p>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Registradas / Impartidas</p>
                     <p class="text-3xl font-black text-indigo-950 mt-1">{{ $estadisticas['realizadas'] ?? 0 }}</p>
                 </div>
                 <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
                     <i class="fas fa-check-circle text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- Justificadas -->
-        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'justificado')"
+                class="text-left stat-card bg-amber-50 hover:bg-amber-100/70 border {{ $estado === 'justificado' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-amber-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Justificadas</p>
@@ -81,7 +85,7 @@
                     <i class="fas fa-shield-alt text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
     </div>
 
     <!-- Sección FILTROS -->
@@ -146,7 +150,9 @@
                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                     <option value="">Todos</option>
                     <option value="no_realizada">No registrada</option>
+                    <option value="impartidas">Todas las impartidas / efectivas</option>
                     <option value="realizada">Registrada (Clase realizada)</option>
+                    <option value="recuperada">Recuperada</option>
                     <option value="pendiente">Pendiente de recuperación</option>
                     <option value="justificado">Justificado</option>
                 </select>
