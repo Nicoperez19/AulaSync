@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 
 class TodasClasesService
 {
