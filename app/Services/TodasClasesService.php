@@ -338,12 +338,28 @@ class TodasClasesService
                             $motivo = $fechasFeriado[$fechaStr];
                             $observaciones = 'Clase no realizada por día feriado o período sin actividades';
 
+                            if (isset($this->clasesNoRealizadasCache[$claveClase])) {
+                                $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
+                                $claseId = $claseNoRealizada->id;
+                                $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                                $estadoStr = match($claseNoRealizada->estado) {
+                                    'no_realizada' => 'No Registrada',
+                                    'realizada', 'registrada' => 'Realizada',
+                                    'justificado'  => 'Feriado/Justificado',
+                                    'recuperada'   => 'Recuperada',
+                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    default        => 'Feriado/Justificado',
+                                };
+                                $motivo = $claseNoRealizada->motivo ?: $motivo;
+                                $observaciones = $claseNoRealizada->observaciones ?: $observaciones;
+                            }
+
                             if ($estado && $estadoStr !== $this->transformEstado($estado)) {
                                 continue;
                             }
 
                             $clasesData->push([
-                                'id'                => null,
+                                'id'                => $claseId,
                                 'fecha'             => clone $fecha,
                                 'dia'               => ucfirst($diaFecha),
                                 'periodo'           => $periodo ?? $planificacion->horario->periodo ?? 'N/A',
@@ -636,12 +652,28 @@ class TodasClasesService
                             $motivo = $fechasFeriado[$fechaStr];
                             $observaciones = 'Clase no realizada por día feriado o período sin actividades';
 
+                            if (isset($this->clasesNoRealizadasCache[$claveClase])) {
+                                $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
+                                $claseId = $claseNoRealizada->id;
+                                $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                                $estadoStr = match($claseNoRealizada->estado) {
+                                    'no_realizada' => 'No Registrada',
+                                    'realizada', 'registrada' => 'Realizada',
+                                    'justificado'  => 'Feriado/Justificado',
+                                    'recuperada'   => 'Recuperada',
+                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    default        => 'Feriado/Justificado',
+                                };
+                                $motivo = $claseNoRealizada->motivo ?: $motivo;
+                                $observaciones = $claseNoRealizada->observaciones ?: $observaciones;
+                            }
+
                             if ($estado && $estadoStr !== $this->transformEstado($estado)) {
                                 continue;
                             }
 
                             $clasesData->push([
-                                'id'                => null,
+                                'id'                => $claseId,
                                 'fecha'             => clone $fecha,
                                 'dia'               => ucfirst($diaFecha),
                                 'periodo'           => $periodo ?? ($fecha->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
@@ -918,12 +950,37 @@ class TodasClasesService
             foreach ($rangoModulos as $numMod) {
                 $horarioCanon = ModulosHelper::getHorarioModulo($diaFecha, (int) $numMod);
                 $idModRaw = "{$prefijoDia}.{$numMod}";
+                $claveCnrRes = $fechaRes->format('Y-m-d') . "_{$res->id_espacio}_{$idModRaw}_{$runProfNorm}";
+                $cnrRes = $this->clasesNoRealizadasCache[$claveCnrRes] ?? null;
+
+                $estadoFinalRes = $estadoReservaStr;
+                $motivoFinalRes = $esRecuperacion ? 'Recuperación de clase' : null;
+                $obsFinalRes = $etiquetaTipo;
+                $idFinalRes = null;
+
+                if ($cnrRes) {
+                    $idFinalRes = $cnrRes->id;
+                    $clasesNoRealizadasUsadasIds[$cnrRes->id] = true;
+                    $estadoFinalRes = match($cnrRes->estado) {
+                        'no_realizada' => 'No Registrada',
+                        'realizada', 'registrada' => 'Realizada',
+                        'justificado'  => 'Justificada',
+                        'recuperada'   => 'Recuperada',
+                        'pendiente'    => 'Pendiente de Recuperación',
+                        default        => $estadoReservaStr,
+                    };
+                    $motivoFinalRes = $cnrRes->motivo ?: $motivoFinalRes;
+                    $obsFinalRes = $cnrRes->observaciones ?: $obsFinalRes;
+                }
+
+                $horaDeteccionRes = $cnrRes?->hora_deteccion
+                    ?? ($res->hora ? Carbon::parse($fechaRes->format('Y-m-d') . ' ' . $res->hora) : $fechaRes);
 
                 $clasesData->push([
-                    'id'                => null,
+                    'id'                => $idFinalRes,
                     'fecha'             => clone $fechaRes,
                     'dia'               => ucfirst($diaFecha),
-                    'periodo'           => $periodo ?? ($fechaRes->year . '-' . ($fechaRes->month <= 6 ? '1' : '2')),
+                    'periodo'           => $periodo ?? ($fechaRes->year . '-' . ($fecha->month <= 6 ? '1' : '2')),
                     'profesor'          => $nombreProfesor,
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($res->asignatura, $res->profesor),
@@ -936,12 +993,12 @@ class TodasClasesService
                     'id_modulo_raw'     => $idModRaw,
                     'hora_inicio'       => $horarioCanon['inicio'] ?? $res->hora,
                     'hora_fin'          => $horarioCanon['fin'] ?? ($res->hora_salida ?? $res->hora),
-                    'estado'            => $estadoReservaStr,
+                    'estado'            => $estadoFinalRes,
                     'hora_entrada'      => $res->hora,
                     'hora_salida'       => $res->hora_salida,
-                    'motivo'            => $esRecuperacion ? 'Recuperación de clase' : null,
-                    'observaciones'     => $etiquetaTipo,
-                    'hora_deteccion'    => $fechaRes,
+                    'motivo'            => $motivoFinalRes,
+                    'observaciones'     => $obsFinalRes,
+                    'hora_deteccion'    => $horaDeteccionRes,
                     'rol_bloque'        => 'reserva_directa',
                 ]);
             }

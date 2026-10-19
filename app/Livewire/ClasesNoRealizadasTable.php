@@ -547,42 +547,50 @@ class ClasesNoRealizadasTable extends Component
             return ClaseNoRealizada::findOrFail($id);
         }
 
-        // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
-        $diaStr = strtolower($claseData['dia'] ?? '');
-        $prefijoDia = match($diaStr) {
-            'lunes' => 'LU',
-            'martes' => 'MA',
-            'miércoles', 'miercoles' => 'MI',
-            'jueves' => 'JU',
-            'viernes' => 'VI',
-            'sábado', 'sabado' => 'SA',
-            'domingo' => 'DO',
-            default => 'LU'
-        };
+        $fechaCarbon = is_string($claseData['fecha'])
+            ? Carbon::parse($claseData['fecha'])
+            : Carbon::instance($claseData['fecha']);
+        $fecha = $fechaCarbon->format('Y-m-d');
 
-        $modulo = (string)($claseData['modulo'] ?? '');
-        if (!str_contains($modulo, '.')) {
-            $partesModulo = explode(',', $modulo);
-            $modulosConPrefijo = array_map(function($m) use ($prefijoDia) {
-                $m = trim($m);
-                return str_contains($m, '.') ? $m : $prefijoDia . '.' . $m;
-            }, $partesModulo);
-            $idModulo = implode(',', $modulosConPrefijo);
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $prefijoDia = $prefijosDias[$fechaCarbon->dayOfWeek] ?? 'LU';
+
+        if (!empty($claseData['id_modulo_raw'])) {
+            $idModulo = (string) $claseData['id_modulo_raw'];
         } else {
-            $idModulo = $modulo;
+            $modulo = (string)($claseData['modulo'] ?? '');
+            if (!str_contains($modulo, '.')) {
+                $partesModulo = explode(',', $modulo);
+                $modulosConPrefijo = array_map(function($m) use ($prefijoDia) {
+                    $m = trim($m);
+                    return str_contains($m, '.') ? $m : $prefijoDia . '.' . $m;
+                }, $partesModulo);
+                $idModulo = implode(',', $modulosConPrefijo);
+            } else {
+                $idModulo = $modulo;
+            }
         }
-
-        $fecha = is_string($claseData['fecha']) 
-            ? Carbon::parse($claseData['fecha'])->format('Y-m-d')
-            : $claseData['fecha']->format('Y-m-d');
 
         $periodo = (!empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A') 
             ? $claseData['periodo'] 
             : ($this->periodo ?: SemesterHelper::getCurrentPeriod());
 
+        $estadoInicial = match($claseData['estado'] ?? '') {
+            'No Registrada' => 'no_realizada',
+            'Justificada', 'Feriado/Justificado' => 'justificado',
+            'Pendiente de Recuperación' => 'pendiente',
+            default => 'realizada',
+        };
+
+        $idAsignatura = !empty($claseData['id_asignatura'])
+            ? (string) $claseData['id_asignatura']
+            : (!empty($claseData['codigo_asignatura']) && $claseData['codigo_asignatura'] !== 'N/A'
+                ? (string) $claseData['codigo_asignatura']
+                : 'RESERVA');
+
         return ClaseNoRealizada::firstOrCreate(
             [
-                'id_asignatura' => $claseData['id_asignatura'],
+                'id_asignatura' => $idAsignatura,
                 'id_espacio' => $claseData['espacio'],
                 'id_modulo' => $idModulo,
                 'fecha_clase' => $fecha,
@@ -590,8 +598,9 @@ class ClasesNoRealizadasTable extends Component
             ],
             [
                 'periodo' => $periodo,
-                'estado' => ($claseData['estado'] ?? '') === 'No Registrada' ? 'no_realizada' : 'realizada',
+                'estado' => $estadoInicial,
                 'motivo' => $claseData['motivo'] ?? 'Generado para acción manual',
+                'observaciones' => $claseData['observaciones'] ?? null,
                 'hora_deteccion' => Carbon::now(),
             ]
         );
@@ -773,6 +782,12 @@ class ClasesNoRealizadasTable extends Component
     public function prepararAccion($accion, $claseData)
     {
         $id = $claseData['id'] ?? null;
+
+        if ($accion === 'historial') {
+            $this->verHistorialClase($id, $claseData);
+            return;
+        }
+
         if (!$id) {
             $clase = $this->materializarClaseNoRealizada($claseData);
             $id = $clase->id;
@@ -1066,20 +1081,30 @@ class ClasesNoRealizadasTable extends Component
         }
     }
 
-    public function verHistorialClase($id)
+    public function verHistorialClase($id = null, $claseData = null)
     {
-        $clase = ClaseNoRealizada::with(['profesor', 'asignatura'])->find($id);
+        $clase = $id ? ClaseNoRealizada::with(['profesor', 'asignatura'])->find($id) : null;
+
+        $runProfesor = $clase?->run_profesor ?? ($claseData['run_profesor'] ?? null);
+        $fechaYmd = $clase?->fecha_clase?->format('Y-m-d');
+        if (!$fechaYmd && !empty($claseData['fecha'])) {
+            $fechaYmd = Carbon::parse($claseData['fecha'])->format('Y-m-d');
+        }
+
         $historial = app(AuditoriaService::class)->obtenerHistorialClase(
             $id,
-            $clase?->run_profesor,
-            $clase?->fecha_clase?->format('Y-m-d')
+            $runProfesor,
+            $fechaYmd
         );
+
+        $fechaFormateada = $clase?->fecha_clase?->format('d/m/Y')
+            ?? (!empty($claseData['fecha']) ? Carbon::parse($claseData['fecha'])->format('d/m/Y') : 'N/A');
 
         $this->dispatch('abrir-modal-historial-auditoria', [
             'clase_id' => $id,
-            'profesor' => $clase?->profesor?->name ?? 'Docente',
-            'asignatura' => $clase?->asignatura?->nombre_asignatura ?? 'Asignatura',
-            'fecha' => $clase?->fecha_clase?->format('d/m/Y') ?? 'N/A',
+            'profesor' => $clase?->profesor?->name ?? ($claseData['profesor'] ?? 'Docente'),
+            'asignatura' => $clase?->asignatura?->nombre_asignatura ?? ($claseData['asignatura'] ?? 'Asignatura'),
+            'fecha' => $fechaFormateada,
             'historial' => $historial->map(function ($item) {
                 return [
                     'id' => $item->id,

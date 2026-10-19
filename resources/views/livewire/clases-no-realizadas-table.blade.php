@@ -366,56 +366,52 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 text-sm font-medium w-32 sticky right-0 bg-white">
-                                        @if(!empty($clase['id']) || !in_array($clase['estado'], ['Realizada', 'Feriado/Justificado']))
-                                            <div class="flex space-x-1">
-                                                @if($clase['estado'] === 'No Registrada')
-                                                    <div class="custom-tooltip">
-                                                        <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
-                                                                class="action-button reagendar p-1"
-                                                                title="Reagendar Clase">
-                                                            <i class="fas fa-calendar-plus icon-animate text-xs"></i>
-                                                        </button>
-                                                        <span class="tooltip-text">Reagendar</span>
-                                                    </div>
-                                                @endif
-                                                @if($clase['estado'] === 'Pendiente de Recuperación')
-                                                    <div class="custom-tooltip">
-                                                        <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
-                                                                class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
-                                                                title="Marcar como recuperada">
-                                                            <i class="fas fa-check-circle icon-animate text-xs"></i>
-                                                        </button>
-                                                        <span class="tooltip-text">Recuperada</span>
-                                                    </div>
-                                                @endif
+                                        <div class="flex space-x-1">
+                                            @if($clase['estado'] === 'No Registrada')
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
-                                                            class="action-button editar p-1"
-                                                            title="Editar">
-                                                        <i class="fas fa-edit icon-animate text-xs"></i>
+                                                    <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
+                                                            class="action-button reagendar p-1"
+                                                            title="Reagendar Clase">
+                                                        <i class="fas fa-calendar-plus icon-animate text-xs"></i>
                                                     </button>
-                                                    <span class="tooltip-text">Editar</span>
+                                                    <span class="tooltip-text">Reagendar</span>
                                                 </div>
+                                            @endif
+                                            @if($clase['estado'] === 'Pendiente de Recuperación')
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
-                                                            class="action-button eliminar p-1"
-                                                            title="Eliminar">
-                                                        <i class="fas fa-trash icon-animate text-xs"></i>
+                                                    <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
+                                                            class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
+                                                            title="Marcar como recuperada">
+                                                        <i class="fas fa-check-circle icon-animate text-xs"></i>
                                                     </button>
-                                                    <span class="tooltip-text">Eliminar</span>
+                                                    <span class="tooltip-text">Recuperada</span>
                                                 </div>
-                                                @if(!empty($clase['id']))
-                                                    <div class="custom-tooltip">
-                                                        <button wire:click="verHistorialClase({{ $clase['id'] }})" 
-                                                                class="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition duration-150"
-                                                                title="Ver Historial de Auditoría">
-                                                            <i class="fas fa-history text-xs"></i>
-                                                        </button>
-                                                        <span class="tooltip-text">Auditoría</span>
-                                                    </div>
-                                                @endif
+                                            @endif
+                                            <div class="custom-tooltip">
+                                                <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
+                                                        class="action-button editar p-1"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit icon-animate text-xs"></i>
+                                                </button>
+                                                <span class="tooltip-text">Editar</span>
                                             </div>
-                                        @endif
+                                            <div class="custom-tooltip">
+                                                <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
+                                                        class="action-button eliminar p-1"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash icon-animate text-xs"></i>
+                                                </button>
+                                                <span class="tooltip-text">Eliminar</span>
+                                            </div>
+                                            <div class="custom-tooltip">
+                                                <button wire:click="prepararAccion('historial', {{ json_encode($clase) }})" 
+                                                        class="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition duration-150"
+                                                        title="Ver Historial de Auditoría">
+                                                    <i class="fas fa-history text-xs"></i>
+                                                </button>
+                                                <span class="tooltip-text">Auditoría</span>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty

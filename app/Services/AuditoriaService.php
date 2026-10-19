@@ -136,6 +136,10 @@ class AuditoriaService
      */
     public function obtenerHistorialClase($entidadId, $runProfesor = null, $fechaClase = null)
     {
+        if (!$entidadId && (!$runProfesor || !$fechaClase)) {
+            return collect();
+        }
+
         $query = AuditoriaClase::query()->with('user');
 
         if ($entidadId) {
