@@ -574,6 +574,7 @@ class ClasesNoRealizadasTable extends Component
             'No Registrada' => 'no_realizada',
             'Justificada', 'Feriado/Justificado' => 'justificado',
             'Pendiente de Recuperación' => 'pendiente',
+            'Recuperada' => 'recuperada',
             default => 'realizada',
         };
 
@@ -996,9 +997,9 @@ class ClasesNoRealizadasTable extends Component
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
             
-            // Verificar que esté en estado pendiente
-            if ($clase->estado !== 'pendiente') {
-                $this->dispatch('show-error', ['message' => 'Solo se pueden marcar como recuperadas las clases en estado PENDIENTE']);
+            // Verificar que no esté ya registrada o recuperada
+            if (in_array($clase->estado, ['recuperada', 'realizada', 'registrada'])) {
+                $this->dispatch('show-info', ['message' => 'Esta clase ya se encuentra registrada o recuperada.']);
                 return;
             }
 
@@ -1007,11 +1008,13 @@ class ClasesNoRealizadasTable extends Component
             
             // Actualizar observaciones agregando confirmación de recuperación
             $observacionAnterior = $clase->observaciones ?? '';
-            $nuevaObservacion = $observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i');
+            $nuevaObservacion = $observacionAnterior 
+                ? ($observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'))
+                : ("✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'));
             
-            // Cambiar estado a justificado
+            // Cambiar estado a recuperada
             $clase->update([
-                'estado' => 'justificado',
+                'estado' => 'recuperada',
                 'observaciones' => $nuevaObservacion,
             ]);
 
@@ -1023,7 +1026,7 @@ class ClasesNoRealizadasTable extends Component
                 'Clase recuperada confirmada',
                 $nuevaObservacion,
                 $estadoAnterior,
-                'justificado',
+                'recuperada',
                 'web'
             );
             

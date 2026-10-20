@@ -354,6 +354,11 @@
                                                     <i class="fas fa-clock text-[10px]"></i>
                                                     Pendiente Recuperación
                                                 </span>
+                                            @elseif($clase['estado'] === 'Recuperada')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                                    <i class="fas fa-check-double text-[10px]"></i>
+                                                    Recuperada
+                                                </span>
                                             @elseif($clase['estado'] === 'Justificada' || $clase['estado'] === 'Feriado/Justificado')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                     {{ $clase['estado'] }}
@@ -383,7 +388,7 @@
                                                     <span class="tooltip-text">Reagendar</span>
                                                 </div>
                                             @endif
-                                            @if($clase['estado'] === 'Pendiente de Recuperación')
+                                            @if($clase['estado'] === 'Pendiente de Recuperación' || $clase['estado'] === 'No Registrada')
                                                 <div class="custom-tooltip">
                                                     <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
                                                             class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
