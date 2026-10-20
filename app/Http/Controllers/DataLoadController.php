@@ -255,27 +255,33 @@ class DataLoadController extends Controller
             // Asegurar separación de semestres previos antes de procesar la carga
             SemesterHelper::asegurarSeparacionSemestres($periodoSeleccionado, true);
 
-            // PRESERVACIÓN DE HISTORIAL EN RECARGAS: Cerrar vigencia de planificaciones previas del mismo período en lugar de borrarlas físicamente
-            Log::info('Iniciando cierre de vigencia previa del período: ' . $periodoSeleccionado);
-            $ayerVigencia = \Carbon\Carbon::yesterday()->toDateString();
-            $hoyVigencia = \Carbon\Carbon::today()->toDateString();
+            // Limpieza de horarios y planificaciones previas del mismo período antes de cargar la nueva programación
+            Log::info('Iniciando reemplazo de programación previa del período: ' . $periodoSeleccionado);
             $limitesCarga = SemesterHelper::getLimitesPeriodo($periodoSeleccionado);
-            $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
-            $planificacionesCerradas = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
-                ->whereIn('id_horario', $horariosDelPeriodo)
-                ->whereNull('fecha_fin_vigencia')
-                ->update(['fecha_fin_vigencia' => $ayerVigencia]);
-            $esRecargaPeriodo = $planificacionesCerradas > 0;
+            $inicioVigenciaPeriodo = $limitesCarga['inicio']->toDateString();
+            $periodoActualReal = SemesterHelper::getCurrentAcademicYear() . '-' . SemesterHelper::getCurrentSemester();
+            $finVigenciaPeriodo = ($periodoSeleccionado !== $periodoActualReal) ? $limitesCarga['fin']->toDateString() : null;
 
-            // Cerrar vigencia de planificaciones de colaboradores previas de este mismo período
+            $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
+            if ($horariosDelPeriodo->isNotEmpty()) {
+                $planificacionesEliminadas = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                    ->whereIn('id_horario', $horariosDelPeriodo)
+                    ->delete();
+                Horario::whereIn('id_horario', $horariosDelPeriodo)->delete();
+                Log::info("Programación titular previa de {$periodoSeleccionado} reemplazada: {$planificacionesEliminadas} bloques eliminados.");
+            }
+
+            // Limpiar planificaciones de colaboradores previas de este mismo período
             $colabsTenantIds = ProfesorColaborador::where('fecha_inicio', '>=', $limitesCarga['inicio']->toDateString())
                 ->where('fecha_termino', '<=', $limitesCarga['fin']->toDateString())
                 ->pluck('id');
-            $planifColabsCerradas = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
-                ->whereIn('id_profesor_colaborador', $colabsTenantIds)
-                ->whereNull('fecha_fin_vigencia')
-                ->update(['fecha_fin_vigencia' => $ayerVigencia]);
-            Log::info("Vigencia previa cerrada en {$periodoSeleccionado}: {$planificacionesCerradas} planificaciones titulares y {$planifColabsCerradas} de colaboradores marcadas hasta {$ayerVigencia}.");
+            if ($colabsTenantIds->isNotEmpty()) {
+                $planifColabsEliminadas = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                    ->whereIn('id_profesor_colaborador', $colabsTenantIds)
+                    ->delete();
+                ProfesorColaborador::whereIn('id', $colabsTenantIds)->delete();
+                Log::info("Programación de colaboradores previa de {$periodoSeleccionado} reemplazada: {$planifColabsEliminadas} bloques eliminados.");
+            }
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
             $modulosExistentes = Modulo::count();
