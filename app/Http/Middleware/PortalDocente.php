@@ -27,7 +27,7 @@ class PortalDocente
         }
 
         $esSuperAdmin = $user->is_superuser || $user->hasRole('Super Admin') || (string)$user->run === '19716146';
-        $esProfesor = $user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor']);
+        $esProfesor = $user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director']);
 
         // Solo profesores puros y el superadministrador pueden ingresar al portal docente
         if (!$esSuperAdmin && !$esProfesor) {

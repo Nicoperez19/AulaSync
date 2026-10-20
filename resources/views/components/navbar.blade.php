@@ -13,7 +13,7 @@
         </button>
 
         <!-- Logo -->
-        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor']) ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
+        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director']) ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
             <x-application-logo-navbar />
         </a>
     </div>

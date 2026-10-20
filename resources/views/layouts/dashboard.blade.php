@@ -132,11 +132,11 @@
 
         <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
-            <!-- Widget Izquierda: Estado de Clases (Control de Asistencia) -->
-            <div class="lg:col-span-7 flex flex-col">
+            <!-- Widget Izquierda: Estado de Clases (Control de Registro) -->
+            <div class="{{ auth()->user()->can('reportes') ? 'lg:col-span-7' : 'lg:col-span-12' }} flex flex-col">
                 <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
                     <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
-                    Estado de Clases (Control de Asistencia)
+                    Estado de Clases (Control de Registro)
                 </h3>
                 <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1">
                     <div id="status-clases-container">

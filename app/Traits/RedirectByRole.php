@@ -14,8 +14,8 @@ trait RedirectByRole
     {
         $user = Auth::user();
         
-        // Administradores y supervisores siempre redirigen al Dashboard (KPIs)
-        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor')) {
+        // Administradores, supervisores y directores siempre redirigen al Dashboard (KPIs)
+        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director')) {
             return redirect(RouteServiceProvider::HOME);
         }
 

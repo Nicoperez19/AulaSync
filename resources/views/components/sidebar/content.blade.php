@@ -1,7 +1,7 @@
 <nav aria-label="main" class="flex flex-col gap-1.5 py-1 text-white">
     @php
         $esSuperAdmin = auth()->check() && (auth()->user()->is_superuser || auth()->user()->hasRole('Super Admin') || (string)auth()->user()->run === '19716146');
-        $esDocentePuro = auth()->check() && auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !auth()->user()->is_superuser;
+        $esDocentePuro = auth()->check() && auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !auth()->user()->is_superuser;
     @endphp
 
     <!-- Portal Docente y Reportes de Asistencia - Ocultos para administradores; solo visibles para docentes y super admin -->
@@ -20,8 +20,8 @@
     @endif
 
     @if(!$esDocentePuro)
-    <!-- Dashboard - Solo Administrador y Supervisor (NO Usuario) -->
-    @role('Administrador|Supervisor')
+    <!-- Dashboard - Solo Administrador, Supervisor y Director (NO Usuario) -->
+    @role('Administrador|Supervisor|Director')
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">
         <x-slot name="icon">
             <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />

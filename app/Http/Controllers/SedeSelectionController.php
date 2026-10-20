@@ -27,7 +27,7 @@ class SedeSelectionController extends Controller
         ->with(['tenant', 'universidad', 'comuna']);
         
         // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
-        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
             // No aplicar filtros - ver todas las sedes activas
         }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
@@ -60,7 +60,7 @@ class SedeSelectionController extends Controller
         $user = Auth::user();
 
         // Si es Profesor puro, NUNCA debe ver el wizard y va a su portal
-        if ($user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
+        if ($user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             if ($sede->tenant->needsInitialization()) {
                 return \Illuminate\Support\Facades\Route::has('docente.sede-no-inicializada')
                     ? redirect()->route('docente.sede-no-inicializada')
@@ -77,7 +77,7 @@ class SedeSelectionController extends Controller
         }
 
         // Si es Control Docente puro, redirigir directamente al plano
-        if ($user->hasRole('Control Docente') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
+        if ($user->hasRole('Control Docente') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             return redirect()->route('plano.index');
         }
 

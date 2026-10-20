@@ -95,7 +95,7 @@
                 </div>
                 <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 whitespace-nowrap shrink-0">{{ $no_registradas }} ({{ $pct_no_registradas }}%)</span>
             </div>
-            <p class="text-[11px] text-rose-700/90 font-medium mt-2">Clases del horario oficial sin marca de asistencia o notificadas como ausentes.</p>
+            <p class="text-[11px] text-rose-700/90 font-medium mt-2">Clases del horario oficial sin marca de registro o notificadas como ausentes.</p>
         </div>
 
         @if(!empty($futuras_pendientes) && $futuras_pendientes > 0)
