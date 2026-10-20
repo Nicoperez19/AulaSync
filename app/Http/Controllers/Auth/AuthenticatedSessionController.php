@@ -120,6 +120,15 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('docente.dashboard');
         }
 
+        // Si el usuario es Director con sede asignada, redirigir directamente
+        if ($user->hasRole('Director') && $user->id_sede) {
+            Log::info('✅ Director con sede asignada detectado, redirigiendo automáticamente', [
+                'run' => $user->run,
+                'id_sede' => $user->id_sede,
+            ]);
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
+        }
+
         // Si el usuario es superusuario, administrador, supervisor, director o usuario maestro (19716146), mostrar selección de sedes
         if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
             Log::info('✅ Superusuario / Administrador Maestro detectado, mostrando selección de sedes', [

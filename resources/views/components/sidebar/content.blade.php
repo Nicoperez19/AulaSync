@@ -29,8 +29,8 @@
     </x-sidebar.link>
     @endrole
 
-    <!-- Monitoreo de Espacios - Todos los roles -->
-    @can('monitoreo de espacios')
+    <!-- Monitoreo de Espacios - Todos los roles autorizados -->
+    @if(auth()->user()->can('monitoreo de espacios') || auth()->user()->hasRole('Director'))
         <x-sidebar.link title="Monitoreo de Espacios"
             href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : '#' }}"
             :isActive="request()->routeIs('plano.show')"
@@ -39,7 +39,7 @@
                 <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
-    @endcan
+    @endif
 
     <!-- Horarios Espacios - Solo Administrador y Supervisor -->
     @can('horarios por espacios')
@@ -74,15 +74,15 @@
         </x-sidebar.link>
     @endcan
 
-    <!-- Tablero Académico - Todos los roles -->
-    @can('tablero academico')
+    <!-- Tablero Académico - Todos los roles autorizados -->
+    @if(auth()->user()->can('tablero academico') || auth()->user()->hasRole('Director'))
         <x-sidebar.link title="Tablero Académico" href="{{ route('modulos.actuales') }}"
             :isActive="request()->routeIs('modulos.actuales')">
             <x-slot name="icon">
                 <x-icons.table class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
-    @endcan
+    @endif
 
     <!-- Acciones Rápidas - Solo Administrador y Supervisor -->
     @can('admin panel')

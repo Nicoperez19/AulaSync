@@ -126,8 +126,8 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
     Route::post('/{ticket}/reabrir', [SupportTicketController::class, 'reopen'])->name('reopen');
 });
 
-// Dashboard - Solo Administrador y Supervisor
-Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execution:300'])->group(function () {
+// Dashboard - Administrador, Supervisor, Director o permiso dashboard
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
@@ -425,8 +425,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-// Monitoreo de espacios - Todos los roles
-Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo de espacios']], function () {
+// Monitoreo de espacios - Todos los roles autorizados
+Route::group(['middleware' => ['auth', 'session.timeout', 'role_or_permission:Administrador|Supervisor|Director|monitoreo de espacios']], function () {
     Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');

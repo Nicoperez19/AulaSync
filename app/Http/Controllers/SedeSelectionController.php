@@ -41,6 +41,11 @@ class SedeSelectionController extends Controller
         
         $sedes = $query->get();
 
+        // Si solo hay una sede disponible y el usuario es Director, auto-seleccionar y redirigir
+        if ($sedes->count() === 1 && $user->hasRole('Director')) {
+            return redirect()->route('sedes.redirect', ['sede' => $sedes->first()->id_sede]);
+        }
+
         return view('sedes.selection', compact('sedes'));
     }
 
