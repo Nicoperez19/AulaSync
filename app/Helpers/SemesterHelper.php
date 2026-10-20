@@ -811,4 +811,92 @@ class SemesterHelper
 
         return false;
     }
+
+    /**
+     * Normaliza un RUN dejando solo el cuerpo numérico (sin DV, puntos ni guiones).
+     */
+    public static function normalizarRun($run): string
+    {
+        if (!$run) {
+            return '';
+        }
+        $run = (string) $run;
+        if (str_contains($run, '-')) {
+            $run = explode('-', $run)[0];
+        }
+        return preg_replace('/[^0-9]/', '', $run);
+    }
+
+    /**
+     * Devuelve los RUN (normalizados, como claves de un array) de los docentes que imparten clases
+     * en el período indicado: titulares con horario vigente en el período + colaboradores del período.
+     * Retorna null si no se pudo determinar (para que el llamador no aplique el filtro).
+     */
+    public static function getRunsDocentesDelPeriodo(?string $periodo = null, $periodosModels = null): ?array
+    {
+        $periodo = $periodo ?: self::getCurrentPeriod();
+        if (empty($periodo)) {
+            return null;
+        }
+
+        static $cache = [];
+        $tenantId = class_exists(\App\Models\Tenant::class) ? (optional(\App\Models\Tenant::current())->id ?? 'default') : 'default';
+        $cacheKey = $tenantId . '_' . $periodo;
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
+
+        try {
+            $periodoActualReal = self::getCurrentAcademicYear() . '-' . self::getCurrentSemester();
+            $runs = [];
+
+            // 1. Titulares: horarios del período con planificaciones (vigentes si es el semestre actual)
+            $qTit = \Illuminate\Support\Facades\DB::connection('tenant')
+                ->table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->where('h.periodo', $periodo);
+            if ($periodo === $periodoActualReal && \App\Models\Planificacion_Asignatura::tieneColumnaVigencia()) {
+                $qTit->whereNull('pa.fecha_fin_vigencia');
+            }
+            foreach ($qTit->distinct()->pluck('h.run_profesor') as $run) {
+                $n = self::normalizarRun($run);
+                if ($n !== '') {
+                    $runs[$n] = true;
+                }
+            }
+
+            // 2. Colaboradores que pertenecen estrictamente a este período
+            $lim = self::getLimitesPeriodo($periodo, $periodosModels);
+            $colabs = \App\Models\ProfesorColaborador::with([
+                    'asignatura:id_asignatura,periodo',
+                    'planificaciones' => fn($q) => $q->withoutGlobalScope('vigencia_activa'),
+                ])
+                ->where(function ($q) use ($lim) {
+                    $q->whereNull('fecha_termino')->orWhere('fecha_termino', '>=', $lim['inicio']->toDateString());
+                })
+                ->where(function ($q) use ($lim) {
+                    $q->whereNull('fecha_inicio')->orWhere('fecha_inicio', '<=', $lim['fin']->toDateString());
+                })
+                ->get();
+
+            foreach ($colabs as $colab) {
+                $n = self::normalizarRun($colab->run_profesor_colaborador);
+                if ($n === '' || isset($runs[$n])) {
+                    continue;
+                }
+                $planes = $colab->planificaciones ?? collect();
+                $pertenece = $planes->isEmpty()
+                    ? self::perteneceColaboradorAPeriodo($colab, $periodo, null, $periodosModels)
+                    : $planes->contains(fn($p) => self::perteneceColaboradorAPeriodo($colab, $periodo, $p, $periodosModels));
+                if ($pertenece) {
+                    $runs[$n] = true;
+                }
+            }
+
+            return $cache[$cacheKey] = (empty($runs) ? null : $runs);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('[SemesterHelper] No se pudo obtener docentes del período ' . $periodo . ': ' . $e->getMessage());
+            return null;
+        }
+    }
 }

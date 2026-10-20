@@ -60,10 +60,22 @@ class LicenciasProfesoresTable extends Component
             return collect();
         }
 
-        return Profesor::where('run_profesor', 'like', '%' . $this->run_profesor . '%')
-            ->orWhere('name', 'like', '%' . $this->run_profesor . '%')
-            ->limit(5)
-            ->get();
+        $termino = $this->run_profesor;
+        $runsPeriodo = \App\Helpers\SemesterHelper::getRunsDocentesDelPeriodo();
+
+        // Solo sugerir docentes que imparten clases en el semestre actual
+        return Profesor::where(function ($q) use ($termino) {
+                $q->where('run_profesor', 'like', '%' . $termino . '%')
+                  ->orWhere('name', 'like', '%' . $termino . '%');
+            })
+            ->orderBy('name')
+            ->limit($runsPeriodo === null ? 5 : 200)
+            ->get()
+            ->when($runsPeriodo !== null, fn($c) => $c->filter(
+                fn($p) => isset($runsPeriodo[\App\Helpers\SemesterHelper::normalizarRun($p->run_profesor)])
+            ))
+            ->take(5)
+            ->values();
     }
 
     public function selectProfesor($run, $nombre)
@@ -207,7 +219,14 @@ class LicenciasProfesoresTable extends Component
             ->orderBy($this->sortField, $this->sortDirection);
 
         $licencias = $query->paginate(15);
+        $runsPeriodo = \App\Helpers\SemesterHelper::getRunsDocentesDelPeriodo();
         $profesores = Profesor::orderBy('name')->get();
+        if ($runsPeriodo !== null) {
+            // Solo docentes que imparten clases en el semestre actual
+            $profesores = $profesores->filter(
+                fn($p) => isset($runsPeriodo[\App\Helpers\SemesterHelper::normalizarRun($p->run_profesor)])
+            )->values();
+        }
 
         return view('livewire.licencias-profesores-table', [
             'licencias' => $licencias,

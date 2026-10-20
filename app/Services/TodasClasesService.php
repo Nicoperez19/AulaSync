@@ -1325,6 +1325,23 @@ class TodasClasesService
 
         $clasesData = $clasesProcesadas;
 
+        // Mostrar solo docentes que imparten clases en el período consultado (titulares con horario del período o colaboradores del período)
+        if ($periodo) {
+            $runsDocentesPeriodo = \App\Helpers\SemesterHelper::getRunsDocentesDelPeriodo($periodo, $periodosModels);
+            if ($runsDocentesPeriodo !== null) {
+                $totalAntes = $clasesData->count();
+                $clasesData = $clasesData->filter(function ($item) use ($runsDocentesPeriodo) {
+                    return isset($runsDocentesPeriodo[$this->normalizeRun($item['run_profesor'] ?? '')]);
+                })->values();
+                if ($clasesData->count() !== $totalAntes) {
+                    \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Clases de docentes fuera del período descartadas', [
+                        'periodo' => $periodo,
+                        'descartadas' => $totalAntes - $clasesData->count(),
+                    ]);
+                }
+            }
+        }
+
         if ($ua) {
             $uaStr = trim((string)$ua);
             $uaNorm = mb_strtolower($uaStr, 'UTF-8');
