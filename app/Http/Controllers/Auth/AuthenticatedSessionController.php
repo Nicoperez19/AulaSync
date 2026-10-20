@@ -80,8 +80,8 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
         }
 
-        // Si el usuario es Profesor (y no es superusuario ni administrador maestro)
-        if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
+        // Si el usuario es Profesor (y no es superusuario ni administrador/supervisor)
+        if ($user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             Log::info('✅ Profesor detectado, activando sede y redirigiendo al portal docente', [
                 'run' => $user->run,
                 'id_sede' => $user->id_sede,
@@ -120,8 +120,8 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('docente.dashboard');
         }
 
-        // Si el usuario es superusuario, administrador o usuario maestro (19716146), mostrar selección de sedes
-        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
+        // Si el usuario es superusuario, administrador, supervisor o usuario maestro (19716146), mostrar selección de sedes
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
             Log::info('✅ Superusuario / Administrador Maestro detectado, mostrando selección de sedes', [
                 'run' => $user->run,
             ]);
