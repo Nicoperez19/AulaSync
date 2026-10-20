@@ -301,6 +301,7 @@ class ModulosActualesTable extends Component
             $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
 
             $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_horario', $planificacionActiva->id_horario)
                 ->where('id_espacio', $planificacionActiva->id_espacio)
                 ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
                 ->pluck('id_modulo')
@@ -565,6 +566,13 @@ class ModulosActualesTable extends Component
             $pisosModels = Piso::with(['espacios'])->get();
             $this->pisos = $pisosModels;
 
+            // Pre-cargar conteo de asistencias del día agrupadas por espacio para mitigar N+1
+            $asistenciasHoyPorEspacio = Asistencia::where('estado', Asistencia::ESTADO_PRESENTE)
+                ->whereDate('created_at', Carbon::today())
+                ->selectRaw('id_espacio, count(*) as total')
+                ->groupBy('id_espacio')
+                ->pluck('total', 'id_espacio');
+
             // Resto del procesamiento existente...
             if ($this->moduloActual) {
                 // Determinar el período actual usando el helper
@@ -641,13 +649,6 @@ class ModulosActualesTable extends Component
                         })
                         ->get();
 
-                    // Pre-cargar TODAS las planificaciones del período para optimizar búsquedas
-                    $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
-                        ->whereHas('horario', function ($q) use ($periodo) {
-                            $q->where('periodo', $periodo);
-                        })
-                        ->get()
-                        ->groupBy('id_asignatura');  // Agrupar por asignatura para búsqueda rápida
                     // Pre-cargar planificaciones del período SOLO para el día actual y espacios relevantes
                     $idsEspacios = $this->pisos->flatMap(fn($p) => $p->espacios->pluck('id_espacio'));
                     $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
@@ -1496,11 +1497,8 @@ class ModulosActualesTable extends Component
                             $tieneReservaPendiente = false;
                         }
 
-                        // Obtener conteo de asistencia actual para este espacio
-                        $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
-                            ->where('estado', Asistencia::ESTADO_PRESENTE)
-                            ->whereDate('created_at', Carbon::today())
-                            ->count();
+                        // Obtener conteo de asistencia actual para este espacio (optimizado O(1))
+                        $asistenciaActual = $asistenciasHoyPorEspacio->get($espacio->id_espacio, 0);
 
                         $espaciosPiso[] = [
                             'id_espacio' => $espacio->id_espacio ?? 'N/A',
@@ -1568,11 +1566,8 @@ class ModulosActualesTable extends Component
                             Log::info('ModulosActuales - Procesando espacio: ' . ($espacio->id_espacio ?? 'SIN_ID'));
 
                             try {
-                                // Obtener conteo de asistencia actual para este espacio
-                                $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
-                                    ->where('estado', Asistencia::ESTADO_PRESENTE)
-                                    ->whereDate('created_at', Carbon::today())
-                                    ->count();
+                                // Obtener conteo de asistencia actual para este espacio (optimizado O(1))
+                                $asistenciaActual = $asistenciasHoyPorEspacio->get($espacio->id_espacio, 0);
 
                                 $espaciosPiso[] = [
                                     'id_espacio' => $espacio->id_espacio ?? 'N/A',

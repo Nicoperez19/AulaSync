@@ -124,7 +124,7 @@ class ReconciliarReservasEspontaneas extends Command
                     $horaCarbon = Carbon::parse($fechaStr . ' ' . $horaStr);
                     $horaMaxInicio = $horaCarbon->copy()->addMinutes(60)->toTimeString();
 
-                    $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($reserva->id_espacio, $tenant->sede_id ?? 'TH');
+                    $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($reserva->id_espacio, $tenant->sede_id ?? null);
 
                     // 1. Buscar en planificación regular del profesor
                     $clasePlanificada = DB::connection('tenant')

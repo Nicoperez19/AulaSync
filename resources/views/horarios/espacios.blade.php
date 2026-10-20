@@ -108,7 +108,12 @@
                                         'Taller' => 'bg-orange-100 text-orange-700',
                                         'Sala de Estudio' => 'bg-pink-100 text-pink-700',
                                     ];
-                                    $espaciosPorTipo = collect($piso->espacios)->groupBy('tipo_espacio');
+                                    $espaciosPorTipo = collect($piso->espacios)
+                                        ->groupBy('tipo_espacio')
+                                        ->sortKeys(SORT_NATURAL | SORT_FLAG_CASE)
+                                        ->map(function ($espacios) {
+                                            return $espacios->sortBy(fn($e) => $e->id_espacio ?? $e->nombre_espacio ?? '', SORT_NATURAL)->values();
+                                        });
                                 @endphp
                                 <div class="flex flex-col items-center w-full">
                                     @foreach($espaciosPorTipo as $tipo => $espacios)

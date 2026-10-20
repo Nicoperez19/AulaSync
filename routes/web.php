@@ -16,7 +16,9 @@ use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\PermisionController;
+use App\Http\Controllers\OcupacionHistoricoController;
+use App\Http\Controllers\AuditoriaClaseController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorColaboradorController;
@@ -90,8 +92,8 @@ Route::get('/', function () {
 
 // Rutas públicas de módulos actuales (sin autenticación)
 Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
-    Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
-    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+    Route::get('/modulos-actuales', [\App\Http\Controllers\ModuloActualController::class, 'index'])->name('modulos.actuales');
+    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\ModuloActualController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
 
 // Ruta Keep-Alive de sesión y refresco de CSRF token
@@ -124,11 +126,12 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
     Route::post('/{ticket}/reabrir', [SupportTicketController::class, 'reopen'])->name('reopen');
 });
 
-// Dashboard - Solo Administrador y Supervisor
-Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execution:300'])->group(function () {
+// Dashboard - Administrador, Supervisor, Director o permiso dashboard
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
+    Route::get('/dashboard/ocupacion/export/{format}', [DashboardController::class, 'exportOcupacion'])->name('dashboard.ocupacion.export');
     Route::get('/dashboard/status-clases', [DashboardController::class, 'statusClasesAjax'])->name('dashboard.status-clases');
 });
 
@@ -215,11 +218,11 @@ Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
 });
 
 Route::group(['middleware' => ['permission:mantenedor de permisos']], function () {
-    Route::get('/permission/permission_index', [PermisionController::class, 'index'])->name('permissions.index');
-    Route::delete('/permission/permission_delete/{id}', [PermisionController::class, 'destroy'])->name('permission.delete');
-    Route::get('/permission/permission_edit/{id}', [PermisionController::class, 'edit'])->name('permissions.edit');
-    Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
-    Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
+    Route::get('/permission/permission_index', [PermissionController::class, 'index'])->name('permissions.index');
+    Route::delete('/permission/permission_delete/{id}', [PermissionController::class, 'destroy'])->name('permission.delete');
+    Route::get('/permission/permission_edit/{id}', [PermissionController::class, 'edit'])->name('permissions.edit');
+    Route::put('/permission/permission_update/{id}', [PermissionController::class, 'update'])->name('permissions.update');
+    Route::post('/permission/permission_store', [PermissionController::class, 'store'])->name('permission.add');
 });
 
 // Control Docente - Vista combinada Ausencias + Recuperación
@@ -243,8 +246,8 @@ Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases
     })->name('recuperacion-clases.index');
 });
 
-// Días Feriados
-Route::group(['middleware' => ['auth', 'permission:mantenedor de feriados']], function () {
+// Calendario Académico: accesible por Administrador, Supervisor o quien tenga permiso de feriados
+Route::middleware(['auth', 'role_or_permission:Administrador|Supervisor|mantenedor de feriados'])->group(function () {
     Route::get('/dias-feriados', [DiaFeriadoController::class, 'index'])->name('dias-feriados.index');
 });
 
@@ -267,6 +270,8 @@ Route::group(['middleware' => ['permission:mantenedor de sedes']], function () {
 Route::group(['middleware' => ['permission:mantenedor de configuracion']], function () {
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
     Route::post('/configuracion', [ConfiguracionController::class, 'store'])->name('configuracion.store');
+    Route::post('/configuracion/guardar-general', [ConfiguracionController::class, 'guardarGeneral'])->name('configuracion.guardar-general');
+    Route::delete('/configuracion/eliminar-logo/{id_sede}', [ConfiguracionController::class, 'eliminarLogo'])->name('configuracion.eliminar-logo');
     Route::get('/configuracion/{id}/edit', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
     Route::put('/configuracion/{id}', [ConfiguracionController::class, 'update'])->name('configuracion.update');
     Route::delete('/configuracion/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.destroy');
@@ -352,7 +357,8 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
 
 Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
-    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::get('/mapas/create', [MapasController::class, 'create'])->name('mapas.create');
+    Route::get('/mapas/add', [MapasController::class, 'create'])->name('mapas.add');
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/mapas/{id}/edit', [MapasController::class, 'edit'])->name('mapas.edit');
     Route::put('/mapas/{id}', [MapasController::class, 'update'])->name('mapas.update');
@@ -419,8 +425,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-// Monitoreo de espacios - Todos los roles
-Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo de espacios']], function () {
+// Monitoreo de espacios - Todos los roles autorizados
+Route::group(['middleware' => ['auth', 'session.timeout', 'role_or_permission:Administrador|Supervisor|Director|monitoreo de espacios']], function () {
     Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
@@ -452,9 +458,20 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('uso-auditorio', [ReportController::class, 'usoAuditorio'])->name('reportes.uso-auditorio');
     Route::get('uso-auditorio/datos-historicos', [ReportController::class, 'getHistoricoAuditorio'])->name('reportes.uso-auditorio.historico');
     Route::get('uso-auditorio/export/{format}', [ReportController::class, 'exportUsoAuditorio'])->name('reportes.uso-auditorio.export');
+
+    // Histórico de Ocupación Semanal
+    Route::get('ocupacion-semanal', [OcupacionHistoricoController::class, 'index'])->name('reportes.ocupacion-semanal.index');
+    Route::get('ocupacion-semanal/export/{id}/{format}', [OcupacionHistoricoController::class, 'export'])->name('reportes.ocupacion-semanal.export');
+    Route::post('ocupacion-semanal/generar', [OcupacionHistoricoController::class, 'generarManual'])->name('reportes.ocupacion-semanal.generar');
+
+    // Auditoría de Clases y Justificaciones
+    Route::get('auditoria-clases', [AuditoriaClaseController::class, 'index'])->name('reportes.auditoria-clases.index');
+    Route::get('auditoria-clases/export/{format}', [AuditoriaClaseController::class, 'export'])->name('reportes.auditoria-clases.export');
+    Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
 });
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/docente.php';
 
 // Rutas para Acciones Rápidas (Mantenedores)
 Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
@@ -494,6 +511,9 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
 
     // API para cambiar estado de reserva
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
+
+    // API para cancelar/eliminar definitivamente una reserva
+    Route::delete('/api/reserva/{id}', [QuickActionsController::class, 'eliminarReserva'])->name('quick-actions.api.eliminar-reserva');
 
     // Ruta para editar reserva
     Route::get('/editar-reserva/{id}', [QuickActionsController::class, 'editarReserva'])->name('editar-reserva');

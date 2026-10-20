@@ -311,7 +311,7 @@ class DetectarClasesNoRealizadas extends Command
                 // Verificar si el profesor tiene reserva activa en el espacio esperado (o sus equivalentes)
                 // Priorizar reservas activas sobre finalizadas (por si hubo doble escaneo)
                 // y dentro del mismo estado, la más reciente.
-                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? 'TH');
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? null);
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
                     ->whereIn('id_espacio', $espaciosEquiv)
                     ->where(function($q) use ($runProfesor, $runLimpio) {

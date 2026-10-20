@@ -60,10 +60,22 @@ class LicenciasProfesoresTable extends Component
             return collect();
         }
 
-        return Profesor::where('run_profesor', 'like', '%' . $this->run_profesor . '%')
-            ->orWhere('name', 'like', '%' . $this->run_profesor . '%')
-            ->limit(5)
-            ->get();
+        $termino = $this->run_profesor;
+        $runsPeriodo = \App\Helpers\SemesterHelper::getRunsDocentesDelPeriodo();
+
+        // Solo sugerir docentes que imparten clases en el semestre actual
+        return Profesor::where(function ($q) use ($termino) {
+                $q->where('run_profesor', 'like', '%' . $termino . '%')
+                  ->orWhere('name', 'like', '%' . $termino . '%');
+            })
+            ->orderBy('name')
+            ->limit($runsPeriodo === null ? 5 : 200)
+            ->get()
+            ->when($runsPeriodo !== null, fn($c) => $c->filter(
+                fn($p) => isset($runsPeriodo[\App\Helpers\SemesterHelper::normalizarRun($p->run_profesor)])
+            ))
+            ->take(5)
+            ->values();
     }
 
     public function selectProfesor($run, $nombre)
@@ -182,9 +194,23 @@ class LicenciasProfesoresTable extends Component
     {
         $query = LicenciaProfesor::with(['profesor', 'creador', 'recuperaciones'])
             ->when($this->search, function ($q) {
-                $q->whereHas('profesor', function ($query) {
-                    $query->where('name', 'like', '%' . $this->search . '%')
-                          ->orWhere('run_profesor', 'like', '%' . $this->search . '%');
+                $rawSearch = trim($this->search);
+                $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+
+                $q->where(function ($subQ) use ($words, $cleanRun) {
+                    if (!empty($words)) {
+                        $subQ->whereHas('profesor', function ($query) use ($words) {
+                            foreach ($words as $word) {
+                                $query->where('name', 'like', '%' . $word . '%');
+                            }
+                        });
+                    }
+                    if (!empty($cleanRun)) {
+                        $subQ->orWhereHas('profesor', function ($query) use ($cleanRun) {
+                            $query->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                        });
+                    }
                 });
             })
             ->when($this->estado, function ($q) {
@@ -193,7 +219,14 @@ class LicenciasProfesoresTable extends Component
             ->orderBy($this->sortField, $this->sortDirection);
 
         $licencias = $query->paginate(15);
+        $runsPeriodo = \App\Helpers\SemesterHelper::getRunsDocentesDelPeriodo();
         $profesores = Profesor::orderBy('name')->get();
+        if ($runsPeriodo !== null) {
+            // Solo docentes que imparten clases en el semestre actual
+            $profesores = $profesores->filter(
+                fn($p) => isset($runsPeriodo[\App\Helpers\SemesterHelper::normalizarRun($p->run_profesor)])
+            )->values();
+        }
 
         return view('livewire.licencias-profesores-table', [
             'licencias' => $licencias,

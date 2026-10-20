@@ -12,14 +12,14 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <x-button href="{{ route('quick-actions.gestionar-reservas') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('quick-actions.gestionar-reservas') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
+                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Volver
-                </x-button>
+                    <span>Volver</span>
+                </a>
             </div>
         </div>
     </x-slot>

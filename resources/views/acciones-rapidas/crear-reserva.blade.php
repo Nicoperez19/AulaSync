@@ -12,14 +12,14 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
-                <x-button href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-2.5">
+                <a href="{{ route('quick-actions.index') }}" 
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
+                    <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
-                    Volver
-                </x-button>
+                    <span>Volver</span>
+                </a>
             </div>
         </div>
     </x-slot>
@@ -246,7 +246,7 @@
                                     <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors bg-green-50 border-green-500" id="label-modalidad-puntual">
                                         <input type="radio" name="tipo_frecuencia" value="puntual" checked onchange="toggleModalidadReserva('puntual')" class="text-green-600 focus:ring-green-500">
                                         <div class="ml-2">
-                                            <span class="block text-xs font-bold text-gray-800">📌 Puntual / Espontánea</span>
+                                            <span class="block text-xs font-bold text-gray-800">Puntual / Espontánea</span>
                                             <span class="block text-[11px] text-gray-500">Reserva para un único día</span>
                                         </div>
                                     </label>
@@ -254,7 +254,7 @@
                                     <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" id="label-modalidad-recurrente">
                                         <input type="radio" name="tipo_frecuencia" value="recurrente" onchange="toggleModalidadReserva('recurrente')" class="text-green-600 focus:ring-green-500">
                                         <div class="ml-2">
-                                            <span class="block text-xs font-bold text-gray-800">🔁 Recurrente</span>
+                                            <span class="block text-xs font-bold text-gray-800">Recurrente</span>
                                             <span class="block text-[11px] text-gray-500">Repetir semanalmente</span>
                                         </div>
                                     </label>
@@ -564,7 +564,14 @@
                         body: JSON.stringify(formData)
                     });
 
-                    const result = await response.json();
+                    const responseText = await response.text();
+                    let result;
+
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        throw new Error(`El servidor respondió con HTTP ${response.status}.`);
+                    }
 
                     if (response.ok && result.success) {
                         Swal.fire({
@@ -625,22 +632,6 @@
                                             <strong>Tipo:</strong> <span class="px-2 py-1 rounded text-xs ml-1 ${result.datos.tipo === 'Académica' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">${result.datos.tipo}</span>
                                         </div>
                                     </div>
-                                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-                                        <div class="flex items-center text-blue-800 text-sm font-medium">
-                                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            <span>Comprobante Oficial (PDF)</span>
-                                        </div>
-                                        <a href="${result.url_comprobante || ('/reservas/' + result.id_reserva + '/comprobante')}" target="_blank"
-                                           class="inline-flex items-center px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                            </svg>
-                                            Descargar PDF
-                                        </a>
-                                    </div>
-
                                     <div class="mt-3 p-3 bg-yellow-50 border-l-2 border-yellow-400 rounded">
                                         <div class="flex items-center">
                                             <svg class="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -656,7 +647,7 @@
                             icon: 'success',
                             confirmButtonText: 'Ir a Gestión de Reservas',
                             showDenyButton: true,
-                            denyButtonText: '📄 Descargar Comprobante',
+                            denyButtonText: 'Descargar Comprobante',
                             denyButtonColor: '#2563EB',
                             showCancelButton: true,
                             cancelButtonText: 'Crear otra reserva',
@@ -665,18 +656,20 @@
                             width: '600px'
                         }).then((dialogResult) => {
                             if (dialogResult.isDenied) {
-                                const comprobanteUrl = result.url_comprobante || ('/reservas/' + result.id_reserva + '/comprobante');
+                                const idReserva = result.id_reserva || result.reserva?.id;
+                                const comprobanteUrl = result.url_comprobante || (idReserva ? `/reservas/${idReserva}/comprobante` : null);
+
+                                if (!comprobanteUrl) {
+                                    Swal.fire('Error', 'No se encontró el ID de la reserva para generar el comprobante.', 'error');
+                                    return;
+                                }
+
                                 window.open(comprobanteUrl, '_blank');
                             } else if (dialogResult.isConfirmed) {
                                 window.location.href = "{{ route('quick-actions.gestionar-reservas') }}";
                             } else {
-                                // Limpiar formulario para crear otra reserva
-                                document.getElementById('form-crear-reserva').reset();
-                                document.getElementById('resultado-busqueda').innerHTML = '';
-                                document.getElementById('fecha-reserva').value = new Date().toISOString().split('T')[0];
-                                resetearForzar();
-                                cargarEspaciosDisponibles();
-                                cargarModulosParaSeleccion();
+                                // Recargar la página para dejar el formulario en estado limpio y reinicializar todos los campos
+                                window.location.reload();
                             }
                         });
                     } else if (response.status === 409 || result.tipo_error === 'clase_programada' || result.tipo_error === 'reserva_existente' || (result.mensaje && result.mensaje.toLowerCase().includes('clase programada'))) {
@@ -707,7 +700,10 @@
                             await enviarCreacionReserva(formData);
                         }
                     } else {
-                        Swal.fire('Error', result.mensaje || 'Error al crear la reserva', 'error');
+                        const erroresValidacion = result.errors
+                            ? Object.values(result.errors).flat().join('<br>')
+                            : '';
+                        Swal.fire('Error', erroresValidacion || result.mensaje || result.message || 'Error al crear la reserva', 'error');
                     }
                 } catch (error) {
                     console.error('Error al enviar creación de reserva:', error);

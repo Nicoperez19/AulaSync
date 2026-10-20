@@ -77,21 +77,46 @@
                         </button>
                     </div>
                     
-                    <!-- Leyenda (Niveles de Ocupación) -->
-                    <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm bg-slate-50 border border-slate-200/80 rounded-xl px-3 sm:px-4 py-2 shadow-xs shrink-0">
-                        <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
-                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold whitespace-nowrap">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <span>0% - 35%</span>
-                        </span>
-                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-200 text-amber-900 font-bold whitespace-nowrap">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                            <span>35% - 75%</span>
-                        </span>
-                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-100 border border-red-200 text-red-800 font-bold whitespace-nowrap">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                            <span>75% - 100%</span>
-                        </span>
+                    <!-- Acciones: Leyenda + Exportar & Histórico -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Leyenda (Niveles de Ocupación) -->
+                        <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm bg-slate-50 border border-slate-200/80 rounded-xl px-3 sm:px-4 py-2 shadow-xs shrink-0">
+                            <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
+                            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold whitespace-nowrap">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <span>0% - 35%</span>
+                            </span>
+                            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-200 text-amber-900 font-bold whitespace-nowrap">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <span>35% - 75%</span>
+                            </span>
+                            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-100 border border-red-200 text-red-800 font-bold whitespace-nowrap">
+                                <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                                <span>75% - 100%</span>
+                            </span>
+                        </div>
+
+                        <!-- Botones de Exportar e Histórico -->
+                        <div class="flex items-center gap-2 shrink-0">
+                            <a id="btn-export-ocupacion-excel" href="{{ route('dashboard.ocupacion.export', ['format' => 'excel', 'tipo' => 'todos']) }}"
+                               title="Exportar semana actual en Excel"
+                               class="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                                <i class="fas fa-file-excel"></i>
+                                <span>Excel</span>
+                            </a>
+                            <a id="btn-export-ocupacion-pdf" href="{{ route('dashboard.ocupacion.export', ['format' => 'pdf', 'tipo' => 'todos']) }}" target="_blank"
+                               title="Exportar semana actual en PDF"
+                               class="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF</span>
+                            </a>
+                            <a href="{{ route('reportes.ocupacion-semanal.index') }}"
+                               title="Ver histórico de semanas almacenadas"
+                               class="inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                                <i class="fas fa-history"></i>
+                                <span>Histórico</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
                                
@@ -107,11 +132,11 @@
 
         <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
-            <!-- Widget Izquierda: Estado de Clases (Control de Asistencia) -->
-            <div class="lg:col-span-7 flex flex-col">
+            <!-- Widget Izquierda: Estado de Clases (Control de Registro) -->
+            <div class="{{ auth()->user()->can('reportes') ? 'lg:col-span-7' : 'lg:col-span-12' }} flex flex-col">
                 <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
                     <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
-                    Estado de Clases (Control de Asistencia)
+                    Estado de Clases (Control de Registro)
                 </h3>
                 <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1">
                     <div id="status-clases-container">
@@ -198,6 +223,40 @@
                             <i class="fas fa-chevron-right text-sm"></i>
                         </div>
                     </a>
+
+                    <!-- Histórico de Ocupación Semanal -->
+                    <a href="{{ route('reportes.ocupacion-semanal.index') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-[#D2091E] group-hover:bg-[#D2091E] group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-chart-line text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Histórico de Ocupación</h4>
+                                <p class="text-xs text-gray-500">Semanas almacenadas y descargas en Excel y PDF</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-[#D2091E] transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
+
+                    <!-- Auditoría de Clases y Justificaciones -->
+                    <a href="{{ route('reportes.auditoria-clases.index') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-slate-700 group-hover:bg-slate-800 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-clipboard-user text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Auditoría de Clases</h4>
+                                <p class="text-xs text-gray-500">Registro inmutable de justificaciones y regularizaciones</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-slate-800 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
                 </div>
             </div>
             @endcan
@@ -209,7 +268,7 @@
                 <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
                 Horarios del Día Actual - Módulos Actuales
             </h3>
-            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6">
+            <div class="bg-[#F8FAFC] rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6">
                 <!-- Contenedor dinámico del horario -->
                 <div id="horarios-actual-container">
                     <div class="flex flex-col items-center justify-center py-12 text-gray-400">
