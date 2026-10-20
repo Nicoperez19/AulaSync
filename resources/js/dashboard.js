@@ -403,13 +403,12 @@ function initStatusClasesChart() {
 
     const realizadas = parseInt(canvas.dataset.realizadas || '0');
     const recuperadas = parseInt(canvas.dataset.recuperadas || '0');
-    const justificadas = parseInt(canvas.dataset.justificadas || '0');
     const noRegistradas = parseInt(canvas.dataset.noRegistradas || '0');
     const pctImpartidas = parseFloat(canvas.dataset.pctImpartidas || '0');
     const pctNoRegistradas = parseFloat(canvas.dataset.pctNoRegistradas || '0');
     const totalClases = parseInt(canvas.dataset.totalClases || '0');
 
-    const impartidasTotal = realizadas + recuperadas + justificadas;
+    const impartidasTotal = realizadas + recuperadas;
 
     const centerValor = document.getElementById('center-label-valor');
     const centerSub = document.getElementById('center-label-sub');
@@ -440,22 +439,7 @@ function initStatusClasesChart() {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '74%',
-            onClick: (event, activeElements) => {
-                if (activeElements && activeElements.length > 0 && totalClases > 0) {
-                    const idx = activeElements[0].index;
-                    if (idx === 0) {
-                        abrirDetalleStatusClases('impartidas');
-                    } else {
-                        abrirDetalleStatusClases('no_registradas');
-                    }
-                } else {
-                    abrirDetalleStatusClases('todas');
-                }
-            },
             onHover: (event, activeElements) => {
-                if (event?.native?.target) {
-                    event.native.target.style.cursor = totalClases > 0 ? 'pointer' : 'default';
-                }
                 if (!centerValor || !centerSub) return;
                 const centerDetail = document.getElementById('center-label-detail');
 
@@ -465,16 +449,16 @@ function initStatusClasesChart() {
                         centerValor.textContent = `${impartidasTotal}`;
                         centerValor.className = 'text-3xl font-black text-emerald-600 tracking-tight leading-none';
                         centerSub.textContent = `Impartidas (${pctImpartidas}%)`;
-                        centerSub.className = 'text-[10px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
+                        centerSub.className = 'text-[11px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
                         if (centerDetail) {
-                            centerDetail.textContent = `Norm. ${realizadas} · Rec. ${recuperadas} · Just. ${justificadas}`;
+                            centerDetail.textContent = `Norm. ${realizadas} + Recup. ${recuperadas}`;
                             centerDetail.classList.remove('hidden');
                         }
                     } else {
                         centerValor.textContent = `${noRegistradas}`;
                         centerValor.className = 'text-3xl font-black text-rose-600 tracking-tight leading-none';
                         centerSub.textContent = `Sin Registro (${pctNoRegistradas}%)`;
-                        centerSub.className = 'text-[10px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
+                        centerSub.className = 'text-[11px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
                         if (centerDetail) {
                             centerDetail.textContent = `de ${totalClases} clases totales`;
                             centerDetail.classList.remove('hidden');
@@ -484,7 +468,7 @@ function initStatusClasesChart() {
                     centerValor.textContent = `${pctImpartidas}%`;
                     centerValor.className = 'text-3xl font-black text-slate-800 tracking-tight leading-none';
                     centerSub.textContent = 'Cumplimiento';
-                    centerSub.className = 'text-[10px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
+                    centerSub.className = 'text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
                     if (centerDetail) {
                         centerDetail.classList.add('hidden');
                         centerDetail.textContent = '';
@@ -501,172 +485,6 @@ function initStatusClasesChart() {
     });
 }
 
-let currentModalStatusTab = 'todas';
-
-function abrirDetalleStatusClases(tab = 'todas') {
-    const modal = document.getElementById('modal-status-clases-detalle');
-    if (!modal) return;
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.style.overflow = 'hidden';
-
-    const searchInput = document.getElementById('modal-status-search');
-    if (searchInput) {
-        searchInput.value = '';
-    }
-
-    cambiarTabDetalleStatusClases(tab);
-}
-
-function cerrarDetalleStatusClases() {
-    const modal = document.getElementById('modal-status-clases-detalle');
-    if (!modal) return;
-
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-    document.body.style.overflow = '';
-}
-
-function cambiarTabDetalleStatusClases(tab = 'todas') {
-    currentModalStatusTab = tab;
-
-    const modal = document.getElementById('modal-status-clases-detalle');
-    const titulo = document.getElementById('modal-status-titulo');
-    const linkControl = document.getElementById('modal-status-link-control');
-
-    const titulosPorTab = {
-        todas: 'Todas las Clases del Período',
-        no_registradas: 'Clases No Registradas / No Realizadas',
-        sin_registro: 'Clases Sin Marca de Asistencia / Ausentes',
-        pendiente_recuperacion: 'Clases Pendientes de Recuperación',
-        impartidas: 'Clases Impartidas / Efectivas',
-        realizadas: 'Clases Realizadas Normales',
-        recuperadas: 'Clases Recuperadas',
-        justificadas: 'Clases Justificadas',
-        futuras: 'Próximas Clases Programadas / En Curso'
-    };
-
-    if (titulo) {
-        titulo.textContent = titulosPorTab[tab] || 'Detalle de Clases del Período';
-    }
-
-    // Actualizar enlace hacia Control de Clases según la pestaña activa
-    if (modal && linkControl) {
-        const baseUrl = modal.dataset.baseControlUrl || '/clases-no-realizadas';
-        const fechaInicio = modal.dataset.fechaInicio || '';
-        const fechaFin = modal.dataset.fechaFin || '';
-        const estadoParamMap = {
-            todas: '',
-            no_registradas: 'no_realizada',
-            sin_registro: 'no_realizada',
-            pendiente_recuperacion: 'pendiente',
-            impartidas: 'impartidas',
-            realizadas: 'realizada',
-            recuperadas: 'recuperada',
-            justificadas: 'justificado',
-            futuras: ''
-        };
-        const estadoParam = estadoParamMap[tab] || '';
-        let url = `${baseUrl}?fecha_inicio=${encodeURIComponent(fechaInicio)}&fecha_fin=${encodeURIComponent(fechaFin)}`;
-        if (estadoParam) {
-            url += `&estado=${encodeURIComponent(estadoParam)}`;
-        }
-        linkControl.href = url;
-    }
-
-    // Actualizar estilo visual de las pestañas
-    const tabButtons = document.querySelectorAll('#modal-status-tabs .status-modal-tab');
-    const tabToHighlight = (tab === 'sin_registro' || tab === 'pendiente_recuperacion') ? 'no_registradas' : tab;
-
-    tabButtons.forEach(btn => {
-        const btnTab = btn.dataset.tab;
-        if (btnTab === tabToHighlight) {
-            btn.className = 'status-modal-tab px-3 py-1.5 rounded-xl text-xs font-extrabold border transition cursor-pointer flex items-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-xs';
-        } else {
-            btn.className = 'status-modal-tab px-3 py-1.5 rounded-xl text-xs font-extrabold border transition cursor-pointer flex items-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:bg-slate-100';
-        }
-    });
-
-    filtrarItemsModalStatusClases();
-}
-
-function filtrarItemsModalStatusClases() {
-    const searchInput = document.getElementById('modal-status-search');
-    const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-    const items = document.querySelectorAll('#modal-status-lista .status-modal-item');
-    const emptyMsg = document.getElementById('modal-status-empty-filter');
-    const contadorPie = document.getElementById('modal-status-contador-pie');
-
-    let visibles = 0;
-
-    items.forEach(item => {
-        const cat = item.dataset.categoria || '';
-        const sub = item.dataset.subtipo || '';
-        const searchStr = item.dataset.search || '';
-
-        let matchTab = false;
-        switch (currentModalStatusTab) {
-            case 'todas':
-                matchTab = cat !== 'futura';
-                break;
-            case 'no_registradas':
-                matchTab = cat === 'no_registrada';
-                break;
-            case 'sin_registro':
-                matchTab = cat === 'no_registrada' && sub === 'sin_registro';
-                break;
-            case 'pendiente_recuperacion':
-                matchTab = cat === 'no_registrada' && sub === 'pendiente_recuperacion';
-                break;
-            case 'impartidas':
-                matchTab = ['realizada', 'recuperada', 'justificada'].includes(cat);
-                break;
-            case 'realizadas':
-                matchTab = cat === 'realizada';
-                break;
-            case 'recuperadas':
-                matchTab = cat === 'recuperada';
-                break;
-            case 'justificadas':
-                matchTab = cat === 'justificada';
-                break;
-            case 'futuras':
-                matchTab = cat === 'futura';
-                break;
-            default:
-                matchTab = true;
-        }
-
-        const matchSearch = !query || searchStr.includes(query);
-
-        if (matchTab && matchSearch) {
-            item.classList.remove('hidden');
-            visibles++;
-        } else {
-            item.classList.add('hidden');
-        }
-    });
-
-    if (emptyMsg) {
-        if (visibles === 0 && items.length > 0) {
-            emptyMsg.classList.remove('hidden');
-        } else {
-            emptyMsg.classList.add('hidden');
-        }
-    }
-
-    if (contadorPie) {
-        contadorPie.textContent = `Mostrando ${visibles} ${visibles === 1 ? 'clase' : 'clases'}`;
-    }
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        cerrarDetalleStatusClases();
-    }
-});
-
 window.prevSlide = prevSlide;
 window.nextSlide = nextSlide;
 window.goToSlide = goToSlide;
@@ -678,8 +496,3 @@ window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
 window.toggleModalReloj = toggleModalReloj;
-window.abrirDetalleStatusClases = abrirDetalleStatusClases;
-window.cerrarDetalleStatusClases = cerrarDetalleStatusClases;
-window.cambiarTabDetalleStatusClases = cambiarTabDetalleStatusClases;
-window.filtrarItemsModalStatusClases = filtrarItemsModalStatusClases;
-

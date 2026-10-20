@@ -429,23 +429,26 @@ class SemesterHelper
      * Auto-saneamiento en tiempo de ejecución por tenant:
      * 1. Garantiza que exista un único PeriodoAcademico activo según la fecha actual.
      * 2. Cierra la fecha_fin_vigencia de las Planificacion_Asignatura de semestres anteriores ya finalizados
-     *    para que nunca se mezclen con el semestre activo.
-     * 3. Corrige los registros de ProfesorColaborador que tenían fechas anuales genéricas (01-01 a 12-31),
-     *    acotándolos al semestre específico al que pertenecen.
+     *    y limpia en el semestre actual cualquier planificación obsoleta/reemplazada.
+     * 3. Corrige los registros de ProfesorColaborador y PlanificacionProfesorColaborador para que los de 2026-1
+     *    queden estrictamente en 2026-1 y no se proyecten en 2026-2.
+     * 4. Elimina registros huérfanos en clases_no_realizadas y profesor_atrasos que provengan de asignaturas de 2026-1
+     *    en fechas de 2026-2.
      */
     public static function asegurarSeparacionSemestres(?string $periodoActual = null, bool $forzar = false): void
     {
         try {
             $dbName = config('database.connections.tenant.database') ?? 'default';
-            $periodoActual = $periodoActual ?: (self::getCurrentAcademicYear() . '-' . self::getCurrentSemester());
-            $memKey = "{$dbName}_{$periodoActual}";
+            $periodoActualReal = self::getCurrentAcademicYear() . '-' . self::getCurrentSemester();
+            $periodoActual = $periodoActual ?: $periodoActualReal;
+            $memKey = "{$dbName}_{$periodoActualReal}";
 
             if (!$forzar && isset(static::$reconciledTenants[$memKey])) {
                 return;
             }
             static::$reconciledTenants[$memKey] = true;
 
-            $cacheKey = "sem_sep_healed_v2_{$memKey}";
+            $cacheKey = "sem_sep_healed_v4_{$memKey}";
             if (!$forzar) {
                 try {
                     if (\Illuminate\Support\Facades\Cache::get($cacheKey)) {
@@ -464,14 +467,18 @@ class SemesterHelper
 
             $periodosModels = PeriodoAcademico::all();
             $hoyStr = Carbon::today()->toDateString();
+            $limActual = self::getLimitesPeriodo($periodoActualReal, $periodosModels);
+            $iniActualStr = $limActual['inicio']->toDateString();
+            $finActualStr = $limActual['fin']->toDateString();
 
-            // 2. Cerrar fecha_fin_vigencia en planificacion_asignaturas de semestres distintos al actual que ya terminaron
+            // 2. Separar y limpiar planificacion_asignaturas entre semestres anteriores y el semestre actual
             if (\App\Models\Planificacion_Asignatura::tieneColumnaVigencia()) {
+                // 2a. Para semestres anteriores (ej. 2026-1), acotar su vigencia estrictamente a su semestre
                 $periodosEnHorarios = \Illuminate\Support\Facades\DB::connection('tenant')
                     ->table('horarios')
                     ->whereNotNull('periodo')
                     ->where('periodo', '!=', '')
-                    ->where('periodo', '!=', $periodoActual)
+                    ->where('periodo', '!=', $periodoActualReal)
                     ->distinct()
                     ->pluck('periodo');
 
@@ -480,8 +487,7 @@ class SemesterHelper
                     $finHistStr = $limHist['fin']->toDateString();
                     $iniHistStr = $limHist['inicio']->toDateString();
 
-                    // Si ese semestre ya concluyó (o es anterior al semestre activo), cerrar su vigencia al fin de su semestre
-                    if ($finHistStr < $hoyStr || strcmp($pHist, $periodoActual) < 0) {
+                    if ($finHistStr < $hoyStr || strcmp($pHist, $periodoActualReal) < 0) {
                         $horariosIds = \Illuminate\Support\Facades\DB::connection('tenant')
                             ->table('horarios')
                             ->where('periodo', $pHist)
@@ -500,94 +506,235 @@ class SemesterHelper
                             \Illuminate\Support\Facades\DB::connection('tenant')
                                 ->table('planificacion_asignaturas')
                                 ->whereIn('id_horario', $horariosIds)
-                                ->whereNull('fecha_inicio_vigencia')
+                                ->where(function ($q) use ($iniHistStr, $finHistStr) {
+                                    $q->whereNull('fecha_inicio_vigencia')
+                                      ->orWhere('fecha_inicio_vigencia', '>', $finHistStr);
+                                })
                                 ->update(['fecha_inicio_vigencia' => $iniHistStr]);
                         }
                     }
                 }
+
+                // 2b. En el semestre activo actual (ej. 2026-2):
+                // - Eliminar planificaciones cerradas/reemplazadas (fecha_fin_vigencia IS NOT NULL) que quedaron de cargas anteriores (como 2026-1 cargado en 2026-2)
+                // - Eliminar planificaciones cuya asignatura tenga explícitamente otro período (ej. 2026-1 migrada desde HOR_{run})
+                // - Asegurar que las planificaciones activas del semestre actual cubran desde el inicio del semestre ($iniActualStr)
+                $horariosActualesIds = \Illuminate\Support\Facades\DB::connection('tenant')
+                    ->table('horarios')
+                    ->where('periodo', $periodoActualReal)
+                    ->pluck('id_horario');
+
+                if ($horariosActualesIds->isNotEmpty()) {
+                    $tieneActivasEnActual = \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('planificacion_asignaturas')
+                        ->whereIn('id_horario', $horariosActualesIds)
+                        ->whereNull('fecha_fin_vigencia')
+                        ->exists();
+
+                    if ($tieneActivasEnActual) {
+                        \Illuminate\Support\Facades\DB::connection('tenant')
+                            ->table('planificacion_asignaturas')
+                            ->whereIn('id_horario', $horariosActualesIds)
+                            ->whereNotNull('fecha_fin_vigencia')
+                            ->delete();
+                    }
+
+                    $asigsOtroPeriodoIds = \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('asignaturas')
+                        ->whereNotNull('periodo')
+                        ->where('periodo', '!=', '')
+                        ->where('periodo', '!=', $periodoActualReal)
+                        ->pluck('id_asignatura');
+
+                    if ($asigsOtroPeriodoIds->isNotEmpty()) {
+                        \Illuminate\Support\Facades\DB::connection('tenant')
+                            ->table('planificacion_asignaturas')
+                            ->whereIn('id_horario', $horariosActualesIds)
+                            ->whereIn('id_asignatura', $asigsOtroPeriodoIds)
+                            ->delete();
+                    }
+
+                    \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('planificacion_asignaturas')
+                        ->whereIn('id_horario', $horariosActualesIds)
+                        ->whereNull('fecha_fin_vigencia')
+                        ->update(['fecha_inicio_vigencia' => $iniActualStr]);
+
+                    // Eliminar horarios del período actual que quedaron vacíos sin planificaciones
+                    $horariosConPlanif = \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('planificacion_asignaturas')
+                        ->whereIn('id_horario', $horariosActualesIds)
+                        ->distinct()
+                        ->pluck('id_horario');
+
+                    \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('horarios')
+                        ->where('periodo', $periodoActualReal)
+                        ->whereNotIn('id_horario', $horariosConPlanif)
+                        ->delete();
+                }
             }
 
-            // 3. Corregir ProfesorColaborador con rangos anuales que cruzan ambos semestres (ej. 2026-01-01 a 2026-12-31)
-            $colabsAnuales = \App\Models\ProfesorColaborador::query()
-                ->whereNotNull('fecha_inicio')
-                ->whereNotNull('fecha_termino')
-                ->get()
-                ->filter(function ($c) use ($periodosModels) {
-                    $pIni = self::resolverPeriodoParaFecha($c->fecha_inicio, $periodosModels);
-                    $pFin = self::resolverPeriodoParaFecha($c->fecha_termino, $periodosModels);
-                    return $pIni !== $pFin;
-                });
+            // 3. Reconciliar ProfesorColaborador y PlanificacionProfesorColaborador para que colaboradores de 2026-1 no aparezcan en 2026-2
+            $todosColabs = \App\Models\ProfesorColaborador::with('asignatura')->get();
 
-            if ($colabsAnuales->isNotEmpty()) {
-                // Mapa de periodos por asignatura en horarios titulares
+            if ($todosColabs->isNotEmpty()) {
                 $asigPeriodos = [];
                 $rowsAsig = \Illuminate\Support\Facades\DB::connection('tenant')
                     ->table('planificacion_asignaturas as pa')
                     ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                     ->whereNotNull('pa.id_asignatura')
                     ->whereNotNull('h.periodo')
-                    ->select('pa.id_asignatura', 'h.periodo')
-                    ->distinct()
+                    ->select('pa.id_asignatura', 'h.periodo', 'pa.fecha_fin_vigencia')
                     ->get();
+
                 foreach ($rowsAsig as $r) {
+                    if ($r->periodo === $periodoActualReal && $r->fecha_fin_vigencia !== null) {
+                        continue;
+                    }
                     $asigPeriodos[$r->id_asignatura][$r->periodo] = true;
                 }
 
-                foreach ($colabsAnuales as $colab) {
-                    $anioColab = Carbon::parse($colab->fecha_inicio)->year;
-                    $lim1 = self::getLimitesPeriodo($anioColab . '-1', $periodosModels);
-                    $lim2 = self::getLimitesPeriodo($anioColab . '-2', $periodosModels);
+                foreach ($todosColabs as $colab) {
+                    $anioColab = $colab->fecha_inicio ? Carbon::parse($colab->fecha_inicio)->year : self::getCurrentAcademicYear();
+                    $codSem1 = $anioColab . '-1';
+                    $codSem2 = $anioColab . '-2';
+                    $lim1 = self::getLimitesPeriodo($codSem1, $periodosModels);
+                    $lim2 = self::getLimitesPeriodo($codSem2, $periodosModels);
+                    $lim1IniStr = $lim1['inicio']->toDateString();
+                    $lim1FinStr = $lim1['fin']->toDateString();
+                    $lim2IniStr = $lim2['inicio']->toDateString();
+                    $lim2FinStr = $lim2['fin']->toDateString();
 
                     $planifsColab = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
                         ->where('id_profesor_colaborador', $colab->id)
                         ->get();
 
-                    $tieneActivaEnSem2 = false;
-                    $todasCerradasEnSem1 = $planifsColab->isNotEmpty();
-
-                    foreach ($planifsColab as $pc) {
-                        $finVig = $pc->fecha_fin_vigencia ? Carbon::parse($pc->fecha_fin_vigencia)->format('Y-m-d') : null;
-                        if ($finVig === null || $finVig >= $lim2['inicio']->format('Y-m-d')) {
-                            $todasCerradasEnSem1 = false;
-                            $refUpdate = $pc->fecha_inicio_vigencia ?? $pc->updated_at ?? $pc->created_at;
-                            if ($refUpdate && Carbon::parse($refUpdate)->format('Y-m-d') >= $lim2['inicio']->format('Y-m-d')) {
-                                $tieneActivaEnSem2 = true;
-                            }
+                    // Un bloque colaborador solo está activo en 2° semestre si su fecha_fin_vigencia es NULL (o >= fin del 2° semestre)
+                    // Si tiene fecha_fin_vigencia en octubre (ej. 2026-10-15), fue cerrado al cargar el 2° semestre y pertenece al 1° semestre
+                    $tienePlanActivaSinFin = $planifsColab->contains(function ($pc) use ($lim2FinStr) {
+                        if (empty($pc->fecha_fin_vigencia)) {
+                            return true;
                         }
-                    }
+                        $finStr = Carbon::parse($pc->fecha_fin_vigencia)->format('Y-m-d');
+                        return $finStr >= $lim2FinStr;
+                    });
 
                     $periodosAsig = ($colab->id_asignatura && isset($asigPeriodos[$colab->id_asignatura]))
                         ? array_keys($asigPeriodos[$colab->id_asignatura])
                         : [];
 
-                    $semestreDestino = null;
-                    if ($todasCerradasEnSem1) {
-                        $semestreDestino = 1;
-                    } elseif (count($periodosAsig) === 1) {
-                        $partesP = explode('-', $periodosAsig[0]);
-                        $semestreDestino = (int) ($partesP[1] ?? 2);
-                    } elseif ($tieneActivaEnSem2) {
-                        $semestreDestino = 2;
-                    } else {
-                        $fechaRefColab = $colab->updated_at ?? $colab->created_at;
-                        if ($fechaRefColab && Carbon::parse($fechaRefColab)->format('Y-m-d') < $lim2['inicio']->format('Y-m-d')) {
-                            $semestreDestino = 1;
-                        } else {
-                            $semestreDestino = 2;
-                        }
+                    $periodoModeloAsig = $colab->asignatura->periodo ?? null;
+
+                    $esDeSem1 = false;
+                    if ($planifsColab->isNotEmpty() && !$tienePlanActivaSinFin) {
+                        $esDeSem1 = true;
+                    } elseif ($periodoModeloAsig === $codSem1 && !in_array($codSem2, $periodosAsig, true)) {
+                        $esDeSem1 = true;
+                    } elseif (count($periodosAsig) === 1 && $periodosAsig[0] === $codSem1) {
+                        $esDeSem1 = true;
+                    } elseif ($planifsColab->isEmpty() && $colab->fecha_termino && Carbon::parse($colab->fecha_termino)->format('Y-m-d') <= $lim1FinStr) {
+                        $esDeSem1 = true;
                     }
 
-                    if ($semestreDestino === 1) {
+                    if ($esDeSem1) {
                         $colab->update([
-                            'fecha_inicio' => $lim1['inicio']->toDateString(),
-                            'fecha_termino' => $lim1['fin']->toDateString(),
+                            'fecha_inicio' => $lim1IniStr,
+                            'fecha_termino' => $lim1FinStr,
                         ]);
+
+                        if (\App\Models\PlanificacionProfesorColaborador::tieneColumnaVigencia()) {
+                            \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                                ->where('id_profesor_colaborador', $colab->id)
+                                ->update([
+                                    'fecha_inicio_vigencia' => $lim1IniStr,
+                                    'fecha_fin_vigencia' => $lim1FinStr,
+                                ]);
+                        }
                     } else {
-                        $colab->update([
-                            'fecha_inicio' => $lim2['inicio']->toDateString(),
-                            'fecha_termino' => $lim2['fin']->toDateString(),
-                        ]);
+                        // Pertenece al 2° semestre: limpiar bloques cerrados obsoletos del 1° semestre que hayan quedado unidos al mismo colaborador
+                        if (\App\Models\PlanificacionProfesorColaborador::tieneColumnaVigencia()) {
+                            if ($tienePlanActivaSinFin) {
+                                \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                                    ->where('id_profesor_colaborador', $colab->id)
+                                    ->whereNotNull('fecha_fin_vigencia')
+                                    ->where('fecha_fin_vigencia', '<', $lim2FinStr)
+                                    ->delete();
+                            }
+
+                            \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                                ->where('id_profesor_colaborador', $colab->id)
+                                ->whereNull('fecha_fin_vigencia')
+                                ->update([
+                                    'fecha_inicio_vigencia' => $lim2IniStr,
+                                ]);
+                        }
+
+                        $iniActualColab = $colab->fecha_inicio ? Carbon::parse($colab->fecha_inicio)->format('Y-m-d') : null;
+                        $finActualColab = $colab->fecha_termino ? Carbon::parse($colab->fecha_termino)->format('Y-m-d') : null;
+                        if (!$iniActualColab || $iniActualColab < $lim2IniStr || ($iniActualColab === $lim2IniStr && $finActualColab === $lim2FinStr)) {
+                            $colab->update([
+                                'fecha_inicio' => $lim2IniStr,
+                                'fecha_termino' => $lim2FinStr,
+                            ]);
+                        }
                     }
+                }
+            }
+
+            // 4. Limpiar registros huérfanos en clases_no_realizadas y profesor_atrasos dentro del semestre actual que provengan de asignaturas de 2026-1
+            $asigsValidasActual = \Illuminate\Support\Facades\DB::connection('tenant')
+                ->table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->where('h.periodo', $periodoActualReal)
+                ->whereNull('pa.fecha_fin_vigencia')
+                ->whereNotNull('pa.id_asignatura')
+                ->distinct()
+                ->pluck('pa.id_asignatura')
+                ->toArray();
+
+            $asigsColabActual = \Illuminate\Support\Facades\DB::connection('tenant')
+                ->table('profesores_colaboradores')
+                ->where('fecha_termino', '>=', $iniActualStr)
+                ->whereNotNull('id_asignatura')
+                ->distinct()
+                ->pluck('id_asignatura')
+                ->toArray();
+
+            $asigsValidasActual = array_values(array_unique(array_merge($asigsValidasActual, $asigsColabActual)));
+
+            if (!empty($asigsValidasActual)) {
+                \Illuminate\Support\Facades\DB::connection('tenant')
+                    ->table('clases_no_realizadas')
+                    ->where('fecha_clase', '>=', $iniActualStr)
+                    ->where(function ($q) use ($periodoActualReal, $asigsValidasActual) {
+                        $q->where(function ($sq) use ($periodoActualReal) {
+                            $sq->whereNotNull('periodo')
+                               ->where('periodo', '!=', '')
+                               ->where('periodo', '!=', $periodoActualReal);
+                        })->orWhere(function ($sq) use ($asigsValidasActual) {
+                            $sq->whereNotNull('id_asignatura')
+                               ->where('id_asignatura', '!=', 'RESERVA')
+                               ->whereNotIn('id_asignatura', $asigsValidasActual);
+                        });
+                    })
+                    ->delete();
+
+                if (\Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('profesor_atrasos')) {
+                    \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('profesor_atrasos')
+                        ->where('fecha', '>=', $iniActualStr)
+                        ->where(function ($q) use ($periodoActualReal, $asigsValidasActual) {
+                            $q->where(function ($sq) use ($periodoActualReal) {
+                                $sq->whereNotNull('periodo')
+                                   ->where('periodo', '!=', '')
+                                   ->where('periodo', '!=', $periodoActualReal);
+                            })->orWhere(function ($sq) use ($asigsValidasActual) {
+                                $sq->whereNotNull('id_asignatura')
+                                   ->whereNotIn('id_asignatura', $asigsValidasActual);
+                            });
+                        })
+                        ->delete();
                 }
             }
 
@@ -610,12 +757,20 @@ class SemesterHelper
             return false;
         }
 
-        if ($planificacion && !empty($planificacion->fecha_fin_vigencia)) {
-            return self::resolverPeriodoParaFecha($planificacion->fecha_fin_vigencia, $periodosModels) === $periodo;
+        $periodoActualReal = self::getCurrentAcademicYear() . '-' . self::getCurrentSemester();
+        $limPeriodo = self::getLimitesPeriodo($periodo, $periodosModels);
+        $finPeriodoStr = $limPeriodo['fin']->format('Y-m-d');
+
+        // Si estamos consultando el semestre activo actual, descartar cualquier planificación colaboradora cerrada
+        if ($periodo === $periodoActualReal && $planificacion && !empty($planificacion->fecha_fin_vigencia)) {
+            $finPlanStr = Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d');
+            if ($finPlanStr < $finPeriodoStr) {
+                return false;
+            }
         }
 
-        if ($planificacion && !empty($planificacion->fecha_inicio_vigencia)) {
-            return self::resolverPeriodoParaFecha($planificacion->fecha_inicio_vigencia, $periodosModels) === $periodo;
+        if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+            return (string) $colab->asignatura->periodo === $periodo;
         }
 
         $iniColab = $colab->fecha_inicio ? Carbon::parse($colab->fecha_inicio)->format('Y-m-d') : null;
@@ -638,8 +793,12 @@ class SemesterHelper
             }
         }
 
-        if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
-            return (string) $colab->asignatura->periodo === $periodo;
+        if ($planificacion && !empty($planificacion->fecha_fin_vigencia)) {
+            return self::resolverPeriodoParaFecha($planificacion->fecha_fin_vigencia, $periodosModels) === $periodo;
+        }
+
+        if ($planificacion && !empty($planificacion->fecha_inicio_vigencia)) {
+            return self::resolverPeriodoParaFecha($planificacion->fecha_inicio_vigencia, $periodosModels) === $periodo;
         }
 
         $fechaRef = ($planificacion ? ($planificacion->updated_at ?? $planificacion->created_at) : null)

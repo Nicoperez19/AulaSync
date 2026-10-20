@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 
 class DataLoadController extends Controller
 {
@@ -671,13 +672,17 @@ class DataLoadController extends Controller
                                         ->first();
 
                                     if ($planColabExistente) {
-                                        $planColabExistente->update(['fecha_fin_vigencia' => null]);
+                                        $planColabExistente->update([
+                                            'fecha_inicio_vigencia' => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia'    => $finVigenciaPeriodo,
+                                        ]);
                                     } else {
                                         \App\Models\PlanificacionProfesorColaborador::create([
                                             'id_profesor_colaborador' => $colaboradorModel->id,
                                             'id_modulo'               => $slotC['id_modulo'],
                                             'id_espacio'              => $slotC['id_espacio'],
-                                            'fecha_inicio_vigencia'   => !empty($esRecargaPeriodo) ? $hoyVigencia : null,
+                                            'fecha_inicio_vigencia'   => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia'      => $finVigenciaPeriodo,
                                         ]);
                                     }
 
@@ -764,17 +769,14 @@ class DataLoadController extends Controller
 
                         if (!$existingHorario) {
                             $oldIdHorario = 'HOR_' . $run;
-                            $existingHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $oldIdHorario)->first();
+                            $oldHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $oldIdHorario)->first();
 
-                            if ($existingHorario) {
-                                // Migrar horario existente al nuevo formato
-                                $existingHorario->id_horario = $idHorario;
-                                $existingHorario->periodo = $periodo;
-                                $existingHorario->save();
-
-                                // Actualizar planificaciones asociadas
-                                Planificacion_Asignatura::where('id_horario', $oldIdHorario)
-                                    ->update(['id_horario' => $idHorario]);
+                            if ($oldHorario) {
+                                // Eliminar horario antiguo sin sufijo de semestre para no mezclar semestres
+                                Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                                    ->where('id_horario', $oldIdHorario)
+                                    ->delete();
+                                $oldHorario->delete();
                             }
                         }
 
@@ -908,7 +910,8 @@ class DataLoadController extends Controller
 
                                     if ($planExistente) {
                                         $planExistente->update([
-                                            'fecha_fin_vigencia' => null,
+                                            'fecha_inicio_vigencia' => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia' => $finVigenciaPeriodo,
                                             'inscritos' => $inscritos,
                                             'data_load_id' => $dataLoad->id,
                                         ]);
@@ -922,7 +925,8 @@ class DataLoadController extends Controller
                                         $planificacion->id_espacio = $espacioIdFinal;
                                         $planificacion->inscritos = $inscritos;
                                         $planificacion->data_load_id = $dataLoad->id;
-                                        $planificacion->fecha_inicio_vigencia = !empty($esRecargaPeriodo) ? $hoyVigencia : null;
+                                        $planificacion->fecha_inicio_vigencia = $inicioVigenciaPeriodo;
+                                        $planificacion->fecha_fin_vigencia = $finVigenciaPeriodo;
                                         $planificacion->es_espacio_externo = $espacioModel->esEspacioExterno();
                                         $planificacion->save();
 
@@ -957,6 +961,8 @@ class DataLoadController extends Controller
                     $errors[] = $errorMsg;
                 }
             }
+
+            SemesterHelper::asegurarSeparacionSemestres($periodoSeleccionado, true);
 
             $dataLoad->update([
                 'estado' => 'completado',
@@ -1011,8 +1017,11 @@ class DataLoadController extends Controller
                     'errores' => $errors
                 ]
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error en carga masiva: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error en carga masiva: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            if (isset($dataLoad) && $dataLoad) {
+                try { $dataLoad->update(['estado' => 'error']); } catch (\Throwable $inner) {}
+            }
             return response()->json([
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);

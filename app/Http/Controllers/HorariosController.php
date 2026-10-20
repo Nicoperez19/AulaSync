@@ -207,8 +207,17 @@ class HorariosController extends Controller
             // Si se encontró el horario, eliminar posibles duplicados de bloques dentro del mismo período
             if ($horario) {
                 $horario->planificaciones = $horario->planificaciones
-                    ->filter(function ($planificacion) {
-                        return (bool) $planificacion->asignatura;
+                    ->filter(function ($planificacion) use ($periodo) {
+                        if (!$planificacion->asignatura) {
+                            return false;
+                        }
+                        if (!empty($planificacion->asignatura->periodo) && $planificacion->asignatura->periodo !== $periodo) {
+                            return false;
+                        }
+                        if ($periodo === SemesterHelper::getCurrentPeriod() && !empty($planificacion->fecha_fin_vigencia)) {
+                            return false;
+                        }
+                        return true;
                     })
                     ->unique(function ($plan) {
                         // Evitar duplicados usando combinación de id_modulo y asignatura

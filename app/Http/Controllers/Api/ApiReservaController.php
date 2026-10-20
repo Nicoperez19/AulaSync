@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\RunNormalizer;
+use App\Helpers\SemesterHelper;
 
 class ApiReservaController extends Controller
 {

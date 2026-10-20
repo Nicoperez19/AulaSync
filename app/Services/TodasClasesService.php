@@ -120,7 +120,7 @@ class TodasClasesService
 
         // ── 1. CACHE DE CLASES NO REALIZADAS / JUSTIFICADAS / REGISTRADAS ──
         $clasesNoRealizadasQuery = ClaseNoRealizada::with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 'profesor:run_profesor,name,id_carrera,id_area_academica',
@@ -154,7 +154,7 @@ class TodasClasesService
                 'profesor:run_profesor,name,id_carrera,id_area_academica',
                 'profesor.carrera:id_carrera,nombre',
                 'profesor.areaAcademica:id_area_academica,nombre_area_academica',
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
             ])
@@ -238,6 +238,8 @@ class TodasClasesService
         }
 
         // Mapa de semestres asociados a cada asignatura según sus horarios titulares
+        $periodoActualReal = \App\Helpers\SemesterHelper::getCurrentAcademicYear() . '-' . \App\Helpers\SemesterHelper::getCurrentSemester();
+        $asignaturasValidasPeriodo = [];
         $periodosPorAsignatura = [];
         try {
             $asigPeriodosRows = \Illuminate\Support\Facades\DB::connection('tenant')
@@ -245,10 +247,12 @@ class TodasClasesService
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->whereNotNull('pa.id_asignatura')
                 ->whereNotNull('h.periodo')
-                ->select('pa.id_asignatura', 'h.periodo')
-                ->distinct()
+                ->select('pa.id_asignatura', 'h.periodo', 'pa.fecha_fin_vigencia')
                 ->get();
             foreach ($asigPeriodosRows as $apr) {
+                if ($apr->periodo === $periodoActualReal && $apr->fecha_fin_vigencia !== null) {
+                    continue;
+                }
                 $periodosPorAsignatura[$apr->id_asignatura][$apr->periodo] = true;
             }
         } catch (\Throwable $e) {
@@ -265,7 +269,7 @@ class TodasClasesService
         $query = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
             ->select($colsPlan)
             ->with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,run_profesor_reemplazo',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,run_profesor_reemplazo,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 $relEspacio,
@@ -283,6 +287,9 @@ class TodasClasesService
             ->whereHas('horario.profesor');
 
         if ($periodo) {
+            if ($periodo === $periodoActualReal && $tieneVigenciaPlan) {
+                $query->whereNull('fecha_fin_vigencia');
+            }
             $query->whereHas('horario', function($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             });
@@ -324,6 +331,7 @@ class TodasClasesService
             &$clasesNoRealizadasUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
+            &$asignaturasValidasPeriodo,
             $fechas,
             $periodoPorFecha,
             $periodosModels,
@@ -344,6 +352,12 @@ class TodasClasesService
                 if ($periodo && $periodoPlan && $periodoPlan !== $periodo) {
                     continue;
                 }
+                if ($periodo && $planificacion->asignatura && !empty($planificacion->asignatura->periodo) && $planificacion->asignatura->periodo !== $periodo) {
+                    continue;
+                }
+                if ($planificacion->id_asignatura) {
+                    $asignaturasValidasPeriodo[$planificacion->id_asignatura] = true;
+                }
 
                 $runProfesor = $this->normalizeRun($planificacion->horario->profesor->run_profesor);
                 if ($planificacion->id_asignatura) {
@@ -363,7 +377,7 @@ class TodasClasesService
                     $limPlan = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodoPlan, $periodosModels);
                     $iniSemPlan = $limPlan['inicio']->format('Y-m-d');
                     $finSemPlan = $limPlan['fin']->format('Y-m-d');
-                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan) {
+                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan || empty($planificacion->fecha_fin_vigencia)) {
                         $inicioVigencia = $iniSemPlan;
                     }
                     if (!$finVigencia || $finVigencia > $finSemPlan) {
@@ -608,7 +622,7 @@ class TodasClasesService
                           'profesor:run_profesor,name,id_carrera,id_area_academica',
                           'profesor.carrera:id_carrera,nombre',
                           'profesor.areaAcademica:id_area_academica,nombre_area_academica',
-                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor',
+                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,periodo',
                           'asignatura.carrera:id_carrera,nombre,id_area_academica',
                           'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                       ]);
@@ -616,6 +630,10 @@ class TodasClasesService
             ])
             ->whereHas('modulo')
             ->whereHas('profesorColaborador.profesor');
+
+        if ($periodo && $periodo === $periodoActualReal && $tieneVigenciaColab) {
+            $queryColab->whereNull('fecha_fin_vigencia');
+        }
 
         if ($search) {
             $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
@@ -656,6 +674,7 @@ class TodasClasesService
             &$clasesNoRealizadasUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
+            &$asignaturasValidasPeriodo,
             $periodosPorAsignatura,
             $periodosModels,
             $fechas,
@@ -681,6 +700,9 @@ class TodasClasesService
                 $asignaturaNombre = $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? 'N/A';
                 $asignaturaCodigo = $colab->asignatura->codigo_asignatura ?? 'N/A';
                 $idAsignatura = $colab->id_asignatura;
+                if ($idAsignatura) {
+                    $asignaturasValidasPeriodo[$idAsignatura] = true;
+                }
 
                 // Fechas de vigencia del colaborador y de la planificación específica
                 $inicioColab = $colab->fecha_inicio ? Carbon::parse($colab->fecha_inicio)->format('Y-m-d') : null;
@@ -698,6 +720,9 @@ class TodasClasesService
                     $limColabFin = $limColab['fin']->format('Y-m-d');
                     if (!$inicioColab || $inicioColab < $limColabIni) {
                         $inicioColab = $limColabIni;
+                    }
+                    if (empty($planificacion->fecha_fin_vigencia)) {
+                        $inicioPlan = $limColabIni;
                     }
                     if (!$finColab || $finColab > $limColabFin) {
                         $finColab = $limColabFin;
@@ -955,7 +980,16 @@ class TodasClasesService
             if ($periodo && $periodoFechaCnr !== $periodo) {
                 continue;
             }
-            if ($periodo && !empty($cnr->periodo) && $cnr->periodo !== $periodo && $periodoFechaCnr !== $periodo) {
+            if ($periodo && !empty($cnr->periodo) && $cnr->periodo !== $periodo) {
+                continue;
+            }
+            if ($cnr->estado === 'no_realizada') {
+                continue;
+            }
+            if ($periodo && $cnr->asignatura && !empty($cnr->asignatura->periodo) && $cnr->asignatura->periodo !== $periodo) {
+                continue;
+            }
+            if (!empty($asignaturasValidasPeriodo) && !empty($cnr->id_asignatura) && $cnr->id_asignatura !== 'RESERVA' && !isset($asignaturasValidasPeriodo[$cnr->id_asignatura])) {
                 continue;
             }
 
@@ -1043,6 +1077,9 @@ class TodasClasesService
             $fechaResStr = $fechaRes->format('Y-m-d');
             $periodoFechaRes = $periodoPorFecha[$fechaResStr] ?? $this->resolverPeriodoParaFecha($fechaResStr, $periodosModels);
             if ($periodo && $periodoFechaRes !== $periodo) {
+                continue;
+            }
+            if ($periodo && $res->asignatura && !empty($res->asignatura->periodo) && $res->asignatura->periodo !== $periodo) {
                 continue;
             }
 
@@ -1691,8 +1728,24 @@ class TodasClasesService
      */
     private function resolverPeriodosColaborador($planificacion, $colab, array $periodosPorAsignatura, $periodosModels = null): array
     {
+        if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+            return [(string) $colab->asignatura->periodo => true];
+        }
+
+        if (!empty($colab->id_asignatura) && !empty($periodosPorAsignatura[$colab->id_asignatura])) {
+            if (count($periodosPorAsignatura[$colab->id_asignatura]) === 1) {
+                return $periodosPorAsignatura[$colab->id_asignatura];
+            }
+        }
+
         if (!empty($planificacion->fecha_fin_vigencia)) {
-            $pFinPlan = $this->resolverPeriodoParaFecha(Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d'), $periodosModels);
+            $finPlanYmd = Carbon::parse($planificacion->fecha_fin_vigencia)->format('Y-m-d');
+            $anioFin = (int) substr($finPlanYmd, 0, 4);
+            $lim2 = \App\Helpers\SemesterHelper::getLimitesPeriodo($anioFin . '-2', $periodosModels);
+            if ($finPlanYmd < $lim2['fin']->format('Y-m-d')) {
+                return [$anioFin . '-1' => true];
+            }
+            $pFinPlan = $this->resolverPeriodoParaFecha($finPlanYmd, $periodosModels);
             return [$pFinPlan => true];
         }
 

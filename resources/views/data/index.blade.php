@@ -329,6 +329,7 @@
             const xhr = new XMLHttpRequest();
             xhr.open('POST', form.action, true);
             xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
+            xhr.setRequestHeader('Accept', 'application/json');
 
             xhr.onload = function () {
                 loadingSpinner.classList.add('hidden');
