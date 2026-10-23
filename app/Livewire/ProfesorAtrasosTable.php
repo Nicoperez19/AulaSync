@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\PeriodoAcademico;
 use App\Models\ProfesorAtraso;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
@@ -24,13 +25,53 @@ class ProfesorAtrasosTable extends Component
         'search' => ['except' => ''],
         'fecha_inicio' => ['except' => ''],
         'fecha_fin' => ['except' => ''],
+        'periodo' => ['except' => ''],
     ];
 
     public function mount()
     {
+        $user = auth()->user();
+        if (!$user || !$user->isSuperAdmin()) {
+            abort(403, 'Acceso denegado. Función disponible solo para superadministradores.');
+        }
+
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
+    }
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFechaInicio()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFechaFin()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPeriodo($value)
+    {
+        $this->resetPage();
+
+        if ($value) {
+            $limites = SemesterHelper::getLimitesPeriodo($value);
+            $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+            $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+                ? Carbon::today()->format('Y-m-d')
+                : $limites['fin']->format('Y-m-d');
+        } else {
+            $this->fecha_inicio = '';
+            $this->fecha_fin = Carbon::today()->format('Y-m-d');
+        }
     }
 
     public function sortBy($field)
@@ -46,8 +87,12 @@ class ProfesorAtrasosTable extends Component
     public function limpiarFiltros()
     {
         $this->search = '';
-        $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->periodo = SemesterHelper::getCurrentPeriod();
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
         $this->resetPage();
     }
 
@@ -62,30 +107,54 @@ class ProfesorAtrasosTable extends Component
                 $q->whereBetween('fecha', [$this->fecha_inicio, $this->fecha_fin]);
             })
             ->when($this->search, function($q) {
-                $searchTerm = '%' . $this->search . '%';
-                $q->where(function($subQ) use ($searchTerm) {
-                    $subQ->whereHas('profesor', function($pq) use ($searchTerm) {
-                        $pq->where('name', 'like', $searchTerm);
+                $rawSearch = trim($this->search);
+                $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
+
+                $q->where(function($subQ) use ($rawSearch, $words, $cleanRun) {
+                    if (!empty($words)) {
+                        $subQ->whereHas('profesor', function($pq) use ($words) {
+                            foreach ($words as $word) {
+                                $pq->where('name', 'like', '%' . $word . '%');
+                            }
+                        });
+                    }
+                    $subQ->orWhereHas('asignatura', function($aq) use ($rawSearch) {
+                        $aq->where('nombre_asignatura', 'like', '%' . $rawSearch . '%');
                     })
-                    ->orWhereHas('asignatura', function($aq) use ($searchTerm) {
-                        $aq->where('nombre_asignatura', 'like', $searchTerm);
-                    })
-                    ->orWhere('id_espacio', 'like', $searchTerm);
+                    ->orWhere('id_espacio', 'like', '%' . $rawSearch . '%');
+
+                    if (!empty($cleanRun)) {
+                        $subQ->orWhereHas('profesor', function($pq) use ($cleanRun) {
+                            $pq->where('run_profesor', 'like', '%' . $cleanRun . '%');
+                        });
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection);
 
         $atrasos = $query->paginate($this->perPage);
 
-        // Estadísticas rápidas
+        // Estadísticas rápidas según período seleccionado
+        $statsQuery = ProfesorAtraso::query()
+            ->when($this->periodo, function($q) {
+                $q->where('periodo', $this->periodo);
+            })
+            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
+                $q->whereBetween('fecha', [$this->fecha_inicio, $this->fecha_fin]);
+            });
+
         $estadisticas = [
-            'total' => ProfesorAtraso::where('periodo', $this->periodo)->count(),
-            'promedio' => round(ProfesorAtraso::where('periodo', $this->periodo)->avg('minutos_atraso') ?? 0),
+            'total' => (clone $statsQuery)->count(),
+            'promedio' => round((clone $statsQuery)->avg('minutos_atraso') ?? 0),
         ];
+
+        $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
         return view('livewire.profesor-atrasos-table', [
             'atrasos' => $atrasos,
             'estadisticas' => $estadisticas,
+            'periodosDisponibles' => $periodosDisponibles,
         ]);
     }
 }

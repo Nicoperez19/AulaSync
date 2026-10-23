@@ -421,6 +421,9 @@ function cerrarModalEditarReservas() {
 
 // Cargar reservas en la tabla
 async function cargarReservas() {
+    const modal = document.getElementById('modal-editar-reservas');
+    if (!modal) return;
+
     try {
         const tbody = document.getElementById('tabla-reservas-body');
         tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Cargando reservas...</td></tr>';
@@ -442,6 +445,9 @@ async function cargarReservas() {
 
 // Mostrar reservas en la tabla
 function mostrarReservasEnTabla(reservas) {
+    const modal = document.getElementById('modal-editar-reservas');
+    if (!modal) return;
+
     const tbody = document.getElementById('tabla-reservas-body');
     
     if (reservas.length === 0) {
@@ -562,6 +568,9 @@ function cerrarModalEditarEspacios() {
 
 // Cargar espacios en la tabla
 async function cargarEspacios() {
+    const modal = document.getElementById('modal-editar-espacios');
+    if (!modal) return;
+
     try {
         const tbody = document.getElementById('tabla-espacios-body');
         tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Cargando espacios...</td></tr>';
@@ -583,6 +592,9 @@ async function cargarEspacios() {
 
 // Mostrar espacios en la tabla
 function mostrarEspaciosEnTabla(espacios) {
+    const modal = document.getElementById('modal-editar-espacios');
+    if (!modal) return;
+
     const tbody = document.getElementById('tabla-espacios-body');
     
     if (espacios.length === 0) {

@@ -1,3 +1,4 @@
+<div data-aulasync-root style="display: contents;">
 <style>
     .sort-icon {
         display: none;
@@ -29,7 +30,31 @@
 </style>
 
 <div>
-    <div class="mt-4 mb-4">
+    <div class="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
+        <div class="relative w-full md:w-1/2">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+            <input type="text"
+                   wire:model.live.debounce.300ms="search"
+                   placeholder="Buscar por Nombre, Código, Sección, Docente o Carrera..."
+                   class="w-full py-2 pl-10 pr-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" />
+            @if(!empty($search))
+                <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            @endif
+        </div>
+        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+            <span>Total: <strong>{{ $asignaturas->total() }}</strong> asignaturas</span>
+        </div>
+    </div>
+
+    <div class="mt-2 mb-4">
         {{ $asignaturas->links('vendor.pagination.tailwind') }}
     </div>
 
@@ -38,18 +63,38 @@
 
             <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
-                    <th class="p-3" onclick="sortTable(0)">ID Asignatura <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(1)">Código <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(2)">Nombre <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(3)">Sección <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(4)">Docente <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(5)">Carrera <span class="sort-icon">▼</span></th>
+                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('id_asignatura')">
+                        ID Asignatura
+                        @if($sortField === 'id_asignatura')
+                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        @endif
+                    </th>
+                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('codigo_asignatura')">
+                        Código
+                        @if($sortField === 'codigo_asignatura')
+                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        @endif
+                    </th>
+                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('nombre_asignatura')">
+                        Nombre
+                        @if($sortField === 'nombre_asignatura')
+                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        @endif
+                    </th>
+                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('seccion')">
+                        Sección
+                        @if($sortField === 'seccion')
+                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
+                        @endif
+                    </th>
+                    <th class="p-3">Docente</th>
+                    <th class="p-3">Carrera</th>
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($asignaturas as $index => $asignatura)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
+                @forelse ($asignaturas as $index => $asignatura)
+                    <tr wire:key="asignatura-row-{{ $asignatura->id_asignatura }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
                         <td
                             class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $asignatura->id_asignatura }}
@@ -89,7 +134,13 @@
                             </div>
                         </td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr wire:key="empty-asignaturas-row">
+                        <td colspan="7" class="p-8 text-center text-gray-500">
+                            No se encontraron asignaturas que coincidan con la búsqueda "{{ $search }}".
+                        </td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -136,26 +187,6 @@
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
 
-    function searchTable() {
-        var input = document.getElementById("searchInput").value.toLowerCase();
-        var table = document.getElementById("subjects-table");
-        var rows = table.getElementsByTagName("tr");
-
-        for (var i = 1; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName("td");
-            var id = cells[0].textContent.toLowerCase();
-            var name = cells[1].textContent.toLowerCase();
-            var docente = cells[2].textContent.toLowerCase();
-            var carrera = cells[3].textContent.toLowerCase();
-
-            if (id.includes(input) || name.includes(input) || docente.includes(input) || carrera.includes(input)) {
-                rows[i].style.display = "";
-            } else {
-                rows[i].style.display = "none";
-            }
-        }
-    }
-
     function deleteSubject(id, name) {
         // Verificar si SweetAlert2 está disponible
         if (typeof Swal === 'undefined') {
@@ -182,3 +213,4 @@
         });
     }
 </script>
+</div>

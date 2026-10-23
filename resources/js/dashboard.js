@@ -20,15 +20,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarHorarioActual();
     cargarOcupacionGrid(activeTabOcupacion);
-    cargarStatusClases('semana');
+    cargarStatusClases('hoy');
 
     setInterval(function() {
+        if (document.hidden) return;
         cargarHorarioActual();
         cargarOcupacionGrid(activeTabOcupacion, true);
-    }, 3000);
+    }, 20000);
 
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
+
+    // Restaurar estado minimizado del reloj si el usuario lo guardó
+    if (localStorage.getItem('dashboard_reloj_minimizado') === '1') {
+        toggleModalReloj(true);
+    }
 });
 
 function switchMainDashboardTab(tabName) {
@@ -57,7 +63,7 @@ function switchMainDashboardTab(tabName) {
     activeMainTab = tabName;
 
     if (tabName === 'status-clases') {
-        cargarStatusClases('semana');
+        cargarStatusClases('hoy');
     }
 }
 
@@ -130,7 +136,7 @@ function updateCarouselState(container, current, total) {
             if (i === current) {
                 ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
             } else {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-gray-300 w-2 hover:bg-gray-400';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-slate-200 w-2 hover:bg-slate-300';
             }
         }
     }
@@ -157,12 +163,34 @@ function obtenerModuloActual(hora = null) {
     return null;
 }
 
+function toggleModalReloj(minimizar) {
+    const expandido = document.getElementById('reloj-expandido');
+    const minimizado = document.getElementById('reloj-minimizado');
+    if (!expandido || !minimizado) return;
+
+    if (minimizar) {
+        expandido.classList.add('hidden');
+        minimizado.classList.remove('hidden');
+        localStorage.setItem('dashboard_reloj_minimizado', '1');
+    } else {
+        expandido.classList.remove('hidden');
+        minimizado.classList.add('hidden');
+        localStorage.setItem('dashboard_reloj_minimizado', '0');
+    }
+}
+
 function actualizarModalReloj() {
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    
     const clockEl = document.getElementById('modal-hora-actual');
     if (clockEl) {
         clockEl.textContent = hora;
+    }
+
+    const clockMinEl = document.getElementById('modal-hora-minimizada');
+    if (clockMinEl) {
+        clockMinEl.textContent = hora;
     }
     
     let modulo = '-';
@@ -243,6 +271,24 @@ function cambiarTabOcupacion(tipo) {
         selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
         selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
     }
+
+    // Actualizar parámetros de tipo en los botones de exportación
+    const excelBtn = document.getElementById('btn-export-ocupacion-excel');
+    if (excelBtn) {
+        try {
+            const url = new URL(excelBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            excelBtn.href = url.toString();
+        } catch (e) {}
+    }
+    const pdfBtn = document.getElementById('btn-export-ocupacion-pdf');
+    if (pdfBtn) {
+        try {
+            const url = new URL(pdfBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            pdfBtn.href = url.toString();
+        } catch (e) {}
+    }
     
     activeTabOcupacion = tipo;
     cargarOcupacionGrid(tipo, false);
@@ -266,13 +312,16 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     
     fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar ocupación');
-            }
-            return response.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
+            return response.text().then(text => {
+                if (!response.ok) {
+                    if (text && text.includes('Error al calcular')) {
+                        container.innerHTML = text;
+                        return;
+                    }
+                    throw new Error(text || 'Error al cargar ocupación');
+                }
+                container.innerHTML = text;
+            });
         })
         .catch(error => {
             console.error('Error:', error);
@@ -288,9 +337,30 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
         });
 }
 
+let statusClasesAbortController = null;
+
 function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
     const container = document.getElementById('status-clases-container');
     if (!container) return;
+
+    if (statusClasesAbortController) {
+        statusClasesAbortController.abort();
+    }
+    statusClasesAbortController = new AbortController();
+
+    // Actualización visual inmediata de los botones para respuesta instantánea (0ms)
+    const btnHoy = document.getElementById('btn-status-hoy');
+    const btnSemana = document.getElementById('btn-status-semana');
+    const btnMes = document.getElementById('btn-status-mes');
+    const activeClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs bg-blue-600 text-white shadow-xs border-blue-600';
+    const inactiveClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-100';
+
+    if (btnHoy) btnHoy.className = (rango === 'hoy') ? activeClasses : inactiveClasses;
+    if (btnSemana) btnSemana.className = (rango === 'semana') ? activeClasses : inactiveClasses;
+    if (btnMes) btnMes.className = (rango === 'mes') ? activeClasses : inactiveClasses;
+
+    container.style.opacity = '0.6';
+    container.style.pointerEvents = 'none';
 
     let route = window.DashboardConfig ? window.DashboardConfig.statusClasesRoute : '/dashboard/status-clases';
     let url = `${route}?rango=${rango}`;
@@ -298,15 +368,20 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
     }
 
-    fetch(url)
+    fetch(url, { signal: statusClasesAbortController.signal })
         .then(response => response.text())
         .then(html => {
             container.innerHTML = html;
             setTimeout(initStatusClasesChart, 50);
         })
         .catch(err => {
+            if (err.name === 'AbortError') return;
             console.error('Error cargando status clases:', err);
             container.innerHTML = `<div class="text-center py-8 text-rose-500">Error al cargar el status de clases.</div>`;
+        })
+        .finally(() => {
+            container.style.opacity = '1';
+            container.style.pointerEvents = 'auto';
         });
 }
 
@@ -335,6 +410,9 @@ function initStatusClasesChart() {
 
     const impartidasTotal = realizadas + recuperadas;
 
+    const centerValor = document.getElementById('center-label-valor');
+    const centerSub = document.getElementById('center-label-sub');
+
     if (statusClasesChartInstance) {
         statusClasesChartInstance.destroy();
     }
@@ -360,33 +438,48 @@ function initStatusClasesChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '76%',
+            cutout: '74%',
+            onHover: (event, activeElements) => {
+                if (!centerValor || !centerSub) return;
+                const centerDetail = document.getElementById('center-label-detail');
+
+                if (activeElements && activeElements.length > 0 && totalClases > 0) {
+                    const idx = activeElements[0].index;
+                    if (idx === 0) {
+                        centerValor.textContent = `${impartidasTotal}`;
+                        centerValor.className = 'text-3xl font-black text-emerald-600 tracking-tight leading-none';
+                        centerSub.textContent = `Impartidas (${pctImpartidas}%)`;
+                        centerSub.className = 'text-[11px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
+                        if (centerDetail) {
+                            centerDetail.textContent = `Norm. ${realizadas} + Recup. ${recuperadas}`;
+                            centerDetail.classList.remove('hidden');
+                        }
+                    } else {
+                        centerValor.textContent = `${noRegistradas}`;
+                        centerValor.className = 'text-3xl font-black text-rose-600 tracking-tight leading-none';
+                        centerSub.textContent = `Sin Registro (${pctNoRegistradas}%)`;
+                        centerSub.className = 'text-[11px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
+                        if (centerDetail) {
+                            centerDetail.textContent = `de ${totalClases} clases totales`;
+                            centerDetail.classList.remove('hidden');
+                        }
+                    }
+                } else {
+                    centerValor.textContent = `${pctImpartidas}%`;
+                    centerValor.className = 'text-3xl font-black text-slate-800 tracking-tight leading-none';
+                    centerSub.textContent = 'Cumplimiento';
+                    centerSub.className = 'text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
+                    if (centerDetail) {
+                        centerDetail.classList.add('hidden');
+                        centerDetail.textContent = '';
+                    }
+                }
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    enabled: totalClases > 0,
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleFont: { size: 13, weight: 'bold' },
-                    bodyFont: { size: 12 },
-                    padding: 12,
-                    cornerRadius: 12,
-                    callbacks: {
-                        label: function(context) {
-                            const index = context.dataIndex;
-                            if (index === 0) {
-                                return [
-                                    ` Realizadas Normales: ${realizadas} clases`,
-                                    ` Recuperadas: ${recuperadas} clases`,
-                                    ` Total Impartidas: ${impartidasTotal} (${pctImpartidas}%)`
-                                ];
-                            } else {
-                                return [
-                                    ` Sin Registro / Ausentes: ${noRegistradas} clases (${pctNoRegistradas}%)`
-                                ];
-                            }
-                        }
-                    }
-                }
+                    enabled: false,
+                },
             }
         }
     });
@@ -402,3 +495,4 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+window.toggleModalReloj = toggleModalReloj;

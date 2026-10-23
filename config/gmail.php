@@ -16,7 +16,7 @@ return [
     'username' => env('MAIL_USERNAME'),
     'password' => env('MAIL_PASSWORD'),
     'from_address' => env('MAIL_FROM_ADDRESS', 'soporteaulasync@gmail.com'),
-    'from_name' => env('MAIL_FROM_NAME', 'AulaSync'),
+    'from_name' => env('MAIL_FROM_NAME', 'SIA | Sistema de Información de Aulas'),
     
     /*
     |--------------------------------------------------------------------------

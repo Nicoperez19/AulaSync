@@ -26,6 +26,11 @@ class ConfiguracionTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,12 +43,26 @@ class ConfiguracionTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $configuraciones = Configuracion::query()
-            ->where(function ($query) {
-                $query->where('clave', 'like', '%' . $this->search . '%')
-                    ->orWhere('descripcion', 'like', '%' . $this->search . '%');
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('clave', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('descripcion', 'like', '%' . $t . '%');
+                    }
+                });
             })
-            ->orderBy($this->sortField, $this->sortDirection)
+            ->orderBy(in_array($this->sortField, ['clave', 'descripcion'], true) ? $this->sortField : 'clave', $this->sortDirection === 'desc' ? 'desc' : 'asc')
             ->paginate($this->perPage);
 
         return view('livewire.configuracion-table', compact('configuraciones'));

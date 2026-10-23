@@ -7,8 +7,13 @@ use App\Models\Profesor;
 use Illuminate\Http\Request;
 use App\Models\Universidad;
 use App\Models\Espacio;
+use App\Models\Planificacion_Asignatura;
+use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionReserva;
 use App\Mail\ConfirmacionDevolucion;
+use App\Services\ComprobanteReservaService;
+use App\Exports\ReservasExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -19,13 +24,13 @@ class ReservasController extends Controller
 
     public function index()
     {
-        $reservas = Reserva::with(['user', 'espacio.piso.facultad.universidad'])->paginate(10);
+        $reservas = Reserva::with(['user', 'espacio.piso.facultad.universidad'])->paginate(20);
         $universidades = Universidad::all();
         $espaciosDisponibles = Espacio::where('estado', 'disponible')
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_index', compact('reservas', 'universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('reservas', 'universidades', 'espaciosDisponibles'));
     }
 
     public function create()
@@ -35,7 +40,7 @@ class ReservasController extends Controller
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_create', compact('universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('universidades', 'espaciosDisponibles'));
     }
 
 
@@ -87,6 +92,34 @@ class ReservasController extends Controller
         } else {
             // Si es usuario o solicitante, lo registramos como solicitante
             $reservaData['run_solicitante'] = $run;
+        }
+
+        // VALIDAR QUE NO EXISTA UNA CLASE PROGRAMADA EN ESTE ESPACIO Y HORARIO
+        $horaReserva = Carbon::parse($request->hora)->format('H:i:s');
+        $fechaReserva = Carbon::parse($request->fecha_reserva);
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaReserva = $diasSemana[$fechaReserva->dayOfWeek];
+        $periodoActual = SemesterHelper::getCurrentPeriod();
+
+        $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
+            ->where('id_espacio', $request->id_espacio)
+            ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
+            ->whereHas('modulo', fn ($q) => $q
+                ->where('dia', $diaReserva)
+                ->where('hora_inicio', '<=', $horaReserva)
+                ->where('hora_termino', '>', $horaReserva)
+            )
+            ->first();
+
+        if ($claseConflicto) {
+            $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
+            $horaInicio = $claseConflicto->modulo->hora_inicio ?? '-';
+            $horaTermino = $claseConflicto->modulo->hora_termino ?? '-';
+            Log::info("⛔ Reserva (store) bloqueada por clase programada en espacio {$request->id_espacio}, hora {$horaReserva}, período {$periodoActual}");
+
+            return redirect()->route('reservas.index')->withErrors([
+                'clase_programada' => "No es posible realizar la reserva: el espacio tiene una clase programada ({$nombreAsig}) en el horario {$horaInicio} - {$horaTermino} del período {$periodoActual}.",
+            ]);
         }
 
         $reserva = Reserva::create($reservaData);
@@ -263,5 +296,110 @@ class ReservasController extends Controller
             \Log::error('Error al verificar estados de espacios: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Generar y descargar/visualizar comprobante de reserva en formato PDF
+     */
+    public function descargarComprobante($id_reserva, Request $request, ComprobanteReservaService $comprobanteService)
+    {
+        $reserva = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad.universidad', 'asignatura'])
+            ->findOrFail($id_reserva);
+
+        $descargar = $request->boolean('download', false);
+
+        return $comprobanteService->responderPdf($reserva, $descargar);
+    }
+
+    /**
+     * Exportar reservas filtradas a Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio');
+        $fechaFin = $request->get('fecha_fin');
+        $tipoEspacio = $request->get('tipo_espacio');
+        $estado = $request->get('estado');
+        $search = trim($request->get('search', ''));
+
+        $query = Reserva::query()
+            ->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
+
+        if (!empty($fechaInicio)) {
+            $query->whereDate('fecha_reserva', '>=', $fechaInicio);
+        }
+        if (!empty($fechaFin)) {
+            $query->whereDate('fecha_reserva', '<=', $fechaFin);
+        }
+
+        if (!empty($tipoEspacio)) {
+            if ($tipoEspacio === 'Laboratorios') {
+                $query->whereHas('espacio', function ($q) {
+                    $q->where('tipo_espacio', 'like', 'Laboratorio%');
+                });
+            } else {
+                $query->whereHas('espacio', function ($q) use ($tipoEspacio) {
+                    $q->where('tipo_espacio', $tipoEspacio);
+                });
+            }
+        } else {
+            $query->whereHas('espacio', function ($q) {
+                $q->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
+                  ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
+            });
+        }
+
+        if (!empty($estado)) {
+            $query->where('estado', $estado);
+        }
+
+        if ($search !== '') {
+            $cleanRun = preg_replace('/[^0-9Kk]/', '', $search);
+            $termSinTilde = str_replace(
+                ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                $search
+            );
+            $terms = array_unique(array_filter([$search, $termSinTilde, mb_strtoupper($search), mb_strtolower($search)]));
+
+            $query->where(function ($q) use ($terms, $search, $cleanRun) {
+                $q->where('id_reserva', 'like', '%' . $search . '%')
+                  ->orWhere('id_espacio', 'like', '%' . $search . '%')
+                  ->orWhere('fecha_reserva', 'like', '%' . $search . '%');
+
+                if (!empty($cleanRun)) {
+                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
+                      ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
+                }
+
+                foreach ($terms as $t) {
+                    $q->orWhere('estado', 'like', '%' . $t . '%')
+                      ->orWhereHas('profesor', function ($pq) use ($t) {
+                          $pq->where('name', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('solicitante', function ($sq) use ($t) {
+                          $sq->where('nombre', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('espacio', function ($eq) use ($t) {
+                          $eq->where('nombre_espacio', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('asignatura', function ($aq) use ($t) {
+                          $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
+                      });
+                }
+            });
+        }
+
+        $reservas = $query->orderBy('fecha_reserva', 'desc')
+                          ->orderBy('hora', 'asc')
+                          ->get();
+
+        $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)) . '_' : '';
+        $nombreArchivo = 'reporte_reservas_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin),
+            $nombreArchivo
+        );
     }
 }

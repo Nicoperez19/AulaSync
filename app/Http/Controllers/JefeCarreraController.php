@@ -15,7 +15,7 @@ class JefeCarreraController extends Controller
     {
         try {
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
-            return view('layouts.jefes_carrera.jefe_carrera_index', compact('carreras'));
+            return view('jefes-carrera.index', compact('carreras'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los jefes de carrera.'])->withInput();
         }
@@ -51,7 +51,7 @@ class JefeCarreraController extends Controller
         try {
             $jefeCarrera = JefeCarrera::with('carrera')->findOrFail($id);
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
-            return view('layouts.jefes_carrera.jefe_carrera_edit', compact('jefeCarrera', 'carreras'));
+            return view('jefes-carrera.edit', compact('jefeCarrera', 'carreras'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('jefes-carrera.index')->withErrors(['error' => 'Jefe de carrera no encontrado.']);
         } catch (\Exception $e) {

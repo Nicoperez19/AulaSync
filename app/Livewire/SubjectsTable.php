@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Carrera;
 use App\Models\Asignatura; 
 
 class SubjectsTable extends Component
@@ -26,6 +27,11 @@ class SubjectsTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,22 +44,44 @@ class SubjectsTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
+        $sortField = in_array($this->sortField, ['id_asignatura', 'codigo_asignatura', 'nombre_asignatura', 'seccion'], true)
+            ? $this->sortField
+            : 'id_asignatura';
+        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+
         $asignaturas = Asignatura::with(['profesor', 'carrera'])
-            ->where(function($query) {
-                $query->where('nombre_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('codigo_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('seccion', 'like', '%' . $this->search . '%')
-                      ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')
-                      ->orWhere('periodo', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('profesor', function($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%');
-                      })
-                      ->orWhereHas('carrera', function($q) {
-                          $q->where('nombre', 'like', '%' . $this->search . '%');
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                // Las carreras viven en la base central: se resuelven sus IDs aparte
+                $carreraIds = Carrera::query()
+                    ->where('nombre', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_carrera')
+                    ->all();
+
+                $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+
+                $query->where(function ($q) use ($searchTerm, $carreraIds, $cleanRun) {
+                    $q->where('id_asignatura', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('codigo_asignatura', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('nombre_asignatura', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('seccion', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('periodo', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('area_conocimiento', 'like', '%' . $searchTerm . '%')
+                      ->orWhereHas('profesor', function ($pq) use ($searchTerm) {
+                          $pq->where('name', 'like', '%' . $searchTerm . '%');
                       });
+
+                    if ($cleanRun !== '') {
+                        $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%');
+                    }
+
+                    if (!empty($carreraIds)) {
+                        $q->orWhereIn('id_carrera', $carreraIds);
+                    }
+                });
             })
-            ->orderBy($this->sortField, $this->sortDirection)
+            ->orderBy($sortField, $sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.subjects-table', compact('asignaturas'));

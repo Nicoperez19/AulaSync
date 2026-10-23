@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notificacion;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
 use App\Models\User;
@@ -205,7 +206,41 @@ class SupportTicketController extends Controller
             }
         });
 
+        $this->notificarRespuesta($ticket, $user, $isTecnico);
+
         return back()->with('success', 'Respuesta enviada correctamente.');
+    }
+
+    /**
+     * Genera una notificación en el Centro de Notificaciones:
+     * - Si responde Soporte → avisa al dueño del ticket.
+     * - Si responde el dueño → avisa al técnico asignado.
+     * Solo se notifica a Administradores/Supervisores (quienes ven el Centro).
+     * Nunca debe romper el flujo de respuesta.
+     */
+    private function notificarRespuesta(SupportTicket $ticket, User $autor, bool $esStaff): void
+    {
+        try {
+            $runDestino = $esStaff ? $ticket->user_id : $ticket->assigned_to;
+
+            if (! $runDestino || (string) $runDestino === (string) $autor->run) {
+                return;
+            }
+
+            $destinatario = User::where('run', $runDestino)->first();
+            if (! $destinatario || ! $destinatario->hasAnyRole(['Administrador', 'Supervisor'])) {
+                return;
+            }
+
+            Notificacion::crearNotificacionSoporte(
+                $ticket,
+                $runDestino,
+                $esStaff ? 'Respuesta de Soporte' : 'Nueva respuesta en ticket',
+                sprintf('%s respondió el ticket «%s».', $autor->name, $ticket->title)
+            );
+        } catch (\Throwable $e) {
+            // Silencioso: la notificación es complementaria
+        }
     }
 
     /**

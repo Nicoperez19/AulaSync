@@ -5,6 +5,10 @@ namespace App\Livewire;
 use App\Models\Profesor;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\AreaAcademica;
+use App\Models\Carrera;
+use App\Models\Facultad;
+use App\Models\Universidad;
 
 class ProfessorsTable extends Component
 {
@@ -25,6 +29,11 @@ class ProfessorsTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,57 +47,58 @@ class ProfessorsTable extends Component
     public function render()
     {
         $searchTerm = trim($this->search);
-        $universidadIds = collect();
+        $centralDb = config('database.connections.mysql.database');
 
-        if ($searchTerm !== '') {
-            $universidadIds = \App\Models\Universidad::where('nombre_universidad', 'like', '%' . $searchTerm . '%')
-                ->pluck('id_universidad');
-        }
+        $sortField = in_array($this->sortField, ['run_profesor', 'name', 'email', 'tipo_profesor', 'carrera'], true)
+            ? $this->sortField
+            : 'run_profesor';
+        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
 
         $profesores = Profesor::query()
             ->with(['carrera', 'universidad', 'facultad', 'areaAcademica'])
-            ->when($searchTerm, function ($query) use ($searchTerm, $universidadIds) {
-                $query->where(function ($q) use ($searchTerm, $universidadIds) {
-                    $q->where('run_profesor', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('name', 'like', '%' . $searchTerm . '%')
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+
+                // Universidad, facultad, carrera y área académica viven en la base central:
+                // se resuelven sus IDs aparte para no cruzar bases de datos en un whereHas.
+                $universidadIds = Universidad::where('nombre_universidad', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_universidad')->all();
+                $facultadIds = Facultad::where('nombre_facultad', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_facultad')->all();
+                $carreraIds = Carrera::where('nombre', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_carrera')->all();
+                $areaIds = AreaAcademica::where('nombre_area_academica', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_area_academica')->all();
+
+                $query->where(function ($q) use ($searchTerm, $cleanRun, $universidadIds, $facultadIds, $carreraIds, $areaIds) {
+                    $q->where('name', 'like', '%' . $searchTerm . '%')
                       ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('tipo_profesor', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('carrera', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->when($universidadIds->isNotEmpty(), function ($q2) use ($universidadIds) {
-                          $q2->orWhereIn('id_universidad', $universidadIds);
-                      })
-                      ->orWhereHas('facultad', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre_facultad', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('areaAcademica', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre_area_academica', 'like', '%' . $searchTerm . '%');
-                      });
+                      ->orWhere('tipo_profesor', 'like', '%' . $searchTerm . '%');
+
+                    if ($cleanRun !== '') {
+                        $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%');
+                    }
+                    if (!empty($universidadIds)) {
+                        $q->orWhereIn('id_universidad', $universidadIds);
+                    }
+                    if (!empty($facultadIds)) {
+                        $q->orWhereIn('id_facultad', $facultadIds);
+                    }
+                    if (!empty($carreraIds)) {
+                        $q->orWhereIn('id_carrera', $carreraIds);
+                    }
+                    if (!empty($areaIds)) {
+                        $q->orWhereIn('id_area_academica', $areaIds);
+                    }
                 });
             })
-            ->when($this->sortField, function ($query) {
-                switch ($this->sortField) {
-                    case 'run_profesor':
-                        $query->orderBy('run_profesor', $this->sortDirection);
-                        break;
-                    case 'name':
-                        $query->orderBy('name', $this->sortDirection);
-                        break;
-                    case 'email':
-                        $query->orderBy('email', $this->sortDirection);
-                        break;
-                    case 'tipo_profesor':
-                        $query->orderBy('tipo_profesor', $this->sortDirection);
-                        break;
-                    case 'carrera':
-                        $query->join('carreras', 'profesors.id_carrera', '=', 'carreras.id_carrera')
-                              ->orderBy('carreras.nombre', $this->sortDirection)
-                              ->select('profesors.*');
-                        break;
-                    default:
-                        $query->orderBy('run_profesor', 'asc');
-                }
+            ->when($sortField === 'carrera', function ($query) use ($centralDb, $sortDirection) {
+                // La tabla carreras está en la base central: se ordena con una subconsulta calificada
+                $query->orderByRaw(
+                    "(select c.nombre from `{$centralDb}`.`carreras` c where c.id_carrera = profesors.id_carrera limit 1) {$sortDirection}"
+                );
+            }, function ($query) use ($sortField, $sortDirection) {
+                $query->orderBy($sortField, $sortDirection);
             })
             ->paginate(10);
 

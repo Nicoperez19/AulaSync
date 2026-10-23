@@ -25,6 +25,11 @@ class CampusTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -37,18 +42,30 @@ class CampusTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $campus = Campus::query()
             ->with('sede.universidad')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('id_campus', 'like', '%' . $this->search . '%')
-                      ->orWhere('nombre_campus', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('sede', function ($subQuery) {
-                          $subQuery->where('nombre_sede', 'like', '%' . $this->search . '%');
-                      })
-                      ->orWhereHas('sede.universidad', function ($subQuery) {
-                          $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
-                      });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_campus', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_campus', 'like', '%' . $t . '%')
+                          ->orWhereHas('sede', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_sede', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('sede.universidad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_universidad', 'like', '%' . $t . '%');
+                          });
+                    }
                 });
             })
             ->when($this->sortField, function ($query) {

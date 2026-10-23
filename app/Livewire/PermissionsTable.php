@@ -11,34 +11,58 @@ class PermissionsTable extends Component
     use WithPagination;
 
     public $search = '';
+    public $sortField = 'name';
+    public $sortDirection = 'asc';
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'sortField' => ['except' => 'name'],
+        'sortDirection' => ['except' => 'asc'],
+    ];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
 
     public function updatedSearch()
     {
         $this->resetPage();
-        \Log::info('Search updated to: "' . $this->search . '"');
     }
 
-    public function clearSearch()
+    public function sortBy($field)
     {
-        $this->search = '';
-        $this->resetPage();
-        \Log::info('Search cleared');
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function render()
     {
-        \Log::info('Render called with search: "' . $this->search . '"');
-        
-        if (empty($this->search)) {
-            $permissions = Permission::paginate(10);
-            \Log::info('No search - showing all: ' . $permissions->total());
-        } else {
-            $permissions = Permission::where('name', 'like', '%' . $this->search . '%')
-                                   ->orWhere('id', 'like', '%' . $this->search . '%')
-                                   ->paginate(10);
-            \Log::info('With search "' . $this->search . '" - found: ' . $permissions->total());
-        }
-        
+        $searchTerm = trim($this->search);
+
+        $permissions = Permission::query()
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id', 'like', '%' . $searchTerm . '%');
+                    foreach ($terms as $t) {
+                        $q->orWhere('name', 'like', '%' . $t . '%');
+                    }
+                });
+            })
+            ->orderBy(in_array($this->sortField, ['id', 'name'], true) ? $this->sortField : 'name', $this->sortDirection === 'desc' ? 'desc' : 'asc')
+            ->paginate(10);
+
         $allPermissions = Permission::all();
 
         return view('livewire.permissions-table', compact('permissions', 'allPermissions'));

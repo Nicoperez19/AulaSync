@@ -24,7 +24,7 @@ class AsignaturaController extends Controller
         $profesores = Profesor::all();       
         $carreras = Carrera::all();
 
-        return view('layouts.subjects.subject_index', compact('asignaturas', 'profesores', 'carreras'));
+        return view('asignaturas.index', compact('asignaturas', 'profesores', 'carreras'));
     }
     /**
      * Show the form for creating a new resource.
@@ -92,7 +92,7 @@ class AsignaturaController extends Controller
             $profesores = Profesor::all();
             $carreras = Carrera::all();
             
-            return view('layouts.subjects.subject_edit', compact('asignatura', 'profesores', 'carreras'));
+            return view('asignaturas.edit', compact('asignatura', 'profesores', 'carreras'));
         } catch (ModelNotFoundException $e) {
             return redirect()->route('asignaturas.index')->withErrors(['error' => 'Asignatura no encontrada.']);
         } catch (\Exception $e) {

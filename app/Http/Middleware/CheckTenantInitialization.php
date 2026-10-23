@@ -16,6 +16,8 @@ class CheckTenantInitialization
         'tenant.initialization.*',
         'logout',
         'login',
+        'sedes.selection',
+        'sedes.redirect',
     ];
 
     /**
@@ -33,8 +35,8 @@ class CheckTenantInitialization
             }
         }
 
-        // También permitir acceso a rutas sin nombre que empiecen con tenant/initialization
-        if ($request->is('tenant/initialization*')) {
+        // También permitir acceso a rutas por path
+        if ($request->is('tenant/initialization*') || $request->is('logout*') || $request->is('login*') || $request->is('sedes/selection*') || $request->is('sedes/redirect*')) {
             return $next($request);
         }
 

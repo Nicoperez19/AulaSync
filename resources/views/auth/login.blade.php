@@ -77,7 +77,7 @@
                 <div class="flex items-center justify-between">
                     <label for="remember_me" class="inline-flex items-center">
                         <input id="remember_me" type="checkbox"
-                            class="border-gray-300 rounded text-dark-royal-blue-500 focus:border-purple-300 focus:ring focus:bg-dark-royal-blue-500 dark:border-gray-600 dark:bg-dark-eval-1 dark:focus:ring-offset-dark-eval-1"
+                            class="border-gray-300 rounded text-[#D2091E] focus:border-[#D2091E] focus:ring focus:ring-[#D2091E] dark:border-gray-600 dark:bg-dark-eval-1 dark:focus:ring-offset-dark-eval-1"
                             name="remember">
 
                         <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">
@@ -86,14 +86,14 @@
                     </label>
 
                     @if (Route::has('password.request'))
-                        <a class="text-sm text-blue-500 hover:underline" href="{{ route('password.request') }}">
+                        <a class="text-sm text-[#D2091E] hover:text-[#B50718] hover:underline" href="{{ route('password.request') }}">
                             {{ __('¿Olvidaste la contraseña?') }}
                         </a>
                     @endif
                 </div>
 
                 <div>
-                    <x-button class="justify-center w-full gap-1">
+                    <x-button variant="login" style="background-color: #D2091E !important;" class="justify-center w-full gap-1 hover:brightness-90 transition">
                         <x-heroicon-o-login class="w-7 h-7" aria-hidden="true" />
                         <span>{{ __('Ingresar') }}</span>
                     </x-button>

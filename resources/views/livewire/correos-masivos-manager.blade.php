@@ -1,3 +1,4 @@
+<div data-aulasync-root style="display: contents;">
 <div class="p-6">
 
     <!-- Header -->
@@ -385,4 +386,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
-
+</div>

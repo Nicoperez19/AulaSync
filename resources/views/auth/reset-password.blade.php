@@ -52,23 +52,20 @@
                 </div>
 
                 <div>
-                    <x-button class="justify-center w-full gap-1" type="submit">
+                    <x-button variant="login" class="justify-center w-full gap-1" type="submit">
                         <x-heroicon-o-key class="w-7 h-7" aria-hidden="true" />
                         <span>{{ __('Restablecer Contraseña') }}</span>
                     </x-button>
                 </div>
 
                 <div class="text-center">
-                    <a href="{{ route('login') }}" class="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
+                    <a href="{{ route('login') }}" class="text-sm text-[#D2091E] hover:text-[#B50718] hover:underline dark:text-red-400">
                         {{ __('Volver al Login') }}
                     </a>
                 </div>
             </div>
         </form>
     </x-auth-card>
-
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

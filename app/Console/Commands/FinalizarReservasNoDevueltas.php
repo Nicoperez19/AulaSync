@@ -3,43 +3,26 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use App\Models\LlaveNoDevuelta;
 use App\Models\Reserva;
 use App\Models\Planificacion_Asignatura;
-use App\Models\Modulo;
+use App\Models\Espacio;
 use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class FinalizarReservasNoDevueltas extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'reservas:finalizar-no-devueltas';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Finaliza automáticamente las reservas de profesores que no devolvieron las llaves una hora después de terminado el módulo';
+    protected $description = 'Finaliza reservas sin devolución de llave tras 1 h del módulo; también cierra reservas activas de días anteriores';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
-        $this->info('Iniciando búsqueda de reservas no devueltas después de 1 hora del módulo...');
-
-        // Obtener todos los tenants
         $tenants = Tenant::all();
 
         if ($tenants->isEmpty()) {
-            $this->warn('No se encontraron tenants configurados.');
             return 0;
         }
 
@@ -52,100 +35,151 @@ class FinalizarReservasNoDevueltas extends Command
 
     protected function processTenant(Tenant $tenant)
     {
-        $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
-
         try {
-            // Configurar conexión de tenant
             Config::set('database.connections.tenant.database', $tenant->database);
             DB::purge('tenant');
 
-            // Obtener todas las reservas activas de profesores
-            $reservasActivas = Reserva::on('tenant')
+            $ahora = Carbon::now();
+            $hoy   = $ahora->toDateString();
+
+            // ── A. Reservas activas de DÍAS ANTERIORES (el comando nocturno falló) ──────
+            $reservasAnteriores = Reserva::on('tenant')
                 ->where('estado', 'activa')
                 ->whereNotNull('run_profesor')
                 ->whereNull('hora_salida')
+                ->where('fecha_reserva', '<', $hoy)
                 ->get();
 
-            if ($reservasActivas->isEmpty()) {
-                $this->line("  No hay reservas activas para procesar.");
-                return;
-            }
-
-            $this->processReservas($reservasActivas, $tenant);
-        } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
-            Log::error("Error en FinalizarReservasNoDevueltas para tenant {$tenant->name}", [
-                'tenant' => $tenant->domain,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    protected function processReservas($reservasActivas, Tenant $tenant)
-    {
-        $reservasFinalizadas = 0;
-
-        foreach ($reservasActivas as $reserva) {
-            // Obtener la planificación asociada si existe
-            $planificacion = Planificacion_Asignatura::on('tenant')
-                ->with('modulo')
-                ->where('id_espacio', $reserva->id_espacio)
-                ->whereHas('modulo', function ($query) use ($reserva) {
-                    $query->where('dia', $this->obtenerDiaSemana($reserva->fecha_reserva));
-                })
-                ->first();
-
-            if (!$planificacion || !$planificacion->modulo) {
-                continue; // No hay módulo asociado
-            }
-
-            $modulo = $planificacion->modulo;
-
-            // Calcular hora de termino del módulo
-            $fechaModulo = Carbon::parse($reserva->fecha_reserva);
-            $horaTerminoModulo = Carbon::parse($reserva->fecha_reserva . ' ' . $modulo->hora_termino);
-
-            // Sumar 1 hora a la hora de término del módulo
-            $horaLimiteDevolucion = $horaTerminoModulo->copy()->addHours(1);
-
-            // Verificar si ya pasó la hora límite
-            $ahora = Carbon::now();
-            if ($ahora->gte($horaLimiteDevolucion)) {
-                // La hora límite ya pasó - finalizar la reserva
-                $reserva->estado = 'finalizada';
-                $reserva->hora_salida = $horaLimiteDevolucion->format('H:i:s');
-                $reserva->observaciones = trim(
-                    ($reserva->observaciones ?? '') . "\n" .
-                    "Reserva finalizada automáticamente después de 1 hora del módulo (Hora límite: " . $horaLimiteDevolucion->format('H:i:s') . "). El profesor no devolvió la llave."
-                );
-                $reserva->save();
-
-                $reservasFinalizadas++;
-
-                Log::info("Reserva finalizada automáticamente por no devolución de llave", [
-                    'id_reserva' => $reserva->id_reserva,
-                    'run_profesor' => $reserva->run_profesor,
-                    'id_espacio' => $reserva->id_espacio,
-                    'fecha_reserva' => $reserva->fecha_reserva,
-                    'hora_termino_modulo' => $horaTerminoModulo->format('H:i:s'),
-                    'hora_limite_devolucion' => $horaLimiteDevolucion->format('H:i:s'),
-                    'ahora' => $ahora->format('Y-m-d H:i:s')
+            foreach ($reservasAnteriores as $reserva) {
+                // Registrar en trazabilidad sin logs
+                LlaveNoDevuelta::create([
+                    'id_reserva'            => $reserva->id_reserva,
+                    'id_espacio'            => $reserva->id_espacio,
+                    'run_profesor'          => $reserva->run_profesor,
+                    'id_asignatura'         => $reserva->id_asignatura,
+                    'fecha_clase'           => $reserva->fecha_reserva,
+                    'hora_entrada'          => $reserva->hora,
+                    'hora_termino_esperada' => null,
+                    'cerrado_en'            => $ahora,
                 ]);
-            }
-        }
 
-        $this->info("  ✅ Se finalizaron {$reservasFinalizadas} reservas para tenant {$tenant->name}.");
+                $reserva->update([
+                    'estado'        => 'finalizada',
+                    'hora_salida'   => '23:59:59',
+                    'observaciones' => trim(
+                        ($reserva->observaciones ?? '') .
+                        "\n⚠️ Llave no devuelta — Espacio liberado automáticamente (detección tardía) el {$ahora->toDateString()}."
+                    ),
+                    'updated_at'    => $ahora,
+                ]);
+
+                // Liberar el espacio si sigue marcado como Ocupado
+                Espacio::on('tenant')
+                    ->where('id_espacio', $reserva->id_espacio)
+                    ->where('estado', 'Ocupado')
+                    ->update(['estado' => 'Disponible', 'updated_at' => $ahora]);
+            }
+
+            // ── B. Reservas activas de HOY que superaron la hora de gracia (1 h tras el módulo) ─
+            $reservasHoy = Reserva::on('tenant')
+                ->where('estado', 'activa')
+                ->where(function ($q) {
+                    $q->whereNotNull('run_profesor')
+                      ->orWhereNotNull('run_solicitante');
+                })
+                ->whereNull('hora_salida')
+                ->where('fecha_reserva', $hoy)
+                ->get();
+
+            foreach ($reservasHoy as $reserva) {
+                $horaTerminoStr = null;
+
+                // 1. Intentar obtener término de la planificación específica de la asignatura y espacio
+                if ($reserva->id_asignatura) {
+                    $planificaciones = Planificacion_Asignatura::on('tenant')
+                        ->where('id_asignatura', $reserva->id_asignatura)
+                        ->where('id_espacio', $reserva->id_espacio)
+                        ->with('modulo')
+                        ->get();
+
+                    if ($planificaciones->isNotEmpty()) {
+                        $horaTerminoStr = $planificaciones
+                            ->filter(fn($p) => !empty($p->modulo?->hora_termino))
+                            ->map(fn($p) => $p->modulo->hora_termino)
+                            ->max();
+                    }
+                }
+
+                // 2. Fallback: calcular según hora de entrada + módulos (50 min por módulo) o 1 hora por defecto
+                if (!$horaTerminoStr && $reserva->hora) {
+                    $duracionMinutos = 50 * ($reserva->modulos ?? 1);
+                    $horaTerminoStr = Carbon::parse($hoy . ' ' . $reserva->hora)->addMinutes($duracionMinutos)->format('H:i:s');
+                }
+
+                if (!$horaTerminoStr) {
+                    continue;
+                }
+
+                $horaTermino = Carbon::parse($hoy . ' ' . $horaTerminoStr);
+                $horaLimite  = $horaTermino->copy()->addHour();
+
+                if ($ahora->gte($horaLimite)) {
+                    $usuarioLabel = $reserva->run_profesor ? "Profesor {$reserva->run_profesor}" : "Solicitante {$reserva->run_solicitante}";
+
+                    $reserva->update([
+                        'estado'        => 'finalizada',
+                        'hora_salida'   => $horaLimite->format('H:i:s'),
+                        'observaciones' => trim(
+                            ($reserva->observaciones ?? '') .
+                            "\n⚠️ Llave no devuelta — Espacio liberado automáticamente 1 h después del término del módulo ({$horaTermino->format('H:i')}) [{$usuarioLabel}]."
+                        ),
+                        'updated_at'    => $ahora,
+                    ]);
+
+                    // Registrar en trazabilidad sin logs
+                    LlaveNoDevuelta::create([
+                        'id_reserva'            => $reserva->id_reserva,
+                        'id_espacio'            => $reserva->id_espacio,
+                        'run_profesor'          => $reserva->run_profesor ?? $reserva->run_solicitante,
+                        'id_asignatura'         => $reserva->id_asignatura,
+                        'fecha_clase'           => $reserva->fecha_reserva,
+                        'hora_entrada'          => $reserva->hora,
+                        'hora_termino_esperada' => $horaTermino->format('H:i:s'),
+                        'cerrado_en'            => $ahora,
+                    ]);
+
+                    // Liberar el espacio si no quedan otras reservas activas AHORA
+                    $otraReserva = Reserva::on('tenant')
+                        ->where('id_espacio', $reserva->id_espacio)
+                        ->where('estado', 'activa')
+                        ->where('id_reserva', '!=', $reserva->id_reserva)
+                        ->exists();
+
+                    if (!$otraReserva) {
+                        Espacio::on('tenant')
+                            ->where('id_espacio', $reserva->id_espacio)
+                            ->where('estado', 'Ocupado')
+                            ->update(['estado' => 'Disponible', 'updated_at' => $ahora]);
+                    }
+                }
+            }
+
+        } catch (\Exception $e) {
+            $this->error("Error procesando tenant {$tenant->name}: " . $e->getMessage());
+        }
     }
 
-    /**
-     * Obtener el día de la semana en español a partir de una fecha
-     */
-    private function obtenerDiaSemana($fecha): string
+    private function obtenerDiaSemana(string $fecha): string
     {
-        $carbon = Carbon::parse($fecha);
-        $dias = ['Sunday' => 'Domingo', 'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles', 'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado'];
-        $diaSemanaIngles = $carbon->format('l');
-        return $dias[$diaSemanaIngles] ?? 'Desconocido';
+        $dias = [
+            'Sunday'    => 'Domingo',
+            'Monday'    => 'Lunes',
+            'Tuesday'   => 'Martes',
+            'Wednesday' => 'Miércoles',
+            'Thursday'  => 'Jueves',
+            'Friday'    => 'Viernes',
+            'Saturday'  => 'Sábado',
+        ];
+        return $dias[Carbon::parse($fecha)->format('l')] ?? 'Desconocido';
     }
 }

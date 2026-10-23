@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\JefeCarrera;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Carrera;
 
 class JefesCarreraTable extends Component
 {
@@ -26,6 +27,11 @@ class JefesCarreraTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,16 +44,34 @@ class JefesCarreraTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
+        $sortField = in_array($this->sortField, ['nombre', 'email'], true) ? $this->sortField : 'nombre';
+        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+
         $jefesCarrera = JefeCarrera::query()
             ->with(['carrera.areaAcademica.facultad.sede.universidad'])
-            ->where(function ($query) {
-                $query->where('nombre', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('carrera', function ($q) {
-                        $q->where('nombre', 'like', '%' . $this->search . '%');
-                    });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                // Las carreras viven en la base central: se resuelven sus IDs aparte
+                $carreraIds = Carrera::query()
+                    ->where(function ($cq) use ($searchTerm) {
+                        $cq->where('nombre', 'like', '%' . $searchTerm . '%')
+                           ->orWhere('id_carrera', 'like', '%' . $searchTerm . '%');
+                    })
+                    ->pluck('id_carrera')
+                    ->all();
+
+                $query->where(function ($q) use ($searchTerm, $carreraIds) {
+                    $q->where('nombre', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('telefono', 'like', '%' . $searchTerm . '%');
+
+                    if (!empty($carreraIds)) {
+                        $q->orWhereIn('id_carrera', $carreraIds);
+                    }
+                });
             })
-            ->orderBy($this->sortField, $this->sortDirection)
+            ->orderBy($sortField, $sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.jefes-carrera-table', compact('jefesCarrera'));

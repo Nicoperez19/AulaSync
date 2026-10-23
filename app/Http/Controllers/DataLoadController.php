@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\DataLoad;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 
 class DataLoadController extends Controller
 {
@@ -81,7 +84,7 @@ class DataLoadController extends Controller
 
         $dataLoads = $query->paginate(10);
 
-        return view('layouts.data.data_index', compact(
+        return view('data.index', compact(
             'dataLoads',
             'aniosDisponibles',
             'semestresDisponibles',
@@ -133,18 +136,152 @@ class DataLoadController extends Controller
             $espaciosNoEncontrados = 0;   // Espacios del tenant que no existen en BD
             $espaciosFaltantes = [];      // Lista de espacios que no se encontraron en BD
 
+            // Encabezados de la primera fila
+            $headers = isset($rows[0]) ? array_map(function($h) {
+                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
+            }, $rows[0]) : [];
+
+            // ── NUEVA CAPA DE SEGURIDAD: VERIFICACIÓN DEL SEMESTRE EN EL ARCHIVO ──
+            $posiblesHeadersSemestre = [
+                'SEMESTRE', 'SEM', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
+                'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
+                'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE', 'TERMINO', 'TERM'
+            ];
+
+            $colSemestreIdx = null;
+            $colPeriodoAcademicoIdx = null;
+            $headerPeriodoAcademicoEncontrado = null;
+            $headersPeriodoAcademico = [
+                'SEMESTRE', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
+                'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
+                'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE'
+            ];
+            foreach ($headers as $colIdx => $headerName) {
+                if ($colSemestreIdx === null && in_array($headerName, $posiblesHeadersSemestre)) {
+                    $colSemestreIdx = $colIdx;
+                }
+
+                // Nota: si "SEMESTRE" contiene niveles curriculares (3, 4, 5...), $esMallaCurricular lo descarta más abajo.
+                // En planificaciones UCSC la columna se llama "SEMESTRE" y trae "2026-1" o "2026-2".
+                if ($colPeriodoAcademicoIdx === null && in_array($headerName, $headersPeriodoAcademico)) {
+                    $colPeriodoAcademicoIdx = $colIdx;
+                    $headerPeriodoAcademicoEncontrado = $headerName;
+                }
+            }
+
+            if ($colPeriodoAcademicoIdx !== null) {
+                $parseSemestreValor = function($val) {
+                    if ($val === null || $val === '') return null;
+                    $v = strtoupper(trim((string)$val));
+
+                    // Formatos con año: 2026-1, 2026-2, 2026/1, 2026/2, 2026_1, 2026_2
+                    if (preg_match('/(?:\d{4}|\d{2})[-_\/]([12])\b/', $v, $m)) {
+                        return (int)$m[1];
+                    }
+                    // Formatos compactos: 202610, 202620, 20261, 20262
+                    if (preg_match('/^\d{4}([12])0?$/', $v, $m)) {
+                        return (int)$m[1];
+                    }
+                    // Textos descriptivos
+                    if (str_contains($v, 'SEGUNDO') || str_contains($v, '2DO') || str_contains($v, '2°') || str_contains($v, '2DO.')) {
+                        return 2;
+                    }
+                    if (str_contains($v, 'PRIMER') || str_contains($v, '1ER') || str_contains($v, '1°') || str_contains($v, '1ER.')) {
+                        return 1;
+                    }
+                    // Dígito exacto 1 o 2
+                    if ($v === '1' || $v === '2') {
+                        return (int)$v;
+                    }
+                    // Otros números (ej: 3 al 12) -> corresponden a nivel curricular de malla, no a período
+                    if (is_numeric($v)) {
+                        return (int)$v;
+                    }
+                    return null;
+                };
+
+                $conteoSemestres = [1 => 0, 2 => 0, 'otros' => 0];
+                $filasVerificadas = 0;
+
+                for ($r = 1; $r < count($rows); $r++) {
+                    $rawVal = $rows[$r][$colPeriodoAcademicoIdx] ?? null;
+                    $res = $parseSemestreValor($rawVal);
+                    if ($res === 1 || $res === 2) {
+                        $conteoSemestres[$res]++;
+                        $filasVerificadas++;
+                    } elseif ($res !== null) {
+                        $conteoSemestres['otros']++;
+                    }
+                }
+
+                // Si predominan números mayores a 2, es nivel curricular de carrera, no período académico
+                $esMallaCurricular = $conteoSemestres['otros'] > 0 && ($conteoSemestres['otros'] / max(1, $filasVerificadas + $conteoSemestres['otros'])) > 0.15;
+
+                if (!$esMallaCurricular && $filasVerificadas > 0) {
+                    $semestreArchivo = $conteoSemestres[1] > $conteoSemestres[2] ? 1 : 2;
+                    $semestreSeleccionadoInt = (int)$semestreSeleccionado;
+
+                    // Si la mayoría del archivo contiene un semestre DISTINTO al que seleccionó el usuario
+                    if ($semestreArchivo !== $semestreSeleccionadoInt && ($conteoSemestres[$semestreArchivo] / $filasVerificadas) >= 0.7) {
+                        // Eliminar archivo temporal recién subido
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+                        }
+                        $dataLoad->update([
+                            'estado' => 'error',
+                            'registros_cargados' => 0
+                        ]);
+
+                        $msgError = "Inconsistencia de Semestre: El archivo contiene asignaturas del Semestre {$semestreArchivo} (detectado en columna '{$headerPeriodoAcademicoEncontrado}' con {$conteoSemestres[$semestreArchivo]} filas), pero seleccionaste el Semestre {$semestreSeleccionadoInt} en el formulario. Por favor verifica el archivo o selecciona el Semestre {$semestreArchivo} para procesarlo.";
+                        Log::warning("⛔ " . $msgError);
+
+                        return response()->json([
+                            'message' => $msgError
+                        ], 422);
+                    }
+
+                    Log::info("✓ Verificación de semestre exitosa: la columna '{$headerPeriodoAcademicoEncontrado}' coincide con el Semestre {$semestreSeleccionadoInt} seleccionado ({$conteoSemestres[$semestreSeleccionadoInt]} filas verificadas).");
+                }
+            }
+
             // Actualizar estado inicial
             $dataLoad->update([
                 'estado' => 'procesando',
                 'registros_cargados' => 0
             ]);
 
-            // LIMPIEZA PREVIA TOTAL: Eliminar planificaciones y horarios del período seleccionado
-            Log::info('Iniciando limpieza previa total del período: ' . $periodoSeleccionado);
+            // Asegurar separación de semestres previos antes de procesar la carga
+            SemesterHelper::asegurarSeparacionSemestres($periodoSeleccionado, true);
+
+            // Limpieza de horarios y planificaciones previas del mismo período antes de cargar la nueva programación
+            Log::info('Iniciando reemplazo de programación previa del período: ' . $periodoSeleccionado);
+            $limitesCarga = SemesterHelper::getLimitesPeriodo($periodoSeleccionado);
+            $inicioVigenciaPeriodo = $limitesCarga['inicio']->toDateString();
+            $periodoActualReal = SemesterHelper::getCurrentAcademicYear() . '-' . SemesterHelper::getCurrentSemester();
+            $finVigenciaPeriodo = ($periodoSeleccionado !== $periodoActualReal) ? $limitesCarga['fin']->toDateString() : null;
+
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
-            $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
-            $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
-            Log::info("Limpieza previa del período {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios eliminados.");
+            if ($horariosDelPeriodo->isNotEmpty()) {
+                $planificacionesEliminadas = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                    ->whereIn('id_horario', $horariosDelPeriodo)
+                    ->delete();
+                Horario::whereIn('id_horario', $horariosDelPeriodo)->delete();
+                Log::info("Programación titular previa de {$periodoSeleccionado} reemplazada: {$planificacionesEliminadas} bloques eliminados.");
+            }
+
+            // Limpiar planificaciones de colaboradores previas de este mismo período
+            $colabsTenantIds = ProfesorColaborador::where('fecha_inicio', '>=', $limitesCarga['inicio']->toDateString())
+                ->where('fecha_termino', '<=', $limitesCarga['fin']->toDateString())
+                ->pluck('id');
+            if ($colabsTenantIds->isNotEmpty()) {
+                $planifColabsEliminadas = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                    ->whereIn('id_profesor_colaborador', $colabsTenantIds)
+                    ->delete();
+                ProfesorColaborador::whereIn('id', $colabsTenantIds)->delete();
+                Log::info("Programación de colaboradores previa de {$periodoSeleccionado} reemplazada: {$planifColabsEliminadas} bloques eliminados.");
+            }
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
             $modulosExistentes = Modulo::count();
@@ -158,43 +295,22 @@ class DataLoadController extends Controller
                     'VI' => 'viernes',
                     'SA' => 'sábado',
                 ];
-                $modulosBase = [
-                    ['hora_inicio' => '08:10', 'hora_termino' => '09:00'],
-                    ['hora_inicio' => '09:10', 'hora_termino' => '10:00'],
-                    ['hora_inicio' => '10:10', 'hora_termino' => '11:00'],
-                    ['hora_inicio' => '11:10', 'hora_termino' => '12:00'],
-                    ['hora_inicio' => '12:10', 'hora_termino' => '13:00'],
-                    ['hora_inicio' => '13:10', 'hora_termino' => '14:00'],
-                    ['hora_inicio' => '14:10', 'hora_termino' => '15:00'],
-                    ['hora_inicio' => '15:10', 'hora_termino' => '16:00'],
-                    ['hora_inicio' => '16:10', 'hora_termino' => '17:00'],
-                    ['hora_inicio' => '17:10', 'hora_termino' => '18:00'],
-                    ['hora_inicio' => '18:10', 'hora_termino' => '19:00'],
-                    ['hora_inicio' => '19:10', 'hora_termino' => '20:00'],
-                    ['hora_inicio' => '20:10', 'hora_termino' => '21:00'],
-                    ['hora_inicio' => '21:10', 'hora_termino' => '22:00'],
-                    ['hora_inicio' => '22:10', 'hora_termino' => '23:00'],
-                ];
+                $horariosModulos = ModulosHelper::getHorariosModulos();
                 $modulosCreados = 0;
                 foreach ($dias as $codigoDia => $nombreDia) {
-                    // Sábado solo tiene módulos 1-5 (hasta 13:00hrs)
-                    $maxModulos = ($codigoDia === 'SA') ? 5 : 15;
+                    $claveDia = ModulosHelper::normalizarDia($nombreDia);
+                    $modulosDia = $horariosModulos[$claveDia] ?? [];
 
-                    foreach ($modulosBase as $idx => $mod) {
-                        $numeroModulo = $idx + 1;
-                        if ($numeroModulo > $maxModulos) {
-                            break;  // Skip módulos > 5 para sábado
-                        }
-
+                    foreach ($modulosDia as $numeroModulo => $horario) {
                         $idModulo = $codigoDia . '.' . $numeroModulo;
                         Modulo::firstOrCreate(
                             ['id_modulo' => $idModulo],
-                            ['dia' => $nombreDia, 'hora_inicio' => $mod['hora_inicio'], 'hora_termino' => $mod['hora_termino']]
+                            ['dia' => $nombreDia, 'hora_inicio' => $horario['inicio'], 'hora_termino' => $horario['fin']]
                         );
                         $modulosCreados++;
                     }
                 }
-                Log::info("✓ Módulos creados: {$modulosCreados} (LU-VI: 15 módulos, SA: 5 módulos)");
+                Log::info("✓ Módulos creados: {$modulosCreados} (LU-VI: 15 módulos, SA: 6 módulos)");
             } else {
                 Log::info("✓ Módulos existentes en BD: {$modulosExistentes}");
             }
@@ -270,21 +386,35 @@ class DataLoadController extends Controller
                 'tipo_profesor' => 16,
                 'id_carrera' => 17,
                 'nombre_carrera' => 18,
-                'horario' => 20,
+                'horario' => 19,
+                'horario_profesor' => 20,
             ];
+            $tieneColumnaHorarioProfesor = false;
 
             // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
             foreach ($headers as $colIdx => $headerName) {
                 if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
                 if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
                 if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
+                if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIOPROFESOR', 'HORARIO_PROF', 'HORARIO_DOCENTE', 'HORARIODOCENTE', 'HORARIO_DOCENTES', 'HORARIODOCENTES', 'HORARIO_PROFESORES', 'HORARIOPROFESORES', 'HORARIO_POR_DOCENTE', 'HORARIOPORDOCENTE', 'HORARIO_POR_PROFESOR', 'HORARIOPORPROFESOR'])) {
+                    $colMap['horario_profesor'] = $colIdx;
+                    $tieneColumnaHorarioProfesor = true;
+                }
+                if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) $colMap['tipo_profesor'] = $colIdx;
                 if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
+                if (in_array($headerName, ['UA', 'UNIDAD_ACADEMICA', 'UNIDADACADEMICA', 'ID_CARRERA', 'COD_CARRERA', 'CODCARRERA'])) $colMap['id_carrera'] = $colIdx;
+                if (in_array($headerName, ['NOMBRE_CARRERA', 'CARRERA'])) $colMap['nombre_carrera'] = $colIdx;
+            }
+            if ($colSemestreIdx !== null) {
+                $colMap['semestre'] = $colSemestreIdx;
             }
             Log::info('→ Carga estándar aplicada para todas las sedes.');
 
             Log::info("→ Mapa de columnas activo: " . json_encode($colMap));
 
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
+
+            $colaboradoresAsignados = []; // [id_asignatura => [id_modulo => [id_espacio => true]]]
 
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
@@ -329,7 +459,9 @@ class DataLoadController extends Controller
                     $idCarrera = isset($row[$colMap['id_carrera']]) ? trim($row[$colMap['id_carrera']]) : '';
 
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
-                    $carrera = !empty($idCarrera) ? Carrera::withoutGlobalScope('tenant')->find($idCarrera) : null;
+                    $carrera = !empty($idCarrera)
+                        ? Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($idCarrera)
+                        : null;
                     if (!$carrera && !empty($idCarrera)) {
                         // Intentar crear una carrera genérica para esta sede
                         $nombreCarrera = (isset($colMap['nombre_carrera']) && isset($row[$colMap['nombre_carrera']]) && !empty($row[$colMap['nombre_carrera']]))
@@ -417,27 +549,164 @@ class DataLoadController extends Controller
                         $processedUsersCount++;
                     }
 
-                    // Los profesores colaboradores NO generan asignatura/horario/planificación propia.
-                    // Se registran en la tabla profesores_colaboradores vinculados a la asignatura.
-                    if (stripos($tipoProfesor, 'colaborador') !== false) {
+                    // Los colaboradores y ayudantes se registran aparte del profesor responsable.
+                    $tipoProfesorNormalizado = mb_strtolower($tipoProfesor, 'UTF-8');
+                    $esProfesorColaborador = str_contains($tipoProfesorNormalizado, 'colaborador')
+                        || str_contains($tipoProfesorNormalizado, 'ayudante');
+                    if ($esProfesorColaborador) {
                         $idAsignaturaColaborador = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
                         $nombreAsignaturaColaborador = isset($row[$colMap['nombre_asignatura']]) ? preg_replace('/^[a-z]{2}:\s*/i', '', trim($row[$colMap['nombre_asignatura']])) : '';
                         $inscritosColaborador = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : 0;
+                        $codigoAsignaturaColab = isset($row[$colMap['codigo_asignatura']]) ? trim($row[$colMap['codigo_asignatura']]) : '';
+                        $numeroSeccionColab = isset($row[$colMap['seccion']]) ? trim($row[$colMap['seccion']]) : '1';
+
+                        // 1. Asegurar que la asignatura exista con su carrera vinculada
+                        if (!empty($idAsignaturaColaborador)) {
+                            $asigExistente = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsignaturaColaborador)->first();
+                            if (!$asigExistente) {
+                                Asignatura::create([
+                                    'id_asignatura'     => $idAsignaturaColaborador,
+                                    'codigo_asignatura' => $codigoAsignaturaColab,
+                                    'nombre_asignatura' => $nombreAsignaturaColaborador,
+                                    'seccion'           => $numeroSeccionColab,
+                                    'periodo'           => $periodoSeleccionado,
+                                    'run_profesor'      => null, // El titular asignará su RUN al procesar su fila
+                                    'id_carrera'        => !empty($idCarrera) ? $idCarrera : null
+                                ]);
+                            } else {
+                                $datosUpdateAsig = ['periodo' => $periodoSeleccionado];
+                                if (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
+                                    $datosUpdateAsig['id_carrera'] = $idCarrera;
+                                }
+                                $asigExistente->update($datosUpdateAsig);
+                            }
+                        }
+
+                        // 2. Asegurar que el profesor tenga su carrera asignada si no la tenía
+                        if ($existingProfesor && empty($existingProfesor->id_carrera) && !empty($idCarrera)) {
+                            $existingProfesor->update(['id_carrera' => $idCarrera]);
+                        }
 
                         try {
-                            ProfesorColaborador::updateOrCreate(
+                            $limitesPeriodoColab = SemesterHelper::getLimitesPeriodo($periodoSeleccionado);
+                            $colaboradorModel = ProfesorColaborador::updateOrCreate(
                                 [
                                     'run_profesor_colaborador' => $run,
                                     'id_asignatura'           => !empty($idAsignaturaColaborador) ? $idAsignaturaColaborador : null,
+                                    'fecha_inicio'            => $limitesPeriodoColab['inicio']->toDateString(),
                                 ],
                                 [
                                     'nombre_asignatura_temporal' => $nombreAsignaturaColaborador ?: null,
                                     'cantidad_inscritos'        => $inscritosColaborador,
-                                    'fecha_inicio'              => now()->startOfYear(),
-                                    'fecha_termino'             => now()->endOfYear(),
+                                    'fecha_termino'             => $limitesPeriodoColab['fin']->toDateString(),
                                     'estado'                    => 'activo',
                                 ]
                             );
+
+                            // 3. Registrar la planificación del colaborador en el espacio correspondiente
+                            $horarioProfesorColab = trim($row[$colMap['horario_profesor']] ?? '');
+                            if (!$tieneColumnaHorarioProfesor && empty($horarioProfesorColab)) {
+                                $horarioProfesorColab = trim($row[$colMap['horario']] ?? '');
+                            }
+                            if (!empty($horarioProfesorColab)) {
+                                $horarioProfesorColab = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesorColab);
+                                $horarioNormalizadoColab = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesorColab);
+
+                                preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioNormalizadoColab, $matchesColabList, PREG_SET_ORDER);
+
+                                // Recopilar primero todos los espacios resueltos
+                                $slotsColabCandidatos = [];
+                                $tieneEspaciosPracticos = false;
+
+                                foreach ($matchesColabList as $mColab) {
+                                    $diaC = strtoupper($mColab[1]);
+                                    $moduloC = $mColab[2];
+                                    $espacioNombreExcelC = trim($mColab[4]);
+                                    $espacioNombreExcelC = EspacioAliasHelper::normalizar(
+                                        $espacioNombreExcelC,
+                                        $sedeActual ? $sedeActual->id_sede : ($prefijoTenantFiltro ?: null),
+                                        [
+                                            'carrera' => $carrera ? $carrera->nombre : '',
+                                            'asignatura' => $nombreAsignaturaColaborador,
+                                        ]
+                                    );
+
+                                    $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                        ->where('id_espacio', $espacioNombreExcelC)
+                                        ->first();
+
+                                    if (!$espacioModelC && $prefijoTenantFiltro) {
+                                        $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                            ->where('id_espacio', $prefijoTenantFiltro . '-' . $espacioNombreExcelC)
+                                            ->first();
+                                    }
+
+                                    if (!$espacioModelC) {
+                                        $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                            ->where('nombre_espacio', $espacioNombreExcelC)
+                                            ->first();
+                                    }
+
+                                    if ($espacioModelC) {
+                                        $esPractico = false;
+                                        $tipoEsp = strtolower($espacioModelC->tipo_espacio ?? '');
+                                        $nomEsp = strtolower($espacioModelC->nombre_espacio ?? '');
+                                        if (str_contains($tipoEsp, 'taller') || str_contains($tipoEsp, 'lab') || str_contains($nomEsp, 'taller') || str_contains($nomEsp, 'lab') || str_contains($nomEsp, 'simulac') || str_contains($espacioModelC->id_espacio, '-211')) {
+                                            $esPractico = true;
+                                            $tieneEspaciosPracticos = true;
+                                        }
+
+                                        $slotsColabCandidatos[] = [
+                                            'id_modulo' => $diaC . '.' . $moduloC,
+                                            'id_espacio' => $espacioModelC->id_espacio,
+                                            'es_practico' => $esPractico
+                                        ];
+                                    }
+                                }
+
+                                // Si el horario trae espacios prácticos (talleres/labs), el colaborador solo toma los prácticos
+                                foreach ($slotsColabCandidatos as $slotC) {
+                                    if ($tieneEspaciosPracticos && !$slotC['es_practico']) {
+                                        continue; // Omitir salas de teoría para el docente de taller
+                                    }
+
+                                    $planColabExistente = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                                        ->where('id_profesor_colaborador', $colaboradorModel->id)
+                                        ->where('id_modulo', $slotC['id_modulo'])
+                                        ->where('id_espacio', $slotC['id_espacio'])
+                                        ->orderByDesc('id')
+                                        ->first();
+
+                                    if ($planColabExistente) {
+                                        $planColabExistente->update([
+                                            'fecha_inicio_vigencia' => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia'    => $finVigenciaPeriodo,
+                                        ]);
+                                    } else {
+                                        \App\Models\PlanificacionProfesorColaborador::create([
+                                            'id_profesor_colaborador' => $colaboradorModel->id,
+                                            'id_modulo'               => $slotC['id_modulo'],
+                                            'id_espacio'              => $slotC['id_espacio'],
+                                            'fecha_inicio_vigencia'   => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia'      => $finVigenciaPeriodo,
+                                        ]);
+                                    }
+
+                                    // Separar al titular solo en bloques prácticos asignados al colaborador.
+                                    if (!empty($idAsignaturaColaborador) && $slotC['es_practico']) {
+                                        $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
+
+                                        // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura en este mismo período, eliminar el duplicado activo
+                                        Planificacion_Asignatura::where('id_asignatura', $idAsignaturaColaborador)
+                                            ->where('id_modulo', $slotC['id_modulo'])
+                                            ->where('id_espacio', $slotC['id_espacio'])
+                                            ->whereHas('horario', function ($hq) use ($periodoSeleccionado) {
+                                                $hq->where('periodo', $periodoSeleccionado);
+                                            })
+                                            ->delete();
+                                    }
+                                }
+                            }
                         } catch (\Exception $e) {
                             Log::warning("Fila {$index}: no se pudo registrar colaborador RUN={$run}: " . $e->getMessage());
                         }
@@ -473,6 +742,7 @@ class DataLoadController extends Controller
                             'codigo_asignatura' => $codigoAsignatura,
                             'nombre_asignatura' => $nombreAsignatura,
                             'seccion' => $numeroSeccion,
+                            'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
                             'id_carrera' => !empty($idCarrera) ? $idCarrera : null
                         ]);
@@ -482,6 +752,7 @@ class DataLoadController extends Controller
                             'codigo_asignatura' => !empty($codigoAsignatura) ? $codigoAsignatura : $existingAsignatura->codigo_asignatura,
                             'nombre_asignatura' => !empty($nombreAsignatura) ? $nombreAsignatura : $existingAsignatura->nombre_asignatura,
                             'seccion' => $numeroSeccion,
+                            'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
                             'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingAsignatura->id_carrera
                         ]);
@@ -490,7 +761,10 @@ class DataLoadController extends Controller
 
                     $processedAsignaturasCount++;
 
-                    $horarioProfesor = isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : null;
+                    $horarioProfesor = trim($row[$colMap['horario_profesor']] ?? '');
+                    if (!$tieneColumnaHorarioProfesor && empty($horarioProfesor)) {
+                        $horarioProfesor = trim($row[$colMap['horario']] ?? '');
+                    }
 
                     $periodo = $periodoSeleccionado;
 
@@ -501,17 +775,14 @@ class DataLoadController extends Controller
 
                         if (!$existingHorario) {
                             $oldIdHorario = 'HOR_' . $run;
-                            $existingHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $oldIdHorario)->first();
+                            $oldHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $oldIdHorario)->first();
 
-                            if ($existingHorario) {
-                                // Migrar horario existente al nuevo formato
-                                $existingHorario->id_horario = $idHorario;
-                                $existingHorario->periodo = $periodo;
-                                $existingHorario->save();
-
-                                // Actualizar planificaciones asociadas
-                                Planificacion_Asignatura::where('id_horario', $oldIdHorario)
-                                    ->update(['id_horario' => $idHorario]);
+                            if ($oldHorario) {
+                                // Eliminar horario antiguo sin sufijo de semestre para no mezclar semestres
+                                Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                                    ->where('id_horario', $oldIdHorario)
+                                    ->delete();
+                                $oldHorario->delete();
                             }
                         }
 
@@ -575,6 +846,14 @@ class DataLoadController extends Controller
                                 $modulo = $matches[2];
                                 $grupo = !empty($matches[3]) ? $matches[3] : '1';
                                 $espacioNombreExcel = trim($matches[4]);
+                                $espacioNombreExcel = EspacioAliasHelper::normalizar(
+                                    $espacioNombreExcel,
+                                    $sedeActual ? $sedeActual->id_sede : ($prefijoTenantFiltro ?: null),
+                                    [
+                                        'carrera' => $carrera ? $carrera->nombre : '',
+                                        'asignatura' => $nombreAsignatura,
+                                    ]
+                                );
 
                                 $espacioNombreUpper = strtoupper($espacioNombreExcel);
 
@@ -617,17 +896,34 @@ class DataLoadController extends Controller
 
                                 $espacioIdFinal = $espacioModel->id_espacio;
 
-                                // CREAR planificación (verificando duplicados exactos)
                                 $idModulo = $dia . '.' . $modulo;
 
+                                // Si este módulo y espacio ya fue asignado a un profesor colaborador de esta asignatura, omitir para el titular
+                                if (isset($colaboradoresAsignados[$idAsignatura][$idModulo][$espacioIdFinal])) {
+                                    Log::info("ℹ Fila $index: Omitiendo asignación de espacio {$espacioIdFinal} ({$idModulo}) para el titular RUN={$run} porque pertenece a un docente colaborador de la asignatura {$idAsignatura}.");
+                                    continue;
+                                }
+
+                                // CREAR o REACTIVAR planificación (conservando historial de bloques previos)
                                 try {
-                                    $existePlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
+                                    $planExistente = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                                        ->where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
                                         ->where('id_modulo', $idModulo)
                                         ->where('id_espacio', $espacioIdFinal)
-                                        ->exists();
+                                        ->orderByDesc('id')
+                                        ->first();
 
-                                    if (!$existePlanificacion) {
+                                    if ($planExistente) {
+                                        $planExistente->update([
+                                            'fecha_inicio_vigencia' => $inicioVigenciaPeriodo,
+                                            'fecha_fin_vigencia' => $finVigenciaPeriodo,
+                                            'inscritos' => $inscritos,
+                                            'data_load_id' => $dataLoad->id,
+                                        ]);
+                                        $processedHorariosCount++;
+                                        $planificacionesGuardadas++;
+                                    } else {
                                         $planificacion = new Planificacion_Asignatura();
                                         $planificacion->id_asignatura = $idAsignatura;
                                         $planificacion->id_horario = $horario->id_horario;
@@ -635,6 +931,9 @@ class DataLoadController extends Controller
                                         $planificacion->id_espacio = $espacioIdFinal;
                                         $planificacion->inscritos = $inscritos;
                                         $planificacion->data_load_id = $dataLoad->id;
+                                        $planificacion->fecha_inicio_vigencia = $inicioVigenciaPeriodo;
+                                        $planificacion->fecha_fin_vigencia = $finVigenciaPeriodo;
+                                        $planificacion->es_espacio_externo = $espacioModel->esEspacioExterno();
                                         $planificacion->save();
 
                                         $processedHorariosCount++;
@@ -669,6 +968,8 @@ class DataLoadController extends Controller
                 }
             }
 
+            SemesterHelper::asegurarSeparacionSemestres($periodoSeleccionado, true);
+
             $dataLoad->update([
                 'estado' => 'completado',
                 'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
@@ -685,7 +986,7 @@ class DataLoadController extends Controller
             Log::info('═══════════════════════════════════════════════════════════');
             Log::info('✓ IMPORTACIÓN COMPLETADA - PERÍODO: ' . $periodoSeleccionado);
             Log::info('  → Filas rechazadas por sede incorrecta: ' . $skippedBySede);
-            Log::info('  → Filas saltadas (profesor colaborador): ' . $skippedByColaborador);
+            Log::info('  → Filas procesadas como profesor colaborador: ' . $skippedByColaborador);
             Log::info('  → Profesores procesados: ' . $processedUsersCount);
             Log::info('  → Asignaturas procesadas: ' . $processedAsignaturasCount);
             Log::info('  → Planificaciones creadas: ' . $processedHorariosCount);
@@ -722,8 +1023,11 @@ class DataLoadController extends Controller
                     'errores' => $errors
                 ]
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error en carga masiva: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error en carga masiva: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+            if (isset($dataLoad) && $dataLoad) {
+                try { $dataLoad->update(['estado' => 'error']); } catch (\Throwable $inner) {}
+            }
             return response()->json([
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);

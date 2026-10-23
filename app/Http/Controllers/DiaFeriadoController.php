@@ -9,6 +9,6 @@ class DiaFeriadoController extends Controller
      */
     public function index()
     {
-        return view('layouts.dias-feriados.index');
+        return view('dias-feriados.index');
     }
 }

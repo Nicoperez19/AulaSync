@@ -71,9 +71,9 @@ class LicenciaRecuperacionService
                             'id_espacio' => $planificacion->id_espacio,
                             'id_modulo' => $planificacion->id_modulo,
                             'fecha_clase' => $planificacion->fecha_clase,
+                            'run_profesor' => $licencia->run_profesor,
                         ],
                         [
-                            'run_profesor' => $licencia->run_profesor,
                             'periodo' => $periodo,
                             'motivo' => $tipoAusencia,
                             'observaciones' => "Generado automáticamente por {$tipoAusencia} del {$licencia->fecha_inicio->format('d/m/Y')} al {$licencia->fecha_fin->format('d/m/Y')}. Motivo: {$licencia->motivo}",

@@ -439,6 +439,24 @@ class TenantInitializationController extends Controller
             "Indica si los períodos académicos están definidos para la sede"
         );
 
+        // IMPORTANTE: SemesterHelper lee el período actual desde la tabla `periodos_academicos`
+        // (BD central), NO desde Configuracion. Sin esto, las fechas del wizard no tenían efecto
+        // y el sistema podía seguir operando sobre el semestre equivocado.
+        foreach ([1 => ['periodo1_inicio', 'periodo1_fin'], 2 => ['periodo2_inicio', 'periodo2_fin']] as $semestre => [$ini, $fin]) {
+            \App\Models\PeriodoAcademico::updateOrCreate(
+                ['anio' => (int) $year, 'semestre' => $semestre],
+                [
+                    'fecha_inicio' => $validated[$ini],
+                    'fecha_fin' => $validated[$fin],
+                    'activo' => true,
+                    'created_by' => auth()->user()->run ?? null,
+                ]
+            );
+        }
+
+        // Auto-sincronizar: solo el semestre correspondiente a la fecha de hoy queda activo
+        \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
+
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(6);
 
@@ -544,5 +562,26 @@ class TenantInitializationController extends Controller
         }
 
         return redirect()->route('tenant.initialization.index');
+    }
+
+    /**
+     * Cancelar la inicialización y volver a la selección de sedes o login
+     */
+    public function cancel(Request $request)
+    {
+        // Limpiar contexto del tenant en sesión
+        session()->forget(['tenant_id', 'tenant']);
+        session()->save();
+
+        if (app()->bound('tenant')) {
+            app()->forgetInstance('tenant');
+        }
+
+        if (auth()->check()) {
+            return redirect()->route('sedes.selection')
+                ->with('info', 'Has cancelado la configuración de la sede.');
+        }
+
+        return redirect()->route('login');
     }
 }

@@ -25,6 +25,11 @@ class AcademicAreasTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -41,34 +46,55 @@ class AcademicAreasTable extends Component
         $universidadIds = collect();
         $sedeIds = collect();
 
-        if ($searchTerm !== '') {
-            $universidadIds = \App\Models\Universidad::where('nombre_universidad', 'like', '%' . $searchTerm . '%')
-                ->pluck('id_universidad');
-            
-            $sedeIds = \App\Models\Sede::where('nombre_sede', 'like', '%' . $searchTerm . '%')
-                ->pluck('id_sede');
-        }
-
         $areasAcademicas = AreaAcademica::query()
             ->with('facultad.sede.universidad')
-            ->when($searchTerm, function ($query) use ($searchTerm, $universidadIds, $sedeIds) {
-                $query->where(function ($q) use ($searchTerm, $universidadIds, $sedeIds) {
-                    $q->where('id_area_academica', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('nombre_area_academica', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('tipo_area_academica', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('facultad', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre_facultad', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->when($sedeIds->isNotEmpty(), function ($q2) use ($sedeIds) {
-                          $q2->orWhereHas('facultad', function ($subQuery) use ($sedeIds) {
-                              $subQuery->whereIn('id_sede', $sedeIds);
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                try {
+                    $universidadIds = \App\Models\Universidad::where(function($uq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
+                        }
+                    })->pluck('id_universidad');
+                    
+                    $sedeIds = \App\Models\Sede::where(function($sq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $sq->orWhere('nombre_sede', 'like', '%' . $t . '%');
+                        }
+                    })->pluck('id_sede');
+                } catch (\Throwable $e) {
+                    $universidadIds = collect();
+                    $sedeIds = collect();
+                }
+
+                $query->where(function ($q) use ($terms, $searchTerm, $universidadIds, $sedeIds) {
+                    $q->where('id_area_academica', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_area_academica', 'like', '%' . $t . '%')
+                          ->orWhere('tipo_area_academica', 'like', '%' . $t . '%')
+                          ->orWhereHas('facultad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
                           });
-                      })
-                      ->when($universidadIds->isNotEmpty(), function ($q2) use ($universidadIds) {
-                          $q2->orWhereHas('facultad', function ($subQuery) use ($universidadIds) {
-                              $subQuery->whereIn('id_universidad', $universidadIds);
-                          });
-                      });
+                    }
+
+                    if ($sedeIds->isNotEmpty()) {
+                        $q->orWhereHas('facultad', function ($subQuery) use ($sedeIds) {
+                            $subQuery->whereIn('id_sede', $sedeIds);
+                        });
+                    }
+
+                    if ($universidadIds->isNotEmpty()) {
+                        $q->orWhereHas('facultad', function ($subQuery) use ($universidadIds) {
+                            $subQuery->whereIn('id_universidad', $universidadIds);
+                        });
+                    }
                 });
             })
             ->when($this->sortField, function ($query) {

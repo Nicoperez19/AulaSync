@@ -3,16 +3,20 @@
 namespace App\Mail;
 
 use App\Models\Reserva;
+use App\Services\ComprobanteReservaService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class ConfirmacionReserva extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public Reserva $reserva;
     public string $nombreUsuario;
     public string $idEspacio;
     public string $nombreEspacio;
@@ -21,12 +25,15 @@ class ConfirmacionReserva extends Mailable
     public string $fechaReserva;
     public ?string $nombreAsignatura;
     public string $idReserva;
+    public string $urlComprobante;
 
     /**
      * Crea una nueva instancia del mailable a partir de una Reserva.
      */
     public function __construct(Reserva $reserva)
     {
+        $this->reserva = $reserva;
+
         // Nombre del responsable (profesor o solicitante)
         if ($reserva->run_profesor && $reserva->profesor) {
             $this->nombreUsuario = $reserva->profesor->name;
@@ -54,6 +61,7 @@ class ConfirmacionReserva extends Mailable
             : null;
 
         $this->idReserva = $reserva->id_reserva;
+        $this->urlComprobante = route('reservas.comprobante', $reserva->id_reserva);
     }
 
     public function envelope(): Envelope
@@ -68,5 +76,23 @@ class ConfirmacionReserva extends Mailable
         return new Content(
             view: 'emails.confirmacion-reserva',
         );
+    }
+
+    /**
+     * Adjuntar comprobante PDF de la reserva al correo
+     */
+    public function attachments(): array
+    {
+        try {
+            $pdfContent = app(ComprobanteReservaService::class)->generarPdf($this->reserva)->output();
+
+            return [
+                Attachment::fromData(fn () => $pdfContent, "comprobante-reserva-{$this->idReserva}.pdf")
+                    ->withMime('application/pdf'),
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo adjuntar el PDF de comprobante al correo de confirmación: ' . $e->getMessage());
+            return [];
+        }
     }
 }

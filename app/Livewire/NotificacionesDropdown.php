@@ -39,31 +39,10 @@ class NotificacionesDropdown extends Component
             ->take(10)
             ->get()
             ->map(function ($notificacion) {
-                // Regenerar URL dinámicamente según el tipo de notificación
-                if (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
-                    $notificacion->url = route('quick-actions.gestionar-salas-estudio');
-                } else {
-                    $notificacion->url = route('recuperacion-clases.index');
-                }
-                
-                // Reconstruir mensaje con ID de espacio si está disponible
-                if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
-                    $datos = $notificacion->datos_adicionales;
-                    $notificacion->mensaje = sprintf(
-                        'El profesor no realizó la clase en %s el %s',
-                        $datos['id_espacio'] ?? 'Desconocido',
-                        $datos['fecha_clase'] ?? 'fecha desconocida'
-                    );
-                } elseif ($notificacion->tipo === 'clase_reagendada' && isset($notificacion->datos_adicionales['id_espacio_reagendado'])) {
-                    $datos = $notificacion->datos_adicionales;
-                    $notificacion->mensaje = sprintf(
-                        'Clase reagendada para el %s en %s',
-                        $datos['fecha_reagendada'] ?? 'fecha pendiente',
-                        $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
-                    );
-                }
+                // URL y mensaje regenerados dinámicamente según el tipo (ver modelo Notificacion)
+                $notificacion->url = $notificacion->urlDestino();
+                $notificacion->mensaje = $notificacion->mensajeFormateado();
 
-                
                 return $notificacion;
             });
 

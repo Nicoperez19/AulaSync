@@ -62,7 +62,7 @@ class ClasesNoRealizadasReportService
                     'asignatura' => $clase->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $clase->asignatura->codigo_asignatura ?? 'N/A',
                     'espacio' => $clase->id_espacio,
-                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo),
+                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string)$clase->id_modulo),
                     'estado' => $clase->estado,
                     'motivo' => $clase->motivo ?? 'No especificado',
                     'observaciones' => $clase->observaciones ?? '',
@@ -132,7 +132,9 @@ class ClasesNoRealizadasReportService
             'total_clases_no_realizadas' => $clasesNoRealizadas->count(),
             'total_no_realizadas' => $clasesNoRealizadas->where('estado', 'no_realizada')->count(),
             'total_justificadas' => $clasesNoRealizadas->where('estado', 'justificado')->count(),
-            'total_recuperadas' => $clasesNoRealizadas->where('observaciones', 'like', '%reagendad%')->count(),
+            'total_recuperadas' => $clasesNoRealizadas->filter(function ($clase) {
+                return stripos($clase->observaciones ?? '', 'reagendad') !== false;
+            })->count(),
             'profesores_afectados' => $clasesPorProfesor->count(),
             'total_clases_programadas' => $totalClasesProgramadas,
             'porcentaje_no_realizadas' => $totalClasesProgramadas > 0 
@@ -155,7 +157,7 @@ class ClasesNoRealizadasReportService
                     'asignatura' => $clase->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $clase->asignatura->codigo_asignatura ?? 'N/A',
                     'espacio' => $clase->id_espacio,
-                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo),
+                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string)$clase->id_modulo),
                     'estado' => $clase->estado,
                     'recuperada' => $esRecuperada ? 'Sí' : 'No',
                     'justificada' => $esJustificada ? 'Sí' : 'No',

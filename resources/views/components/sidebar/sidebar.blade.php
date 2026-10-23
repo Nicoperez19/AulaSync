@@ -1,14 +1,15 @@
 <x-sidebar.overlay />
 
 <aside
-    class="fixed inset-y-0 left-0 z-[90] mt-4 shadow-md bg-light-cloud-blue dark:bg-dark-eval-1 shadow-gray-500/30 transform transition-all duration-300 ease-in-out"
+    class="fixed inset-y-0 left-0 z-[90] w-64 sm:w-72 bg-light-cloud-blue dark:bg-dark-eval-1 shadow-[4px_0_24px_rgba(0,0,0,0.18)] transform-gpu transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] select-none"
     :class="{
-        'translate-x-0 opacity-100': isSidebarOpen || isSidebarHovered,
-        '-translate-x-full opacity-0': !isSidebarOpen && !isSidebarHovered
+        'translate-x-0': isSidebarOpen || isSidebarHovered,
+        '-translate-x-full': !isSidebarOpen && !isSidebarHovered
     }"
-    style="top: 2rem; height: calc(100vh - 2rem);" 
+    style="top: 3.5rem; height: calc(100vh - 3.5rem); will-change: transform;"
     x-on:mouseenter="handleSidebarHover(true)"
     x-on:mouseleave="handleSidebarHover(false)"
+    @keydown.escape.window="isSidebarOpen = false"
 >
     <div class="flex flex-col h-full">
         <nav class="flex-1 overflow-y-auto custom-scrollbar">
@@ -21,4 +22,3 @@
         </div>
     </div>
 </aside>
-

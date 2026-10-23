@@ -26,6 +26,7 @@ class Asignatura extends Model
         'area_conocimiento',
         'periodo',
         'run_profesor', //profesor
+        'run_profesor_reemplazo',
         'id_carrera',
     ];
 
@@ -57,5 +58,22 @@ class Asignatura extends Model
     public function colaboradores()
     {
         return $this->hasMany(ProfesorColaborador::class, 'id_asignatura', 'id_asignatura');
+    }
+
+    public function profesorReemplazo()
+    {
+        return $this->belongsTo(Profesor::class, 'run_profesor_reemplazo', 'run_profesor');
+    }
+
+    public function estudiantes()
+    {
+        return $this->belongsToMany(Estudiante::class, 'inscripciones', 'id_asignatura', 'estudiante_id')
+            ->withPivot('periodo')
+            ->withTimestamps();
+    }
+
+    public function sesionesAsistencia()
+    {
+        return $this->hasMany(SesionAsistencia::class, 'id_asignatura', 'id_asignatura');
     }
 }

@@ -221,31 +221,37 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-xs bg-white rounded-lg dark:bg-gray-800 table-fixed">
+                <table class="w-full text-xs bg-white rounded-lg dark:bg-gray-800 table-auto">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th class="w-1/5 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Usuario
                             </th>
-                            <th class="w-1/5 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                UA
+                            </th>
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                Asignatura
+                            </th>
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 ID Sala
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Fecha
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Entrada
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Salida
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Duración
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Tipo
                             </th>
-                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Estado
                             </th>
                         </tr>
@@ -254,38 +260,44 @@
                         @forelse($accesos as $acceso)
                             <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-2 py-2">
-                                    <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white">
                                         {{ $acceso['usuario'] }}
                                     </div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ $acceso['run'] }}
                                     </div>
                                 </td>
+                                <td class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
+                                    {{ $acceso['ua'] ?? 'N/A' }}
+                                </td>
+                                <td class="px-2 py-2 text-xs text-gray-800 dark:text-gray-200">
+                                    {{ $acceso['asignatura'] ?? 'N/A' }}
+                                </td>
                                 <td class="px-2 py-2">
-                                    <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white">
                                         {{ $acceso['id_espacio'] }}
                                     </div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                    <div class="text-xs text-gray-400 dark:text-gray-500">
                                         Piso {{ $acceso['piso'] }}
                                     </div>
                                 </td>
-                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white">
+                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white whitespace-nowrap">
                                     {{ \Carbon\Carbon::parse($acceso['fecha'])->format('d/m/Y') }}
                                 </td>
-                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white">
+                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white whitespace-nowrap">
                                     {{ $acceso['hora_entrada'] }}
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2 whitespace-nowrap">
                                     <span class="text-xs {{ $acceso['hora_salida'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
                                         {{ $acceso['hora_salida'] }}
                                     </span>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2 whitespace-nowrap">
                                     <span class="text-xs {{ $acceso['duracion'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
                                         {{ $acceso['duracion'] }}
                                     </span>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2 whitespace-nowrap">
                                     <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap
                                         {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
                                            ($acceso['tipo_usuario'] == 'estudiante' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
@@ -294,7 +306,7 @@
                                         {{ ucfirst($acceso['tipo_usuario']) }}
                                     </span>
                                 </td>
-                                <td class="px-2 py-2">
+                                <td class="px-2 py-2 whitespace-nowrap">
                                     <span class="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full whitespace-nowrap
                                         {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                                            ($acceso['estado'] == 'finalizada' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
@@ -305,7 +317,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-2 py-4 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="10" class="px-2 py-4 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center">
                                         <i class="mb-2 text-2xl fas fa-search"></i>
                                         <p class="text-sm font-medium">No se encontraron accesos registrados</p>

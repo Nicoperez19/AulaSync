@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use App\Helpers\ModulosHelper;
 
 class ProfesorColaboradorController extends Controller
 {
@@ -83,7 +84,7 @@ class ProfesorColaboradorController extends Controller
 
         $profesores = Profesor::orderBy('name')->get();
 
-        return view('layouts.clases_temporales.index', compact('profesoresColaboradores', 'profesores'));
+        return view('clases-temporales.index', compact('profesoresColaboradores', 'profesores'));
     }
 
     /**
@@ -98,7 +99,7 @@ class ProfesorColaboradorController extends Controller
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
 
-        return view('layouts.clases_temporales.create', compact('profesores', 'asignaturas', 'espacios'));
+        return view('clases-temporales.create', compact('profesores', 'asignaturas', 'espacios'));
     }
 
     /**
@@ -209,7 +210,7 @@ class ProfesorColaboradorController extends Controller
     {
         $profesorColaborador->load(['profesor', 'asignatura', 'planificaciones.modulo', 'planificaciones.espacio.piso']);
 
-        return view('layouts.clases_temporales.show', compact('profesorColaborador'));
+        return view('clases-temporales.show', compact('profesorColaborador'));
     }
 
     /**
@@ -226,15 +227,14 @@ class ProfesorColaboradorController extends Controller
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
         
         // Obtener módulos para pasar a la vista
-        $modulos = [
-            1 => '08:10 - 09:00', 2 => '09:10 - 10:00', 3 => '10:10 - 11:00',
-            4 => '11:10 - 12:00', 5 => '12:10 - 13:00', 6 => '13:10 - 14:00',
-            7 => '14:10 - 15:00', 8 => '15:10 - 16:00', 9 => '16:10 - 17:00',
-            10 => '17:10 - 18:00', 11 => '18:10 - 19:00', 12 => '19:10 - 20:00',
-            13 => '20:10 - 21:00', 14 => '21:10 - 22:00', 15 => '22:10 - 23:00',
-        ];
+        $modulos = collect(ModulosHelper::getModulosSimples())
+            ->mapWithKeys(function ($mod, $idx) {
+                $inicio = substr($mod['hora_inicio'], 0, 5);
+                $fin    = substr($mod['hora_termino'], 0, 5);
+                return [$idx + 1 => "{$inicio} - {$fin}"];
+            })->all();
 
-        return view('layouts.clases_temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
+        return view('clases-temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
     }
 
     /**
@@ -282,28 +282,99 @@ class ProfesorColaboradorController extends Controller
         try {
             DB::beginTransaction();
 
-            // Actualizar el profesor colaborador
-            $profesorColaborador->update([
-                'run_profesor_colaborador' => $request->run_profesor_colaborador,
-                'id_asignatura' => $request->id_asignatura,
-                'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
-                'descripcion' => $request->descripcion,
-                'tipo_clase' => $request->tipo_clase,
-                'fecha_inicio' => $request->fecha_inicio,
-                'fecha_termino' => $request->fecha_termino,
-                'estado' => $request->estado,
-            ]);
+            $hoy = Carbon::today();
+            $ayer = Carbon::yesterday()->toDateString();
+            $inicioOriginal = $profesorColaborador->fecha_inicio ? Carbon::parse($profesorColaborador->fecha_inicio)->startOfDay() : null;
+            $cambioDocente = (string) $profesorColaborador->run_profesor_colaborador !== (string) $request->run_profesor_colaborador;
+            $yaIniciado = $inicioOriginal && $inicioOriginal->lt($hoy);
 
-            // Eliminar planificaciones existentes
-            $profesorColaborador->planificaciones()->delete();
-
-            // Crear nuevas planificaciones
-            foreach ($request->planificaciones as $planificacion) {
-                PlanificacionProfesorColaborador::create([
-                    'id_profesor_colaborador' => $profesorColaborador->id,
-                    'id_modulo' => $planificacion['id_modulo'],
-                    'id_espacio' => $planificacion['id_espacio'],
+            if ($cambioDocente && $yaIniciado) {
+                // Conservar el registro del docente colaborador anterior cerrado hasta ayer para no perder su historial
+                $profesorColaborador->update([
+                    'fecha_termino' => $ayer,
                 ]);
+                $profesorColaborador->planificaciones()
+                    ->whereNull('fecha_fin_vigencia')
+                    ->update(['fecha_fin_vigencia' => $ayer]);
+
+                // Crear nuevo registro para el nuevo colaborador desde hoy (o desde la fecha indicada si es posterior)
+                $nuevaFechaInicio = Carbon::parse($request->fecha_inicio)->gt($hoy)
+                    ? $request->fecha_inicio
+                    : $hoy->toDateString();
+
+                $nuevoColaborador = ProfesorColaborador::create([
+                    'run_profesor_colaborador' => $request->run_profesor_colaborador,
+                    'id_asignatura' => $request->id_asignatura,
+                    'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
+                    'descripcion' => $request->descripcion,
+                    'cantidad_inscritos' => $profesorColaborador->cantidad_inscritos,
+                    'tipo_clase' => $request->tipo_clase,
+                    'fecha_inicio' => $nuevaFechaInicio,
+                    'fecha_termino' => $request->fecha_termino,
+                    'estado' => $request->estado,
+                ]);
+
+                foreach ($request->planificaciones as $planificacion) {
+                    PlanificacionProfesorColaborador::create([
+                        'id_profesor_colaborador' => $nuevoColaborador->id,
+                        'id_modulo' => $planificacion['id_modulo'],
+                        'id_espacio' => $planificacion['id_espacio'],
+                        'fecha_inicio_vigencia' => $nuevaFechaInicio,
+                    ]);
+                }
+            } else {
+                // Actualizar el profesor colaborador manteniendo su inicio original si ya había comenzado
+                $profesorColaborador->update([
+                    'run_profesor_colaborador' => $request->run_profesor_colaborador,
+                    'id_asignatura' => $request->id_asignatura,
+                    'nombre_asignatura_temporal' => $request->nombre_asignatura_temporal,
+                    'descripcion' => $request->descripcion,
+                    'tipo_clase' => $request->tipo_clase,
+                    'fecha_inicio' => $yaIniciado ? $inicioOriginal->toDateString() : $request->fecha_inicio,
+                    'fecha_termino' => $request->fecha_termino,
+                    'estado' => $request->estado,
+                ]);
+
+                $nuevasClaves = collect($request->planificaciones)->map(fn($p) => $p['id_modulo'] . '_' . $p['id_espacio'])->all();
+                $existentesActivas = $profesorColaborador->planificaciones()
+                    ->whereNull('fecha_fin_vigencia')
+                    ->get();
+
+                if ($yaIniciado) {
+                    // Cerrar vigencia de bloques que se quitaron o cambiaron en vez de borrarlos físicamente
+                    $clavesExistentes = [];
+                    foreach ($existentesActivas as $planExistente) {
+                        $clave = $planExistente->id_modulo . '_' . $planExistente->id_espacio;
+                        if (!in_array($clave, $nuevasClaves, true)) {
+                            $planExistente->update(['fecha_fin_vigencia' => $ayer]);
+                        } else {
+                            $clavesExistentes[] = $clave;
+                        }
+                    }
+
+                    // Crear solo los bloques nuevos con vigencia desde hoy
+                    foreach ($request->planificaciones as $planificacion) {
+                        $clave = $planificacion['id_modulo'] . '_' . $planificacion['id_espacio'];
+                        if (!in_array($clave, $clavesExistentes, true)) {
+                            PlanificacionProfesorColaborador::create([
+                                'id_profesor_colaborador' => $profesorColaborador->id,
+                                'id_modulo' => $planificacion['id_modulo'],
+                                'id_espacio' => $planificacion['id_espacio'],
+                                'fecha_inicio_vigencia' => $hoy->toDateString(),
+                            ]);
+                        }
+                    }
+                } else {
+                    // Si aún no iniciaba, reemplazar normalmente
+                    $profesorColaborador->planificaciones()->delete();
+                    foreach ($request->planificaciones as $planificacion) {
+                        PlanificacionProfesorColaborador::create([
+                            'id_profesor_colaborador' => $profesorColaborador->id,
+                            'id_modulo' => $planificacion['id_modulo'],
+                            'id_espacio' => $planificacion['id_espacio'],
+                        ]);
+                    }
+                }
             }
 
             DB::commit();

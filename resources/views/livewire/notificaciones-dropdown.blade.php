@@ -1,3 +1,4 @@
+<div data-aulasync-root style="display: contents;">
 <div class="relative" x-data="{ open: @entangle('mostrarDropdown') }">
     <!-- Notification Bell Button -->
     <button 
@@ -104,16 +105,14 @@
             @endforelse
         </div>
 
-        @if($notificaciones->count() > 0)
-            <!-- Footer -->
-            <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-                <a 
-                    href="{{ route('recuperacion-clases.index') }}"
-                    class="block text-sm text-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                    Ver todas las recuperaciones
-                </a>
-            </div>
-        @endif
+        <!-- Footer -->
+        <div class="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
+            <a 
+                href="{{ route('notificaciones.index') }}"
+                class="block text-sm font-semibold text-center text-[#D2091E] hover:underline">
+                Ver Centro de Notificaciones
+            </a>
+        </div>
     </div>
 </div>
 
@@ -123,3 +122,4 @@
         @this.call('cargarNotificaciones');
     }, 120000);
 </script>
+</div>

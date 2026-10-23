@@ -13,6 +13,10 @@
             </div>
 
             <div class="flex gap-2">
+                <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => 'Sala de Estudio', 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin])) }}"
+                   class="px-4 py-2 text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700">
+                    <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
+                </a>
                 <a href="{{ route('reportes.salas-estudio.export', ['format' => 'pdf']) }}?fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}{{ $salaId ? '&sala_id=' . $salaId : '' }}"
                    class="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
                     <i class="mr-2 fas fa-file-pdf"></i> Exportar PDF

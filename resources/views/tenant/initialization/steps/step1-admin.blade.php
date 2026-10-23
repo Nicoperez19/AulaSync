@@ -6,8 +6,8 @@
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
                 <i class="fas fa-user-check text-2xl text-green-600"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">Iniciar Sesión como Administrador</h2>
-            <p class="text-gray-600 mt-2">Ya existe una cuenta de administrador. Por favor, inicie sesión para continuar.</p>
+            <h2 class="text-2xl font-bold text-gray-800">Iniciar Sesi&oacute;n como Administrador</h2>
+            <p class="text-gray-600 mt-2">Ya existe una cuenta de administrador. Por favor, inicie sesi&oacute;n para continuar.</p>
         </div>
 
         @if(session('error'))
@@ -26,7 +26,7 @@
                 <!-- Info sobre el admin existente -->
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div class="flex items-start">
-                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                        <i class="fas fa-info-circle text-blue-500 mt-1 mr-3 flex-shrink-0"></i>
                         <div>
                             <h4 class="font-semibold text-blue-800">Administrador registrado</h4>
                             <p class="text-sm text-blue-700 mt-1">
@@ -38,7 +38,7 @@
 
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-envelope mr-2"></i>Correo Electrónico
+                        <i class="fas fa-envelope mr-2"></i>Correo Electr&oacute;nico
                     </label>
                     <input type="email" name="email" id="email" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
@@ -49,20 +49,20 @@
 
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Contraseña
+                        <i class="fas fa-lock mr-2"></i>Contrase&ntilde;a
                     </label>
                     <input type="password" name="password" id="password" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                           placeholder="Ingrese su contraseña"
+                           placeholder="Ingrese su contrase&ntilde;a"
                            required>
                 </div>
             </div>
 
             <div class="mt-8 flex justify-end">
                 <button type="submit" 
-                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition">
+                        class="inline-flex items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition shadow-sm">
                     <i class="fas fa-sign-in-alt mr-2"></i>
-                    Iniciar Sesión y Continuar
+                    Iniciar Sesi&oacute;n y Continuar
                 </button>
             </div>
         </form>
@@ -93,7 +93,7 @@
 
                 <div>
                     <label for="run" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-id-card mr-2"></i>RUN (Sin puntos ni guión)
+                        <i class="fas fa-id-card mr-2"></i>RUN (Sin puntos ni gui&oacute;n)
                     </label>
                     <input type="text" name="run" id="run" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
@@ -105,7 +105,7 @@
 
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-envelope mr-2"></i>Correo Electrónico
+                        <i class="fas fa-envelope mr-2"></i>Correo Electr&oacute;nico
                     </label>
                     <input type="email" name="email" id="email" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
@@ -116,28 +116,28 @@
 
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Contraseña
+                        <i class="fas fa-lock mr-2"></i>Contrase&ntilde;a
                     </label>
                     <input type="password" name="password" id="password" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                           placeholder="Mínimo 8 caracteres"
+                           placeholder="M&iacute;nimo 8 caracteres"
                            required>
                 </div>
 
                 <div>
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-lock mr-2"></i>Confirmar Contraseña
+                        <i class="fas fa-lock mr-2"></i>Confirmar Contrase&ntilde;a
                     </label>
                     <input type="password" name="password_confirmation" id="password_confirmation" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                           placeholder="Repita la contraseña"
+                           placeholder="Repita la contrase&ntilde;a"
                            required>
                 </div>
             </div>
 
             <div class="mt-8 flex justify-end">
                 <button type="submit" 
-                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                        class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
                     Siguiente
                     <i class="fas fa-arrow-right ml-2"></i>
                 </button>
