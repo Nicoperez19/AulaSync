@@ -13,11 +13,8 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('spaces_index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium  border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                <x-button href="{{ route('spaces.index') }}" variant="back">
+                    <i class="mr-2 fa-solid fa-arrow-left"></i>
                     Volver
                 </x-button>
             </div>
@@ -50,7 +47,7 @@
                     <div>
                         <x-form.label for="universidad" :value="__('Universidad')" />
                         <select name="id_universidad" id="universidad"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required onchange="loadSedes()">
                             <option value="" disabled>{{ __('Seleccionar Universidad') }}</option>
                             @foreach($universidades as $universidad)
@@ -65,7 +62,7 @@
                     <div>
                         <x-form.label for="sede" :value="__('Sede')" />
                         <select name="id_sede" id="sede"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                            required onchange="loadFacultades()">
                             <option value="" disabled>{{ __('Seleccionar Sede') }}</option>
                             @foreach($sedes as $sede)
@@ -82,7 +79,7 @@
                     <div>
                         <x-form.label for="facultad" :value="__('Facultad')" />
                         <select name="id_facultad" id="facultad"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required onchange="loadPisos()">
                             <option value="" disabled>{{ __('Seleccionar Facultad') }}</option>
                             @foreach($facultades as $facultad)
@@ -97,7 +94,7 @@
                     <div>
                         <x-form.label for="piso_id" :value="__('Piso')" />
                         <select name="piso_id" id="piso_id"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             @foreach ($pisos as $piso)
                                 <option value="{{ $piso->id }}"
@@ -113,7 +110,7 @@
                     <div>
                         <x-form.label for="tipo_espacio" :value="__('Tipo de Espacio')" />
                         <select name="tipo_espacio" id="tipo_espacio"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             @php
                                 $tipos = [
@@ -142,7 +139,7 @@
                     <div>
                         <x-form.label for="estado" :value="__('Estado')" />
                         <select name="estado" id="estado"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             @foreach (['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'] as $estado)
                                 <option value="{{ $estado }}"
@@ -164,8 +161,14 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Guardar Cambios') }}</x-button>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <x-button href="{{ route('spaces.index') }}" variant="cancel">
+                        {{ __('Cancelar') }}
+                    </x-button>
+                    <x-button type="submit" variant="save">
+                        <i class="mr-2 fa-solid fa-floppy-disk"></i>
+                        {{ __('Guardar Cambios') }}
+                    </x-button>
                 </div>
             </div>
         </form>
@@ -180,12 +183,14 @@
                     e.preventDefault();
 
                     Swal.fire({
-                        title: '¿Seguro de editar?',
-                        text: "Estás a punto de guardar los cambios.",
-                        icon: 'warning',
+                        title: '¿Guardar cambios?',
+                        text: 'Estás a punto de guardar los cambios realizados.',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, editar',
+                        confirmButtonText: 'Sí, guardar',
                         cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#8D8D8D',
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {

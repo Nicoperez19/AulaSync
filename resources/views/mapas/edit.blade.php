@@ -123,7 +123,7 @@
 
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-4 mt-4">
-                    <button id="clearIndicatorsBtn" type="button" class="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700">Limpiar Todo</button>
+                    <button id="clearIndicatorsBtn" type="button" class="btn btn-clear px-4 py-2 text-sm">Limpiar Todo</button>
                     <button id="saveMapBtn" type="button" class="hidden px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700">Guardar Edición</button>
                 </div>
             </div>

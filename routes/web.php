@@ -418,6 +418,11 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::get('/data/download/{id}', [DataLoadController::class, 'download'])->name('data.download');
     Route::get('/data/progress/{id}', [DataLoadController::class, 'progress'])->name('data.progress');
     Route::post('/data/limpiar', [DataLoadController::class, 'limpiarPeriodo'])->name('data.limpiar');
+
+    // Carga Masiva de Estudiantes (Superadmin / Administrador)
+    Route::get('/estudiantes/carga-masiva', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'index'])->name('estudiantes.carga-masiva.index');
+    Route::post('/estudiantes/carga-masiva', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'procesar'])->name('estudiantes.carga-masiva.procesar');
+    Route::get('/estudiantes/carga-masiva/plantilla', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'descargarPlantilla'])->name('estudiantes.carga-masiva.plantilla');
 });
 
 Route::middleware('auth')->group(function () {

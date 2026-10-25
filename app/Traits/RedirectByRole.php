@@ -31,7 +31,7 @@ trait RedirectByRole
                 : redirect('/docente');
         }
         
-        if ($user->hasRole('Usuario')) {
+        if ($user->hasAnyRole(['Usuario', 'Estudiante en Práctica'])) {
             return redirect()->route('espacios.show');
         }
 

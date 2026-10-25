@@ -1,45 +1,64 @@
 <div class="flex flex-col h-full">
-    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-        <table class="w-full text-sm text-center border-collapse table-auto min-w-max">
-            <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
-                <tr>
-                    <th class="px-4 py-2">Nombre Mapa</th>
-                    <th class="px-4 py-2">Ver</th>
-                    <th class="px-4 py-2">Editar</th>
-                    <th class="px-4 py-2">Eliminar</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($mapas as $mapa)
-                    <tr class="{{ $loop->index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $mapa->nombre_mapa }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            @if($mapa->ruta_mapa)
-                                <img src="{{ asset('storage/' . $mapa->ruta_mapa) }}" alt="Mapa {{ $mapa->nombre_mapa }}" class="h-12 w-auto rounded shadow border inline-block align-middle mr-2">
-                            @endif
-                            <x-button variant="ghost" class="text-blue-500" wire:click="verMapa('{{ $mapa->id_mapa }}')">
-                                Ver
-                            </x-button>
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <a href="{{ route('mapas.edit', $mapa->id_mapa) }}" class="inline-flex items-center px-3 py-1 text-xs font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600">
-                                <i class="fa-solid fa-pen mr-1"></i> Editar
-                            </a>
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <x-button variant="ghost" class="text-red-600" wire:click="confirmarEliminarMapa('{{ $mapa->id_mapa }}')">
-                                Eliminar
-                            </x-button>
-                        </td>
-                        
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                    <tr>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">Nombre Mapa</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">Vista Previa</th>
+                        <th scope="col" class="w-64 px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">Acciones</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    @forelse ($mapas as $mapa)
+                        <tr wire:key="mapa-row-{{ $mapa->id_mapa }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="px-4 py-3 text-center align-middle font-medium text-gray-800 dark:text-gray-200">
+                                {{ $mapa->nombre_mapa }}
+                            </td>
+                            <td class="px-4 py-3 text-center align-middle">
+                                @if($mapa->ruta_mapa)
+                                    <img src="{{ asset('storage/' . $mapa->ruta_mapa) }}" alt="Mapa {{ $mapa->nombre_mapa }}" class="h-12 w-auto rounded-lg shadow-xs border border-gray-200 dark:border-gray-700 inline-block align-middle">
+                                @else
+                                    <span class="text-xs text-gray-400 italic">Sin imagen</span>
+                                @endif
+                            </td>
+                            <td class="w-64 px-4 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                    <button type="button" wire:click="verMapa('{{ $mapa->id_mapa }}')"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-300 transition-colors shadow-xs"
+                                            title="Ver mapa">
+                                        <i class="fa-solid fa-eye text-xs"></i>
+                                        <span>Ver</span>
+                                    </button>
+                                    <a href="{{ route('mapas.edit', $mapa->id_mapa) }}"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                       title="Editar mapa">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
+                                    </a>
+                                    <button type="button" wire:click="confirmarEliminarMapa('{{ $mapa->id_mapa }}')"
+                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
+                                            title="Eliminar mapa">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                        <span>Eliminar</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr wire:key="empty-mapas-row">
+                            <td colspan="3" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-map-location-dot text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron planos</p>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
-
     <!-- Modal con diseño de horario -->
     @if ($mostrarModal && $mapaSeleccionado)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999] flex items-center justify-center p-8"

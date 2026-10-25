@@ -4,52 +4,111 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
-    /* Estilos globales y unificados de SweetAlert2 para AulaSync */
+    /* Animaciones fluidas de entrada y salida */
+    @keyframes swalModalIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.94) translateY(8px);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+    @keyframes swalModalOut {
+        0% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: scale(0.96) translateY(4px);
+        }
+    }
+
+    .swal2-show {
+        animation: swalModalIn 240ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .swal2-hide {
+        animation: swalModalOut 180ms ease-in !important;
+    }
+
+    /* Estilos globales y unificados de SweetAlert2 con Paleta Oficial AulaSync */
     .swal2-popup {
         font-family: 'Roboto', sans-serif !important;
-        border-radius: 1rem !important;
+        border-radius: 1.25rem !important;
         padding: 1.75rem !important;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #C0C0C0 !important;
+        box-shadow: 0 25px 50px -12px rgba(25, 25, 25, 0.18) !important;
+    }
+    .dark .swal2-popup {
+        background-color: #1F1F1F !important;
+        border-color: #404040 !important;
     }
     .swal2-title {
         font-size: 1.45rem !important;
         font-weight: 700 !important;
-        color: #111827 !important; /* gray-900 */
+        color: #191919 !important;
         margin-top: 0.75rem !important;
         line-height: 1.3 !important;
     }
+    .dark .swal2-title {
+        color: #F1EFF2 !important;
+    }
     .swal2-html-container {
-        color: #4b5563 !important; /* gray-600 */
+        color: #525252 !important;
         font-size: 0.95rem !important;
         margin-top: 0.6rem !important;
         line-height: 1.5 !important;
+    }
+    .dark .swal2-html-container {
+        color: #D4D4D4 !important;
     }
     .swal2-actions {
         margin-top: 1.5rem !important;
         gap: 0.75rem !important;
     }
     .swal2-confirm, .swal2-cancel {
-        border-radius: 0.5rem !important;
+        border-radius: 0.625rem !important;
         font-size: 0.925rem !important;
         font-weight: 600 !important;
-        padding: 0.625rem 1.25rem !important;
+        padding: 0.65rem 1.4rem !important;
         margin: 0 !important;
-        transition: all 0.2s ease-in-out !important;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.15s ease-in-out !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     }
     .swal2-confirm:hover, .swal2-cancel:hover {
         transform: translateY(-1px) !important;
-        filter: brightness(1.05) !important;
+        filter: brightness(1.04) !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15) !important;
     }
     .swal2-confirm:active, .swal2-cancel:active {
-        transform: translateY(0) !important;
+        transform: translateY(0) scale(0.98) !important;
     }
     .swal2-confirm:focus, .swal2-cancel:focus {
-        box-shadow: none !important;
+        box-shadow: 0 0 0 3px rgba(209, 36, 32, 0.25) !important;
     }
     .swal2-icon {
         margin-top: 0.5rem !important;
         border-width: 3px !important;
+    }
+    .swal2-icon.swal2-success {
+        border-color: #10B981 !important;
+        color: #10B981 !important;
+    }
+    .swal2-icon.swal2-success [class^='swal2-success-line'] {
+        background-color: #10B981 !important;
+    }
+    .swal2-icon.swal2-success .swal2-success-ring {
+        border-color: rgba(16, 185, 129, 0.3) !important;
+    }
+    .swal2-icon.swal2-error {
+        border-color: #D12420 !important;
+        color: #D12420 !important;
+    }
+    .swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+        background-color: #D12420 !important;
     }
 </style>
 
@@ -58,13 +117,20 @@
         if (typeof Swal !== 'undefined') {
             const originalFire = Swal.fire;
 
-            // Paleta de colores oficial del sistema AulaSync (UCSC)
+            // Paleta de colores oficial del sistema AulaSync
             const SYSTEM_COLORS = {
-                primary: '#2563eb',    // Azul UCSC / SIA
-                success: '#059669',    // Verde Esmeralda UCSC
-                danger: '#dc2626',     // Rojo UCSC (eliminar / error)
-                warning: '#d97706',    // Ámbar
-                secondary: '#6b7280'   // Gris Neutro para Cancelar
+                primary: '#D12420',        // Rojo Institucional UCSC / AulaSync
+                primaryDark: '#950101',    // Carmesí Oscuro
+                success: '#10B981',        // Verde Confirmar / Aceptar / Continuar
+                successHover: '#059669',   // Verde Intenso Hover
+                danger: '#D12420',         // Rojo Peligro / Eliminar / Error
+                dangerHover: '#950101',    // Carmesí Oscuro Hover
+                warning: '#F59E0B',        // Ámbar Advertencia
+                secondary: '#8D8D8D',      // Gris Neutro para Cancelar
+                secondaryHover: '#737373', // Gris Neutro Hover
+                border: '#C0C0C0',         // Gris Plata
+                canvas: '#F1EFF2',         // Fondo Lienzo
+                dark: '#191919'            // Negro Obsidiana
             };
 
             // Interceptor Global para unificar automáticamente cualquier llamada a Swal.fire
@@ -94,8 +160,8 @@
                 }
                 if (options.confirmButtonColor === '#d33') {
                     options.confirmButtonColor = SYSTEM_COLORS.danger;
-                } else if (options.confirmButtonColor === '#3085d6' || options.confirmButtonColor === '#3B82F6') {
-                    options.confirmButtonColor = SYSTEM_COLORS.primary;
+                } else if (options.confirmButtonColor === '#3085d6' || options.confirmButtonColor === '#3B82F6' || options.confirmButtonColor === '#2563eb') {
+                    options.confirmButtonColor = SYSTEM_COLORS.success; // Confirmaciones usan el verde oficial
                 } else if (options.confirmButtonColor === '#b91c1c') {
                     options.confirmButtonColor = isDelete ? SYSTEM_COLORS.danger : SYSTEM_COLORS.primary;
                 }
@@ -108,7 +174,8 @@
                         options.confirmButtonText = options.confirmButtonText || 'Sí, eliminar';
                     } else {
                         options.icon = options.icon || 'question';
-                        options.confirmButtonColor = options.confirmButtonColor || SYSTEM_COLORS.primary;
+                        // Acción positiva estándar (Continuar / Confirmar / Aceptar) usa VERDE
+                        options.confirmButtonColor = options.confirmButtonColor || SYSTEM_COLORS.success;
                         options.confirmButtonText = options.confirmButtonText || 'Confirmar';
                     }
                     options.cancelButtonColor = options.cancelButtonColor || SYSTEM_COLORS.secondary;
@@ -128,7 +195,7 @@
                         options.confirmButtonColor = options.confirmButtonColor || SYSTEM_COLORS.primary;
                         options.confirmButtonText = options.confirmButtonText || 'Entendido';
                     } else {
-                        options.confirmButtonColor = options.confirmButtonColor || SYSTEM_COLORS.primary;
+                        options.confirmButtonColor = options.confirmButtonColor || SYSTEM_COLORS.success;
                         options.confirmButtonText = options.confirmButtonText || 'Aceptar';
                     }
                 }
@@ -179,7 +246,7 @@
                     text: config.text || '',
                     icon: config.icon || 'question',
                     showCancelButton: true,
-                    confirmButtonColor: SYSTEM_COLORS.primary,
+                    confirmButtonColor: SYSTEM_COLORS.success,
                     cancelButtonColor: SYSTEM_COLORS.secondary,
                     confirmButtonText: config.confirmButtonText || 'Confirmar',
                     cancelButtonText: config.cancelButtonText || 'Cancelar',
@@ -284,7 +351,7 @@
                 text: 'Tu sesión ha caducado por inactividad. Por favor, inicia sesión nuevamente para continuar.',
                 icon: 'warning',
                 showCancelButton: false,
-                confirmButtonColor: '#D2091E',
+                confirmButtonColor: '#D12420',
                 confirmButtonText: 'Iniciar Sesión',
                 allowOutsideClick: false
             }).then(() => {
@@ -324,6 +391,7 @@
                 title: '¡Éxito!',
                 text: @json(session('success')),
                 icon: 'success',
+                confirmButtonColor: '#10B981',
                 confirmButtonText: 'Aceptar'
             });
         @endif
@@ -333,6 +401,7 @@
                 title: '¡Error!',
                 text: @json(session('error')),
                 icon: 'error',
+                confirmButtonColor: '#D12420',
                 confirmButtonText: 'Entendido'
             });
         @endif
@@ -342,6 +411,7 @@
                 title: 'Atención',
                 text: @json(session('warning')),
                 icon: 'warning',
+                confirmButtonColor: '#D12420',
                 confirmButtonText: 'Entendido'
             });
         @endif
@@ -351,6 +421,7 @@
                 title: 'Información',
                 text: @json(session('info')),
                 icon: 'info',
+                confirmButtonColor: '#D12420',
                 confirmButtonText: 'Aceptar'
             });
         @endif
@@ -367,6 +438,7 @@
                     </ul>
                 `,
                 icon: 'error',
+                confirmButtonColor: '#D12420',
                 confirmButtonText: 'Entendido'
             });
         @endif

@@ -120,8 +120,8 @@ async function confirmarVaciarReservas() {
         text: 'Esta acción finalizará TODAS las reservas activas y liberará todos los espacios ocupados.',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
+        confirmButtonColor: '#D12420',
+        cancelButtonColor: '#8D8D8D',
         confirmButtonText: 'Sí, vaciar todo',
         cancelButtonText: 'Cancelar'
     });

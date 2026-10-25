@@ -68,15 +68,15 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semana / Período</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Filtro</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Espacios</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Promedio Semanal</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pico Máximo</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Día Más Concurrido</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Descargas</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Semana / Período</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Filtro</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Espacios</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Promedio Semanal</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Pico Máximo</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Día Más Concurrido</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-white uppercase tracking-wider">Descargas</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200 text-sm">
@@ -124,13 +124,13 @@
                                     <div class="inline-flex items-center gap-2">
                                         <a href="{{ route('reportes.ocupacion-semanal.export', ['id' => $snap->id, 'format' => 'excel']) }}"
                                            title="Descargar en Excel"
-                                           class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                                           class="btn btn-excel gap-1.5 px-3 py-1.5 text-xs font-semibold">
                                             <i class="fas fa-file-excel"></i>
                                             <span class="hidden sm:inline">Excel</span>
                                         </a>
                                         <a href="{{ route('reportes.ocupacion-semanal.export', ['id' => $snap->id, 'format' => 'pdf']) }}"
                                            title="Descargar en PDF" target="_blank"
-                                           class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                                           class="btn btn-pdf gap-1.5 px-3 py-1.5 text-xs font-semibold">
                                             <i class="fas fa-file-pdf"></i>
                                             <span class="hidden sm:inline">PDF</span>
                                         </a>

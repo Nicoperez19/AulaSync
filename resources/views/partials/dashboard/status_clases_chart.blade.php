@@ -3,13 +3,13 @@
     <div class="flex flex-row items-center gap-1.5 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 xl:justify-between">
         <div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500 sm:text-xs">Período:</span>
-            <button onclick="filtrarStatusClases('hoy')" id="btn-status-hoy" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'hoy' ? 'bg-blue-600 text-white shadow-xs border-blue-600' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100' }}">
+            <button onclick="filtrarStatusClases('hoy')" id="btn-status-hoy" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'hoy' ? 'bg-[#D12420] text-white shadow-xs border-[#D12420]' : 'border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100' }}">
                 Hoy
             </button>
-            <button onclick="filtrarStatusClases('semana')" id="btn-status-semana" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'semana' ? 'bg-blue-600 text-white shadow-xs border-blue-600' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100' }}">
+            <button onclick="filtrarStatusClases('semana')" id="btn-status-semana" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'semana' ? 'bg-[#D12420] text-white shadow-xs border-[#D12420]' : 'border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100' }}">
                 Esta Semana
             </button>
-            <button onclick="filtrarStatusClases('mes')" id="btn-status-mes" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'mes' ? 'bg-blue-600 text-white shadow-xs border-blue-600' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100' }}">
+            <button onclick="filtrarStatusClases('mes')" id="btn-status-mes" class="shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs {{ ($rango ?? 'hoy') === 'mes' ? 'bg-[#D12420] text-white shadow-xs border-[#D12420]' : 'border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100' }}">
                 Este Mes
             </button>
         </div>
@@ -17,10 +17,10 @@
         <!-- Rango de fechas libre -->
         <div class="flex min-w-max items-center gap-1.5 sm:gap-2">
             <span class="shrink-0 text-[10px] font-bold text-slate-500 sm:text-xs">Desde:</span>
-            <input type="date" id="status-fecha-inicio" value="{{ $fecha_inicio ?: now()->format('Y-m-d') }}" class="h-8 min-w-[120px] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 sm:text-xs">
+            <input type="date" id="status-fecha-inicio" value="{{ $fecha_inicio ?: now()->format('Y-m-d') }}" class="h-8 min-w-[120px] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-2 focus:ring-[#D12420]/20 sm:text-xs">
             <span class="shrink-0 text-[10px] font-bold text-slate-500 sm:text-xs">Hasta:</span>
-            <input type="date" id="status-fecha-fin" value="{{ $fecha_fin ?: now()->format('Y-m-d') }}" class="h-8 min-w-[120px] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 sm:text-xs">
-            <button onclick="filtrarStatusClasesPersonalizado()" class="shrink-0 rounded-lg bg-slate-800 px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-slate-900 sm:text-xs">
+            <input type="date" id="status-fecha-fin" value="{{ $fecha_fin ?: now()->format('Y-m-d') }}" class="h-8 min-w-[120px] shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-2 focus:ring-[#D12420]/20 sm:text-xs">
+            <button onclick="filtrarStatusClasesPersonalizado()" class="shrink-0 rounded-lg bg-[#191919] px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-[#950101] sm:text-xs">
                 Filtrar
             </button>
         </div>
@@ -43,7 +43,7 @@
             <!-- Etiqueta flotante central -->
             <div id="status-clases-center-label" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
                 <span id="center-label-valor" class="text-3xl font-black text-slate-800 tracking-tight leading-none">{{ $pct_impartidas }}%</span>
-                <span id="center-label-sub" class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1">Cumplimiento</span>
+                <span id="center-label-sub" class="text-[11px] font-extrabold text-[#10B981] uppercase tracking-wide mt-1">Cumplimiento</span>
                 <span id="center-label-detail" class="text-[10px] font-medium text-slate-400 tracking-tight mt-0.5 hidden"></span>
             </div>
         </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
                     <span class="text-slate-500 font-bold block text-[11px]">Justificadas</span>
-                    <span class="text-sm font-black text-blue-700">{{ $justificadas }}</span>
+                    <span class="text-sm font-black text-slate-700">{{ $justificadas }}</span>
                     <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_justificadas ?? 0 }}%)</span>
                 </div>
             </div>

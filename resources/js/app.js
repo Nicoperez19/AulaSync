@@ -75,7 +75,7 @@ window.mostrarSweetAlertNoMapas = function(event) {
             `,
             icon: 'warning',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#2563eb'
+            confirmButtonColor: '#D12420'
         });
     }
 }
@@ -93,7 +93,7 @@ window.mostrarSweetAlertNoProfesores = function(event) {
             `,
             icon: 'warning',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#2563eb'
+            confirmButtonColor: '#D12420'
         });
     }
 }
@@ -111,7 +111,7 @@ window.mostrarSweetAlertNoEspacios = function(event) {
             `,
             icon: 'warning',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#2563eb'
+            confirmButtonColor: '#D12420'
         });
     }
 }

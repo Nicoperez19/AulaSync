@@ -14,11 +14,11 @@
 
             <div class="flex gap-2">
                 <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => 'Sala de Estudio', 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin])) }}"
-                   class="px-4 py-2 text-white transition-colors bg-emerald-600 rounded-lg hover:bg-emerald-700">
+                   class="btn btn-excel px-4 py-2 text-sm font-semibold">
                     <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
                 </a>
                 <a href="{{ route('reportes.salas-estudio.export', ['format' => 'pdf']) }}?fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}{{ $salaId ? '&sala_id=' . $salaId : '' }}"
-                   class="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                   class="btn btn-pdf px-4 py-2 text-sm font-semibold">
                     <i class="mr-2 fas fa-file-pdf"></i> Exportar PDF
                 </a>
             </div>
@@ -134,12 +134,12 @@
 
                 <div class="flex gap-2">
                     <button type="submit"
-                            class="px-4 py-2 text-white transition-colors bg-light-cloud-blue rounded-lg hover:bg-[#b10718]">
-                        <i class="mr-2 fas fa-search"></i> Filtrar
+                            class="px-4 py-2 text-white transition-colors bg-[#191919] rounded-lg hover:bg-black font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{{ route('reportes.salas-estudio') }}"
-                       class="px-4 py-2 text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600">
-                        <i class="mr-2 fas fa-times"></i> Limpiar
+                       class="px-4 py-2 text-gray-700 transition-colors bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-undo"></i> Limpiar
                     </a>
                 </div>
             </form>
@@ -167,7 +167,7 @@
                                     </h4>
                                     <div class="flex items-center gap-2">
                                         <button onclick="vetarGrupo('{{ $grupo['reservas'][0]->id_reserva }}', '{{ $data['sala']->nombre_espacio }}', {{ $index + 1 }})"
-                                                class="px-3 py-1 text-xs text-white transition-colors bg-red-600 rounded hover:bg-red-700">
+                                                class="px-3 py-1 text-xs text-white transition-colors bg-[#D12420] rounded hover:bg-[#950101]">
                                             <i class="mr-1 fas fa-ban"></i> Vetar Grupo
                                         </button>
                                         <div class="text-sm text-gray-600 dark:text-gray-400">
@@ -182,15 +182,15 @@
 
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full text-sm">
-                                        <thead class="bg-gray-200 dark:bg-gray-600">
+                                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                                             <tr>
-                                                <th class="px-3 py-2 text-left">#</th>
-                                                <th class="px-3 py-2 text-left">RUN</th>
-                                                <th class="px-3 py-2 text-left">Nombre</th>
-                                                <th class="px-3 py-2 text-left">Entrada</th>
-                                                <th class="px-3 py-2 text-left">Salida</th>
-                                                <th class="px-3 py-2 text-left">Tiempo</th>
-                                                <th class="px-3 py-2 text-left">Acciones</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">#</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">RUN</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Nombre</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Entrada</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Salida</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Tiempo</th>
+                                                <th class="px-3 py-2.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
@@ -220,7 +220,7 @@
                                                     </td>
                                                     <td class="px-3 py-2">
                                                         <button onclick="vetarIndividual('{{ $reserva->run_solicitante }}', '{{ $reserva->solicitante->nombre ?? 'N/A' }}', '{{ $reserva->id_reserva }}')"
-                                                                class="px-2 py-1 text-xs text-white transition-colors bg-red-600 rounded hover:bg-red-700">
+                                                                class="px-2 py-1 text-xs text-white transition-colors bg-[#D12420] rounded hover:bg-[#950101]">
                                                             <i class="fas fa-ban"></i> Vetar
                                                         </button>
                                                     </td>
@@ -256,11 +256,11 @@
                     </h3>
                     <div class="flex gap-2">
                         <button onclick="exportarVetados()" id="btn-exportar-vetados"
-                                class="px-4 py-2 text-sm text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
+                                class="btn btn-excel px-4 py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
                         </button>
                         <button onclick="filtrarVetados('activo')" id="filter-activo"
-                                class="filter-button active px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">
+                                class="filter-button active px-4 py-2 text-sm text-white bg-[#D12420] rounded-lg hover:bg-[#950101]">
                             Activos
                         </button>
                         <button onclick="filtrarVetados('liberado')" id="filter-liberado"
@@ -309,7 +309,7 @@
 
             <div class="flex gap-2">
                 <button onclick="confirmarVetoIndividual()" 
-                        class="flex-1 px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                        class="flex-1 px-4 py-2 text-white transition-colors bg-[#D12420] rounded-lg hover:bg-[#950101]">
                     <i class="mr-2 fas fa-check"></i> Confirmar Veto
                 </button>
                 <button onclick="cerrarModalVetar()" 
@@ -349,7 +349,7 @@
 
             <div class="flex gap-2">
                 <button onclick="confirmarVetoGrupo()" 
-                        class="flex-1 px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                        class="flex-1 px-4 py-2 text-white transition-colors bg-[#D12420] rounded-lg hover:bg-[#950101]">
                     <i class="mr-2 fas fa-check"></i> Confirmar Veto Grupal
                 </button>
                 <button onclick="cerrarModalVetarGrupo()" 
@@ -421,7 +421,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar el motivo del veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -447,7 +447,7 @@
                         icon: 'success',
                         title: 'Veto aplicado',
                         text: 'Usuario vetado correctamente',
-                        confirmButtonColor: '#10b981'
+                        confirmButtonColor: '#10B981'
                     });
                     cerrarModalVetar();
                     location.reload();
@@ -456,7 +456,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -465,7 +465,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al aplicar el veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -492,7 +492,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar el motivo del veto grupal',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -518,7 +518,7 @@
                         icon: 'success',
                         title: 'Veto grupal aplicado',
                         html: mensaje,
-                        confirmButtonColor: '#10b981'
+                        confirmButtonColor: '#10B981'
                     });
                     cerrarModalVetarGrupo();
                     location.reload();
@@ -527,7 +527,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -536,7 +536,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al aplicar el veto grupal',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -633,7 +633,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al cargar la lista de vetados',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -647,8 +647,8 @@
                 showCancelButton: true,
                 confirmButtonText: 'Sí, liberar',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280'
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#8D8D8D'
             });
 
             if (!result.isConfirmed) {
@@ -671,7 +671,7 @@
                         icon: 'success',
                         title: 'Veto liberado',
                         text: 'Veto liberado correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                     await cargarVetados('activo', 'listaVetados');
@@ -680,7 +680,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -689,7 +689,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al liberar el veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -716,7 +716,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar una observación',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -740,7 +740,7 @@
                         icon: 'success',
                         title: 'Actualizado',
                         text: 'Observación actualizada correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                     cerrarModalEditar();
@@ -750,7 +750,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -759,7 +759,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al actualizar la observación',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -820,7 +820,7 @@
                         icon: 'success',
                         title: 'Exportado',
                         text: 'El archivo se ha descargado correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                 } else {
@@ -832,7 +832,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al exportar el reporte',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }

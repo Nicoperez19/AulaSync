@@ -41,14 +41,14 @@ function switchMainDashboardTab(tabName) {
     if (activeMainTab === tabName) return;
 
     document.querySelectorAll('.main-dashboard-tab-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-xs');
+        btn.classList.remove('bg-[#D12420]', 'text-white', 'shadow-xs');
         btn.classList.add('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
     });
 
     const activeBtn = document.getElementById(`main-tab-btn-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
-        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
+        activeBtn.classList.add('bg-[#D12420]', 'text-white', 'shadow-xs');
     }
 
     document.querySelectorAll('.main-dashboard-tab-content').forEach(content => {
@@ -134,7 +134,7 @@ function updateCarouselState(container, current, total) {
         const ind = document.getElementById(`indicator-${i}`);
         if (ind) {
             if (i === current) {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-[#D12420] w-6';
             } else {
                 ind.className = 'h-2 rounded-full transition-all duration-200 bg-slate-200 w-2 hover:bg-slate-300';
             }
@@ -149,6 +149,9 @@ function obtenerDiaActual() {
 
 function obtenerModuloActual(hora = null) {
     const diaActual = obtenerDiaActual();
+    if (diaActual === 'domingo') {
+        return null;
+    }
     const horaAhora = hora || new Date().toTimeString().slice(0, 8);
 
     if (!window.horariosModulos || !window.horariosModulos[diaActual]) {
@@ -301,7 +304,7 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     if (!silencioso) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 text-gray-400">
-                <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p class="text-sm">Cargando datos...</p>
             </div>
         `;
@@ -352,8 +355,8 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
     const btnHoy = document.getElementById('btn-status-hoy');
     const btnSemana = document.getElementById('btn-status-semana');
     const btnMes = document.getElementById('btn-status-mes');
-    const activeClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs bg-blue-600 text-white shadow-xs border-blue-600';
-    const inactiveClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-100';
+    const activeClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs bg-[#D12420] text-white shadow-xs border-[#D12420]';
+    const inactiveClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100';
 
     if (btnHoy) btnHoy.className = (rango === 'hoy') ? activeClasses : inactiveClasses;
     if (btnSemana) btnSemana.className = (rango === 'semana') ? activeClasses : inactiveClasses;
@@ -420,8 +423,8 @@ function initStatusClasesChart() {
     const ctx = canvas.getContext('2d');
 
     const chartData = totalClases === 0 ? [1] : [impartidasTotal, noRegistradas];
-    const chartColors = totalClases === 0 ? ['#e2e8f0'] : ['#10b981', '#ef4444'];
-    const chartHoverColors = totalClases === 0 ? ['#cbd5e1'] : ['#059669', '#dc2626'];
+    const chartColors = totalClases === 0 ? ['#e2e8f0'] : ['#10B981', '#D12420'];
+    const chartHoverColors = totalClases === 0 ? ['#cbd5e1'] : ['#059669', '#950101'];
 
     statusClasesChartInstance = new Chart(ctx, {
         type: 'doughnut',
@@ -447,7 +450,7 @@ function initStatusClasesChart() {
                     const idx = activeElements[0].index;
                     if (idx === 0) {
                         centerValor.textContent = `${impartidasTotal}`;
-                        centerValor.className = 'text-3xl font-black text-emerald-600 tracking-tight leading-none';
+                        centerValor.className = 'text-3xl font-black text-[#10B981] tracking-tight leading-none';
                         centerSub.textContent = `Impartidas (${pctImpartidas}%)`;
                         centerSub.className = 'text-[11px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
                         if (centerDetail) {
@@ -456,9 +459,9 @@ function initStatusClasesChart() {
                         }
                     } else {
                         centerValor.textContent = `${noRegistradas}`;
-                        centerValor.className = 'text-3xl font-black text-rose-600 tracking-tight leading-none';
+                        centerValor.className = 'text-3xl font-black text-[#D12420] tracking-tight leading-none';
                         centerSub.textContent = `Sin Registro (${pctNoRegistradas}%)`;
-                        centerSub.className = 'text-[11px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
+                        centerSub.className = 'text-[11px] font-extrabold text-[#950101] uppercase tracking-wide mt-1';
                         if (centerDetail) {
                             centerDetail.textContent = `de ${totalClases} clases totales`;
                             centerDetail.classList.remove('hidden');
@@ -468,7 +471,7 @@ function initStatusClasesChart() {
                     centerValor.textContent = `${pctImpartidas}%`;
                     centerValor.className = 'text-3xl font-black text-slate-800 tracking-tight leading-none';
                     centerSub.textContent = 'Cumplimiento';
-                    centerSub.className = 'text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
+                    centerSub.className = 'text-[11px] font-extrabold text-[#10B981] uppercase tracking-wide mt-1';
                     if (centerDetail) {
                         centerDetail.classList.add('hidden');
                         centerDetail.textContent = '';

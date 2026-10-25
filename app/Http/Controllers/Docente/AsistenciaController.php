@@ -10,6 +10,7 @@ use App\Models\Estudiante;
 use App\Models\ProfesorColaborador;
 use App\Models\Reserva;
 use App\Models\SesionAsistencia;
+use App\Models\Tenant;
 use App\Policies\ClaseDocentePolicy;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -115,7 +116,7 @@ class AsistenciaController extends Controller
                     'nombre' => $est->nombre,
                     'email' => $est->email,
                     'inscrito' => true,
-                    'presente' => $asistenciaExistente ? (bool) $asistenciaExistente->presente : true, // Si hay registro se respeta, si no, por defecto presente
+                    'presente' => $asistenciaExistente ? (bool) $asistenciaExistente->presente : false, // Por defecto desmarcado; se van marcando al escanear el QR o manualmente
                     'observacion' => $asistenciaExistente?->observacion,
                 ]);
             }
@@ -485,5 +486,277 @@ class AsistenciaController extends Controller
         ];
 
         return $dias[$fecha->dayOfWeekIso] ?? 'Lunes';
+    }
+
+    /**
+     * Endpoint API para el Agente C# en segundo plano.
+     * Registra la asistencia del estudiante vía lector QR y le envía el correo de confirmación.
+     */
+    public function registrarPorQr(Request $request)
+    {
+        $apiKeyRecibida = $request->header('X-API-KEY');
+        $clavesValidas = array_filter([
+            'SIA_QR_AGENT_SECRET_2026',
+            'AULASYNC_QR_AGENT_SECRET_2026',
+            config('app.qr_agent_key'),
+            env('QR_AGENT_KEY')
+        ]);
+
+        if (!in_array($apiKeyRecibida, $clavesValidas, true)) {
+            return response()->json(['error' => 'No autorizado. API Key inválida.'], 401);
+        }
+
+        $tenantId = $request->input('tenant_id') ?: $request->session()->get('tenant_id');
+        $tenant = $tenantId
+            ? Tenant::where('is_active', true)->find($tenantId)
+            : null;
+
+        if (!$tenant) {
+            return response()->json(['error' => 'No se pudo identificar una sede activa para registrar la asistencia.'], 422);
+        }
+
+        $tenant->makeCurrent();
+
+        $rawInput = trim((string) $request->input('raw_qr', ''));
+
+        // Extraer RUN del escaneo
+        $runEnviado = preg_replace('/\D/', '', (string) $request->input('run_estudiante', ''));
+        if (strlen($runEnviado) === 9) {
+            $runEnviado = substr($runEnviado, 0, -1);
+        }
+        $runLimpio = preg_match('/^\d{7,8}$/', $runEnviado) ? $runEnviado : null;
+
+        if ($runLimpio === null && preg_match('/(?:RUN|RUT)[^0-9]{0,8}(\d{1,2}\.?\d{3}\.?\d{3}|\d{7,8})/i', $rawInput, $matches)) {
+            $runLimpio = preg_replace('/\D/', '', $matches[1]);
+            $runLimpio = $matches[1];
+        } elseif ($runLimpio === null && preg_match('/[?&](?:run|rut|alumno|estudiante|id)=([^\s&]+)/i', $rawInput, $matches)) {
+            $parametro = preg_replace('/\D/', '', $matches[1]);
+            if (strlen($parametro) === 9) {
+                $parametro = substr($parametro, 0, -1);
+            }
+            $runLimpio = preg_match('/^\d{7,8}$/', $parametro) ? $parametro : null;
+        } elseif ($runLimpio === null && preg_match('/(\d{1,2}(?:\.\d{3}){2}|\d{7,8})/i', $rawInput, $matches)) {
+            $runLimpio = preg_replace('/\D/', '', $matches[1]);
+        }
+
+        if ($runLimpio === null && empty($rawInput)) {
+            return response()->json(['error' => 'RUN de estudiante no proporcionado.'], 422);
+        }
+        if ($runLimpio === null || !preg_match('/^\d{7,8}$/', $runLimpio)) {
+            return response()->json(['error' => 'No se pudo extraer un RUN válido del código QR.'], 422);
+        }
+
+        $hoy = Carbon::today();
+
+        // 1. Cargar la asignatura activa o colaboración temporal
+        $idAsignatura = $request->input('id_asignatura');
+        if (!$idAsignatura) {
+            return response()->json(['error' => 'No se recibió el ID de la asignatura activa.'], 422);
+        }
+
+        $esColaboracion = str_starts_with($idAsignatura, 'colab_');
+        $sesion = null;
+        $asignatura = null;
+        $colaborador = null;
+        $docente = null;
+        $nombreClase = 'Clase';
+        $sala = 'Sala no asignada';
+        $rolDocente = 'titular';
+        $planificaciones = collect();
+
+        if ($esColaboracion) {
+            $colabId = substr($idAsignatura, 6);
+            $colaborador = ProfesorColaborador::with(['asignatura.estudiantes', 'asignatura.carrera', 'profesor', 'planificaciones.espacio', 'planificaciones.modulo'])->find($colabId);
+            if (!$colaborador) {
+                return response()->json(['error' => 'La clase temporal o colaboración no existe en la sede activa.'], 404);
+            }
+            $asignatura = $colaborador->asignatura;
+            $nombreClase = $colaborador->nombre_asignatura;
+            $docente = $colaborador->profesor ?? $asignatura?->profesor;
+            $planificaciones = $colaborador->planificaciones->isNotEmpty() ? $colaborador->planificaciones : ($asignatura?->planificaciones ?? collect());
+            $espacio = $planificaciones->first()?->espacio;
+            $sala = $this->obtenerEspacioFormateado($espacio) ?? 'Sala no asignada';
+            $rolDocente = 'colaborador';
+        } else {
+            $asignatura = Asignatura::with(['planificaciones.espacio', 'planificaciones.modulo', 'profesor', 'estudiantes'])->find($idAsignatura);
+            if (!$asignatura) {
+                return response()->json(['error' => 'La asignatura indicada no existe en la sede activa.'], 404);
+            }
+            $nombreClase = $asignatura->nombre_asignatura;
+            $docente = $asignatura->profesor;
+            $planificaciones = $asignatura->planificaciones ?? collect();
+            $espacio = $planificaciones->first()?->espacio;
+            $sala = $this->obtenerEspacioFormateado($espacio) ?? 'Sala no asignada';
+        }
+
+        // CONDICIÓN 1: Validar si la asignatura tiene clases programadas el día de hoy
+        $diaHoyEspanol = $this->obtenerDiaSemanaEspanol($hoy);
+        $tieneClaseHoy = $planificaciones->contains(function ($p) use ($diaHoyEspanol) {
+            return $p->modulo && strcasecmp(\App\Helpers\ModulosHelper::normalizarDia($p->modulo->dia), $diaHoyEspanol) === 0;
+        });
+
+        // Si la planificación tiene módulos definidos y ninguno coincide con hoy, se rechaza
+        if ($planificaciones->isNotEmpty() && !$tieneClaseHoy) {
+            return response()->json([
+                'error' => "La clase '{$nombreClase}' no tiene módulos programados para el día de hoy ({$diaHoyEspanol})."
+            ], 422);
+        }
+
+        // CONDICIÓN 2: El estudiante DEBE estar inscrito en la asignatura
+        $estudiantesDisponibles = $asignatura ? $asignatura->estudiantes : collect();
+        $estudiante = null;
+
+        if ($estudiantesDisponibles && $estudiantesDisponibles->isNotEmpty()) {
+            $estudiante = $estudiantesDisponibles->first(function ($e) use ($runLimpio) {
+                $eRunLimpio = preg_replace('/\D/', '', (string)$e->run);
+                if (strlen($eRunLimpio) === 9) {
+                    $eRunLimpio = substr($eRunLimpio, 0, -1);
+                }
+                return $eRunLimpio === $runLimpio;
+            });
+        }
+
+        if (!$estudiante) {
+            return response()->json([
+                'error' => "El estudiante con RUN {$runLimpio} no está inscrito en la asignatura '{$nombreClase}'."
+            ], 422);
+        }
+
+        // Buscar o crear la sesión de asistencia para el día de hoy
+        $sesion = SesionAsistencia::firstOrCreate(
+            [
+                'fecha' => $hoy->toDateString(),
+                'id_asignatura' => $asignatura?->id_asignatura,
+                'id_profesor_colaborador' => $colaborador?->id,
+            ],
+            [
+                'id_espacio' => $espacio?->id_espacio,
+                'run_profesor' => $docente?->run ?? $asignatura?->run_profesor,
+                'rol_docente' => $rolDocente,
+                'registrado_por_run' => 'AGENTE_QR',
+                'actividad' => $esColaboracion ? ($colaborador->descripcion ?? 'Registro automático vía Lector QR') : 'Registro automático vía Lector QR',
+            ]
+        );
+
+        // CONDICIÓN 3: Si ya estaba registrado, confirmar éxito sin duplicar correo
+        $asistenciaPrevia = AsistenciaEstudiante::where('sesion_id', $sesion->id)
+            ->where('estudiante_id', $estudiante->id)
+            ->first();
+
+        if ($asistenciaPrevia && $asistenciaPrevia->presente) {
+            $horaPrevia = $asistenciaPrevia->updated_at ? $asistenciaPrevia->updated_at->format('H:i') : '';
+            $mensajeYaRegistrado = $horaPrevia
+                ? "Asistencia ya confirmada anteriormente a las {$horaPrevia} hrs."
+                : "La asistencia de {$estudiante->nombre} ya se encontraba registrada.";
+
+            return response()->json([
+                'exito' => true,
+                'ya_registrado' => true,
+                'mensaje' => $mensajeYaRegistrado,
+                'estudiante' => $estudiante->nombre,
+                'run' => $estudiante->run,
+                'clase' => $nombreClase,
+                'sala' => $sala,
+                'correo_enviado' => false,
+                'correo_destinatario' => $estudiante->email,
+            ]);
+        }
+
+        // Registrar asistencia como presente
+        AsistenciaEstudiante::updateOrCreate(
+            [
+                'sesion_id' => $sesion->id,
+                'estudiante_id' => $estudiante->id,
+            ],
+            [
+                'presente' => true,
+                'inscrito' => true,
+                'metodo' => 'qr',
+                'observacion' => 'Registrado vía Lector QR en segundo plano a las ' . now()->format('H:i:s'),
+            ]
+        );
+
+        // Enviar correo de confirmación al estudiante
+        $correoEnviado = false;
+        if (!empty($estudiante->email) && filter_var($estudiante->email, FILTER_VALIDATE_EMAIL)) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($estudiante->email)->send(
+                    new \App\Mail\AsistenciaRegistradaMail(
+                        $estudiante,
+                        $asignatura,
+                        $sesion,
+                        $docente,
+                        $nombreClase,
+                        $sala
+                    )
+                );
+                $correoEnviado = true;
+            } catch (\Throwable $mailEx) {
+                Log::warning('[AsistenciaController] Error enviando correo de asistencia: ' . $mailEx->getMessage());
+            }
+        }
+
+        return response()->json([
+            'exito' => true,
+            'mensaje' => 'Asistencia registrada exitosamente',
+            'estudiante' => $estudiante->nombre,
+            'run' => $estudiante->run,
+            'clase' => $nombreClase,
+            'sala' => $sala,
+            'correo_enviado' => $correoEnviado,
+            'correo_destinatario' => $estudiante->email,
+        ]);
+    }
+
+    public function estadoEnVivo(Request $request, string $id)
+    {
+        $fechaConsultaStr = $request->query('fecha');
+        $fechaConsulta = $fechaConsultaStr ? Carbon::parse($fechaConsultaStr) : Carbon::today();
+        $esColaboracion = str_starts_with($id, 'colab_');
+
+        $sesionQuery = SesionAsistencia::where('fecha', $fechaConsulta->format('Y-m-d'));
+        if ($esColaboracion) {
+            $colabId = substr($id, 6);
+            $colaborador = ProfesorColaborador::find($colabId);
+            if ($colaborador && !$colaborador->id_asignatura) {
+                $sesionQuery->where('id_profesor_colaborador', $colaborador->id);
+            } else {
+                $sesionQuery->where('id_asignatura', $colaborador?->id_asignatura);
+            }
+        } else {
+            $sesionQuery->where('id_asignatura', $id);
+        }
+
+        $sesion = $sesionQuery->with(['asistencias.estudiante'])->latest()->first();
+
+        if (!$sesion) {
+            return response()->json([
+                'ok' => true,
+                'hay_sesion' => false,
+                'presentes' => [],
+                'total_presentes' => 0,
+            ]);
+        }
+
+        $presentes = [];
+        foreach ($sesion->asistencias as $asist) {
+            if ($asist->presente) {
+                $presentes[] = [
+                    'estudiante_id' => $asist->estudiante_id,
+                    'run' => $asist->estudiante?->run,
+                    'nombre' => $asist->estudiante?->nombre,
+                    'inscrito' => (bool) $asist->inscrito,
+                    'metodo' => $asist->metodo,
+                    'hora' => $asist->updated_at ? $asist->updated_at->format('H:i:s') : null,
+                ];
+            }
+        }
+
+        return response()->json([
+            'ok' => true,
+            'hay_sesion' => true,
+            'presentes' => $presentes,
+            'total_presentes' => count($presentes),
+        ]);
     }
 }

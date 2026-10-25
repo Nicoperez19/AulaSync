@@ -18,6 +18,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 max-w-xs justify-end">
+                <a href="{{ route('estudiantes.carga-masiva.index') }}" class="inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-50 dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 border border-slate-200 hover:border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 text-sm font-semibold rounded-xl shadow-xs transition"><i class="fa-solid fa-users text-light-cloud-blue"></i><span>Cargar Estudiantes</span></a>
                 <x-button target="_blank" variant="add" class="gap-2 p-2"
                     x-on:click="$dispatch('open-modal', 'add-data')">
                     <x-icons.add class="w-6 h-6" aria-hidden="true" />
