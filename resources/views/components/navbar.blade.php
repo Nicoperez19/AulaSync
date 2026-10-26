@@ -13,7 +13,7 @@
         </button>
 
         <!-- Logo -->
-        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasRole('Administrador') ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
+        <a href="{{ auth()->user()->hasAnyRole(['Usuario', 'Estudiante en Práctica']) ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director']) ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
             <x-application-logo-navbar />
         </a>
     </div>
@@ -32,11 +32,6 @@
             <x-heroicon-o-moon x-show="!isDarkMode" aria-hidden="true" class="w-6 h-6" />
             <x-heroicon-o-sun x-show="isDarkMode" aria-hidden="true" class="w-6 h-6" />
         </x-button> --}}
-
-        <!-- Academic Period Reminder - For administrators -->
-        @hasanyrole('Supervisor|Administrador')
-            <x-academic-period-reminder />
-        @endhasanyrole
 
         <!-- Botón Acciones Rápidas - Para usuarios con permiso -->
         @can('acciones rapidas')

@@ -11,12 +11,6 @@
                     </p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-semibold text-light-cloud-blue">
-                    <i class="mr-1 fa-solid fa-calendar-days"></i>
-                    Período: {{ $semestre }}° Semestre {{ $anioActual }}
-                </span>
-            </div>
         </div>
     </x-slot>
 
@@ -33,34 +27,43 @@
         <div class="flex flex-col items-center justify-center w-full space-y-6"
             x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
             <!-- Tarjeta de filtros -->
-            <div class="w-full p-6 bg-white shadow-sm rounded-xl">
-                <form id="filtro-periodo-form" method="GET" action="" class="flex flex-col w-full gap-4"
-                    onsubmit="return false;">
-                    <div class="flex flex-col w-full gap-4 sm:flex-row sm:items-center">
-                        <div class="flex items-center flex-1 gap-4">
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold text-light-cloud-blue">Año:</span>
-                                <span
-                                    class="px-3 py-2 font-medium text-gray-700 border border-gray-300 rounded-lg bg-gray-50">
-                                    {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold text-light-cloud-blue">Semestre:</span>
-                                <select name="semestre" id="semestre"
-                                    class="px-4 py-2 pr-8 transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue">
-                                    @foreach($semestresDisponibles as $sem)
-                                        <option value="{{ $sem }}" {{ ($semestreFiltro ?: \App\Helpers\SemesterHelper::getCurrentSemester()) == $sem ? 'selected' : '' }}>
-                                            {{ $sem }}° Semestre
-                                        </option>
-                                    @endforeach
-                                </select>
+            <div class="w-full bg-white p-5 rounded-xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                        <i class="fas fa-filter text-[#950101]"></i> FILTROS
+                    </h3>
+                </div>
+
+                <form id="filtro-periodo-form" method="GET" action="" onsubmit="return false;">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Año</label>
+                            <div class="px-3 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-lg bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
                             </div>
                         </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Semestre</label>
+                            <select name="semestre" id="semestre"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                @foreach($semestresDisponibles as $sem)
+                                    <option value="{{ $sem }}" {{ ($semestreFiltro ?: \App\Helpers\SemesterHelper::getCurrentSemester()) == $sem ? 'selected' : '' }}>
+                                        {{ $sem }}° Semestre
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción separados por línea -->
+                    <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <a href="{{ url()->current() }}"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 cursor-pointer">
+                            <i class="fas fa-undo text-xs"></i> Limpiar
+                        </a>
                         <button id="aplicar-filtro-btn" type="button"
-                            class="flex items-center gap-2 px-6 py-2 font-semibold text-white transition rounded-lg bg-light-cloud-blue hover:bg-red-800">
-                            <i class="fa-solid fa-filter"></i>
-                            Aplicar Filtros
+                            class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2 cursor-pointer">
+                            <i class="fas fa-filter text-xs"></i> Aplicar filtros
                         </button>
                     </div>
                 </form>

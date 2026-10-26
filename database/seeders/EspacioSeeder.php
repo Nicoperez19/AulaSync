@@ -114,6 +114,13 @@ class EspacioSeeder extends Seeder
             $map[1] = data_get($piso1, 'id');
             $map[2] = data_get($piso2, 'id');
         }
+        // Mapeo para Concepción (CCP)
+        elseif ($tenant->sede_id === 'CCP') {
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $map[1] = data_get($piso1, 'id');
+            $map[2] = data_get($piso2, 'id');
+        }
         // Mapeo para Cañete (CT)
         elseif ($tenant->sede_id === 'CT') {
             $piso1 = $pisos->where('numero_piso', 1)->first();

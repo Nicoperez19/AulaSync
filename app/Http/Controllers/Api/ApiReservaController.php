@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Traits\RunNormalizer;
+use App\Helpers\SemesterHelper;
 
 class ApiReservaController extends Controller
 {
@@ -52,12 +53,19 @@ class ApiReservaController extends Controller
             $run = $usuario->run;
             $runLimpio = preg_replace('/[^0-9kK]/', '', $run);
             $ahoraMas60 = $ahora->copy()->addMinutes(60)->format('H:i:s');
+            $hoyFecha = $ahora->toDateString();
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             $tieneClaseProgramada = DB::connection('tenant')
                 ->table('planificacion_asignaturas as pa')
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->where('pa.id_espacio', $espacioId)
+                ->where('h.periodo', $periodoActual)
+                ->where(function ($q) use ($hoyFecha) {
+                    $q->whereNull('pa.fecha_fin_vigencia')
+                      ->orWhere('pa.fecha_fin_vigencia', '>=', $hoyFecha);
+                })
                 ->where(function ($q) use ($run, $runLimpio) {
                     $q->where('h.run_profesor', $run)
                       ->orWhere('h.run_profesor', $runLimpio)
@@ -74,12 +82,18 @@ class ApiReservaController extends Controller
                     ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
                     ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
                     ->where('ppc.id_espacio', $espacioId)
+                    ->where(function ($q) use ($hoyFecha) {
+                        $q->whereNull('ppc.fecha_fin_vigencia')
+                          ->orWhere('ppc.fecha_fin_vigencia', '>=', $hoyFecha);
+                    })
                     ->where(function ($q) use ($run, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $run)
                           ->orWhere('pc.run_profesor_colaborador', $runLimpio)
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
+                    ->where('pc.fecha_inicio', '<=', $hoyFecha)
+                    ->where('pc.fecha_termino', '>=', $hoyFecha)
                     ->whereIn('m.dia', $diasPosibles)
                     ->where('m.hora_inicio', '<=', $ahoraMas60)
                     ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
@@ -89,16 +103,24 @@ class ApiReservaController extends Controller
             if (!$tieneClaseProgramada) {
                 $tieneClaseProgramada = DB::connection('tenant')
                     ->table('planificacion_asignaturas as pa')
+                    ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                     ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                     ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
                     ->where('pa.id_espacio', $espacioId)
+                    ->where('h.periodo', $periodoActual)
+                    ->where(function ($q) use ($hoyFecha) {
+                        $q->whereNull('pa.fecha_fin_vigencia')
+                          ->orWhere('pa.fecha_fin_vigencia', '>=', $hoyFecha);
+                    })
                     ->where(function ($q) use ($run, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $run)
                           ->orWhere('pc.run_profesor_colaborador', $runLimpio)
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
+                    ->where('pc.fecha_inicio', '<=', $hoyFecha)
+                    ->where('pc.fecha_termino', '>=', $hoyFecha)
                     ->whereIn('m.dia', $diasPosibles)
                     ->where('m.hora_inicio', '<=', $ahoraMas60)
                     ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
@@ -144,6 +166,8 @@ class ApiReservaController extends Controller
             // Ventana: permite que el profesor llegue hasta 60 min antes del inicio del módulo
             // y que el módulo aún no haya terminado.
             $horaMaximaInicio = $horaActual->copy()->addMinutes(60)->toTimeString();
+            $hoyFecha = $horaActual->toDateString();
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             $tieneClase = DB::connection('tenant')
                 ->table('planificacion_asignaturas as pa')
@@ -151,6 +175,11 @@ class ApiReservaController extends Controller
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->whereIn('pa.id_espacio', $espaciosEquivalentes)
+                ->where('h.periodo', $periodoActual)
+                ->where(function ($q) use ($hoyFecha) {
+                    $q->whereNull('pa.fecha_fin_vigencia')
+                      ->orWhere('pa.fecha_fin_vigencia', '>=', $hoyFecha);
+                })
                 ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                     $q->where('h.run_profesor', $runNormalizado)
                       ->orWhere('h.run_profesor', $request->run)
@@ -172,6 +201,10 @@ class ApiReservaController extends Controller
                     ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
                     ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
                     ->whereIn('ppc.id_espacio', $espaciosEquivalentes)
+                    ->where(function ($q) use ($hoyFecha) {
+                        $q->whereNull('ppc.fecha_fin_vigencia')
+                          ->orWhere('ppc.fecha_fin_vigencia', '>=', $hoyFecha);
+                    })
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
                           ->orWhere('pc.run_profesor_colaborador', $request->run)
@@ -179,6 +212,8 @@ class ApiReservaController extends Controller
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
+                    ->where('pc.fecha_inicio', '<=', $hoyFecha)
+                    ->where('pc.fecha_termino', '>=', $hoyFecha)
                     ->whereIn('m.dia', $diasPosibles)
                     ->where('m.hora_inicio', '<=', $horaMaximaInicio)
                     ->where('m.hora_termino', '>=', $horaActualStr)
@@ -196,10 +231,16 @@ class ApiReservaController extends Controller
             if (!$tieneClase) {
                 $tieneClase = DB::connection('tenant')
                     ->table('planificacion_asignaturas as pa')
+                    ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                     ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                     ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
                     ->whereIn('pa.id_espacio', $espaciosEquivalentes)
+                    ->where('h.periodo', $periodoActual)
+                    ->where(function ($q) use ($hoyFecha) {
+                        $q->whereNull('pa.fecha_fin_vigencia')
+                          ->orWhere('pa.fecha_fin_vigencia', '>=', $hoyFecha);
+                    })
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
                           ->orWhere('pc.run_profesor_colaborador', $request->run)
@@ -207,6 +248,8 @@ class ApiReservaController extends Controller
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->where('pc.estado', 'activo')
+                    ->where('pc.fecha_inicio', '<=', $hoyFecha)
+                    ->where('pc.fecha_termino', '>=', $hoyFecha)
                     ->whereIn('m.dia', $diasPosibles)
                     ->where('m.hora_inicio', '<=', $horaMaximaInicio)
                     ->where('m.hora_termino', '>=', $horaActualStr)
@@ -357,6 +400,8 @@ class ApiReservaController extends Controller
                 );
 
                 DB::connection('tenant')->commit();
+
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
 
                 return response()->json([
                     'success' => true,
@@ -549,6 +594,9 @@ class ApiReservaController extends Controller
                 'modulos' => count($idsModulos),
                 'estado' => 'activa'
             ]);
+
+            // Enviar comprobante de reserva por correo
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
 
             return response()->json([
                 'success' => true,
@@ -811,13 +859,21 @@ class ApiReservaController extends Controller
             $horaActual = Carbon::now();
             $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
             $horaActualStr = $horaActual->format('H:i:s');
+            $hoyFecha = $horaActual->toDateString();
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
-            // 1️⃣ VALIDACIÓN: Verificar que hay clase programada en este espacio/horario
+            // 1️⃣ VALIDACIÓN: Verificar que hay clase programada en este espacio/horario del semestre activo
             // Esto asegura que el profesor que llega tiene horario en ese espacio
             $tieneClaseProgramada = DB::connection('tenant')->table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->where('pa.id_espacio', $request->espacio_id)
+                ->where('h.periodo', $periodoActual)
+                ->where(function ($q) use ($hoyFecha) {
+                    $q->whereNull('pa.fecha_fin_vigencia')
+                      ->orWhere('pa.fecha_fin_vigencia', '>=', $hoyFecha);
+                })
                 ->where('m.dia', $diaActual)
                 ->where(function ($query) use ($horaActualStr, $horaActual) {
                     $tiempoMas20 = $horaActual->copy()->addMinutes(20)->toTimeString();
@@ -965,6 +1021,8 @@ class ApiReservaController extends Controller
                 // 4️⃣ ACTUALIZAR ESTADO DEL ESPACIO
                 $espacio->estado = 'Ocupado';
                 $espacio->save();
+
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($nuevaReserva);
 
                 // 5️⃣ LIMPIAR REGISTROS DE CLASES NO REALIZADAS (si aplica)
                 if (method_exists(\App\Models\ClaseNoRealizada::class, 'limpiarRegistrosIncorrectos')) {

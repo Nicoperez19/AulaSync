@@ -1,6 +1,11 @@
 <nav aria-label="main" class="flex flex-col gap-1.5 py-1 text-white">
-    <!-- Portal Docente y Reportes de Asistencia - Para profesores o superadmin -->
-    @if(auth()->check() && (auth()->user()->hasRole('Profesor') || auth()->user()->is_superuser || auth()->user()->hasRole('Super Admin') || (string)auth()->user()->run === '19716146'))
+    @php
+        $esSuperAdmin = auth()->check() && (auth()->user()->is_superuser || auth()->user()->hasRole('Super Admin') || (string)auth()->user()->run === '19716146');
+        $esDocentePuro = auth()->check() && auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !auth()->user()->is_superuser;
+    @endphp
+
+    <!-- Portal Docente y Reportes de Asistencia - Ocultos para administradores; solo visibles para docentes y super admin -->
+    @if($esDocentePuro || $esSuperAdmin)
     <x-sidebar.link title="Portal Docente" href="{{ route('docente.dashboard') }}" :isActive="request()->routeIs('docente.dashboard') || request()->routeIs('docente.asistencia.*')">
         <x-slot name="icon">
             <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-graduation-cap text-lg flex items-center justify-center" aria-hidden="true"></i>
@@ -14,13 +19,9 @@
     </x-sidebar.link>
     @endif
 
-    @php
-        $esDocentePuro = auth()->check() && auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin']) && !auth()->user()->is_superuser;
-    @endphp
-
     @if(!$esDocentePuro)
-    <!-- Dashboard - Solo Administrador y Supervisor (NO Usuario) -->
-    @role('Administrador|Supervisor')
+    <!-- Dashboard - Solo Administrador, Supervisor y Director (NO Usuario) -->
+    @role('Administrador|Supervisor|Director')
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">
         <x-slot name="icon">
             <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
@@ -28,8 +29,8 @@
     </x-sidebar.link>
     @endrole
 
-    <!-- Monitoreo de Espacios - Todos los roles -->
-    @can('monitoreo de espacios')
+    <!-- Monitoreo de Espacios - Todos los roles autorizados -->
+    @if(auth()->user()->can('monitoreo de espacios') || auth()->user()->hasRole('Director'))
         <x-sidebar.link title="Monitoreo de Espacios"
             href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : '#' }}"
             :isActive="request()->routeIs('plano.show')"
@@ -38,12 +39,12 @@
                 <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
-    @endcan
+    @endif
 
     <!-- Horarios Espacios - Solo Administrador y Supervisor -->
     @can('horarios por espacios')
         <x-sidebar.link title="Horarios por Espacios"
-            href="{{ $tieneEspacios ? ($sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard'))) : '#' }}"
+            href="{{ $tieneEspacios ? ($sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasAnyRole(['Usuario', 'Estudiante en Práctica']) ? route('espacios.show') : route('dashboard'))) : '#' }}"
             :isActive="request()->routeIs('espacios.show')"
             onclick="{{ !$tieneEspacios ? 'mostrarSweetAlertNoEspacios(event)' : '' }}">
             <x-slot name="icon">
@@ -65,23 +66,31 @@
     @endcan
 
     <!-- Carga Masiva - Solo Administrador -->
-    @can('mantenedor de carga de datos')
+        @can('mantenedor de carga de datos')
         <x-sidebar.link title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')">
             <x-slot name="icon">
                 <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
+
+        @if(auth()->user()?->is_superuser || auth()->user()?->hasRole(['Super Admin', 'Administrador']))
+            <x-sidebar.link title="Carga de Estudiantes" href="{{ route('estudiantes.carga-masiva.index') }}" :isActive="request()->routeIs('estudiantes.carga-masiva.*')">
+                <x-slot name="icon">
+                    <i class="flex-shrink-0 w-6 h-6 text-center text-lg fa-solid fa-users-rectangle" aria-hidden="true"></i>
+                </x-slot>
+            </x-sidebar.link>
+        @endif
     @endcan
 
-    <!-- Tablero Académico - Todos los roles -->
-    @can('tablero academico')
+    <!-- Tablero Académico - Todos los roles autorizados -->
+    @if(auth()->user()->can('tablero academico') || auth()->user()->hasRole('Director'))
         <x-sidebar.link title="Tablero Académico" href="{{ route('modulos.actuales') }}"
             :isActive="request()->routeIs('modulos.actuales')">
             <x-slot name="icon">
                 <x-icons.table class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
-    @endcan
+    @endif
 
     <!-- Acciones Rápidas - Solo Administrador y Supervisor -->
     @can('admin panel')

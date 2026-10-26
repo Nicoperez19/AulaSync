@@ -14,11 +14,11 @@
 
             <div class="flex gap-2">
                 <a href="{{ route('reportes.uso-auditorio.export', ['format' => 'pdf']) }}?fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}"
-                   class="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                   class="btn btn-pdf px-4 py-2 text-sm font-semibold">
                     <i class="mr-2 fas fa-file-pdf"></i> Exportar PDF
                 </a>
                 <a href="{{ route('reportes.uso-auditorio.export', ['format' => 'excel']) }}?fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}"
-                   class="px-4 py-2 text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
+                   class="btn btn-excel px-4 py-2 text-sm font-semibold">
                     <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
                 </a>
             </div>
@@ -101,31 +101,31 @@
 
                 <div class="flex gap-2">
                     <button type="submit"
-                            class="px-4 py-2 text-white transition-colors bg-light-cloud-blue rounded-lg hover:bg-[#b10718]">
-                        <i class="mr-2 fas fa-search"></i> Filtrar
+                            class="px-4 py-2 text-white transition-colors bg-[#191919] rounded-lg hover:bg-black font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{{ route('reportes.uso-auditorio') }}"
-                       class="px-4 py-2 text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600">
-                        <i class="mr-2 fas fa-times"></i> Limpiar
+                       class="px-4 py-2 text-gray-700 transition-colors bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-undo"></i> Limpiar
                     </a>
                 </div>
             </form>
         </div>
 
         <!-- Tabla de Registros -->
-        <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left border-collapse">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                         <tr>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Fecha</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Auditorio</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Usuario</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200">Asignatura/Motivo</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200 text-center">Entrada</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200 text-center">Salida</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200 text-center">Duración</th>
-                            <th class="px-4 py-3 font-semibold text-gray-700 dark:text-gray-200 text-center">Estado</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Fecha</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Auditorio</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Usuario</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Asignatura/Motivo</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Entrada</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Salida</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Duración</th>
+                            <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Estado</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-700">

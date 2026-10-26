@@ -62,18 +62,14 @@
             {{-- Tab: Ausencias de Profesores --}}
             @can('gestionar licencias profesores')
             <div x-show="activeTab === 'ausencias'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
-                <div class="overflow-hidden bg-white rounded-lg shadow-lg">
-                    <livewire:licencias-profesores-table />
-                </div>
+                <livewire:licencias-profesores-table />
             </div>
             @endcan
 
             {{-- Tab: Recuperación de Clases --}}
             @can('gestionar recuperacion clases')
             <div x-show="activeTab === 'recuperacion'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
-                <div class="overflow-hidden bg-white rounded-lg shadow-lg">
-                    <livewire:recuperacion-clases-table />
-                </div>
+                <livewire:recuperacion-clases-table />
             </div>
             @endcan
         </div>

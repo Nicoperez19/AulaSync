@@ -24,28 +24,30 @@
     <!-- Título Clases Realizadas -->
     <div class="mb-4">
         <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
-            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            <i class="fas fa-calendar-check text-[#950101] text-xl"></i>
             <span>Clases Realizadas</span>
         </span>
     </div>
 
-    <!-- Navpills / Estadísticas (por fuera) -->
+    <!-- Navpills / Estadísticas (interactivas al hacer clic) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <!-- Total realizadas -->
-        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+        <!-- Total realizadas / Evaluadas -->
+        <button type="button" wire:click="$set('estado', '')"
+                class="text-left stat-card bg-slate-50 hover:bg-slate-100/70 border {{ $estado === '' ? 'border-[#D12420] ring-2 ring-[#D12420]/20' : 'border-[#C0C0C0]' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total realizadas</p>
-                    <p class="text-3xl font-black text-blue-950 mt-1">{{ $estadisticas['total'] }}</p>
+                    <p class="text-slate-700 text-xs font-semibold uppercase tracking-wider">Total clases</p>
+                    <p class="text-3xl font-black text-[#191919] mt-1">{{ $estadisticas['total'] }}</p>
                 </div>
-                <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
+                <div class="p-3 bg-slate-100 rounded-lg text-[#D12420]">
                     <i class="fas fa-calendar-check text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- No registradas -->
-        <div class="stat-card bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'no_realizada')"
+                class="text-left stat-card bg-red-50 hover:bg-red-100/70 border {{ $estado === 'no_realizada' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-red-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-red-700 text-xs font-semibold uppercase tracking-wider">No registradas</p>
@@ -55,23 +57,25 @@
                     <i class="fas fa-times-circle text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- Registradas -->
-        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'impartidas')"
+                class="text-left stat-card bg-indigo-50 hover:bg-indigo-100/70 border {{ in_array($estado, ['realizada', 'impartidas']) ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-indigo-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Registradas</p>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Registradas / Impartidas</p>
                     <p class="text-3xl font-black text-indigo-950 mt-1">{{ $estadisticas['realizadas'] ?? 0 }}</p>
                 </div>
                 <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
                     <i class="fas fa-check-circle text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
 
         <!-- Justificadas -->
-        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+        <button type="button" wire:click="$set('estado', 'justificado')"
+                class="text-left stat-card bg-amber-50 hover:bg-amber-100/70 border {{ $estado === 'justificado' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-amber-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Justificadas</p>
@@ -81,14 +85,14 @@
                     <i class="fas fa-shield-alt text-xl"></i>
                 </div>
             </div>
-        </div>
+        </button>
     </div>
 
     <!-- Sección FILTROS -->
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-filter text-blue-600"></i> FILTROS
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
             </h3>
         </div>
 
@@ -98,7 +102,7 @@
                 <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Semestre</label>
                 <select wire:model.live="periodo" 
                         id="periodo_filtro"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     @foreach($periodosDisponibles as $p)
                         <option value="{{ $p->codigo }}">
                             {{ $p->display_label }}
@@ -115,7 +119,7 @@
                     <input type="text" 
                            wire:model.live.debounce.800ms="search" 
                            id="search"
-                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]"
                            placeholder="Profesor, asignatura, RUN o espacio...">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
@@ -126,7 +130,7 @@
                 <label for="ua_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Unidad Académica</label>
                 <select wire:model.live="ua" 
                         id="ua_filtro"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todas las UAs</option>
                     @if(isset($unidadesAcademicas) && count($unidadesAcademicas) > 0)
                         @foreach($unidadesAcademicas as $u)
@@ -143,10 +147,12 @@
                 <label for="estado" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
                 <select wire:model.live.debounce.800ms="estado" 
                         id="estado"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todos</option>
                     <option value="no_realizada">No registrada</option>
+                    <option value="impartidas">Todas las impartidas / efectivas</option>
                     <option value="realizada">Registrada (Clase realizada)</option>
+                    <option value="recuperada">Recuperada</option>
                     <option value="pendiente">Pendiente de recuperación</option>
                     <option value="justificado">Justificado</option>
                 </select>
@@ -158,7 +164,7 @@
                 <input type="date" 
                        wire:model.live.debounce.800ms="fecha_inicio" 
                        id="fecha_inicio"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
 
             <!-- Hasta -->
@@ -167,7 +173,7 @@
                 <input type="date" 
                        wire:model.live.debounce.800ms="fecha_fin" 
                        id="fecha_fin"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
         </div>
 
@@ -178,16 +184,21 @@
                 <i class="fas fa-undo text-xs"></i> Limpiar
             </button>
             <button type="button" wire:click="aplicarFiltros" 
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
-                <i class="fas fa-check text-xs"></i> Aplicar filtros
+                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
             </button>
         </div>
     </div>
 
-    <!-- Botón Exportar -->
-    <div class="flex justify-end mb-4">
+    <!-- Botón Exportar y Auditoría -->
+    <div class="flex flex-wrap justify-end gap-2 mb-4">
+        <a href="{{ route('reportes.auditoria-clases.index') }}"
+           class="inline-flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+            <i class="fas fa-clipboard-user"></i>
+            <span>Registro de Auditoría</span>
+        </a>
         <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
-           class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las clases</span>
         </a>
@@ -218,18 +229,19 @@
                                 @endif
                             </p>
                             <p class="text-xs text-slate-500">
-                                Justifica en lote las clases seleccionadas con un único motivo y detalle.
+                                Acciones masivas para registrar o justificar las clases no registradas seleccionadas.
                             </p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
                         <button type="button" wire:click="limpiarSeleccion" 
-                                class="px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
-                            <i class="fas fa-times"></i> Cancelar
+                                class="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-300 rounded-md font-medium text-sm gap-2 inline-flex items-center justify-center shadow-sm px-4 py-2 cursor-pointer transition-all duration-150">
+                            <i class="fas fa-times"></i>
+                            <span>Cancelar</span>
                         </button>
-                        <button type="button" wire:click="abrirModalJustificarMasivo" 
-                                class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-medium rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-2 cursor-pointer">
+                        <button type="button" x-on:click="$dispatch('abrir-modal-masivo', { cantidad: {{ $selectAllFiltered ? $totalNoRealizadasFiltradas : count($selectedClases) }} })" 
+                                class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2 cursor-pointer">
                             <i class="fas fa-shield-alt text-sm"></i>
                             <span>Justificar Seleccionadas</span>
                         </button>
@@ -237,61 +249,39 @@
                 </div>
             @endif
 
-            <div class="bg-white shadow rounded-lg overflow-hidden">
-                {{-- Banner de Selección Global (Estilo Gmail) --}}
-                @if($selectAllPage && $totalNoRealizadasFiltradas > count($currentPageNoRealizadasKeys))
-                    <div class="bg-slate-100/70 border-b border-slate-200 text-slate-700 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-info-circle text-slate-500 text-sm"></i>
-                            @if($selectAllFiltered)
-                                <span>Están seleccionadas <strong>todas las {{ $totalNoRealizadasFiltradas }} clases no registradas</strong> de esta búsqueda.</span>
-                            @else
-                                <span>Has seleccionado las <strong>{{ count($currentPageNoRealizadasKeys) }}</strong> clases no registradas de esta página.</span>
-                                <button type="button" wire:click="seleccionarTodoElFiltro" class="font-semibold underline text-slate-900 hover:text-slate-700 cursor-pointer ml-1">
-                                    Seleccionar las {{ $totalNoRealizadasFiltradas }} clases encontradas en esta búsqueda
-                                </button>
-                            @endif
-                        </div>
-                        @if($selectAllFiltered)
-                            <button type="button" wire:click="limpiarSeleccion" class="text-xs font-medium text-slate-600 hover:text-slate-900 underline cursor-pointer">
-                                Deshacer selección global
-                            </button>
-                        @endif
-                    </div>
-                @endif
-
+            <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
                                 <th class="px-3 py-3 text-center w-10">
                                     <input type="checkbox" 
                                            wire:model.live="selectAllPage" 
-                                           class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer"
-                                           title="Seleccionar todas las clases no registradas de esta página"
+                                           class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer"
+                                           title="Seleccionar todas las clases no registradas"
                                            @if(empty($currentPageNoRealizadasKeys)) disabled @endif>
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-24" 
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer w-24" 
                                     wire:click="sortBy('fecha_clase')">
                                     Fecha
                                     @if($sortField === 'fecha_clase')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Profesor</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asignatura</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Espacio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Inicio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Fin</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-32">Profesor</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-40">Asignatura</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Espacio</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Mód. Inicio</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Mód. Fin</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer"
                                     wire:click="sortBy('estado')">
                                     Estado
                                     @if($sortField === 'estado')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Detección</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 sticky right-0 bg-gray-50">Acciones</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Detección</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[200px]">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -308,13 +298,13 @@
                                             <input type="checkbox" 
                                                    wire:model.live="selectedClases" 
                                                    value="{{ $clase['unique_key'] }}" 
-                                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer">
+                                                   class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
                                         @else
-                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden justificar clases no registradas">
+                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden seleccionar clases no registradas">
                                         @endif
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
-                                        <div class="flex items-center gap-1">
+                                        <div class="flex items-center gap-1 justify-center">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
                                             @if($clase['estado'] === 'Pendiente de Recuperación')
                                                 <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
@@ -364,6 +354,11 @@
                                                     <i class="fas fa-clock text-[10px]"></i>
                                                     Pendiente Recuperación
                                                 </span>
+                                            @elseif($clase['estado'] === 'Recuperada')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                                    <i class="fas fa-check-double text-[10px]"></i>
+                                                    Recuperada
+                                                </span>
                                             @elseif($clase['estado'] === 'Justificada' || $clase['estado'] === 'Feriado/Justificado')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                     {{ $clase['estado'] }}
@@ -381,47 +376,43 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-4 text-sm font-medium w-32 sticky right-0 bg-white">
-                                        @if(!empty($clase['id']) || !in_array($clase['estado'], ['Realizada', 'Feriado/Justificado']))
-                                            <div class="flex space-x-1">
-                                                @if($clase['estado'] === 'No Registrada')
-                                                    <div class="custom-tooltip">
-                                                        <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
-                                                                class="action-button reagendar p-1"
-                                                                title="Reagendar Clase">
-                                                            <i class="fas fa-calendar-plus icon-animate text-xs"></i>
-                                                        </button>
-                                                        <span class="tooltip-text">Reagendar</span>
-                                                    </div>
-                                                @endif
-                                                @if($clase['estado'] === 'Pendiente de Recuperación')
-                                                    <div class="custom-tooltip">
-                                                        <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
-                                                                class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
-                                                                title="Marcar como recuperada">
-                                                            <i class="fas fa-check-circle icon-animate text-xs"></i>
-                                                        </button>
-                                                        <span class="tooltip-text">Recuperada</span>
-                                                    </div>
-                                                @endif
-                                                <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
-                                                            class="action-button editar p-1"
-                                                            title="Editar">
-                                                        <i class="fas fa-edit icon-animate text-xs"></i>
-                                                    </button>
-                                                    <span class="tooltip-text">Editar</span>
-                                                </div>
-                                                <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
-                                                            class="action-button eliminar p-1"
-                                                            title="Eliminar">
-                                                        <i class="fas fa-trash icon-animate text-xs"></i>
-                                                    </button>
-                                                    <span class="tooltip-text">Eliminar</span>
-                                                </div>
-                                            </div>
-                                        @endif
+                                    <td class="px-4 py-4 text-center align-middle whitespace-nowrap">
+                                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                            @if($clase['estado'] === 'No Registrada')
+                                                <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition-colors shadow-xs"
+                                                        title="Reagendar Clase">
+                                                    <i class="fas fa-calendar-plus text-xs"></i>
+                                                    <span>Reagendar</span>
+                                                </button>
+                                            @endif
+                                            @if($clase['estado'] === 'Pendiente de Recuperación' || $clase['estado'] === 'No Registrada')
+                                                <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors shadow-xs"
+                                                        title="Marcar como recuperada">
+                                                    <i class="fas fa-check-circle text-xs"></i>
+                                                    <span>Recuperada</span>
+                                                </button>
+                                            @endif
+                                            <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-[#950101] transition-colors shadow-xs"
+                                                    title="Editar">
+                                                <i class="fas fa-edit text-xs"></i>
+                                                <span>Editar</span>
+                                            </button>
+                                            <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 border border-red-200 rounded-lg hover:bg-[#D12420] hover:text-white transition-colors shadow-xs"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash text-xs"></i>
+                                                <span>Eliminar</span>
+                                            </button>
+                                            <button wire:click="prepararAccion('historial', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors shadow-xs"
+                                                    title="Ver Historial de Auditoría">
+                                                <i class="fas fa-history text-xs"></i>
+                                                <span>Auditoría</span>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -447,10 +438,193 @@
                 @endif
             </div>
 
+            <!-- Modal Unificado de Acción Masiva (Diseño Institucional, Alpine + wire:ignore) -->
+            <div wire:ignore
+                 x-data="{
+                    open: false,
+                    cantidad: 0,
+                    tipo: 'justificar',
+                    motivoJ: 'Supervisión de Prácticas / Salida a Terreno',
+                    motivoR: 'Docente dictó la clase en aula (asistencia presencial)',
+                    otroJ: '',
+                    otroR: '',
+                    obs: '',
+                    sobrescribir: false,
+                    abrir(cant) {
+                        this.cantidad = cant;
+                        this.tipo = 'justificar';
+                        this.otroJ = ''; this.otroR = '';
+                        this.obs = ''; this.sobrescribir = false;
+                        this.open = true;
+                    },
+                    confirmar() {
+                        let motivo = this.tipo === 'justificar'
+                            ? (this.motivoJ === '__OTRO__' ? this.otroJ.trim() : this.motivoJ)
+                            : (this.motivoR === '__OTRO__' ? this.otroR.trim() : this.motivoR);
+                        if (!motivo) {
+                            Swal.fire({ title: 'Atención', text: 'Por favor especifica un motivo para la acción masiva.', icon: 'warning', confirmButtonColor: '#D12420' });
+                            return;
+                        }
+                        this.open = false;
+                        Swal.fire({
+                            title: this.tipo === 'justificar' ? 'Aplicando justificación masiva...' : 'Aplicando registro masivo...',
+                            text: `Procesando ${this.cantidad} clases, por favor espera...`,
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+                        if (this.tipo === 'justificar') {
+                            $wire.ejecutarJustificacionMasiva(motivo, this.obs.trim(), this.sobrescribir);
+                        } else {
+                            $wire.ejecutarRegistroMasivo(motivo, this.obs.trim(), this.sobrescribir);
+                        }
+                    }
+                 }"
+                 x-on:abrir-modal-masivo.window="abrir($event.detail.cantidad)"
+                 x-on:keydown.escape.window="open = false">
+                <div x-show="open" x-cloak x-transition.opacity
+                     class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
+                     x-on:click.self="open = false">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+                        <!-- Cabecera Institucional -->
+                        <div class="p-4 bg-[#D12420] text-white flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <div class="p-1.5 bg-white/20 rounded-lg">
+                                    <i class="fas fa-shield-alt text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold leading-tight">Gestión Masiva de Clases</h3>
+                                    <p class="text-xs text-white/80">Regularización o justificación masiva de asistencia docente</p>
+                                </div>
+                            </div>
+                            <button type="button" x-on:click="open = false" class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer">
+                                <i class="fas fa-times text-lg"></i>
+                            </button>
+                        </div>
+
+                        <!-- Cuerpo -->
+                        <div class="p-6 overflow-y-auto space-y-5 text-gray-800 text-sm">
+                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-medium">Clases seleccionadas para aplicar cambio</p>
+                                        <p class="text-base font-extrabold text-gray-900"><span x-text="cantidad"></span> clases no registradas</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 font-semibold rounded-full border border-amber-200">Acción Masiva</span>
+                            </div>
+
+                            <!-- Opciones -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Selecciona la acción a realizar <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div x-on:click="tipo = 'justificar'"
+                                         :class="tipo === 'justificar' ? 'border-slate-800 bg-slate-50/70' : 'border-gray-200 bg-white hover:border-slate-400'"
+                                         class="relative flex flex-col p-3.5 border-2 rounded-xl cursor-pointer transition-all">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                                                <i class="fas fa-shield-alt text-amber-600"></i> Justificar Ausencia
+                                            </span>
+                                            <span :class="tipo === 'justificar' ? 'border-slate-800 bg-slate-800' : 'border-gray-300 bg-white'"
+                                                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center">
+                                                <span x-show="tipo === 'justificar'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 leading-snug">Pasa a estado <strong>Justificada</strong>. No exige recuperación horaria de clase.</p>
+                                    </div>
+
+                                    <div x-on:click="tipo = 'registrar'"
+                                         :class="tipo === 'registrar' ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-200 bg-white hover:border-indigo-300'"
+                                         class="relative flex flex-col p-3.5 border-2 rounded-xl cursor-pointer transition-all">
+                                        <div class="flex items-center justify-between mb-1.5">
+                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-900">
+                                                <i class="fas fa-check-circle text-indigo-600"></i> Regularizar / Realizada
+                                            </span>
+                                            <span :class="tipo === 'registrar' ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'"
+                                                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center">
+                                                <span x-show="tipo === 'registrar'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                            </span>
+                                        </div>
+                                        <p class="text-xs text-gray-500 leading-snug">Pasa a estado <strong>Registrada</strong>. El docente sí dictó la clase (ej: firma manual).</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Motivo Justificar -->
+                            <div x-show="tipo === 'justificar'" class="space-y-2">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Motivo de la Justificación <span class="text-red-500">*</span></label>
+                                <select x-model="motivoJ" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 bg-white">
+                                    <option value="Supervisión de Prácticas / Salida a Terreno">Supervisión de Prácticas / Salida a Terreno</option>
+                                    <option value="Licencia Médica Docente">Licencia Médica Docente</option>
+                                    <option value="Comisión de Servicio / Capacitación Institucional">Comisión de Servicio / Capacitación Institucional</option>
+                                    <option value="Suspensión de Actividades Institucionales / Feriado">Suspensión de Actividades Institucionales / Feriado</option>
+                                    <option value="Problema Técnico o de Infraestructura en Aula">Problema Técnico o de Infraestructura en Aula</option>
+                                    <option value="Clase Realizada en Modalidad Online / Alternativa">Clase Realizada en Modalidad Online / Alternativa</option>
+                                    <option value="__OTRO__">Otro motivo (especificar abajo)...</option>
+                                </select>
+                                <input type="text" x-show="motivoJ === '__OTRO__'" x-model="otroJ" placeholder="Describe el motivo de la justificación..."
+                                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 mt-2">
+                            </div>
+
+                            <!-- Motivo Registrar -->
+                            <div x-show="tipo === 'registrar'" class="space-y-2">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Motivo de la Regularización <span class="text-red-500">*</span></label>
+                                <select x-model="motivoR" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white">
+                                    <option value="Docente dictó la clase en aula (asistencia presencial)">Docente dictó la clase en aula (asistencia presencial)</option>
+                                    <option value="Firma en libro de asistencia / Registro manual validado">Firma en libro de asistencia / Registro manual validado</option>
+                                    <option value="Falla técnica en escaneo de código QR en sala">Falla técnica en escaneo de código QR en sala</option>
+                                    <option value="Validación directa de Jefatura de Carrera / Dirección">Validación directa de Jefatura de Carrera / Dirección</option>
+                                    <option value="Recuperación de clase efectuada">Recuperación de clase efectuada</option>
+                                    <option value="__OTRO__">Otro motivo (especificar abajo)...</option>
+                                </select>
+                                <input type="text" x-show="motivoR === '__OTRO__'" x-model="otroR" placeholder="Describe el motivo de la regularización..."
+                                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 mt-2">
+                            </div>
+
+                            <!-- Observaciones -->
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    Observaciones / Respaldo <span class="text-gray-400 font-normal lowercase">(opcional)</span>
+                                </label>
+                                <textarea x-model="obs" rows="2" maxlength="1000" placeholder="Agrega notas, número de oficio, documento o antecedentes relevantes..."
+                                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 resize-none"></textarea>
+                            </div>
+
+                            <!-- Sobrescribir -->
+                            <label class="flex items-start gap-2.5 p-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer">
+                                <input type="checkbox" x-model="sobrescribir" class="mt-0.5 rounded border-gray-300 text-slate-800 focus:ring-slate-800">
+                                <span class="text-xs text-gray-600">
+                                    <strong>Sobrescribir observaciones previas:</strong> si no se marca, el texto se añadirá al final de las observaciones existentes.
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-end gap-3 rounded-b-2xl">
+                            <button type="button" x-on:click="open = false"
+                                    class="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-300 rounded-md font-medium text-sm gap-2 inline-flex items-center justify-center shadow-sm px-4 py-2 cursor-pointer transition-all duration-150">
+                                <i class="fas fa-times"></i>
+                                <span>Cancelar</span>
+                            </button>
+                            <button type="button" x-on:click="confirmar()"
+                                    :class="tipo === 'justificar' ? 'bg-slate-800 hover:bg-slate-900' : 'bg-indigo-600 hover:bg-indigo-700'"
+                                    class="inline-flex items-center justify-center px-4 py-2 text-white text-sm font-semibold rounded-md shadow-sm transition-all duration-150 gap-2 cursor-pointer">
+                                <i class="fas fa-check"></i>
+                                <span x-text="(tipo === 'justificar' ? 'Justificar ' : 'Registrar ') + cantidad + (cantidad === 1 ? ' Clase' : ' Clases')"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+@endif
 </div>
 
+@push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function initClasesNoRealizadasScripts() {
     // Listener para abrir modal automáticamente desde URL
     Livewire.on('auto-open-reagendar', (data) => {
         const id = data[0]?.id || data.id;
@@ -460,107 +634,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.Livewire.find('{{ $this->getId() }}').call('showReagendarModal', id);
             }, 500);
         }
-    });
-
-    // Listener para abrir modal de justificación masiva
-    Livewire.on('show-bulk-justify-modal', (data) => {
-        const payload = Array.isArray(data) ? data[0] : data;
-        const cantidad = payload?.cantidad || 0;
-
-        Swal.fire({
-            title: '<strong><i class="fas fa-shield-alt text-slate-700"></i> Justificación Masiva</strong>',
-            html: `
-                <div class="text-left space-y-4">
-                    <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg flex items-center gap-3">
-                        <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700">
-                            <i class="fas fa-tasks text-lg"></i>
-                        </div>
-                        <div>
-                            <p class="text-sm font-semibold text-slate-900">Vas a justificar ${cantidad} ${cantidad === 1 ? 'clase no registrada' : 'clases no registradas'}</p>
-                            <p class="text-xs text-slate-600">Todas pasarán al estado <strong>Justificada</strong> y se reflejarán en las estadísticas y reportes.</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Motivo Principal</label>
-                        <select id="swal-bulk-motivo-select" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-500">
-                            <option value="Supervisión de Prácticas / Terreno" selected>Supervisión de Prácticas / Terreno (Campos clínicos, visitas, prácticas)</option>
-                            <option value="Licencia Médica / Permiso Administrativo">Licencia Médica / Permiso Administrativo</option>
-                            <option value="Comisión de Servicio / Actividad Institucional">Comisión de Servicio / Actividad Institucional</option>
-                            <option value="Suspensión de Actividades Académicas">Suspensión de Actividades Académicas</option>
-                            <option value="Problema Técnico / Ajuste de Registro">Problema Técnico / Ajuste de Registro</option>
-                            <option value="__OTRO__">Otro motivo (especificar)...</option>
-                        </select>
-                        <input type="text" id="swal-bulk-motivo-custom" class="w-full p-2 text-sm border border-gray-300 rounded-lg mt-2 hidden" placeholder="Escribe el motivo personalizado...">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Observaciones / Detalle</label>
-                        <textarea id="swal-bulk-observaciones" rows="3" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-slate-400 focus:border-slate-500" placeholder="Ej: Docente asignado a supervisión de prácticas clínicas según programación del semestre..."></textarea>
-                        <p class="text-[11px] text-gray-500 mt-1">Este texto quedará registrado en las observaciones de cada una de las clases seleccionadas.</p>
-                    </div>
-
-                    <div class="pt-2 border-t border-gray-200">
-                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" id="swal-bulk-sobrescribir" class="rounded border-gray-300 text-slate-800 focus:ring-slate-500">
-                            <span class="text-xs text-gray-700">Reemplazar observaciones previas (si no se marca, se añadirá al final)</span>
-                        </label>
-                    </div>
-                </div>
-            `,
-            width: 580,
-            showCancelButton: true,
-            confirmButtonText: `<i class="fas fa-check-circle mr-1"></i> Justificar ${cantidad} ${cantidad === 1 ? 'Clase' : 'Clases'}`,
-            cancelButtonText: '<i class="fas fa-times mr-1"></i> Cancelar',
-            confirmButtonColor: '#1E293B',
-            cancelButtonColor: '#6B7280',
-            didOpen: () => {
-                const select = document.getElementById('swal-bulk-motivo-select');
-                const customInput = document.getElementById('swal-bulk-motivo-custom');
-                select.addEventListener('change', () => {
-                    if (select.value === '__OTRO__') {
-                        customInput.classList.remove('hidden');
-                        customInput.focus();
-                    } else {
-                        customInput.classList.add('hidden');
-                    }
-                });
-            },
-            preConfirm: () => {
-                const select = document.getElementById('swal-bulk-motivo-select');
-                const customInput = document.getElementById('swal-bulk-motivo-custom');
-                let motivo = select.value === '__OTRO__' ? customInput.value.trim() : select.value;
-                const observaciones = document.getElementById('swal-bulk-observaciones').value.trim();
-                const sobrescribir = document.getElementById('swal-bulk-sobrescribir').checked;
-
-                if (!motivo) {
-                    Swal.showValidationMessage('Por favor especifica un motivo');
-                    return false;
-                }
-
-                if (observaciones.length > 1000) {
-                    Swal.showValidationMessage('Las observaciones no pueden exceder 1000 caracteres');
-                    return false;
-                }
-
-                return { motivo, observaciones, sobrescribir };
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const { motivo, observaciones, sobrescribir } = result.value;
-
-                Swal.fire({
-                    title: 'Aplicando justificación masiva...',
-                    text: `Actualizando ${cantidad} clases, por favor espera.`,
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                window.Livewire.find('{{ $this->getId() }}').call('ejecutarJustificacionMasiva', motivo, observaciones, sobrescribir);
-            }
-        });
     });
 
     Livewire.on('show-edit-modal', (data) => {
@@ -603,8 +676,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-save"></i> Guardar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#8D8D8D',
             didOpen: () => {
                 document.getElementById('swal-estado').focus();
             },
@@ -660,8 +733,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     
-                    <div class="bg-blue-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-semibold text-blue-900 mb-2">Clase Original</h4>
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-4">
+                        <h4 class="font-semibold text-slate-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
                         <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
@@ -715,7 +788,7 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmButtonText: '<i class="fas fa-calendar-check"></i> Reagendar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
             confirmButtonColor: '#10B981',
-            cancelButtonColor: '#6B7280',
+            cancelButtonColor: '#8D8D8D',
             didOpen: async () => {
                 const dateInput = document.getElementById('swal-nueva-fecha');
                 const hoy = new Date().toISOString().split('T')[0];
@@ -952,8 +1025,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
         }).then((result) => {
             if (result.isConfirmed) {
                 window.Livewire.find('{{ $this->getId() }}').call('confirmDelete', clase.id);
@@ -985,9 +1058,65 @@ document.addEventListener('DOMContentLoaded', function() {
             text: message,
             icon: 'error',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#DC2626'
+            confirmButtonColor: '#D12420'
         });
     });
-});
+
+    Livewire.on('abrir-modal-historial-auditoria', (data) => {
+        const payload = Array.isArray(data) ? data[0] : data;
+        const historial = payload?.historial || [];
+        
+        let htmlContent = `
+            <div class="text-left text-xs text-slate-700 max-h-96 overflow-y-auto">
+                <div class="mb-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
+                    <p class="font-bold text-slate-900">${payload.profesor}</p>
+                    <p class="text-slate-600">${payload.asignatura}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Fecha de la clase: <strong>${payload.fecha}</strong></p>
+                </div>
+        `;
+        
+        if (historial.length === 0) {
+            htmlContent += `
+                <div class="text-center py-6 text-slate-400">
+                    <i class="fas fa-history text-2xl mb-2 text-slate-300"></i>
+                    <p>No se registran cambios previos para esta clase.</p>
+                </div>
+            `;
+        } else {
+            htmlContent += `<div class="space-y-2.5">`;
+            historial.forEach((item) => {
+                htmlContent += `
+                    <div class="p-3 bg-white border border-slate-200 rounded-xl shadow-2xs">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-extrabold text-slate-900 text-xs">${item.accion}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${item.fecha_hora}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600"><strong>Por:</strong> ${item.usuario} <span class="text-slate-400">(${item.rol})</span></p>
+                        <p class="text-[11px] text-slate-600"><strong>Transición:</strong> <span class="line-through text-slate-400">${item.estado_anterior}</span> &rarr; <span class="font-bold text-emerald-700">${item.estado_nuevo}</span></p>
+                        ${item.motivo ? `<p class="text-[11px] text-slate-800 mt-1"><strong>Motivo:</strong> ${item.motivo}</p>` : ''}
+                        ${item.observaciones ? `<p class="text-[10px] text-slate-500 mt-1 p-2 bg-slate-50 rounded-lg border border-slate-100 italic">${item.observaciones}</p>` : ''}
+                    </div>
+                `;
+            });
+            htmlContent += `</div>`;
+        }
+        
+        htmlContent += `</div>`;
+        
+        Swal.fire({
+            title: '<i class="fas fa-history text-slate-700 mr-2"></i> Historial de Auditoría',
+            html: htmlContent,
+            width: '600px',
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#8D8D8D',
+        });
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClasesNoRealizadasScripts);
+} else {
+    initClasesNoRealizadasScripts();
+}
 </script>
-@endif
+@endpush

@@ -1939,7 +1939,7 @@
                             text: 'Se ha registrado la clase automáticamente según tu programación.',
                             icon: 'success',
                             confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#059669',
+                            confirmButtonColor: '#10B981',
                             timer: 1500,
                             timerProgressBar: true,
                             showConfirmButton: false
@@ -2128,7 +2128,7 @@
                     text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
                     icon: 'error',
                     confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#dc2626',
+                    confirmButtonColor: '#D12420',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
@@ -2220,7 +2220,7 @@
                             text: 'Las llaves han sido devueltas correctamente.',
                             icon: 'success',
                             confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#059669',
+                            confirmButtonColor: '#10B981',
                             timer: 1500,
                             timerProgressBar: true,
                             showConfirmButton: false
@@ -2283,7 +2283,7 @@
                     text: resultadoVerificacion.mensaje,
                     icon: 'warning',
                     confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#F59E0B',
+                    confirmButtonColor: '#D12420',
                     timer: 2000,
                     timerProgressBar: true,
                     showConfirmButton: false
@@ -2324,7 +2324,7 @@
                     html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#059669',
+                    confirmButtonColor: '#10B981',
                     timer: 2500,
                     timerProgressBar: true,
                     showConfirmButton: false
@@ -2359,7 +2359,7 @@
                     </div>`,
                     icon: 'info',
                     confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#818CF8',
+                    confirmButtonColor: '#D12420',
                     timer: 3000,
                     timerProgressBar: true,
                     showConfirmButton: false
@@ -2404,8 +2404,8 @@
                     showCancelButton: true,
                     confirmButtonText: 'Sí, Reservar Espacio',
                     cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#D97706',
-                    cancelButtonColor: '#6B7280',
+                    confirmButtonColor: '#D12420',
+                    cancelButtonColor: '#8D8D8D',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 }).then(async (result) => {
@@ -2465,8 +2465,8 @@
                         showCancelButton: true,
                         confirmButtonText: botonConfirmar,
                         cancelButtonText: 'Cancelar',
-                        confirmButtonColor: '#059669',
-                        cancelButtonColor: '#6B7280',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#8D8D8D',
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             // Mostrar cargando
@@ -2545,7 +2545,7 @@
                     html: htmlContent,
                     icon: 'error',
                     confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#dc2626',
+                    confirmButtonColor: '#D12420',
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
@@ -4148,7 +4148,7 @@
                 text: 'Las llaves han sido devueltas correctamente.',
                 icon: 'success',
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#059669',
+                confirmButtonColor: '#10B981',
                 timer: 1500,
                 timerProgressBar: true,
                 showConfirmButton: false
@@ -4536,7 +4536,7 @@
                         html: mensaje,
                         icon: null,
                         confirmButtonText: '<i class="fas fa-check mr-2"></i>Entendido',
-                        confirmButtonColor: '#b91c1c',
+                        confirmButtonColor: '#D12420',
                         width: '550px',
                         background: 'transparent',
                         customClass: {
@@ -5511,7 +5511,7 @@
                 text: 'La reserva ha sido creada exitosamente.',
                 icon: 'success',
                 confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#059669',
+                confirmButtonColor: '#10B981',
                 timer: 1500,
                 timerProgressBar: true,
                 showConfirmButton: false
@@ -5547,7 +5547,7 @@
                 text: mensajeError,
                 icon: 'error',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#dc2626'
+                confirmButtonColor: '#D12420'
             });
 
             // Cerrar modal en caso de error
@@ -5578,6 +5578,7 @@
 
         function moduloActualNum(hora) {
             const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') return null;
             const horariosDia = horariosModulos[diaActual];
 
             if (!horariosDia) return null;
@@ -5602,6 +5603,7 @@
 
         function obtenerModuloParaReserva(hora) {
             const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') return null;
             const horariosDia = horariosModulos[diaActual];
 
             if (!horariosDia) return null;
@@ -5760,10 +5762,11 @@
                 horaMinimizadaElement.textContent = horaActual;
             }
 
+            const diaActual = obtenerDiaActual();
             const moduloActual = moduloActualNum(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
             if (moduloActualElement) {
-                moduloActualElement.textContent = moduloActual ? `Módulo actual: ${moduloActual}` : 'Módulo actual: N/A';
+                moduloActualElement.textContent = (diaActual === 'domingo' || !moduloActual) ? 'Módulo actual: -' : `Módulo actual: ${moduloActual}`;
             }
         }
 
@@ -5889,19 +5892,26 @@
                 }
             }
 
-            if (moduloActual && moduloActualElement && moduloHorarioElement) {
+            const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') {
+                if (moduloActualElement) {
+                    moduloActualElement.textContent = 'Módulo actual: -';
+                }
+                if (moduloHorarioElement) {
+                    moduloHorarioElement.textContent = 'Sin actividades';
+                }
+            } else if (moduloActual && moduloActualElement && moduloHorarioElement) {
                 moduloActualElement.textContent = `Módulo actual: ${moduloActual}`;
 
-                const diaActual = obtenerDiaActual();
-                const horarioModulo = horariosModulos[diaActual][moduloActual];
-                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
+                const horarioModulo = horariosModulos[diaActual]?.[moduloActual];
+                const horarioTexto = horarioModulo ? `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}` : '';
                 moduloHorarioElement.textContent = horarioTexto;
             } else {
                 if (moduloActualElement) {
                     if (moduloParaReserva) {
                         moduloActualElement.textContent = `Módulo actual: ${moduloParaReserva} (próximo)`;
                     } else {
-                        moduloActualElement.textContent = 'Módulo actual: N/A';
+                        moduloActualElement.textContent = 'Módulo actual: -';
                     }
                 }
                 if (moduloHorarioElement) {

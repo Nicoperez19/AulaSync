@@ -15,6 +15,12 @@ return [
      */
     'enabled' => env('MULTITENANCY_ENABLED', true),
 
+    /*
+     * Disable Spatie's default queue tenant-awareness listener since AulaSync
+     * uses its own custom App\Models\Tenant implementation on the 'tenant' connection.
+     */
+    'queues_are_tenant_aware_by_default' => false,
+
     /**
      * Tenant identification method
      * Options: 'subdomain', 'domain', 'header', 'session'

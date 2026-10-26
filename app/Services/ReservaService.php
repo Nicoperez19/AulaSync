@@ -519,7 +519,7 @@ class ReservaService
             $reservasCreadas[] = $reservaCreated;
 
             if ($indexFecha === 0) {
-                $this->enviarCorreoReserva($reservaCreated);
+                $this->enviarCorreoReserva($reservaCreated, $data['correo'] ?? null);
             }
 
             if ($indexFecha === 0) {
@@ -833,18 +833,20 @@ class ReservaService
     /**
      * Enviar comprobante de reserva por correo.
      */
-    public function enviarCorreoReserva(Reserva $reserva): void
+    public function enviarCorreoReserva(Reserva $reserva, ?string $emailFallback = null): void
     {
         try {
-            $destinatario = $this->resolverEmailReserva($reserva);
+            $reserva->loadMissing(['profesor', 'solicitante', 'espacio', 'asignatura']);
+
+            $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
 
             if (!$destinatario) {
                 Log::info("ℹ️ Reserva {$reserva->id_reserva}: no se encontró correo para enviar comprobante.");
                 return;
             }
 
-            Mail::to($destinatario)->queue(new \App\Mail\ConfirmacionReserva($reserva));
-            Log::info("📧 Comprobante de reserva {$reserva->id_reserva} encolado para {$destinatario}");
+            Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
+            Log::info("📧 Comprobante de reserva {$reserva->id_reserva} enviado a {$destinatario}");
         } catch (\Throwable $e) {
             Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
         }
@@ -856,14 +858,18 @@ class ReservaService
     public function resolverEmailReserva(Reserva $reserva): ?string
     {
         if ($reserva->run_profesor) {
-            $profesor = Profesor::where('run_profesor', $reserva->run_profesor)->first();
+            $profesor = $reserva->relationLoaded('profesor') && $reserva->profesor
+                ? $reserva->profesor
+                : Profesor::on('tenant')->where('run_profesor', $reserva->run_profesor)->first();
             if ($profesor && !empty($profesor->email)) {
                 return $profesor->email;
             }
         }
 
         if ($reserva->run_solicitante) {
-            $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
+            $solicitante = $reserva->relationLoaded('solicitante') && $reserva->solicitante
+                ? $reserva->solicitante
+                : Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
             if ($solicitante && !empty($solicitante->correo)) {
                 return $solicitante->correo;
             }

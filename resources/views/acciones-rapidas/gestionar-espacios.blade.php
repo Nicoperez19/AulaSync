@@ -107,91 +107,99 @@
         </div>
     </div>
 
-    <!-- 3. Filtros -->
-    <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
-        <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
-                    <select 
-                        id="filtro-estado-espacio"
-                        onchange="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="">Todos los estados</option>
-                        <option value="Disponible">Disponibles</option>
-                        <option value="Ocupado">Ocupados</option>
-                        <option value="Mantenimiento">En mantenimiento</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Piso</label>
-                    <select 
-                        id="filtro-piso-espacio"
-                        onchange="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="">Todos los pisos</option>
-                        <option value="1">Piso 1</option>
-                        <option value="2">Piso 2</option>
-                        <option value="3">Piso 3</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Búsqueda</label>
+    <!-- 3. Sección FILTROS -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
+            </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
+                <select 
+                    id="filtro-estado-espacio"
+                    onchange="filtrarEspacios()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los estados</option>
+                    <option value="Disponible">Disponibles</option>
+                    <option value="Ocupado">Ocupados</option>
+                    <option value="Mantenimiento">En mantenimiento</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Piso</label>
+                <select 
+                    id="filtro-piso-espacio"
+                    onchange="filtrarEspacios()"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los pisos</option>
+                    <option value="1">Piso 1</option>
+                    <option value="2">Piso 2</option>
+                    <option value="3">Piso 3</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Búsqueda</label>
+                <div class="relative">
                     <input 
                         type="text"
                         id="filtro-busqueda-espacio"
                         placeholder="Buscar por código o nombre..."
                         onkeyup="filtrarEspacios()"
-                        class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
-                </div>
-                
-                <div class="flex items-end">
-                    <button 
-                        onclick="cargarEspacios()"
-                        class="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors text-sm sm:text-base shadow-xs flex items-center justify-center">
-                        <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
-                        Actualizar
-                    </button>
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
             </div>
+        </div>
+
+        <!-- Botones de Acción separados por línea -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button 
+                type="button"
+                onclick="limpiarFiltrosEspacios()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+            <button 
+                type="button"
+                onclick="cargarEspacios()"
+                class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
+            </button>
         </div>
     </div>
 
     <!-- 4. Tabla de espacios -->
-    <div class="bg-white overflow-hidden shadow-xs border border-slate-200/80 rounded-2xl">
-        <div class="p-4 sm:p-6">
-            <div class="overflow-x-auto -mx-4 sm:mx-0">
-                <div class="inline-block min-w-full align-middle">
-                    <div class="overflow-hidden">
-                        <table class="min-w-full divide-y divide-slate-200">
-                            <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Código</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Nombre</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Tipo</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Piso</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Capacidad</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Estado</th>
-                                    <th class="px-3 sm:px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-espacios-body" class="bg-white divide-y divide-slate-200">
-                                <tr>
-                                    <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-slate-500">
-                                        <div class="flex flex-col items-center">
-                                            <i class="fa-solid fa-building text-6xl text-slate-300 mb-4"></i>
-                                            <p>Cargando espacios...</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                    <tr>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Código</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Nombre</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Tipo</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Piso</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Capacidad</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Estado</th>
+                        <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider whitespace-nowrap">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-espacios-body" class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    <tr>
+                        <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fa-solid fa-building text-6xl text-slate-300 mb-4"></i>
+                                <p>Cargando espacios...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -279,27 +287,27 @@ function mostrarEspaciosEnTabla(espacios) {
     }
 
     tbody.innerHTML = espacios.map(espacio => `
-        <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">${espacio.codigo}</td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">${espacio.nombre}</td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500">${espacio.tipo}</td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+        <tr class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
+            <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-gray-100 text-center align-middle">${espacio.codigo}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-800 dark:text-gray-200 text-center align-middle">${espacio.nombre}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300 text-center align-middle">${espacio.tipo}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-center align-middle">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                     Piso ${espacio.piso}
                 </span>
             </td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-900">${espacio.capacidad}</td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoClasses(espacio.estado)}">
+            <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-gray-800 dark:text-gray-200 text-center align-middle">${espacio.capacidad}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
+                <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoClasses(espacio.estado)}">
                     ${espacio.estado}
                 </span>
             </td>
-            <td class="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm font-medium">
-                <div class="flex flex-col sm:flex-row gap-2">
+            <td class="px-4 py-3 whitespace-nowrap text-center align-middle">
+                <div class="flex items-center justify-center gap-1.5">
                     ${espacio.estado !== 'Disponible' 
                         ? `<button 
                             onclick="cambiarEstadoEspacio('${espacio.codigo}', 'Disponible')"
-                            class="inline-flex items-center justify-center px-2 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 transition-colors whitespace-nowrap">
+                            class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-300 transition-colors shadow-xs">
                             <i class="fa-solid fa-unlock w-3 h-3 mr-1"></i>
                             Liberar
                         </button>`
@@ -307,7 +315,7 @@ function mostrarEspaciosEnTabla(espacios) {
                     }
                     <button 
                         onclick="cambiarEstadoEspacio('${espacio.codigo}', 'Mantenimiento')"
-                        class="inline-flex items-center justify-center px-2 py-1 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 transition-colors whitespace-nowrap">
+                        class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white border border-amber-300 transition-colors shadow-xs">
                         <i class="fa-solid fa-wrench w-3 h-3 mr-1"></i>
                         Mantenimiento
                     </button>
@@ -344,6 +352,15 @@ function actualizarEstadisticasEspacios(espacios) {
     document.getElementById('stats-total').textContent = total;
 }
 
+// Limpiar filtros
+function limpiarFiltrosEspacios() {
+    const estado = document.getElementById('filtro-estado-espacio'); if (estado) estado.value = '';
+    const piso = document.getElementById('filtro-piso-espacio'); if (piso) piso.value = '';
+    const busqueda = document.getElementById('filtro-busqueda-espacio'); if (busqueda) busqueda.value = '';
+    filtrarEspacios();
+}
+window.limpiarFiltrosEspacios = limpiarFiltrosEspacios;
+
 // Filtrar espacios
 function filtrarEspacios() {
     const estadoFiltro = document.getElementById('filtro-estado-espacio').value;
@@ -379,8 +396,8 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
             text: `¿Deseas cambiar el estado del espacio ${codigoEspacio} a ${nuevoEstado}?`,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#6b7280',
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#8D8D8D',
             confirmButtonText: 'Sí, cambiar',
             cancelButtonText: 'Cancelar'
         });
@@ -435,8 +452,8 @@ async function liberarTodosLosEspacios() {
         text: 'Esta acción liberará TODOS los espacios ocupados',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: '#10B981',
+        cancelButtonColor: '#8D8D8D',
         confirmButtonText: 'Sí, liberar todos',
         cancelButtonText: 'Cancelar'
     });

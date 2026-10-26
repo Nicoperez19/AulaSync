@@ -26,8 +26,6 @@
             </div>
         @endif
 
-        <div class="overflow-hidden bg-white rounded-lg shadow-lg">
-            <livewire:recuperacion-clases-table />
-        </div>
+        <livewire:recuperacion-clases-table />
     </div>
 </x-app-layout>

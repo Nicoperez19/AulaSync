@@ -71,7 +71,7 @@
                 </span>
                 <h3 class="text-lg font-bold text-gray-700">Registro de Accesos</h3>
             </div>
-            <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
+            <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-[#950101]"
                 variant="primary" href="{{ route('reportes.accesos') }}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                     <path fill-rule="evenodd"

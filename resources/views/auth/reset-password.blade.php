@@ -115,7 +115,7 @@
                             title: '¡Ups! Algo salió mal 😅',
                             text: data.message || 'Hubo un problema al restablecer tu contraseña. Inténtalo de nuevo.',
                             confirmButtonText: 'Entendido',
-                            confirmButtonColor: '#EF4444'
+                            confirmButtonColor: '#D12420'
                         });
                     }
                 })
@@ -126,7 +126,7 @@
                         title: 'Error de Conexión',
                         text: 'No se pudo conectar con el servidor. Verifica tu conexión e inténtalo de nuevo.',
                         confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#EF4444'
+                        confirmButtonColor: '#D12420'
                     });
                 });
             });

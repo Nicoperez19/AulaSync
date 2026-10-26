@@ -15,8 +15,13 @@
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Marca la casilla correspondiente para registrar la presencia del alumno en la sesión.</p>
         </div>
 
-        {{-- Contadores dinámicos --}}
+        {{-- Contadores dinámicos y último escaneo QR --}}
         <div class="flex flex-wrap items-center gap-2">
+            <div x-show="ultimoEscaneado" x-cloak class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold shadow-xs">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <i class="fa-solid fa-qrcode text-emerald-600"></i>
+                <span>Último QR: <strong x-text="ultimoEscaneado?.nombre"></strong></span>
+            </div>
             <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 text-xs font-semibold">
                 <i class="fa-solid fa-user-check"></i>
                 <span x-text="totalPresentes"></span> Presentes
@@ -78,7 +83,11 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                 {{-- Filas dinámicas existentes --}}
                 <template x-for="(est, index) in estudiantesFiltrados" :key="est.id || ('nuevo_' + index)">
-                    <tr class="hover:bg-gray-50/80 dark:hover:bg-dark-eval-2 transition" :class="est.presente ? 'bg-emerald-50/20 dark:bg-emerald-950/10' : ''">
+                    <tr class="hover:bg-gray-50/80 dark:hover:bg-dark-eval-2 transition-all duration-200" 
+                        :class="{
+                            'bg-emerald-50/25 dark:bg-emerald-950/15': est.presente && estudianteDestacado !== (est.id || est.run),
+                            'bg-emerald-100/70 dark:bg-emerald-900/40 ring-2 ring-emerald-500 font-semibold': estudianteDestacado === (est.id || est.run)
+                        }">
                         <td class="py-3 px-4 text-center">
                             <input type="hidden" :name="'asistencia[' + est.id + ']'" :value="est.presente ? '1' : '0'" :disabled="{{ $bloqueado ? 'true' : 'false' }}">
                             <label class="inline-flex items-center justify-center cursor-pointer">
@@ -183,6 +192,90 @@ function asistenciaListHandler() {
         nuevoNombre: '',
         estudiantes: @json($estudiantesData),
         nuevosEstudiantes: [],
+        ultimoEscaneado: null,
+        estudianteDestacado: null,
+
+        init() {
+            // Exponer método global para permitir marcado en tiempo real desde WebSocket, Polling o Lector QR
+            window.asistenciaMarcarRun = (run, nombre, metodo) => {
+                this.marcarPorRun(run, nombre, metodo);
+            };
+        },
+
+        normalizarRun(run) {
+            return String(run || '').toUpperCase().replace(/[^0-9K]/g, '');
+        },
+
+        coincideRun(runA, runB) {
+            const a = this.normalizarRun(runA);
+            const b = this.normalizarRun(runB);
+            if (!a || !b) return false;
+            if (a === b) return true;
+
+            // Comparación tolerando Dígito Verificador (ej: cuerpo de 8 dígitos vs 9 con DV)
+            if (a.length === b.length + 1 && a.startsWith(b)) return true;
+            if (b.length === a.length + 1 && b.startsWith(a)) return true;
+            if (a.length === 8 && b.length === 7 && a.startsWith(b)) return true;
+            if (b.length === 8 && a.length === 7 && b.startsWith(a)) return true;
+
+            return false;
+        },
+
+        marcarPorRun(runBuscado, nombreOpcional = null, metodo = 'QR') {
+            if (!runBuscado) return;
+            const runNorm = this.normalizarRun(runBuscado);
+
+            // 1. Buscar en lista oficial de estudiantes
+            let est = this.estudiantes.find(e => this.coincideRun(e.run, runNorm));
+            if (est) {
+                if (!est.presente) {
+                    est.presente = true;
+                    this.destacarEstudiante(est.id || est.run);
+                }
+                this.ultimoEscaneado = {
+                    nombre: est.nombre,
+                    run: est.run,
+                    hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                };
+                return;
+            }
+
+            // 2. Buscar en estudiantes agregados en caliente
+            let nuevo = this.nuevosEstudiantes.find(n => this.coincideRun(n.run, runNorm));
+            if (nuevo) {
+                nuevo.presente = true;
+                this.ultimoEscaneado = {
+                    nombre: nuevo.nombre,
+                    run: nuevo.run,
+                    hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                };
+                return;
+            }
+
+            // 3. Estudiante no listado: agregar automáticamente a la lista y marcar presente
+            const nuevoEst = {
+                run: runNorm,
+                nombre: nombreOpcional || ('Estudiante ' + runNorm),
+                presente: true,
+                inscrito: false
+            };
+            this.nuevosEstudiantes.push(nuevoEst);
+            this.destacarEstudiante(runNorm);
+            this.ultimoEscaneado = {
+                nombre: nuevoEst.nombre,
+                run: nuevoEst.run,
+                hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            };
+        },
+
+        destacarEstudiante(identificador) {
+            this.estudianteDestacado = identificador;
+            setTimeout(() => {
+                if (this.estudianteDestacado === identificador) {
+                    this.estudianteDestacado = null;
+                }
+            }, 3000);
+        },
 
         get estudiantesFiltrados() {
             if (!this.filtro.trim()) {
@@ -235,7 +328,7 @@ function asistenciaListHandler() {
             }
 
             // Verificar si ya existe en la lista
-            const yaExiste = this.estudiantes.some(e => e.run === run) || this.nuevosEstudiantes.some(e => e.run === run);
+            const yaExiste = this.estudiantes.some(e => this.coincideRun(e.run, run)) || this.nuevosEstudiantes.some(e => this.coincideRun(e.run, run));
             if (yaExiste) {
                 alert('Este RUN ya se encuentra en la lista de asistencia.');
                 return;
@@ -247,6 +340,13 @@ function asistenciaListHandler() {
                 presente: true,
                 inscrito: false
             });
+
+            this.destacarEstudiante(run);
+            this.ultimoEscaneado = {
+                nombre: nombre,
+                run: run,
+                hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+            };
 
             this.nuevoRun = '';
             this.nuevoNombre = '';

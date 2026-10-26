@@ -3,7 +3,7 @@
     <!-- Título Atrasos de Profesores -->
     <div class="mb-4">
         <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
-            <i class="fas fa-clock text-orange-500 text-xl"></i>
+            <i class="fas fa-clock text-[#950101] text-xl"></i>
             <span>Atrasos de Profesores</span>
         </span>
     </div>
@@ -41,7 +41,7 @@
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-filter text-orange-500"></i> FILTROS
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
             </h3>
         </div>
 
@@ -100,55 +100,55 @@
                 <i class="fas fa-undo text-xs"></i> Limpiar
             </button>
             <button type="button" wire:click="$refresh" 
-                    class="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
-                <i class="fas fa-check text-xs"></i> Aplicar filtros
+                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
             </button>
         </div>
     </div>
 
     <!-- Tabla -->
-    <div class="bg-white shadow rounded-lg overflow-hidden">
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                     <tr>
                         <th 
                             wire:click="sortBy('fecha')" 
-                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                            class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:bg-[#800101]"
                         >
-                            <div class="flex items-center gap-1">
+                            <div class="flex items-center gap-1 justify-center">
                                 Fecha
                                 @if($sortField === 'fecha')
-                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-orange-500"></i>
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                 @endif
                             </div>
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Profesor
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Asignatura
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Sala
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Módulo
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Hora Programada
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Hora Llegada
                         </th>
                         <th 
                             wire:click="sortBy('minutos_atraso')" 
-                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                            class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:bg-[#800101]"
                         >
-                            <div class="flex items-center gap-1">
+                            <div class="flex items-center gap-1 justify-center">
                                 Atraso
                                 @if($sortField === 'minutos_atraso')
-                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-orange-500"></i>
+                                    <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                 @endif
                             </div>
                         </th>
@@ -156,36 +156,36 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($atrasos as $atraso)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-center">
                                 {{ \Carbon\Carbon::parse($atraso->fecha)->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {{ $atraso->profesor->name ?? 'N/A' }}
                                 </div>
-                                <div class="text-xs text-gray-500">
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
                                     {{ $atraso->run_profesor }}
                                 </div>
                             </td>
-                            <td class="px-4 py-3">
-                                <div class="text-sm text-gray-900 max-w-xs truncate" title="{{ $atraso->asignatura->nombre_asignatura ?? 'N/A' }}">
+                            <td class="px-4 py-3 text-center">
+                                <div class="text-sm text-gray-900 dark:text-gray-200 max-w-xs mx-auto truncate" title="{{ $atraso->asignatura->nombre_asignatura ?? 'N/A' }}">
                                     {{ $atraso->asignatura->nombre_asignatura ?? 'N/A' }}
                                 </div>
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200 text-center">
                                 {{ $atraso->id_espacio }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                                 {{ $atraso->id_modulo }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                                 {{ $atraso->hora_programada_formateada }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
                                 {{ $atraso->hora_llegada_formateada }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
+                            <td class="px-4 py-3 whitespace-nowrap text-center">
                                 @php
                                     $minutos = $atraso->minutos_atraso ?? 0;
                                     $colorClass = $minutos <= 15 ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 

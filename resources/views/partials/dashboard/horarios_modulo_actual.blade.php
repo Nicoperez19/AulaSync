@@ -71,7 +71,7 @@ $coloresTipo = [
     </div>
     
     <!-- Botón Actualizar -->
-    <button onclick="cargarHorarioActual()" class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 transition-colors duration-200 shadow-2xs shrink-0 self-end xl:self-center" id="btn-actualizar">
+    <button onclick="cargarHorarioActual()" class="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-[#D12420] transition-colors duration-200 shadow-2xs shrink-0 self-end xl:self-center" id="btn-actualizar">
         <i id="btn-sync-icon" class="fas fa-sync-alt text-slate-500"></i>
         <span>Actualizar</span>
     </button>
@@ -230,11 +230,11 @@ $coloresTipo = [
                 <!-- Controles Prev / Next -->
                 @if($chunks->count() > 1)
                     <!-- Botón Anterior -->
-                    <button onclick="prevSlide()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-slate-700 p-2 rounded-full shadow-md border border-slate-200/90 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -ml-2 sm:-ml-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-prev" aria-label="Anterior">
+                    <button onclick="prevSlide()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-slate-700 p-2 rounded-full shadow-md border border-slate-200/90 hover:text-[#D12420] hover:scale-105 transition-all duration-150 z-10 -ml-2 sm:-ml-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-prev" aria-label="Anterior">
                         <i class="fas fa-chevron-left text-xs sm:text-sm"></i>
                     </button>
                     <!-- Botón Siguiente -->
-                    <button onclick="nextSlide()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-slate-700 p-2 rounded-full shadow-md border border-slate-200/90 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -mr-2 sm:-mr-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-next" aria-label="Siguiente">
+                    <button onclick="nextSlide()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-slate-700 p-2 rounded-full shadow-md border border-slate-200/90 hover:text-[#D12420] hover:scale-105 transition-all duration-150 z-10 -mr-2 sm:-mr-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-next" aria-label="Siguiente">
                         <i class="fas fa-chevron-right text-xs sm:text-sm"></i>
                     </button>
                 @endif
@@ -244,7 +244,7 @@ $coloresTipo = [
             @if($chunks->count() > 1)
                 <div class="flex justify-center items-center gap-2 mt-5" id="carousel-indicators">
                     @foreach($chunks as $index => $chunk)
-                        <button onclick="goToSlide({{ $index }})" class="h-2 rounded-full transition-all duration-200 {{ $index === 0 ? 'bg-blue-600 w-6' : 'bg-slate-200 w-2 hover:bg-slate-300' }}" id="indicator-{{ $index }}"></button>
+                        <button onclick="goToSlide({{ $index }})" class="h-2 rounded-full transition-all duration-200 {{ $index === 0 ? 'bg-[#D12420] w-6' : 'bg-slate-200 w-2 hover:bg-slate-300' }}" id="indicator-{{ $index }}"></button>
                     @endforeach
                 </div>
             @endif

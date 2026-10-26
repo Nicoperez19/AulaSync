@@ -32,14 +32,14 @@
                 <!-- Columna izquierda -->
                 <div class="flex flex-col items-center w-full p-6 text-center bg-white rounded-lg shadow-md md:w-1/3">
                     <div
-                        class="flex items-center justify-center w-32 h-32 mb-4 bg-red-100 border-4 border-red-200 rounded-full">
-                        <i class="text-5xl text-red-400 fa-solid fa-user"></i>
+                        class="flex items-center justify-center w-32 h-32 mb-4 bg-[#EDB9B9]/30 border-4 border-[#EDB9B9] rounded-full">
+                        <i class="text-5xl text-[#D12420] fa-solid fa-user"></i>
                     </div>
                     <h2 class="text-lg font-semibold">{{ $user->name }}</h2>
                     <p class="text-gray-500">{{ $user->email }}</p>
 
                     <button @click="open = true"
-                        class="flex items-center justify-center w-full gap-2 px-6 py-3 mt-6 text-base font-semibold text-white transition bg-red-600 border border-red-700 rounded-md shadow hover:bg-red-700">
+                        class="flex items-center justify-center w-full gap-2 px-6 py-3 mt-6 text-base font-semibold text-white transition bg-[#D12420] hover:bg-[#950101] border border-[#950101] rounded-xl shadow-sm hover:shadow active:scale-[0.98]">
                         <i class="fa-solid fa-pen-to-square"></i> Editar Perfil y Contraseña
                     </button>
                 </div>
@@ -99,12 +99,25 @@
 
         <!-- Modal Unificado -->
         <div x-show="open" style="display: none;"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            class="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black/60 backdrop-blur-xs"
+            x-transition:enter="transition ease-out duration-250"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            @keydown.escape.window="open = false">
             <div @click.away="open = false"
-                class="relative w-full max-w-2xl p-0 overflow-hidden bg-white rounded-b-lg shadow-xl rounded-t-2xl">
+                class="relative w-full max-w-2xl my-auto overflow-hidden bg-white shadow-2xl rounded-2xl max-h-[90vh] flex flex-col"
+                x-transition:enter="transition ease-out duration-250"
+                x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+                x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                x-transition:leave-end="opacity-0 scale-95 translate-y-2">
                 <!-- Header personalizado -->
                 <div
-                    class="relative flex items-center justify-between px-6 py-4 overflow-hidden bg-red-700 rounded-t-2xl">
+                    class="relative flex items-center justify-between px-6 py-4 overflow-hidden bg-[#D12420] shrink-0">
                     <!-- Círculos decorativos -->
                     <div class="absolute w-24 h-24 bg-white rounded-full -top-8 -left-8 opacity-20"></div>
                     <div class="absolute w-24 h-24 bg-white rounded-full -top-8 -right-8 opacity-20"></div>
@@ -117,7 +130,7 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
-                <div class="p-8">
+                <div class="p-6 sm:p-8 overflow-y-auto">
                     <form method="POST" action="{{ route('profile.update') }}" class="space-y-6">
                         @csrf
                         @method('patch')
@@ -183,8 +196,12 @@
                         </div>
                         <div class="flex items-center justify-center w-full gap-4 mt-8">
                             <x-button
-                                class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
-                                variant="primary">{{ __('Guardar cambios') }}</x-button>
+                                variant="success"
+                                size="base"
+                                class="gap-2 px-6 py-2.5 text-sm font-semibold shadow-sm hover:shadow active:scale-[0.98] transition-all">
+                                <i class="fa-solid fa-check"></i>
+                                <span>{{ __('Guardar cambios') }}</span>
+                            </x-button>
                         </div>
                     </form>
                 </div>

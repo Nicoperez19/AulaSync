@@ -40,7 +40,7 @@ class BienvenidaUsuarioMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bienvenido a AulaSync - Tus credenciales de acceso',
+            subject: 'Bienvenido a SIA - Tus credenciales de acceso',
         );
     }
 

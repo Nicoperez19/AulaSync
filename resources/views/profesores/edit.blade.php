@@ -12,11 +12,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('professors.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                <x-button href="{{ route('professors.index') }}" variant="back">
+                    <i class="mr-2 fa-solid fa-arrow-left"></i>
                     Volver
                 </x-button>
             </div>
@@ -79,7 +76,7 @@
                     <div>
                         <x-form.label for="tipo_profesor" :value="__('Tipo de Profesor')" />
                         <select name="tipo_profesor" id="tipo_profesor"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             <option value="" disabled>{{ __('Seleccionar Tipo') }}</option>
                             <option value="Profesor Responsable" {{ $profesor->tipo_profesor == 'Profesor Responsable' ? 'selected' : '' }}>Profesor Responsable</option>
@@ -91,7 +88,7 @@
                     <div>
                         <x-form.label for="id_universidad" :value="__('Universidad')" />
                         <select name="id_universidad" id="id_universidad"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m">
                             <option value="">{{ __('Seleccionar Universidad') }}</option>
                             @foreach($universidades as $universidad)
                                 <option value="{{ $universidad->id_universidad }}" 
@@ -107,7 +104,7 @@
                     <div>
                         <x-form.label for="id_facultad" :value="__('Facultad')" />
                         <select name="id_facultad" id="id_facultad"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m">
                             <option value="">{{ __('Seleccionar Facultad') }}</option>
                             @foreach($facultades as $facultad)
                                 <option value="{{ $facultad->id_facultad }}" 
@@ -121,7 +118,7 @@
                     <div>
                         <x-form.label for="id_carrera" :value="__('Carrera')" />
                         <select name="id_carrera" id="id_carrera"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m">
                             <option value="">{{ __('Seleccionar Carrera') }}</option>
                             @foreach($carreras as $carrera)
                                 <option value="{{ $carrera->id_carrera }}" 
@@ -136,7 +133,7 @@
                 <div>
                     <x-form.label for="id_area_academica" :value="__('Área Académica')" />
                     <select name="id_area_academica" id="id_area_academica"
-                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m">
                         <option value="">{{ __('Seleccionar Área Académica') }}</option>
                         @foreach($areasAcademicas as $areaAcademica)
                             <option value="{{ $areaAcademica->id_area_academica }}" 
@@ -147,8 +144,14 @@
                     </select>
                 </div>
 
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Guardar Cambios') }}</x-button>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <x-button href="{{ route('professors.index') }}" variant="cancel">
+                        {{ __('Cancelar') }}
+                    </x-button>
+                    <x-button type="submit" variant="save">
+                        <i class="mr-2 fa-solid fa-floppy-disk"></i>
+                        {{ __('Guardar Cambios') }}
+                    </x-button>
                 </div>
             </div>
         </form>
@@ -272,8 +275,8 @@
                     text: "Estás a punto de actualizar la información del profesor.",
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#6b7280',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#8D8D8D',
                     confirmButtonText: 'Sí, guardar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {

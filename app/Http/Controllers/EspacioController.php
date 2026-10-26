@@ -12,6 +12,7 @@ use App\Models\PlanificacionProfesorColaborador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\QRService;
+use App\Helpers\SemesterHelper;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 use App\Models\Sede;
@@ -927,11 +928,13 @@ class EspacioController extends Controller
     {
         try {
             $codigoDia = $request->input('codigo_dia', 'LU');
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
-            // Obtener las asignaturas del profesor para el día especificado
+            // Obtener las asignaturas del profesor para el día especificado en el semestre activo
             $asignaturas = Planificacion_Asignatura::with(['asignatura', 'modulo'])
-                ->whereHas('asignatura', function ($query) use ($runProfesor) {
-                    $query->where('run_profesor', $runProfesor);
+                ->whereHas('horario', function ($query) use ($runProfesor, $periodoActual) {
+                    $query->where('run_profesor', $runProfesor)
+                        ->where('periodo', $periodoActual);
                 })
                 ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->get()
@@ -983,6 +986,7 @@ class EspacioController extends Controller
 
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
             $diaActual = strtolower(now()->format('l'));
             // Convertir a nombres de días en español (como están en la BD)
             $diasEnEspanol = [
@@ -1020,6 +1024,7 @@ class EspacioController extends Controller
             // 2. Planificación actual del día (una query)
             $planActual = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
                     ->where('hora_termino', '>', $horaActual))
@@ -1039,6 +1044,7 @@ class EspacioController extends Controller
             // 3. Próxima planificación (una query)
             $planProxima = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
                 ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
                 ->orderBy('modulos.hora_inicio', 'asc')
@@ -1094,6 +1100,7 @@ class EspacioController extends Controller
 
             $planAnterior = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_termino', '<=', $horaCorteAnterior))
                 ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
                 ->orderBy('modulos.hora_termino', 'desc')
@@ -1477,10 +1484,13 @@ class EspacioController extends Controller
                 ];
                 $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-                // Cargar planificaciones del profesor para el día (usando la relación con horario)
+                $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+
+                // Cargar planificaciones del profesor para el día (usando la relación con horario del semestre activo)
                 $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
-                    ->whereHas('horario', function ($query) use ($runProfesor) {
-                        $query->where('run_profesor', $runProfesor);
+                    ->whereHas('horario', function ($query) use ($runProfesor, $periodoActual) {
+                        $query->where('run_profesor', $runProfesor)
+                            ->where('periodo', $periodoActual);
                     })
                     ->where('id_modulo', 'like', $codigoDia . '.%')
                     ->get();
@@ -1532,10 +1542,14 @@ class EspacioController extends Controller
                 'domingo' => 'DO'
             ];
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             // [OPTIMIZACIÓN] Buscar directamente la planificación que coincide con la hora actual en SQL
             $planificacion = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', function ($query) use ($periodoActual) {
+                    $query->where('periodo', $periodoActual);
+                })
                 ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                     $query->where('dia', $codigoDia)
                         ->where('hora_inicio', '<=', $horaActual)
@@ -1556,9 +1570,12 @@ class EspacioController extends Controller
                 ];
             }
 
-            // 2. Buscar en Planificaciones de Profesores Colaboradores (SQL filtrado)
+            // 2. Buscar en Planificaciones de Profesores Colaboradores (SQL filtrado por vigencia del semestre activo)
             $planColaborador = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('profesorColaborador', function ($query) {
+                    $query->activosYVigentes();
+                })
                 ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                     $query->where('dia', $codigoDia)
                         ->where('hora_inicio', '<=', $horaActual)
@@ -1657,6 +1674,7 @@ class EspacioController extends Controller
     private function obtenerProximaClase($idEspacio, $horaActual)
     {
         $fechaActual = now()->format('Y-m-d');
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
         // PRIMERO: Buscar reservas futuras del día actual.
         // Excluimos reservas espontáneas porque no tienen clase asociada y mostrarían "Reserva sin asignatura".
@@ -1696,6 +1714,9 @@ class EspacioController extends Controller
         // [OPTIMIZACIÓN] Filtrar directamente en SQL para mayor rapidez
         $proxima = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
+            ->whereHas('horario', function ($query) use ($periodoActual) {
+                $query->where('periodo', $periodoActual);
+            })
             ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                 $query->where('dia', $codigoDia)
                     ->where('hora_inicio', '>', $horaActual);
@@ -1721,6 +1742,7 @@ class EspacioController extends Controller
     private function obtenerClaseAnterior($idEspacio, $horaActual)
     {
         $fechaActual = now()->format('Y-m-d');
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
         // PRIMERO: Buscar reservas FINALIZADAS anteriores del día actual.
         // Excluimos reservas activas para no mostrar la reserva actual como "clase anterior".
@@ -1763,6 +1785,9 @@ class EspacioController extends Controller
 
         $anterior = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
+            ->whereHas('horario', function ($query) use ($periodoActual) {
+                $query->where('periodo', $periodoActual);
+            })
             ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                 $query->where('dia', $codigoDia)
                     ->where('hora_termino', '<=', $horaActual);

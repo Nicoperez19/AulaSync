@@ -27,7 +27,7 @@ class SedeSelectionController extends Controller
         ->with(['tenant', 'universidad', 'comuna']);
         
         // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
-        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
             // No aplicar filtros - ver todas las sedes activas
         }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
@@ -40,6 +40,11 @@ class SedeSelectionController extends Controller
         }
         
         $sedes = $query->get();
+
+        // Si solo hay una sede disponible y el usuario es Director, auto-seleccionar y redirigir
+        if ($sedes->count() === 1 && $user->hasRole('Director')) {
+            return redirect()->route('sedes.redirect', ['sede' => $sedes->first()->id_sede]);
+        }
 
         return view('sedes.selection', compact('sedes'));
     }
@@ -59,12 +64,16 @@ class SedeSelectionController extends Controller
         // DEBUG: Log para verificar
         $user = Auth::user();
 
-        // Si es Profesor, NUNCA debe ver el wizard
-        if ($user->hasRole('Profesor') && !$user->is_superuser && !$user->hasRole('Super Admin') && (string)$user->run !== '19716146') {
+        // Si es Profesor puro, NUNCA debe ver el wizard y va a su portal
+        if ($user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             if ($sede->tenant->needsInitialization()) {
-                return redirect()->route('docente.sede-no-inicializada');
+                return \Illuminate\Support\Facades\Route::has('docente.sede-no-inicializada')
+                    ? redirect()->route('docente.sede-no-inicializada')
+                    : redirect('/docente/sede-no-inicializada');
             }
-            return redirect()->route('docente.dashboard');
+            return \Illuminate\Support\Facades\Route::has('docente.dashboard')
+                ? redirect()->route('docente.dashboard')
+                : redirect('/docente');
         }
 
         // Verificar si el tenant necesita inicialización (para otros roles)
@@ -72,8 +81,8 @@ class SedeSelectionController extends Controller
             return redirect()->route('tenant.initialization.index');
         }
 
-        // Si es Control Docente, redirigir directamente al plano
-        if ($user->hasRole('Control Docente')) {
+        // Si es Control Docente puro, redirigir directamente al plano
+        if ($user->hasRole('Control Docente') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             return redirect()->route('plano.index');
         }
 

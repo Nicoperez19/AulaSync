@@ -222,14 +222,14 @@
                         Tipo de Espacio</h2>
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm text-left bg-white rounded-lg shadow-sm">
-                            <thead class="bg-white border-b border-gray-400">
+                            <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                                 <tr class="text-xs text-gray-600 uppercase">
-                                    <th class="px-6 py-4 font-semibold">Tipo de Espacio</th>
-                                    <th class="px-6 py-4 font-semibold">Total Espacios</th>
-                                    <th class="px-6 py-4 font-semibold">Total Reservas</th>
-                                    <th class="px-6 py-4 font-semibold">Horas Utilizadas</th>
-                                    <th class="px-6 py-4 font-semibold">Promedio de Uso</th>
-                                    <th class="px-6 py-4 font-semibold">Estado</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Tipo de Espacio</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Total Espacios</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Total Reservas</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Horas Utilizadas</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Promedio de Uso</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -266,9 +266,9 @@
                     
                     <div class="overflow-x-auto">
                         <table class="min-w-full text-sm text-left bg-white rounded-lg shadow-sm">
-                            <thead class="bg-white border-b-2 border-indigo-400">
+                            <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                                 <tr class="text-xs text-gray-600 uppercase">
-                                    <th class="px-6 py-4 font-semibold">Tipo de Espacio</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Tipo de Espacio</th>
                                     <th class="px-6 py-4 font-semibold text-center" colspan="3">Turno Diurno (8:00 - 19:00)</th>
                                     <th class="px-6 py-4 font-semibold text-center" colspan="3">Turno Vespertino (19:00 - 23:00)</th>
                                 </tr>
@@ -384,11 +384,11 @@
                     <!-- Botones de exportar a la derecha -->
                     <div class="flex items-center gap-2">
                         <button type="button" onclick="exportarHistoricoExcel()"
-                            class="px-4 h-[40px] py-2 text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            class="btn btn-excel px-4 h-[40px] py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-excel"></i>Exportar Excel
                         </button>
                         <button type="button" onclick="exportarHistoricoPDF()"
-                            class="px-4 h-[40px] py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                            class="btn btn-pdf px-4 h-[40px] py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-pdf"></i>Exportar PDF
                         </button>
                     </div>
@@ -404,38 +404,38 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full bg-white rounded-lg dark:bg-gray-800">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Profesor/Solicitante
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Espacio
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Fecha
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Hora entrada
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Hora salida
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Duración
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Tipo usuario
                                 </th>
                                 <th
-                                    class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                    class="px-4 py-3 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                     Estado
                                 </th>
                             </tr>
