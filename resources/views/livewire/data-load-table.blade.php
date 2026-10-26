@@ -124,10 +124,6 @@
                                     </button>
                                 </div>
                             </td>
-                                        <x-icons.delete class="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </td>
                         </tr>
                     @empty
                         <tr>

@@ -194,51 +194,6 @@
             };
         }
 
-        const searchInput = document.getElementById('search-profesor');
-        const searchSpinner = document.getElementById('search-spinner');
-        searchInput.addEventListener('input', debounce(function () {
-            const search = this.value;
-            const url = `{{ route('horarios.index') }}?search=${encodeURIComponent(search)}`;
-            searchSpinner.classList.remove('hidden');
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(html => {
-                    // Extraer solo el contenido de la lista de profesores
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const newList = doc.getElementById('profesores-lista');
-                    if (newList) {
-                        document.getElementById('profesores-lista').innerHTML = newList.innerHTML;
-                        // Volver a activar los eventos de click en las tarjetas y botones
-                        document.querySelectorAll('.profesor-card .ver-horario-btn').forEach(btn => {
-                            btn.addEventListener('click', function (e) {
-                                e.stopPropagation();
-                                const run = this.closest('.profesor-card').dataset.run;
-                                mostrarHorario(run);
-                            });
-                        });
-                    } else {
-                        // No se encontró el elemento profesores-lista en la respuesta
-                        document.getElementById('profesores-lista').innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos</div>';
-                    }
-                })
-                .catch(error => {
-                    // Error en la búsqueda
-                    document.getElementById('profesores-lista').innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos: ' + error.message + '</div>';
-                })
-                .finally(() => {
-                    searchSpinner.classList.add('hidden');
-                });
-        }, 100));
 
         // Colores pastel muy claros para bloques de clase
         const coloresClases = [
@@ -457,6 +412,12 @@
         }
         const searchInput = document.getElementById('search-profesor');
         if (searchInput) {
+            // Búsqueda en vivo con debounce al escribir
+            searchInput.addEventListener('input', debounce(function () {
+                aplicarFiltros();
+            }, 300));
+
+            // Búsqueda inmediata con tecla Enter
             searchInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
