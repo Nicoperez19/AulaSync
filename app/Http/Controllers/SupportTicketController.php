@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notificacion;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketReply;
 use App\Models\User;
@@ -18,7 +19,7 @@ class SupportTicketController extends Controller
     private function isStaff(User $user): bool
     {
         return $user->is_superuser
-            || (string) $user->run === '19716146'
+            || (string)$user->run === '19716146'
             || $user->hasRole('Técnico')
             || $user->hasRole('Administrador')
             || $user->hasRole('Super Admin')
@@ -32,8 +33,8 @@ class SupportTicketController extends Controller
      */
     private function scopeBySede($query, User $user): void
     {
-        $isGlobalAdmin = $user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador');
-        if (! $isGlobalAdmin && $user->id_sede) {
+        $isGlobalAdmin = $user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador');
+        if (!$isGlobalAdmin && $user->id_sede) {
             $query->where('id_sede', $user->id_sede);
         }
     }
@@ -50,7 +51,7 @@ class SupportTicketController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
+        $user      = Auth::user();
         $isTecnico = $this->isStaff($user);
 
         $query = SupportTicket::with(['user', 'assignedTo', 'replies'])
@@ -73,7 +74,7 @@ class SupportTicketController extends Controller
             $s = $request->search;
             $query->where(function ($q) use ($s) {
                 $q->where('title', 'like', "%{$s}%")
-                    ->orWhere('description', 'like', "%{$s}%");
+                  ->orWhere('description', 'like', "%{$s}%");
             });
         }
 
@@ -84,9 +85,9 @@ class SupportTicketController extends Controller
             $baseStats = SupportTicket::query();
             $this->scopeBySede($baseStats, $user);
             $stats = [
-                'open' => (clone $baseStats)->where('status', 'open')->count(),
+                'open'        => (clone $baseStats)->where('status', 'open')->count(),
                 'in_progress' => (clone $baseStats)->where('status', 'in_progress')->count(),
-                'closed' => (clone $baseStats)->where('status', 'closed')->count(),
+                'closed'      => (clone $baseStats)->where('status', 'closed')->count(),
             ];
         }
 
@@ -107,23 +108,23 @@ class SupportTicketController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:200',
+            'title'       => 'required|string|max:200',
             'description' => 'required|string|max:5000',
-            'priority' => 'required|in:low,medium,high',
+            'priority'    => 'required|in:low,medium,high',
         ], [
-            'title.required' => 'El título es obligatorio.',
+            'title.required'       => 'El título es obligatorio.',
             'description.required' => 'La descripción es obligatoria.',
-            'priority.required' => 'Selecciona una prioridad.',
+            'priority.required'    => 'Selecciona una prioridad.',
         ]);
 
-        $user = Auth::user();
+        $user   = Auth::user();
         $ticket = SupportTicket::create([
-            'user_id' => $user->run,
-            'id_sede' => $user->id_sede,
-            'title' => $validated['title'],
+            'user_id'     => $user->run,
+            'id_sede'     => $user->id_sede,
+            'title'       => $validated['title'],
             'description' => $validated['description'],
-            'priority' => $validated['priority'],
-            'status' => 'open',
+            'priority'    => $validated['priority'],
+            'status'      => 'open',
         ]);
 
         return redirect()
@@ -136,14 +137,14 @@ class SupportTicketController extends Controller
      */
     public function show(SupportTicket $ticket)
     {
-        $user = Auth::user();
+        $user      = Auth::user();
         $isTecnico = $this->isStaff($user);
 
         $canView = $ticket->user_id === $user->run
             || $user->is_superuser
-            || ($isTecnico && ($user->id_sede === $ticket->id_sede || ! $user->id_sede));
+            || ($isTecnico && ($user->id_sede === $ticket->id_sede || !$user->id_sede));
 
-        if (! $canView) {
+        if (!$canView) {
             abort(403, 'No tienes permiso para ver este ticket.');
         }
 
@@ -152,7 +153,7 @@ class SupportTicketController extends Controller
         $tecnicos = collect();
         if ($isTecnico) {
             $tecnicoQuery = User::role(['Técnico', 'Administrador'])->orderBy('name');
-            if (! $user->is_superuser && $user->id_sede) {
+            if (!$user->is_superuser && $user->id_sede) {
                 $tecnicoQuery->where('id_sede', $user->id_sede);
             }
             $tecnicos = $tecnicoQuery->get();
@@ -170,11 +171,11 @@ class SupportTicketController extends Controller
      */
     public function reply(Request $request, SupportTicket $ticket)
     {
-        $user = Auth::user();
+        $user      = Auth::user();
         $isTecnico = $this->isStaff($user);
-        $isOwner = $ticket->user_id === $user->run;
+        $isOwner   = $ticket->user_id === $user->run;
 
-        if (! $isTecnico && ! $isOwner) {
+        if (!$isTecnico && !$isOwner) {
             abort(403);
         }
 
@@ -190,22 +191,56 @@ class SupportTicketController extends Controller
 
         DB::transaction(function () use ($request, $ticket, $user, $isTecnico) {
             SupportTicketReply::create([
-                'ticket_id' => $ticket->id,
-                'user_id' => $user->run,
-                'message' => $request->message,
+                'ticket_id'      => $ticket->id,
+                'user_id'        => $user->run,
+                'message'        => $request->message,
                 'is_staff_reply' => $isTecnico,
             ]);
 
             // Si el técnico responde, pasa a "en proceso" automáticamente
             if ($isTecnico && $ticket->isOpen()) {
                 $ticket->update([
-                    'status' => 'in_progress',
+                    'status'      => 'in_progress',
                     'assigned_to' => $ticket->assigned_to ?? $user->run,
                 ]);
             }
         });
 
+        $this->notificarRespuesta($ticket, $user, $isTecnico);
+
         return back()->with('success', 'Respuesta enviada correctamente.');
+    }
+
+    /**
+     * Genera una notificación en el Centro de Notificaciones:
+     * - Si responde Soporte → avisa al dueño del ticket.
+     * - Si responde el dueño → avisa al técnico asignado.
+     * Solo se notifica a Administradores/Supervisores (quienes ven el Centro).
+     * Nunca debe romper el flujo de respuesta.
+     */
+    private function notificarRespuesta(SupportTicket $ticket, User $autor, bool $esStaff): void
+    {
+        try {
+            $runDestino = $esStaff ? $ticket->user_id : $ticket->assigned_to;
+
+            if (! $runDestino || (string) $runDestino === (string) $autor->run) {
+                return;
+            }
+
+            $destinatario = User::where('run', $runDestino)->first();
+            if (! $destinatario || ! $destinatario->hasAnyRole(['Administrador', 'Supervisor'])) {
+                return;
+            }
+
+            Notificacion::crearNotificacionSoporte(
+                $ticket,
+                $runDestino,
+                $esStaff ? 'Respuesta de Soporte' : 'Nueva respuesta en ticket',
+                sprintf('%s respondió el ticket «%s».', $autor->name, $ticket->title)
+            );
+        } catch (\Throwable $e) {
+            // Silencioso: la notificación es complementaria
+        }
     }
 
     /**
@@ -213,7 +248,7 @@ class SupportTicketController extends Controller
      */
     public function updateStatus(Request $request, SupportTicket $ticket)
     {
-        if (! $this->isStaff(Auth::user())) {
+        if (!$this->isStaff(Auth::user())) {
             abort(403);
         }
 
@@ -229,10 +264,10 @@ class SupportTicketController extends Controller
         $ticket->update($data);
 
         $label = match ($request->status) {
-            'open' => 'marcado como abierto',
+            'open'        => 'marcado como abierto',
             'in_progress' => 'marcado como en proceso',
-            'closed' => 'cerrado',
-            default => 'actualizado',
+            'closed'      => 'cerrado',
+            default       => 'actualizado',
         };
 
         return back()->with('success', "Ticket {$label} correctamente.");
@@ -243,7 +278,7 @@ class SupportTicketController extends Controller
      */
     public function assign(Request $request, SupportTicket $ticket)
     {
-        if (! $this->isStaff(Auth::user())) {
+        if (!$this->isStaff(Auth::user())) {
             abort(403);
         }
 
@@ -251,7 +286,7 @@ class SupportTicketController extends Controller
 
         $ticket->update([
             'assigned_to' => $request->assigned_to ?: null,
-            'status' => $request->assigned_to ? 'in_progress' : $ticket->status,
+            'status'      => $request->assigned_to ? 'in_progress' : $ticket->status,
         ]);
 
         return back()->with('success', 'Asignación actualizada.');
@@ -263,7 +298,7 @@ class SupportTicketController extends Controller
     public function close(SupportTicket $ticket)
     {
         $user = Auth::user();
-        if ($ticket->user_id !== $user->run && ! $this->isStaff($user)) {
+        if ($ticket->user_id !== $user->run && !$this->isStaff($user)) {
             abort(403);
         }
 
@@ -278,7 +313,7 @@ class SupportTicketController extends Controller
     public function reopen(SupportTicket $ticket)
     {
         $user = Auth::user();
-        if ($ticket->user_id !== $user->run && ! $this->isStaff($user)) {
+        if ($ticket->user_id !== $user->run && !$this->isStaff($user)) {
             abort(403);
         }
 

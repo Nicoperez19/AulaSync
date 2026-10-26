@@ -13,7 +13,6 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
-    use RunNormalizer;
 
     /**
      * Prepare the data for validation.

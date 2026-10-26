@@ -11,7 +11,6 @@ use Livewire\WithPagination;
 
 class LicenciasProfesoresTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

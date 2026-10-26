@@ -2,16 +2,16 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
+use App\Models\Tenant;
 
 class Notificacion extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
-
     protected $table = 'notificaciones';
 
     protected $fillable = [
@@ -32,9 +32,77 @@ class Notificacion extends Model
     ];
 
     /**
+     * Catálogo de tipos de notificación (etiqueta, ícono Font Awesome y color lógico).
+     * Los colores se traducen a clases Tailwind en la vista del Centro de Notificaciones.
+     */
+    public const TIPOS = [
+        'clase_no_realizada' => ['label' => 'Clases no realizadas', 'icon' => 'fa-triangle-exclamation', 'color' => 'red'],
+        'clase_reagendada' => ['label' => 'Reagendamientos', 'icon' => 'fa-calendar-check', 'color' => 'emerald'],
+        'sala_estudio_advertencia' => ['label' => 'Sala de estudio por vencer', 'icon' => 'fa-hourglass-half', 'color' => 'amber'],
+        'sala_estudio_vencida' => ['label' => 'Sala de estudio vencida', 'icon' => 'fa-clock', 'color' => 'orange'],
+        'soporte_respuesta' => ['label' => 'Soporte', 'icon' => 'fa-headset', 'color' => 'blue'],
+    ];
+
+    /**
+     * Metadatos del tipo (con valores por defecto para tipos desconocidos).
+     */
+    public static function metaTipo(?string $tipo): array
+    {
+        return static::TIPOS[$tipo] ?? [
+            'label' => $tipo ? ucfirst(str_replace('_', ' ', $tipo)) : 'General',
+            'icon' => 'fa-circle-info',
+            'color' => 'slate',
+        ];
+    }
+
+    /**
+     * URL de destino calculada dinámicamente según el tipo (evita URLs guardadas obsoletas).
+     */
+    public function urlDestino(): string
+    {
+        $datos = $this->datos_adicionales ?? [];
+
+        if (in_array($this->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
+            return route('quick-actions.gestionar-salas-estudio');
+        }
+
+        if ($this->tipo === 'soporte_respuesta' && ! empty($datos['id_ticket'])) {
+            return route('soporte.show', $datos['id_ticket']);
+        }
+
+        return route('recuperacion-clases.index');
+    }
+
+    /**
+     * Mensaje a mostrar. Reconstruye el texto con datos adicionales cuando están disponibles.
+     */
+    public function mensajeFormateado(): string
+    {
+        $datos = $this->datos_adicionales ?? [];
+
+        if ($this->tipo === 'clase_no_realizada' && isset($datos['id_espacio'])) {
+            return sprintf(
+                'El profesor no realizó la clase en %s el %s',
+                $datos['id_espacio'] ?? 'Desconocido',
+                $datos['fecha_clase'] ?? 'fecha desconocida'
+            );
+        }
+
+        if ($this->tipo === 'clase_reagendada' && isset($datos['id_espacio_reagendado'])) {
+            return sprintf(
+                'Clase reagendada para el %s en %s',
+                $datos['fecha_reagendada'] ?? 'fecha pendiente',
+                $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
+            );
+        }
+
+        return (string) $this->mensaje;
+    }
+
+    /**
      * Relación con el usuario
      */
-    public function usuario(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function usuario()
     {
         return $this->belongsTo(User::class, 'run_usuario', 'run');
     }
@@ -103,31 +171,31 @@ class Notificacion extends Model
             $usuarios = User::role(['Supervisor', 'Administrador'])->get();
 
             try {
-                \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: '.$usuarios->count());
+                \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
             } catch (\Throwable $logEx) {
                 // Ignorar errores de log — no bloquear el flujo por permisos de archivo
             }
 
             // Cargar relaciones necesarias con eager loading
             $claseNoRealizada->load(['asignatura', 'profesor', 'espacio', 'modulo']);
-
+            
             $asignatura = $claseNoRealizada->asignatura;
             $profesor = $claseNoRealizada->profesor;
             $espacio = $claseNoRealizada->espacio;
             $modulo = $claseNoRealizada->modulo;
-
+            
             // Obtener nombre completo del profesor con fallback a múltiples campos
             $nombreProfesor = 'Desconocido';
             if ($profesor) {
-                if (isset($profesor->name) && ! empty($profesor->name)) {
+                if (isset($profesor->name) && !empty($profesor->name)) {
                     $nombreProfesor = $profesor->name;
-                } elseif (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
-                    $nombreProfesor = trim($profesor->nombres.' '.$profesor->apellido_paterno);
-                } elseif (isset($profesor->run)) {
-                    $nombreProfesor = 'Profesor RUN: '.$profesor->run;
+                } else if (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
+                    $nombreProfesor = trim($profesor->nombres . ' ' . $profesor->apellido_paterno);
+                } else if (isset($profesor->run)) {
+                    $nombreProfesor = 'Profesor RUN: ' . $profesor->run;
                 }
             }
-
+            
             // Construir hora del módulo
             $horaModulo = 'hora no especificada';
             if ($modulo && $modulo->hora_inicio) {
@@ -165,14 +233,14 @@ class Notificacion extends Model
                 ]);
 
                 try {
-                    \Log::info('Notificación creada para usuario: '.$usuario->run);
+                    \Log::info('Notificación creada para usuario: ' . $usuario->run);
                 } catch (\Throwable $logEx) {
                     // Ignorar errores de log — no bloquear el flujo por permisos de archivo
                 }
             }
         } catch (\Exception $e) {
             try {
-                \Log::error('Error al crear notificación de clase no realizada: '.$e->getMessage());
+                \Log::error('Error al crear notificación de clase no realizada: ' . $e->getMessage());
             } catch (\Throwable $logEx) {
                 // Ignorar errores de log — no bloquear el flujo por permisos de archivo
             }
@@ -234,7 +302,7 @@ class Notificacion extends Model
                     ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
                     ->exists();
 
-                if (! $existe) {
+                if (!$existe) {
                     static::create([
                         'run_usuario' => $usuario->run,
                         'tipo' => 'sala_estudio_advertencia',
@@ -250,7 +318,7 @@ class Notificacion extends Model
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Error al crear notificación de advertencia en sala de estudio: '.$e->getMessage());
+            \Log::error('Error al crear notificación de advertencia en sala de estudio: ' . $e->getMessage());
         }
     }
 
@@ -271,7 +339,7 @@ class Notificacion extends Model
                     ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
                     ->exists();
 
-                if (! $existe) {
+                if (!$existe) {
                     static::create([
                         'run_usuario' => $usuario->run,
                         'tipo' => 'sala_estudio_vencida',
@@ -287,8 +355,59 @@ class Notificacion extends Model
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Error al crear notificación de vencimiento en sala de estudio: '.$e->getMessage());
+            \Log::error('Error al crear notificación de vencimiento en sala de estudio: ' . $e->getMessage());
         }
+    }
+
+
+    /**
+     * Crear una notificación de Soporte (respuesta a un ticket) en la BD de la sede del ticket.
+     *
+     * Los tickets viven en la BD central y pueden pertenecer a una sede distinta a la que
+     * el usuario que responde tiene activa, por lo que se cambia temporalmente de tenant
+     * para escribir en la base de datos correcta y luego se restaura el contexto original.
+     */
+    public static function crearNotificacionSoporte($ticket, $runDestino, string $titulo, string $mensaje): void
+    {
+        $tenantActual = app()->bound('tenant') ? Tenant::current() : null;
+
+        try {
+            $tenantDestino = $ticket->id_sede
+                ? Tenant::where('sede_id', $ticket->id_sede)->where('is_active', true)->first()
+                : null;
+
+            ($tenantDestino ?? $tenantActual)?->makeCurrent();
+
+            static::create([
+                'run_usuario' => $runDestino,
+                'tipo' => 'soporte_respuesta',
+                'titulo' => $titulo,
+                'mensaje' => $mensaje,
+                'url' => route('soporte.show', $ticket->id),
+                'datos_adicionales' => [
+                    'id_ticket' => $ticket->id,
+                    'titulo_ticket' => $ticket->title,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            try {
+                \Log::error('Error al crear notificación de soporte: ' . $e->getMessage());
+            } catch (\Throwable $logEx) {
+                // No bloquear el flujo por errores de log
+            }
+        } finally {
+            $tenantActual?->makeCurrent();
+        }
+    }
+
+    /**
+     * Eliminar todas las notificaciones leídas de un usuario
+     */
+    public static function eliminarLeidas($runUsuario): int
+    {
+        return static::where('run_usuario', $runUsuario)
+            ->leidas()
+            ->delete();
     }
 
     /**

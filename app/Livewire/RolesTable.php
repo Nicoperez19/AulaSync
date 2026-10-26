@@ -8,7 +8,6 @@ use Spatie\Permission\Models\Role;
 
 class RolesTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

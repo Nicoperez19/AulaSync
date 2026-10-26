@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class AsistentesAcademicosTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

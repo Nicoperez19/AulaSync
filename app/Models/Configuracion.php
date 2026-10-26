@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Configuracion extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

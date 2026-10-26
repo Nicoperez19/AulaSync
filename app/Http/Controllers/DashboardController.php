@@ -2,24 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\OcupacionSemanalExport;
-use App\Helpers\EspacioAliasHelper;
 use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
-use App\Models\ClaseNoRealizada;
-use App\Models\DiaFeriado;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Reserva;
-use App\Models\Tenant;
-use App\Services\OcupacionSemanalService;
-use App\Traits\RunNormalizer;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\ClaseNoRealizada;
+use App\Models\DiaFeriado;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use App\Traits\RunNormalizer;
+use App\Services\OcupacionSemanalService;
+use App\Exports\OcupacionSemanalExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DashboardController extends Controller
 {
@@ -54,7 +52,7 @@ class DashboardController extends Controller
             }
 
             // Si estamos en intervalo (break) entre módulos, considerar el próximo módulo
-            if (! $moduloActualNum) {
+            if (!$moduloActualNum) {
                 $moduloActualNum = ModulosHelper::obtenerModuloActual($horaAhora, $diaNormalizado);
                 if ($moduloActualNum && isset($horariosModulos[$diaNormalizado][$moduloActualNum])) {
                     $moduloActualHorario = $horariosModulos[$diaNormalizado][$moduloActualNum];
@@ -84,8 +82,8 @@ class DashboardController extends Controller
             ->where('id_modulo', $idModulo)
             ->whereHas('profesorColaborador', function ($q) use ($fechaHoy) {
                 $q->where('estado', 'activo')
-                    ->where('fecha_inicio', '<=', $fechaHoy)
-                    ->where('fecha_termino', '>=', $fechaHoy);
+                  ->where('fecha_inicio', '<=', $fechaHoy)
+                  ->where('fecha_termino', '>=', $fechaHoy);
             })
             ->get();
 
@@ -117,13 +115,13 @@ class DashboardController extends Controller
         $finModulo = $moduloActualHorario['fin'] ?? null;
         $margenMinutos = $moduloActualNum ? ModulosHelper::getMargenIngresoMinutos($idModulo) : 15;
         $horaLimiteTolerancia = ($inicioModulo && $moduloActualNum)
-            ? Carbon::parse($fechaHoy.' '.$inicioModulo)->addMinutes($margenMinutos)->format('H:i:s')
+            ? Carbon::parse($fechaHoy . ' ' . $inicioModulo)->addMinutes($margenMinutos)->format('H:i:s')
             : null;
 
         $asignacionesMapeadas = collect();
 
         foreach ($asignaciones as $asig) {
-            if (! $asig->espacio) {
+            if (!$asig->espacio) {
                 continue;
             }
 
@@ -147,15 +145,9 @@ class DashboardController extends Controller
 
             // 1. Buscar reserva activa en curso para este espacio/asignatura
             $reservaActiva = $reservasEspacio->first(function ($r) use ($horaAhora, $runProfesorNorm, $asig) {
-                if ($r->estado !== 'activa') {
-                    return false;
-                }
-                if ($r->hora > $horaAhora) {
-                    return false;
-                }
-                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) {
-                    return false;
-                }
+                if ($r->estado !== 'activa') return false;
+                if ($r->hora > $horaAhora) return false;
+                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) return false;
 
                 if ($r->id_asignatura && $asig->id_asignatura && $r->id_asignatura == $asig->id_asignatura) {
                     return true;
@@ -163,14 +155,13 @@ class DashboardController extends Controller
                 if ($runProfesorNorm && $r->run_profesor) {
                     return $this->normalizeRun($r->run_profesor) === $runProfesorNorm;
                 }
-
                 return true;
             });
 
             if ($reservaActiva) {
                 $estadoPresencia = 'en_sala';
                 $profesorPresente = true;
-                if ($reservaActiva->asignatura && ! empty($reservaActiva->asignatura->nombre_asignatura)) {
+                if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
                     $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
                 }
                 if ($reservaActiva->profesor) {
@@ -180,9 +171,7 @@ class DashboardController extends Controller
             } else {
                 // 2. Buscar si la clase ya fue impartida y finalizada hoy
                 $reservaFinalizada = $reservasEspacio->first(function ($r) use ($asig, $runProfesorNorm, $inicioModulo, $finModulo) {
-                    if ($r->estado !== 'finalizada') {
-                        return false;
-                    }
+                    if ($r->estado !== 'finalizada') return false;
 
                     // Coincidencia directa por asignatura
                     if ($r->id_asignatura && $asig->id_asignatura && $r->id_asignatura == $asig->id_asignatura) {
@@ -191,7 +180,7 @@ class DashboardController extends Controller
 
                     // Coincidencia por profesor y solapamiento horario con este módulo
                     $esMismoProfesor = $runProfesorNorm && $r->run_profesor && ($this->normalizeRun($r->run_profesor) === $runProfesorNorm);
-                    $solapaHorario = (! $inicioModulo || ! $finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
+                    $solapaHorario = (!$inicioModulo || !$finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
 
                     if ($esMismoProfesor && $solapaHorario) {
                         return true;
@@ -208,7 +197,7 @@ class DashboardController extends Controller
                     $estadoPresencia = 'finalizada';
                     $profesorPresente = true;
                     $horaSalida = $reservaFinalizada->hora_salida;
-                    if ($reservaFinalizada->asignatura && ! empty($reservaFinalizada->asignatura->nombre_asignatura)) {
+                    if ($reservaFinalizada->asignatura && !empty($reservaFinalizada->asignatura->nombre_asignatura)) {
                         $nombreAsignatura = $reservaFinalizada->asignatura->nombre_asignatura;
                     }
                     if ($reservaFinalizada->profesor) {
@@ -254,7 +243,7 @@ class DashboardController extends Controller
         }
 
         foreach ($asignacionesColaboradores as $asig) {
-            if (! $asig->espacio) {
+            if (!$asig->espacio) {
                 continue;
             }
 
@@ -279,15 +268,9 @@ class DashboardController extends Controller
 
             // 1. Buscar reserva activa en curso
             $reservaActiva = $reservasEspacio->first(function ($r) use ($horaAhora, $runProfesorNorm, $idAsignaturaColab) {
-                if ($r->estado !== 'activa') {
-                    return false;
-                }
-                if ($r->hora > $horaAhora) {
-                    return false;
-                }
-                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) {
-                    return false;
-                }
+                if ($r->estado !== 'activa') return false;
+                if ($r->hora > $horaAhora) return false;
+                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) return false;
 
                 if ($r->id_asignatura && $idAsignaturaColab && $r->id_asignatura == $idAsignaturaColab) {
                     return true;
@@ -295,14 +278,13 @@ class DashboardController extends Controller
                 if ($runProfesorNorm && $r->run_profesor) {
                     return $this->normalizeRun($r->run_profesor) === $runProfesorNorm;
                 }
-
                 return true;
             });
 
             if ($reservaActiva) {
                 $estadoPresencia = 'en_sala';
                 $profesorPresente = true;
-                if ($reservaActiva->asignatura && ! empty($reservaActiva->asignatura->nombre_asignatura)) {
+                if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
                     $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
                 }
                 if ($reservaActiva->profesor) {
@@ -312,16 +294,14 @@ class DashboardController extends Controller
             } else {
                 // 2. Buscar si ya fue finalizada hoy
                 $reservaFinalizada = $reservasEspacio->first(function ($r) use ($idAsignaturaColab, $runProfesorNorm, $inicioModulo, $finModulo) {
-                    if ($r->estado !== 'finalizada') {
-                        return false;
-                    }
+                    if ($r->estado !== 'finalizada') return false;
 
                     if ($r->id_asignatura && $idAsignaturaColab && $r->id_asignatura == $idAsignaturaColab) {
                         return true;
                     }
 
                     $esMismoProfesor = $runProfesorNorm && $r->run_profesor && ($this->normalizeRun($r->run_profesor) === $runProfesorNorm);
-                    $solapaHorario = (! $inicioModulo || ! $finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
+                    $solapaHorario = (!$inicioModulo || !$finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
 
                     if ($esMismoProfesor && $solapaHorario) {
                         return true;
@@ -338,7 +318,7 @@ class DashboardController extends Controller
                     $estadoPresencia = 'finalizada';
                     $profesorPresente = true;
                     $horaSalida = $reservaFinalizada->hora_salida;
-                    if ($reservaFinalizada->asignatura && ! empty($reservaFinalizada->asignatura->nombre_asignatura)) {
+                    if ($reservaFinalizada->asignatura && !empty($reservaFinalizada->asignatura->nombre_asignatura)) {
                         $nombreAsignatura = $reservaFinalizada->asignatura->nombre_asignatura;
                     }
                     if ($reservaFinalizada->profesor) {
@@ -384,9 +364,9 @@ class DashboardController extends Controller
         // Agregar espacios que no tienen planificación en este módulo pero sí una reserva activa en curso
         $espaciosConAsignacion = $asignacionesMapeadas->pluck('espacio.id_espacio')->filter()->toArray();
         foreach ($reservasActivasHoy as $idEspacio => $reservas) {
-            if (! in_array($idEspacio, $espaciosConAsignacion)) {
+            if (!in_array($idEspacio, $espaciosConAsignacion)) {
                 $reservaExtra = $reservas->first();
-                $espacioExtra = $reservaExtra->espacio ?? Espacio::with('piso')->where('id_espacio', $idEspacio)->first();
+                $espacioExtra = $reservaExtra->espacio ?? \App\Models\Espacio::with('piso')->where('id_espacio', $idEspacio)->first();
                 if ($espacioExtra) {
                     $asignacionesMapeadas->push((object) [
                         'espacio' => $espacioExtra,
@@ -403,7 +383,7 @@ class DashboardController extends Controller
         }
 
         // Ventana de 15 minutos para clases próximas (coherente con Plano Digital)
-        $horaLimiteProxima = Carbon::parse($fechaHoy.' '.$horaAhora)->addMinutes(15)->format('H:i:s');
+        $horaLimiteProxima = Carbon::parse($fechaHoy . ' ' . $horaAhora)->addMinutes(15)->format('H:i:s');
         $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
         $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
@@ -423,7 +403,7 @@ class DashboardController extends Controller
                     ->where('hora_inicio', '>=', $horaAhora)
                     ->where('hora_inicio', '<=', $horaLimiteProxima);
             })
-            ->whereHas('profesorColaborador', fn ($q) => $q->where('estado', 'activo')
+            ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
                 ->where('fecha_inicio', '<=', $fechaHoy)
                 ->where('fecha_termino', '>=', $fechaHoy))
             ->get();
@@ -431,7 +411,7 @@ class DashboardController extends Controller
         // Mapear identificadores de espacios ya procesados (incluyendo alias equivalentes)
         $espaciosProcesados = [];
         foreach ($asignacionesMapeadas as $asigItem) {
-            if (! empty($asigItem->espacio?->id_espacio)) {
+            if (!empty($asigItem->espacio?->id_espacio)) {
                 foreach (EspacioAliasHelper::obtenerEquivalentes($asigItem->espacio->id_espacio) as $alias) {
                     $espaciosProcesados[strtoupper($alias)] = true;
                 }
@@ -471,7 +451,6 @@ class DashboardController extends Controller
                     'hora_salida' => null,
                     'hora_inicio_proxima' => null,
                 ]);
-
                 continue;
             }
 
@@ -481,7 +460,7 @@ class DashboardController extends Controller
             });
 
             if ($proxReg) {
-                $horaIni = ! empty($proxReg->modulo?->hora_inicio) ? substr($proxReg->modulo->hora_inicio, 0, 5) : '';
+                $horaIni = !empty($proxReg->modulo?->hora_inicio) ? substr($proxReg->modulo->hora_inicio, 0, 5) : '';
                 $asignacionesMapeadas->push((object) [
                     'espacio' => $esp,
                     'nombre_asignatura' => $proxReg->asignatura->nombre_asignatura ?? 'Clase Programada',
@@ -492,7 +471,6 @@ class DashboardController extends Controller
                     'hora_salida' => null,
                     'hora_inicio_proxima' => $horaIni,
                 ]);
-
                 continue;
             }
 
@@ -502,7 +480,7 @@ class DashboardController extends Controller
             });
 
             if ($proxColab) {
-                $horaIni = ! empty($proxColab->modulo?->hora_inicio) ? substr($proxColab->modulo->hora_inicio, 0, 5) : '';
+                $horaIni = !empty($proxColab->modulo?->hora_inicio) ? substr($proxColab->modulo->hora_inicio, 0, 5) : '';
                 $asignacionesMapeadas->push((object) [
                     'espacio' => $esp,
                     'nombre_asignatura' => $proxColab->profesorColaborador->nombre_asignatura ?? 'Clase Programada',
@@ -513,7 +491,6 @@ class DashboardController extends Controller
                     'hora_salida' => null,
                     'hora_inicio_proxima' => $horaIni,
                 ]);
-
                 continue;
             }
 
@@ -537,7 +514,6 @@ class DashboardController extends Controller
             if ($pisoA !== $pisoB) {
                 return $pisoA <=> $pisoB;
             }
-
             return strnatcasecmp($a->espacio->id_espacio ?? '', $b->espacio->id_espacio ?? '');
         })->values();
 
@@ -596,7 +572,7 @@ class DashboardController extends Controller
 
         $datos = $service->calcularOcupacion($lunesDate, $tipoFilter, true);
 
-        $semanaStr = $datos['semana_inicio'].'_al_'.$datos['semana_fin'];
+        $semanaStr = $datos['semana_inicio'] . '_al_' . $datos['semana_fin'];
         $tipoStr = str_replace('_', '-', $tipoFilter);
         $fileName = "ocupacion_semanal_{$tipoStr}_{$semanaStr}";
 
@@ -610,7 +586,6 @@ class DashboardController extends Controller
         if (strtolower($format) === 'pdf') {
             $pdf = Pdf::loadView('pdf.ocupacion-semanal', ['datos' => $datos]);
             $pdf->setPaper('a4', 'landscape');
-
             return $pdf->download("{$fileName}.pdf");
         }
 
@@ -631,7 +606,7 @@ class DashboardController extends Controller
         $fechaInicioStr = $request->query('fecha_inicio');
         $fechaFinStr = $request->query('fecha_fin');
 
-        if (! $fechaInicioStr || ! $fechaFinStr) {
+        if (!$fechaInicioStr || !$fechaFinStr) {
             if ($rango === 'hoy') {
                 $fechaInicio = now()->startOfDay();
                 $fechaFin = now()->endOfDay();
@@ -763,15 +738,15 @@ class DashboardController extends Controller
                 $currentDate->addDay();
             }
 
-            $realizadas = 0;
-            $recuperadas = 0;
-            $justificadas = 0;
-            $noRegistradas = 0;
-            $futurasPendientes = 0;
+        $realizadas = 0;
+        $recuperadas = 0;
+        $justificadas = 0;
+        $noRegistradas = 0;
+        $futurasPendientes = 0;
 
-            foreach ($fechasAEvaluar as $fechaObj) {
-                $fechaYmd = $fechaObj->format('Y-m-d');
-                $diaNombre = $diasSemana[$fechaObj->dayOfWeek];
+        foreach ($fechasAEvaluar as $fechaObj) {
+            $fechaYmd = $fechaObj->format('Y-m-d');
+            $diaNombre = $diasSemana[$fechaObj->dayOfWeek];
 
             // Si es día feriado o receso con horario flexible:
             // no exigir la planificación teórica ni contar no_realizadas, pero sí sumar las clases efectivamente realizadas (Reserva) ese día
@@ -813,31 +788,30 @@ class DashboardController extends Controller
                     continue;
                 }
 
+                // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
+                $registroCNR = null;
+                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
+                foreach ($modulosClase as $mItem) {
                     foreach ($espaciosClaseEquiv as $espIdEq) {
-                        $claveReserva = "{$fechaYmd}_{$espIdEq}";
-                        if (isset($reservasCache[$claveReserva])) {
-                            $reservasDelDia = $reservasCache[$claveReserva];
-
-                            // Coincidencia por asignatura
-                            foreach ($reservasDelDia as $r) {
-                                if ($r->id_asignatura == $primerModulo->id_asignatura) {
-                                    $reservaEncontrada = $r;
-                                    break 2;
-                                }
-                            }
-
-                            // Coincidencia por horario
-                            foreach ($reservasDelDia as $r) {
-                                $horaAcceso = Carbon::parse($r->hora);
-                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
-                                    $reservaEncontrada = $r;
-                                    break 2;
-                                }
-                            }
+                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
+                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
+                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
+                            break 2;
                         }
                     }
+                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
+                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
+                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
+                        break;
+                    }
+                }
 
-                    if ($reservaEncontrada) {
+                if ($registroCNR) {
+                    if ($registroCNR->estado === 'recuperada') {
+                        $recuperadas++;
+                    } elseif ($registroCNR->estado === 'justificado') {
+                        $justificadas++;
+                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
                         $realizadas++;
                     } else {
                         $noRegistradas++;
@@ -880,35 +854,20 @@ class DashboardController extends Controller
                         }
                     }
                 }
-            }
 
-            // 6. Asegurar concordancia total con Control de Clases:
-            // Reusar $clasesNoRealizadas ya precargadas en el paso 2 para no repetir la consulta
-            $cnrsTotales = $clasesNoRealizadas;
-            // Agrupar por fecha, espacio y asignatura para contar 1 por bloque (igual que en Control de Clases)
-            $cnrsBloques = $cnrsTotales->groupBy(function ($c) {
-                $fecha = Carbon::parse($c->fecha_clase)->format('Y-m-d');
-
-                return "{$fecha}_{$c->id_espacio}_{$c->id_asignatura}";
-            });
-
-            $cnrBloquesNoRegistradas = 0;
-            $cnrBloquesRecuperadas = 0;
-            $cnrBloquesJustificadas = 0;
-            $cnrBloquesRealizadas = 0;
-
-            foreach ($cnrsBloques as $bloqueKey => $items) {
-                $primerItem = $items->first();
-                if ($primerItem->estado === 'recuperada') {
-                    $cnrBloquesRecuperadas++;
-                } elseif ($primerItem->estado === 'justificado') {
-                    $cnrBloquesJustificadas++;
-                } elseif (in_array($primerItem->estado, ['realizada', 'registrada'], true)) {
-                    $cnrBloquesRealizadas++;
+                if ($reservaEncontrada) {
+                    $realizadas++;
                 } else {
-                    $cnrBloquesNoRegistradas++;
+                    // Si aún no termina el horario de la clase, queda pendiente
+                    if ($fechaHoraFinClase >= $ahora) {
+                        $futurasPendientes++;
+                    } else {
+                        // Concluyó y no tiene inasistencia oficial registrada en Control de Clases
+                        $realizadas++;
+                    }
                 }
             }
+        }
 
         // 6. Asegurar concordancia total con Control de Clases:
         // Reusar $clasesNoRealizadas ya precargadas en el paso 2 para no repetir la consulta
@@ -936,15 +895,25 @@ class DashboardController extends Controller
             } elseif (!isset($fechasFeriado[$fechaItemYmd])) {
                 $cnrBloquesNoRegistradas++;
             }
+        }
 
-            $totalImpartidas = $realizadas + $recuperadas + $justificadas;
-            $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
+        // Si el total registrado en Control de Clases es mayor que lo capturado en el loop de planificaciones,
+        // actualizar con el valor oficial del Control de Clases para garantizar coincidencia exacta.
+        if ($cnrBloquesNoRegistradas > $noRegistradas) {
+            $noRegistradas = $cnrBloquesNoRegistradas;
+        }
+        if ($cnrBloquesRecuperadas > $recuperadas) {
+            $recuperadas = $cnrBloquesRecuperadas;
+        }
+        if ($cnrBloquesJustificadas > $justificadas) {
+            $justificadas = $cnrBloquesJustificadas;
+        }
+        if ($cnrBloquesRealizadas > $realizadas) {
+            $realizadas = $cnrBloquesRealizadas;
+        }
 
-            $pctImpartidas = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
-            $pctRealizadas = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
-            $pctRecuperadas = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
-            $pctJustificadas = $totalClasesEvaluadas > 0 ? round(($justificadas / $totalClasesEvaluadas) * 100, 1) : 0;
-            $pctNoRegistradas = $totalClasesEvaluadas > 0 ? round(($noRegistradas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $totalImpartidas = $realizadas + $recuperadas + $justificadas;
+        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
 
         $pctImpartidas    = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
         $pctRealizadas    = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;

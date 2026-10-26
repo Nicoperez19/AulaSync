@@ -10,7 +10,6 @@ use Livewire\WithPagination;
 
 class CareersTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

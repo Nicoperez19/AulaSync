@@ -8,7 +8,6 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionsTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

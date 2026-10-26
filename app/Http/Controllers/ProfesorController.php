@@ -18,16 +18,13 @@ use App\Models\Tenant;
 use App\Models\Universidad;
 use App\Services\ReservaService;
 use App\Traits\RunNormalizer;
-use App\Helpers\SemesterHelper;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class ProfesorController extends Controller
 {
-    use RunNormalizer;
 
     /**
      * Crear reserva para profesor

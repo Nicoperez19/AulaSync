@@ -10,7 +10,6 @@ use Illuminate\View\View;
 
 class EmailVerificationPromptController extends Controller
 {
-    use RedirectByRole;
 
     /**
      * Display the email verification prompt.

@@ -7,6 +7,10 @@ export default {
     './resources/**/*.vue',
     './resources/**/*.ts',
   ],
+  future: {
+    removeDeprecatedGapUtilities: true,
+    purgeLayersByDefault: true,
+  },
   theme: {
     extend: {
       colors: {
@@ -104,5 +108,12 @@ export default {
         'shake-subtle': 'shakeSubtle 350ms ease-in-out',
       },
     },
+  },
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+  ],
+  corePlugins: {
+    preflight: true,
   },
 }

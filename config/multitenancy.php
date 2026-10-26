@@ -122,5 +122,6 @@ return [
         'profesor_atrasos',
         'profesores_colaboradores',
         'planificaciones_profesores_colaboradores',
+        'notificaciones',
     ],
 ];

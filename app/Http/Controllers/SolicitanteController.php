@@ -27,7 +27,6 @@ use Illuminate\Validation\ValidationException;
  */
 class SolicitanteController extends Controller
 {
-    use RunNormalizer;
 
     /**
      * Verificar si un solicitante existe en la base de datos

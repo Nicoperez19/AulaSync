@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class CampusTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

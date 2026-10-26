@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class SedesTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

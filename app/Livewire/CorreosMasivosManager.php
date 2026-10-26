@@ -16,7 +16,6 @@ use Livewire\WithPagination;
 
 class CorreosMasivosManager extends Component
 {
-    use WithPagination;
 
     // Variables para la pestaña activa
     public $tab = 'tipos'; // 'tipos', 'destinatarios', 'plantillas', 'enviar'

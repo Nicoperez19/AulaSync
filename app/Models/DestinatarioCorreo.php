@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class DestinatarioCorreo extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

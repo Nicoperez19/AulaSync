@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class VisitantesTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

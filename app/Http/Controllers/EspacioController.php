@@ -12,31 +12,22 @@ use App\Models\PlanificacionProfesorColaborador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\QRService;
-use App\Helpers\SemesterHelper;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 use App\Models\Sede;
 use App\Models\User;
 use App\Models\Profesor;
 use App\Models\Reserva;
-use App\Models\Sede;
 use App\Models\Solicitante;
 use App\Models\Universidad;
-use App\Models\User;
-use App\Services\QRService;
 use App\Traits\SafeCacheTrait;
 use Dompdf\Dompdf;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use ZipArchive;
 
 class EspacioController extends Controller
 {
-    use SafeCacheTrait;
 
     /**
      * Muestra el listado de espacios

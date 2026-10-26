@@ -13,7 +13,6 @@ use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
 {
-    use RedirectByRole;
 
     /**
      * Display the login view.

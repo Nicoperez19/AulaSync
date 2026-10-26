@@ -117,6 +117,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('manual.image');
 });
 
+// Centro de Notificaciones (disponible en todas las sedes: usa la sede activa en sesión)
+Route::middleware(['auth', 'tenant.init', 'role:Administrador|Supervisor'])->group(function () {
+    Route::view('/notificaciones', 'notificaciones.index')->name('notificaciones.index');
+});
+
 // Soporte Técnico (sistema de tickets)
 Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')->group(function () {
     Route::get('/', [SupportTicketController::class, 'index'])->name('index');

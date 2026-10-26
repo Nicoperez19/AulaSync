@@ -11,7 +11,6 @@ use Livewire\WithPagination;
 
 class ProfesorAtrasosTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TipoCorreoMasivo extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

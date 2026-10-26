@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bloque extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

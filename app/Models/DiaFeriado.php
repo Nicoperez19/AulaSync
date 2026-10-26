@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class DiaFeriado extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

@@ -23,7 +23,6 @@ use Livewire\WithPagination;
 
 class ClasesNoRealizadasTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

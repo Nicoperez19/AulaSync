@@ -12,7 +12,6 @@ use Illuminate\View\View;
 
 class ConfirmablePasswordController extends Controller
 {
-    use RedirectByRole;
 
     /**
      * Show the confirm password view.

@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
-    use RedirectByRole;
 
     /**
      * Handle an incoming request.

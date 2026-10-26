@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class ReservationsTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

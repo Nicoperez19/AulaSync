@@ -10,7 +10,6 @@ use Livewire\WithPagination;
 
 class DataLoadTable extends Component
 {
-    use WithPagination;
 
     protected $listeners = ['fileUploaded' => '$refresh'];
 

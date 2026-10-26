@@ -9,7 +9,6 @@ use Livewire\WithPagination;
 
 class DiasFeriadosTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

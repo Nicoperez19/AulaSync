@@ -9,7 +9,6 @@ use Spatie\Permission\Models\Role;
 
 class UsersTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

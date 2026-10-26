@@ -34,7 +34,6 @@ use Illuminate\Validation\ValidationException;
 
 class PlanoDigitalController extends Controller
 {
-    use RunNormalizer;
 
     public function index()
     {

@@ -2,18 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Models\Espacio;
+use App\Models\Espacio;  
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Facultad;
 
 class SpacesTable extends Component
 {
-    use WithPagination;
 
-    public $search = '';
-
+    public $search = '';  
     public $sortField = 'id_espacio';
-
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -46,52 +44,36 @@ class SpacesTable extends Component
     {
         $searchTerm = trim($this->search);
 
+        $sortField = in_array($this->sortField, ['id_espacio', 'nombre_espacio', 'tipo_espacio', 'estado', 'puestos_disponibles'], true)
+            ? $this->sortField
+            : 'id_espacio';
+        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
+
         $espacios = Espacio::query()
             ->with('piso.facultad.sede')
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                $termSinTilde = str_replace(
-                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
-                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
-                    $searchTerm
-                );
-                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+                // Las facultades viven en la base central: se resuelven sus IDs aparte
+                $facultadIds = Facultad::where('nombre_facultad', 'like', '%' . $searchTerm . '%')
+                    ->pluck('id_facultad')->all();
 
-                $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_espacio', 'like', '%'.$searchTerm.'%');
-                    foreach ($terms as $t) {
-                        $q->orWhere('nombre_espacio', 'like', '%'.$t.'%')
-                            ->orWhere('tipo_espacio', 'like', '%'.$t.'%')
-                            ->orWhere('estado', 'like', '%'.$t.'%')
-                            ->orWhereHas('piso.facultad', function ($subQuery) use ($t) {
-                                $subQuery->where('nombre_facultad', 'like', '%'.$t.'%');
-                            })
-                            ->orWhereHas('piso', function ($subQuery) use ($t) {
-                                $subQuery->where('numero_piso', 'like', '%'.$t.'%');
-                            });
-                    }
+                $query->where(function ($q) use ($searchTerm, $facultadIds) {
+                    $q->where('id_espacio', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('nombre_espacio', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('tipo_espacio', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('estado', 'like', '%' . $searchTerm . '%')
+                      ->orWhereHas('piso', function ($pq) use ($searchTerm, $facultadIds) {
+                          $pq->where(function ($sub) use ($searchTerm, $facultadIds) {
+                              $sub->where('numero_piso', 'like', '%' . $searchTerm . '%')
+                                  ->orWhere('nombre_piso', 'like', '%' . $searchTerm . '%');
+
+                              if (!empty($facultadIds)) {
+                                  $sub->orWhereIn('id_facultad', $facultadIds);
+                              }
+                          });
+                      });
                 });
             })
-            ->when($this->sortField, function ($query) {
-                switch ($this->sortField) {
-                    case 'id_espacio':
-                        $query->orderBy('id_espacio', $this->sortDirection);
-                        break;
-                    case 'nombre_espacio':
-                        $query->orderBy('nombre_espacio', $this->sortDirection);
-                        break;
-                    case 'tipo_espacio':
-                        $query->orderBy('tipo_espacio', $this->sortDirection);
-                        break;
-                    case 'estado':
-                        $query->orderBy('estado', $this->sortDirection);
-                        break;
-                    case 'puestos_disponibles':
-                        $query->orderBy('puestos_disponibles', $this->sortDirection);
-                        break;
-                    default:
-                        $query->orderBy('id_espacio', 'asc');
-                }
-            })
+            ->orderBy($sortField, $sortDirection)
             ->paginate(10);
 
         return view('livewire.spaces-table', compact('espacios'));

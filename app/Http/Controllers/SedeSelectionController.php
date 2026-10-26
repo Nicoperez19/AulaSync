@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Auth;
 
 class SedeSelectionController extends Controller
 {
-    use RedirectByRole;
 
     /**
      * Mostrar la página de selección de sedes

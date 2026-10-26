@@ -14,7 +14,6 @@ use Livewire\WithPagination;
 
 class CalendarioAcademicoTable extends Component
 {
-    use WithPagination;
 
     // Vista activa: 'tabla' o 'calendario'
     public $vistaActiva = 'tabla';

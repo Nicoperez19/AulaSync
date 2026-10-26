@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Log;
 
 class CacheHealthController extends Controller
 {
-    use SafeCacheTrait;
 
     /**
      * Verificar la salud del sistema de caché

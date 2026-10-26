@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class PeriodoAcademico extends Model
 {
-    use HasFactory;
 
     protected $connection = 'mysql';
 

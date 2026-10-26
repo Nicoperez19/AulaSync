@@ -16,7 +16,6 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    use RedirectByRole;
 
     /**
      * Display the registration view.

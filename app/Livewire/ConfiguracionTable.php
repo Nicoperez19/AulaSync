@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class ConfiguracionTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

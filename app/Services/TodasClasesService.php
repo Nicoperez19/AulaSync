@@ -9,15 +9,12 @@ use App\Models\PeriodoAcademico;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ProfesorColaborador;
-use App\Models\ClaseNoRealizada;
 use App\Models\Reserva;
-use App\Models\DiaFeriado;
 use App\Models\Modulo;
 use App\Models\SesionAsistencia;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
-use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
 
 class TodasClasesService

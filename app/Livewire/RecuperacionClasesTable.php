@@ -15,7 +15,6 @@ use Livewire\WithPagination;
 
 class RecuperacionClasesTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

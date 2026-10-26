@@ -8,7 +8,6 @@ use Livewire\WithPagination;
 
 class JefesCarreraTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

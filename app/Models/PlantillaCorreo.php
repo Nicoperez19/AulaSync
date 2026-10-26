@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlantillaCorreo extends Model
 {
-    use HasFactory;
 
     protected $connection = 'tenant';
 

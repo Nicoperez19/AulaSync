@@ -9,7 +9,6 @@ use Livewire\WithPagination;
 
 class ProfessorsTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

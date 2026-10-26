@@ -10,7 +10,6 @@ use Livewire\WithPagination;
 
 class AcademicAreasTable extends Component
 {
-    use WithPagination;
 
     public $search = '';
 

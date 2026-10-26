@@ -27,8 +27,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Helpers\ModulosHelper;
-use App\Helpers\SemesterHelper;
 
 class DataLoadController extends Controller
 {

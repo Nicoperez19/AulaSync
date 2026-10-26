@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Docente\AsistenciaController;
 use App\Http\Controllers\SolicitanteController;
