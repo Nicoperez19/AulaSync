@@ -13,14 +13,14 @@ class QRService
     {
         // Generamos una URL única para el espacio
         $url = route('spaces.show', ['space' => $espacio->id_espacio]);
-
+        
         $qrCode = new QrCode($url);
-        $writer = new PngWriter;
+        $writer = new PngWriter();
         $result = $writer->write($qrCode);
 
         // Guardamos el código QR en el almacenamiento
-        $path = 'qrcodes/qr_'.$espacio->id_espacio.'.png';
-        Storage::put('public/'.$path, $result->getString());
+        $path = 'qrcodes/qr_' . $espacio->id_espacio . '.png';
+        Storage::put('public/' . $path, $result->getString());
 
         return $path;
     }
@@ -28,12 +28,12 @@ class QRService
     public function generateQR(string $data, int $size = 300): string
     {
         $qrCode = new QrCode($data);
-        $writer = new PngWriter;
+        $writer = new PngWriter();
         $result = $writer->write($qrCode);
 
         // Guardamos el código QR en el almacenamiento
-        $path = 'qrcodes/qr_'.$data.'.png';
-        Storage::put('public/'.$path, $result->getString());
+        $path = 'qrcodes/qr_' . $data . '.png';
+        Storage::put('public/' . $path, $result->getString());
 
         return $path;
     }
@@ -43,4 +43,4 @@ class QRService
         // Generamos el QR con el ID del espacio directamente
         return $this->generateQR($espacioId);
     }
-}
+} 

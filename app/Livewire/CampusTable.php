@@ -8,11 +8,10 @@ use Livewire\WithPagination;
 
 class CampusTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $sortField = 'id_campus';
-
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -56,16 +55,16 @@ class CampusTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_campus', 'like', '%'.$searchTerm.'%');
+                    $q->where('id_campus', 'like', '%' . $searchTerm . '%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_campus', 'like', '%'.$t.'%')
-                            ->orWhereHas('sede', function ($subQuery) use ($t) {
-                                $subQuery->where('nombre_sede', 'like', '%'.$t.'%');
-                            })
-                            ->orWhereHas('sede.universidad', function ($subQuery) use ($t) {
-                                $subQuery->where('nombre_universidad', 'like', '%'.$t.'%');
-                            });
+                        $q->orWhere('nombre_campus', 'like', '%' . $t . '%')
+                          ->orWhereHas('sede', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_sede', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('sede.universidad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_universidad', 'like', '%' . $t . '%');
+                          });
                     }
                 });
             })
@@ -79,14 +78,14 @@ class CampusTable extends Component
                         break;
                     case 'sede':
                         $query->join('sedes', 'campus.id_sede', '=', 'sedes.id_sede')
-                            ->orderBy('sedes.nombre_sede', $this->sortDirection)
-                            ->select('campus.*');
+                              ->orderBy('sedes.nombre_sede', $this->sortDirection)
+                              ->select('campus.*');
                         break;
                     case 'universidad':
                         $query->join('sedes', 'campus.id_sede', '=', 'sedes.id_sede')
-                            ->join('universidades', 'sedes.id_universidad', '=', 'universidades.id_universidad')
-                            ->orderBy('universidades.nombre_universidad', $this->sortDirection)
-                            ->select('campus.*');
+                              ->join('universidades', 'sedes.id_universidad', '=', 'universidades.id_universidad')
+                              ->orderBy('universidades.nombre_universidad', $this->sortDirection)
+                              ->select('campus.*');
                         break;
                     default:
                         $query->orderBy('id_campus', 'asc');
@@ -96,4 +95,4 @@ class CampusTable extends Component
 
         return view('livewire.campus-table', compact('campus'));
     }
-}
+} 

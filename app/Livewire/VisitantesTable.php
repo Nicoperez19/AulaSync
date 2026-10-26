@@ -8,11 +8,10 @@ use Livewire\WithPagination;
 
 class VisitantesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $sortField = 'run_solicitante';
-
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -41,11 +40,11 @@ class VisitantesTable extends Component
         $visitantes = Visitante::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    $q->where('run_solicitante', 'like', '%'.$this->search.'%')
-                        ->orWhere('nombre', 'like', '%'.$this->search.'%')
-                        ->orWhere('correo', 'like', '%'.$this->search.'%')
-                        ->orWhere('telefono', 'like', '%'.$this->search.'%')
-                        ->orWhere('tipo_solicitante', 'like', '%'.$this->search.'%');
+                    $q->where('run_solicitante', 'like', '%' . $this->search . '%')
+                      ->orWhere('nombre', 'like', '%' . $this->search . '%')
+                      ->orWhere('correo', 'like', '%' . $this->search . '%')
+                      ->orWhere('telefono', 'like', '%' . $this->search . '%')
+                      ->orWhere('tipo_solicitante', 'like', '%' . $this->search . '%');
                 });
             })
             ->when($this->sortField, function ($query) {

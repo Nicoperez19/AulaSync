@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class PlanificacionProfesorColaborador extends Model
 {
-    use BelongsToTenant, HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
     protected $connection = 'tenant';
-
     protected $table = 'planificaciones_profesores_colaboradores';
 
     protected $fillable = [
@@ -63,7 +62,7 @@ class PlanificacionProfesorColaborador extends Model
     /**
      * Relación con ProfesorColaborador
      */
-    public function profesorColaborador(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function profesorColaborador()
     {
         return $this->belongsTo(ProfesorColaborador::class, 'id_profesor_colaborador');
     }
@@ -71,7 +70,7 @@ class PlanificacionProfesorColaborador extends Model
     /**
      * Relación con Modulo
      */
-    public function modulo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function modulo()
     {
         return $this->belongsTo(Modulo::class, 'id_modulo', 'id_modulo');
     }
@@ -79,7 +78,7 @@ class PlanificacionProfesorColaborador extends Model
     /**
      * Relación con Espacio
      */
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
@@ -89,7 +88,7 @@ class PlanificacionProfesorColaborador extends Model
      */
     public function scopePorDia($query, $dia)
     {
-        return $query->whereHas('modulo', function ($q) use ($dia) {
+        return $query->whereHas('modulo', function($q) use ($dia) {
             $q->where('dia', $dia);
         });
     }
@@ -99,7 +98,7 @@ class PlanificacionProfesorColaborador extends Model
      */
     public function scopeVigentes($query, $fecha = null)
     {
-        return $query->whereHas('profesorColaborador', function ($q) use ($fecha) {
+        return $query->whereHas('profesorColaborador', function($q) use ($fecha) {
             $q->activosYVigentes($fecha);
         });
     }

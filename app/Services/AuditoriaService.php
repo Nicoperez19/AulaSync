@@ -3,9 +3,8 @@
 namespace App\Services;
 
 use App\Models\AuditoriaClase;
-use App\Models\Tenant;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AuditoriaService
@@ -21,7 +20,6 @@ class AuditoriaService
     public static function iniciarLote(string $accion = 'operacion_masiva'): string
     {
         static::$loteActivo = (string) Str::uuid();
-
         return static::$loteActivo;
     }
 
@@ -91,16 +89,16 @@ class AuditoriaService
         }
 
         $tenantId = null;
-        if (class_exists(Tenant::class)) {
-            $tenantId = Tenant::current()?->id;
+        if (class_exists(\App\Models\Tenant::class)) {
+            $tenantId = \App\Models\Tenant::current()?->id;
         }
 
         $fechaClase = $entidad->fecha_clase ?? ($valoresNuevos['fecha_clase'] ?? ($valoresAnteriores['fecha_clase'] ?? null));
         if ($fechaClase instanceof \DateTimeInterface) {
             $fechaClase = $fechaClase->format('Y-m-d');
-        } elseif (is_string($fechaClase) && ! empty($fechaClase)) {
+        } elseif (is_string($fechaClase) && !empty($fechaClase)) {
             try {
-                $fechaClase = Carbon::parse($fechaClase)->format('Y-m-d');
+                $fechaClase = \Carbon\Carbon::parse($fechaClase)->format('Y-m-d');
             } catch (\Throwable $e) {
                 // Mantener valor tal cual
             }
@@ -156,7 +154,7 @@ class AuditoriaService
             });
         } elseif ($runProfesor && $fechaClase) {
             $query->where('run_profesor', $runProfesor)
-                ->where('fecha_clase', $fechaClase);
+                  ->where('fecha_clase', $fechaClase);
         }
 
         return $query->orderBy('created_at', 'desc')->get();

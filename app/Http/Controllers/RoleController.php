@@ -1,10 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -47,7 +47,7 @@ class RoleController extends Controller
             return redirect()->route('roles.index')->with('success', 'Rol creado y permisos asignados correctamente.');
         } catch (\Exception $e) {
             // Redirige con error
-            return redirect()->route('roles.index')->with('error', 'Hubo un problema al crear el rol: '.$e->getMessage());
+            return redirect()->route('roles.index')->with('error', 'Hubo un problema al crear el rol: ' . $e->getMessage());
         }
     }
 
@@ -78,7 +78,7 @@ class RoleController extends Controller
     {
         try {
             $request->validate([
-                'name_rol' => 'required|string|max:255|unique:roles,name,'.$id,
+                'name_rol' => 'required|string|max:255|unique:roles,name,' . $id,
                 'permissions' => 'array',
             ]);
 
@@ -94,9 +94,10 @@ class RoleController extends Controller
             return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
         } catch (\Exception $e) {
             // Redirige con error
-            return redirect()->route('roles.index')->with('error', 'Error al actualizar el rol: '.$e->getMessage());
+            return redirect()->route('roles.index')->with('error', 'Error al actualizar el rol: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -111,7 +112,7 @@ class RoleController extends Controller
             return redirect()->route('roles.index')->with('success', 'Rol eliminado exitosamente.');
         } catch (\Exception $e) {
             // Redirige con error
-            return redirect()->route('roles.index')->with('error', 'Error al borrar el rol: '.$e->getMessage());
+            return redirect()->route('roles.index')->with('error', 'Error al borrar el rol: ' . $e->getMessage());
         }
     }
 }

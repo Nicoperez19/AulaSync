@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Visitante extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
 

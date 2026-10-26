@@ -3,15 +3,15 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AccesosExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles
+class AccesosExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths
 {
     protected $accesos;
 
@@ -43,7 +43,7 @@ class AccesosExport implements FromCollection, WithColumnWidths, WithHeadings, W
             'Hora Salida',
             'Duración',
             'Tipo Reserva',
-            'Estado',
+            'Estado'
         ];
     }
 
@@ -57,7 +57,7 @@ class AccesosExport implements FromCollection, WithColumnWidths, WithHeadings, W
             ucfirst($acceso['tipo_usuario']),
             $acceso['ua'] ?? 'N/A',
             $acceso['asignatura'] ?? 'N/A',
-            $acceso['espacio'].' ('.$acceso['id_espacio'].')',
+            $acceso['espacio'] . ' (' . $acceso['id_espacio'] . ')',
             $acceso['piso'],
             $acceso['facultad'],
             $acceso['fecha'],
@@ -65,7 +65,7 @@ class AccesosExport implements FromCollection, WithColumnWidths, WithHeadings, W
             $acceso['hora_salida'],
             $acceso['duracion'],
             $acceso['tipo_reserva'],
-            ucfirst($acceso['estado']),
+            ucfirst($acceso['estado'])
         ];
     }
 
@@ -118,4 +118,4 @@ class AccesosExport implements FromCollection, WithColumnWidths, WithHeadings, W
             'P' => 12,  // Estado
         ];
     }
-}
+} 

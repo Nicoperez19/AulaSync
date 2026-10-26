@@ -3,18 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\AreaAcademica;
-use App\Models\Sede;
-use App\Models\Universidad;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class AcademicAreasTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $sortField = 'id_area_academica';
-
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -60,15 +57,15 @@ class AcademicAreasTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 try {
-                    $universidadIds = Universidad::where(function ($uq) use ($terms) {
+                    $universidadIds = \App\Models\Universidad::where(function($uq) use ($terms) {
                         foreach ($terms as $t) {
-                            $uq->orWhere('nombre_universidad', 'like', '%'.$t.'%');
+                            $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
                         }
                     })->pluck('id_universidad');
-
-                    $sedeIds = Sede::where(function ($sq) use ($terms) {
+                    
+                    $sedeIds = \App\Models\Sede::where(function($sq) use ($terms) {
                         foreach ($terms as $t) {
-                            $sq->orWhere('nombre_sede', 'like', '%'.$t.'%');
+                            $sq->orWhere('nombre_sede', 'like', '%' . $t . '%');
                         }
                     })->pluck('id_sede');
                 } catch (\Throwable $e) {
@@ -77,14 +74,14 @@ class AcademicAreasTable extends Component
                 }
 
                 $query->where(function ($q) use ($terms, $searchTerm, $universidadIds, $sedeIds) {
-                    $q->where('id_area_academica', 'like', '%'.$searchTerm.'%');
+                    $q->where('id_area_academica', 'like', '%' . $searchTerm . '%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_area_academica', 'like', '%'.$t.'%')
-                            ->orWhere('tipo_area_academica', 'like', '%'.$t.'%')
-                            ->orWhereHas('facultad', function ($subQuery) use ($t) {
-                                $subQuery->where('nombre_facultad', 'like', '%'.$t.'%');
-                            });
+                        $q->orWhere('nombre_area_academica', 'like', '%' . $t . '%')
+                          ->orWhere('tipo_area_academica', 'like', '%' . $t . '%')
+                          ->orWhereHas('facultad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
+                          });
                     }
 
                     if ($sedeIds->isNotEmpty()) {
@@ -113,23 +110,23 @@ class AcademicAreasTable extends Component
                         break;
                     case 'facultad':
                         $query->join('facultades', 'area_academicas.id_facultad', '=', 'facultades.id_facultad')
-                            ->orderBy('facultades.nombre_facultad', $this->sortDirection)
-                            ->select('area_academicas.*');
+                              ->orderBy('facultades.nombre_facultad', $this->sortDirection)
+                              ->select('area_academicas.*');
                         break;
                     case 'sede':
                         $centralDb = config('database.connections.mysql.database');
                         $query->join('facultades', 'area_academicas.id_facultad', '=', 'facultades.id_facultad')
-                            ->join($centralDb.'.sedes', 'facultades.id_sede', '=', 'sedes.id_sede')
-                            ->orderBy('sedes.nombre_sede', $this->sortDirection)
-                            ->select('area_academicas.*');
+                              ->join($centralDb . '.sedes', 'facultades.id_sede', '=', 'sedes.id_sede')
+                              ->orderBy('sedes.nombre_sede', $this->sortDirection)
+                              ->select('area_academicas.*');
                         break;
                     case 'universidad':
                         $centralDb = config('database.connections.mysql.database');
                         $query->join('facultades', 'area_academicas.id_facultad', '=', 'facultades.id_facultad')
-                            ->join($centralDb.'.sedes', 'facultades.id_sede', '=', 'sedes.id_sede')
-                            ->join($centralDb.'.universidades', 'sedes.id_universidad', '=', 'universidades.id_universidad')
-                            ->orderBy('universidades.nombre_universidad', $this->sortDirection)
-                            ->select('area_academicas.*');
+                              ->join($centralDb . '.sedes', 'facultades.id_sede', '=', 'sedes.id_sede')
+                              ->join($centralDb . '.universidades', 'sedes.id_universidad', '=', 'universidades.id_universidad')
+                              ->orderBy('universidades.nombre_universidad', $this->sortDirection)
+                              ->select('area_academicas.*');
                         break;
                     default:
                         $query->orderBy('id_area_academica', 'asc');
@@ -139,4 +136,4 @@ class AcademicAreasTable extends Component
 
         return view('livewire.academic-areas-table', compact('areasAcademicas'));
     }
-}
+} 

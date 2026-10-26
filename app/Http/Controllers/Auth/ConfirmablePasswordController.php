@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Providers\RouteServiceProvider;
 use App\Traits\RedirectByRole;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,7 @@ use Illuminate\View\View;
 
 class ConfirmablePasswordController extends Controller
 {
+    use RedirectByRole;
 
     /**
      * Show the confirm password view.

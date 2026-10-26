@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ModulosHelper;
 use App\Models\Espacio;
-use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
 use App\Models\Solicitante;
 use App\Models\Tenant;
 use App\Models\Visitante;
-use App\Services\ReservaService;
-use App\Traits\RunNormalizer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+
+use App\Traits\RunNormalizer;
+use App\Helpers\ModulosHelper;
 
 /**
  * Controlador para manejar operaciones de solicitantes
@@ -27,6 +26,7 @@ use Illuminate\Validation\ValidationException;
  */
 class SolicitanteController extends Controller
 {
+    use RunNormalizer;
 
     /**
      * Verificar si un solicitante existe en la base de datos
@@ -35,18 +35,18 @@ class SolicitanteController extends Controller
     {
         // Obtener y configurar el tenant
         $tenantId = tenant_id();
-        if (! $tenantId) {
+        if (!$tenantId) {
             return response()->json([
                 'verificado' => false,
-                'mensaje' => 'No se encontró contexto de tenant',
+                'mensaje' => 'No se encontró contexto de tenant'
             ], 400);
         }
 
         $tenant = Tenant::find($tenantId);
-        if (! $tenant) {
+        if (!$tenant) {
             return response()->json([
                 'verificado' => false,
-                'mensaje' => 'Tenant no encontrado',
+                'mensaje' => 'Tenant no encontrado'
             ], 400);
         }
 
@@ -63,6 +63,7 @@ class SolicitanteController extends Controller
                 ->where('activo', true)
                 ->first();
 
+
             if ($solicitante) {
                 return response()->json([
                     'verificado' => true,
@@ -72,9 +73,9 @@ class SolicitanteController extends Controller
                         'nombre' => $solicitante->nombre,
                         'correo' => $solicitante->correo,
                         'telefono' => $solicitante->telefono,
-                        'tipo_solicitante' => $solicitante->tipo_solicitante,
+                        'tipo_solicitante' => $solicitante->tipo_solicitante
                     ],
-                    'mensaje' => 'Solicitante verificado correctamente',
+                    'mensaje' => 'Solicitante verificado correctamente'
                 ]);
             }
 
@@ -83,14 +84,13 @@ class SolicitanteController extends Controller
                 'verificado' => false,
                 'tipo_usuario' => 'solicitante_nuevo',
                 'run_escaneado' => $run,
-                'mensaje' => 'Solicitante no registrado. Se requiere registro previo.',
+                'mensaje' => 'Solicitante no registrado. Se requiere registro previo.'
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al verificar solicitante: '.$e->getMessage());
-
+            Log::error('Error al verificar solicitante: ' . $e->getMessage());
             return response()->json([
                 'verificado' => false,
-                'mensaje' => 'Error al verificar solicitante: '.$e->getMessage(),
+                'mensaje' => 'Error al verificar solicitante: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -102,18 +102,18 @@ class SolicitanteController extends Controller
     {
         // Obtener y configurar el tenant
         $tenantId = tenant_id();
-        if (! $tenantId) {
+        if (!$tenantId) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'No se encontró contexto de tenant',
+                'mensaje' => 'No se encontró contexto de tenant'
             ], 400);
         }
 
         $tenant = Tenant::find($tenantId);
-        if (! $tenant) {
+        if (!$tenant) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Tenant no encontrado',
+                'mensaje' => 'Tenant no encontrado'
             ], 400);
         }
 
@@ -127,7 +127,7 @@ class SolicitanteController extends Controller
                 'nombre' => 'required|string|max:255',
                 'correo' => 'required|email',
                 'telefono' => 'required|string|max:20',
-                'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro',
+                'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro'
             ]);
 
             // Normalizar RUN
@@ -141,9 +141,10 @@ class SolicitanteController extends Controller
                     'telefono' => $request->telefono,
                     'tipo_solicitante' => $request->tipo_solicitante,
                     'activo' => true,
-                    'fecha_registro' => now(),
+                    'fecha_registro' => now()
                 ]
             );
+
 
             // Registrar también como visitante para que aparezca en el mantenedor
             try {
@@ -158,8 +159,10 @@ class SolicitanteController extends Controller
                 ]);
             } catch (\Exception $e) {
                 // Si falla al crear el visitante, continuamos igual porque ya tenemos el solicitante
-                Log::warning('No se pudo registrar como visitante: '.$e->getMessage());
+                Log::warning('No se pudo registrar como visitante: ' . $e->getMessage());
             }
+
+
 
             return response()->json([
                 'success' => true,
@@ -170,21 +173,20 @@ class SolicitanteController extends Controller
                     'correo' => $solicitante->correo,
                     'telefono' => $solicitante->telefono,
                     'tipo_solicitante' => $solicitante->tipo_solicitante,
-                    'institucion_origen' => $solicitante->institucion_origen,
-                ],
+                    'institucion_origen' => $solicitante->institucion_origen
+                ]
             ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error de validación: '.$e->getMessage(),
-                'errores' => $e->errors(),
+                'mensaje' => 'Error de validación: ' . $e->getMessage(),
+                'errores' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Error al registrar solicitante: '.$e->getMessage());
-
+            Log::error('Error al registrar solicitante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al registrar solicitante: '.$e->getMessage(),
+                'mensaje' => 'Error al registrar solicitante: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -195,20 +197,21 @@ class SolicitanteController extends Controller
     public function crearReservaSolicitante(Request $request)
     {
 
+
         // Obtener el tenant del contexto actual
         $tenantId = tenant_id();
-        if (! $tenantId) {
+        if (!$tenantId) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'No se encontró contexto de tenant',
+                'mensaje' => 'No se encontró contexto de tenant'
             ], 400);
         }
 
         $tenant = Tenant::find($tenantId);
-        if (! $tenant) {
+        if (!$tenant) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Tenant no encontrado',
+                'mensaje' => 'Tenant no encontrado'
             ], 400);
         }
 
@@ -217,20 +220,23 @@ class SolicitanteController extends Controller
         Config::set('database.connections.tenant.host', $tenant->host ?? config('database.connections.mysql.host'));
         DB::purge('tenant');
 
+
+
         try {
             // VERIFICAR QUE LA CONEXIÓN TENANT ESTÁ CONFIGURADA
             $tenantConfig = config('database.connections.tenant');
+
 
             // Validar datos básicos
             $request->validate([
                 'run_solicitante' => 'required|string',
                 'id_espacio' => 'required|string',
-                'modulos' => 'required|integer|min:1|max:15',
+                'modulos' => 'required|integer|min:1|max:15'
             ]);
 
             // Normalizar id_espacio usando la lógica del tenant actual
             $idEspacio = $request->id_espacio;
-            if (! empty($idEspacio)) {
+            if (!empty($idEspacio)) {
                 $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
                 $tenant = Tenant::find(tenant_id());
                 if ($tenant) {
@@ -239,7 +245,7 @@ class SolicitanteController extends Controller
                     if (strpos($normalizedInput, $prefix) === 0) {
                         $normalizedInput = substr($normalizedInput, strlen($prefix));
                     }
-                    $idEspacio = $prefix.'-'.$normalizedInput;
+                    $idEspacio = $prefix . '-' . $normalizedInput;
                 }
                 $request->merge(['id_espacio' => $idEspacio]);
             }
@@ -257,26 +263,27 @@ class SolicitanteController extends Controller
                 ->where('activo', true)
                 ->first();
 
-            if (! $solicitante) {
+
+            if (!$solicitante) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Solicitante no encontrado o inactivo',
+                    'mensaje' => 'Solicitante no encontrado o inactivo'
                 ], 404);
             }
 
             // Verificar que el espacio existe y está disponible (búsqueda en BD tenant)
             $espacio = Espacio::on('tenant')->where('id_espacio', $request->id_espacio)->first();
-            if (! $espacio) {
+            if (!$espacio) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado',
+                    'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
 
             if ($espacio->estado === 'Ocupado') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio está ocupado actualmente',
+                    'mensaje' => 'El espacio está ocupado actualmente'
                 ], 400);
             }
 
@@ -298,6 +305,7 @@ class SolicitanteController extends Controller
             }
             */
 
+
             // Validar módulos consecutivos disponibles
             $modulosSolicitados = $request->modulos;
             $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
@@ -305,7 +313,7 @@ class SolicitanteController extends Controller
 
             $codigosDias = [
                 'lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI',
-                'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA', 'domingo' => 'DO',
+                'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA', 'domingo' => 'DO'
             ];
 
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
@@ -314,41 +322,41 @@ class SolicitanteController extends Controller
             $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
 
             $usarHoraActual = false;
-            if (! $moduloActual) {
+            if (!$moduloActual) {
                 // Verificar si ya terminó el día académico para el día actual
-                $ultimoModulo = Modulo::on('tenant')
-                    ->where('id_modulo', 'like', $codigoDia.'.%')
+                $ultimoModulo = \App\Models\Modulo::on('tenant')
+                    ->where('id_modulo', 'like', $codigoDia . '.%')
                     ->orderBy('hora_termino', 'desc')
                     ->first();
-
+                
                 if ($ultimoModulo && $horaActual >= $ultimoModulo->hora_termino) {
                     return response()->json([
                         'success' => false,
-                        'mensaje' => 'El horario académico para el día de hoy ha finalizado. No es posible crear nuevas reservas espontáneas.',
+                        'mensaje' => 'El horario académico para el día de hoy ha finalizado. No es posible crear nuevas reservas espontáneas.'
                     ], 400);
                 }
 
                 // Si estamos antes del primer módulo, empezar desde el módulo 1
-                $primerModulo = Modulo::on('tenant')
-                    ->where('id_modulo', 'like', $codigoDia.'.%')
+                $primerModulo = \App\Models\Modulo::on('tenant')
+                    ->where('id_modulo', 'like', $codigoDia . '.%')
                     ->orderBy('hora_inicio', 'asc')
                     ->first();
-
+                
                 if ($primerModulo && $horaActual < $primerModulo->hora_inicio) {
                     $moduloActual = 1;
                     $usarHoraActual = false; // Empezar en el horario oficial del módulo 1
                 } else {
                     // Probablemente estamos en un recreo, intentar buscar el siguiente módulo del día
-                    $siguienteModulo = Modulo::on('tenant')
-                        ->where('id_modulo', 'like', $codigoDia.'.%')
+                    $siguienteModulo = \App\Models\Modulo::on('tenant')
+                        ->where('id_modulo', 'like', $codigoDia . '.%')
                         ->where('hora_inicio', '>', $horaActual)
                         ->orderBy('hora_inicio', 'asc')
                         ->first();
-
+                    
                     if ($siguienteModulo) {
                         // Extraer el número del módulo (ej: "LU.2" -> 2)
                         $partes = explode('.', $siguienteModulo->id_modulo);
-                        $moduloActual = isset($partes[1]) ? (int) $partes[1] : 1;
+                        $moduloActual = isset($partes[1]) ? (int)$partes[1] : 1;
                         $usarHoraActual = false;
                     } else {
                         // Fallback de seguridad
@@ -361,7 +369,7 @@ class SolicitanteController extends Controller
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
             $planificaciones = Planificacion_Asignatura::on('tenant')
                 ->where('id_espacio', $request->id_espacio)
-                ->where('id_modulo', 'like', $codigoDia.'.%')
+                ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->pluck('id_modulo')
                 ->toArray();
 
@@ -380,7 +388,7 @@ class SolicitanteController extends Controller
 
                 // Determinar qué módulos cubre esta reserva
                 for ($i = 1; $i <= 15; $i++) {
-                    $moduloCodigo = $codigoDia.'.'.$i;
+                    $moduloCodigo = $codigoDia . '.' . $i;
                     $horarioModulo = $this->obtenerHorarioModulo($i, $diaActual);
 
                     if ($horarioModulo &&
@@ -400,7 +408,7 @@ class SolicitanteController extends Controller
             $proximaClase = null;
 
             for ($i = $moduloActual; $i <= 15; $i++) {
-                $moduloCodigo = $codigoDia.'.'.$i;
+                $moduloCodigo = $codigoDia . '.' . $i;
 
                 $ocupadoPorReservaActiva = in_array($moduloCodigo, $modulosOcupadosPorReservas);
                 $ocupadoPorPlanificacion = in_array($moduloCodigo, $planificaciones);
@@ -426,10 +434,9 @@ class SolicitanteController extends Controller
                 if ($proximaClase) {
                     $mensaje .= " Próxima clase: {$proximaClase['asignatura']} (Módulo {$proximaClase['modulo']})";
                 }
-
                 return response()->json([
                     'success' => false,
-                    'mensaje' => $mensaje,
+                    'mensaje' => $mensaje
                 ], 400);
             }
 
@@ -440,13 +447,13 @@ class SolicitanteController extends Controller
             $indexDia = array_search($diaActual, $diasArray);
             $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
 
-            $idModuloInicio = $prefijo.'.'.$moduloActual;
-            $idModuloFin = $prefijo.'.'.($moduloActual + $modulosSolicitados - 1);
+            $idModuloInicio = $prefijo . '.' . $moduloActual;
+            $idModuloFin = $prefijo . '.' . ($moduloActual + $modulosSolicitados - 1);
 
-            $moduloInicio = Modulo::on('tenant')->where('id_modulo', $idModuloInicio)->first();
-            $moduloFin = Modulo::on('tenant')->where('id_modulo', $idModuloFin)->first();
+            $moduloInicio = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloInicio)->first();
+            $moduloFin = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloFin)->first();
 
-            $horaInicio = ($moduloInicio && ! $usarHoraActual) ? $moduloInicio->hora_inicio : $horaActual;
+            $horaInicio = ($moduloInicio && !$usarHoraActual) ? $moduloInicio->hora_inicio : $horaActual;
 
             // Si no hay módulo final, calcular una hora por defecto (1.5 horas por módulo)
             if ($moduloFin) {
@@ -466,7 +473,7 @@ class SolicitanteController extends Controller
                 ->where('fecha_reserva', $fechaActual)  // Filtrar por fecha
                 ->where(function ($query) use ($horaInicio, $horaFin) {
                     // Verificar si hay solapamiento de horarios
-                    $query->where(function ($q) use ($horaInicio) {
+                    $query->where(function ($q) use ($horaInicio, $horaFin) {
                         // La nueva reserva empieza antes y termina durante una reserva existente
                         $q
                             ->where('hora', '<=', $horaInicio)
@@ -488,7 +495,7 @@ class SolicitanteController extends Controller
             if ($reservasSimultaneas) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa en ese horario.',
+                    'mensaje' => 'Ya tienes una reserva activa en ese horario.'
                 ], 400);
             }
 
@@ -507,7 +514,7 @@ class SolicitanteController extends Controller
                 'tipo_reserva' => 'espontanea',
                 'estado' => 'activa',
                 'created_at' => $ahora,
-                'updated_at' => $ahora,
+                'updated_at' => $ahora
             ]);
 
             // Actualizar estado del espacio a 'Ocupado' inmediatamente
@@ -518,10 +525,13 @@ class SolicitanteController extends Controller
                     ->where('id_espacio', $request->id_espacio)
                     ->update([
                         'estado' => 'Ocupado',
-                        'updated_at' => $ahora,
+                        'updated_at' => $ahora
                     ]);
 
+
             }
+
+
 
             // Verificar que la reserva se guardó usando Query Builder
             $reservaVerificacion = DB::connection('tenant')
@@ -529,18 +539,19 @@ class SolicitanteController extends Controller
                 ->where('id_reserva', $idReserva)
                 ->first();
 
-            if (! $reservaVerificacion) {
+            if (!$reservaVerificacion) {
                 Log::error('❌ ERROR CRÍTICO: Reserva NO se guardó en BD tenant', [
                     'id_reserva' => $idReserva,
                     'run_solicitante' => $request->run_solicitante,
-                    'insertado_resultado' => $insertado,
+                    'insertado_resultado' => $insertado
                 ]);
-
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Error al guardar la reserva en la base de datos',
+                    'mensaje' => 'Error al guardar la reserva en la base de datos'
                 ], 500);
             }
+
+
 
             // Actualizar estado del espacio usando Query Builder también
             DB::connection('tenant')
@@ -551,7 +562,7 @@ class SolicitanteController extends Controller
             // Enviar comprobante de reserva por correo
             $reservaModel = Reserva::on('tenant')->where('id_reserva', $idReserva)->first();
             if ($reservaModel) {
-                app(ReservaService::class)->enviarCorreoReserva($reservaModel, $solicitante->correo ?? null);
+                app(\App\Services\ReservaService::class)->enviarCorreoReserva($reservaModel, $solicitante->correo ?? null);
             }
 
             return response()->json([
@@ -564,25 +575,23 @@ class SolicitanteController extends Controller
                     'fecha' => $fechaActual,
                     'espacio' => $espacio->nombre_espacio,
                     'solicitante' => $solicitante->nombre,
-                    'modulos_reservados' => $modulosSolicitados,
-                ],
+                    'modulos_reservados' => $modulosSolicitados
+                ]
             ]);
         } catch (ValidationException $e) {
             // La ValidationException ocurre antes de la transacción, no necesita rollBack
-            Log::error('Error de validación al crear reserva de solicitante: '.json_encode($e->errors()));
-
+            Log::error('Error de validación al crear reserva de solicitante: ' . json_encode($e->errors()));
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error de validación en los datos enviados',
-                'errors' => $e->errors(),
+                'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
             // Los errores en la transacción se manejan automáticamente (auto-rollback)
-            Log::error('Error al crear reserva de solicitante: '.$e->getMessage());
-
+            Log::error('Error al crear reserva de solicitante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al crear reserva: '.$e->getMessage(),
+                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -606,17 +615,17 @@ class SolicitanteController extends Controller
         $indexDia = array_search($diaActual, $diasArray);
         $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
 
-        $idModulo = $prefijo.'.'.$modulo;
+        $idModulo = $prefijo . '.' . $modulo;
         // Usar explícitamente la conexión 'tenant'
-        $moduloData = Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
+        $moduloData = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
 
-        if (! $moduloData) {
+        if (!$moduloData) {
             return null;
         }
 
         return [
             'inicio' => $moduloData->hora_inicio,
-            'fin' => $moduloData->hora_termino,
+            'fin' => $moduloData->hora_termino
         ];
     }
 
@@ -638,7 +647,7 @@ class SolicitanteController extends Controller
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                 'profesor' => $planificacion->horario->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
-                'hora_termino' => $planificacion->modulo->hora_termino ?? '',
+                'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
         }
 
@@ -661,12 +670,12 @@ class SolicitanteController extends Controller
                 ->exists();
 
             return response()->json([
-                'existe' => $existe,
+                'existe' => $existe
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'existe' => false,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -679,11 +688,13 @@ class SolicitanteController extends Controller
         try {
             $tenantId = tenant_id() ?? null;
 
-            if (! $tenantId) {
+
+
+            if (!$tenantId) {
                 // Si no hay tenant establecido, buscarlo por dominio
                 $host = request()->getHost();
                 $tenant = Tenant::where('domain', $host)
-                    ->orWhere('domain', 'LIKE', '%'.$host.'%')
+                    ->orWhere('domain', 'LIKE', '%' . $host . '%')
                     ->first();
 
                 if ($tenant) {
@@ -704,19 +715,20 @@ class SolicitanteController extends Controller
                     Config::set('database.connections.tenant.database', $tenant->database);
                     DB::purge('tenant');
 
+
                     // VERIFICACIÓN DE CONEXIÓN
                     try {
                         DB::connection('tenant')->getPdo();
 
                     } catch (\Exception $e) {
-                        Log::error('Error al verificar conexión tenant: '.$e->getMessage());
+                        Log::error('Error al verificar conexión tenant: ' . $e->getMessage());
                         throw $e;
                     }
                 }
             }
         } catch (\Exception $e) {
             Log::error('Error en establecerContextoTenant', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
             throw $e;
         }

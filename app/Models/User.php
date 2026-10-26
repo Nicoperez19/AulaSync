@@ -66,37 +66,37 @@ class User extends Authenticatable
         return 'run';
     }
 
-    public function universidad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function universidad()
     {
         return $this->belongsTo(Universidad::class, 'id_universidad');
     }
 
-    public function facultad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function facultad()
     {
         return $this->belongsTo(Facultad::class, 'id_facultad');
     }
 
-    public function carrera(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function carrera()
     {
         return $this->belongsTo(Carrera::class, 'id_carrera');
     }
 
-    public function areaAcademica(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function areaAcademica()
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
 
-    public function sede(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function sede()
     {
         return $this->belongsTo(Sede::class, 'id_sede');
     }
 
-    public function profesor(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function profesor()
     {
         return $this->hasOne(Profesor::class, 'run_profesor', 'run');
     }
 
-    public function notificaciones(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function notificaciones()
     {
         return $this->hasMany(Notificacion::class, 'run_usuario', 'run');
     }
@@ -124,3 +124,4 @@ class User extends Authenticatable
         );
     }
 }
+

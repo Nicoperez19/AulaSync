@@ -7,17 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Bloque extends Model
 {
-
+    use HasFactory;
     protected $connection = 'tenant';
-
     protected $table = 'bloques';
-
     protected $primaryKey = 'id_bloque';
-
     public $incrementing = false;
-
     protected $keyType = 'string';
-
+    
     protected $fillable = [
         'id_bloque',
         'id_espacio',
@@ -27,12 +23,12 @@ class Bloque extends Model
         'id_mapa',
     ];
 
-    public function mapa(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function mapa()
     {
         return $this->belongsTo(Mapa::class, 'id_mapa');
     }
 
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio');
     }

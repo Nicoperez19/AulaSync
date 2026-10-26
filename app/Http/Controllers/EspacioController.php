@@ -2,33 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ModulosHelper;
-use App\Helpers\SemesterHelper;
 use App\Models\Espacio;
 use App\Models\Facultad;
 use App\Models\Piso;
+use App\Models\Universidad;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Solicitante;
 use App\Models\PlanificacionProfesorColaborador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\QRService;
+use App\Helpers\SemesterHelper;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 use App\Models\Sede;
 use App\Models\User;
 use App\Models\Profesor;
 use App\Models\Reserva;
-use App\Models\Solicitante;
-use App\Models\Universidad;
 use App\Traits\SafeCacheTrait;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Helpers\ModulosHelper;
 
 class EspacioController extends Controller
 {
-
+    use SafeCacheTrait;
     /**
      * Muestra el listado de espacios
      */
@@ -45,6 +45,7 @@ class EspacioController extends Controller
      */
     public function store(Request $request)
     {
+
 
         try {
             $validated = $this->validarDatosEspacio($request);
@@ -70,13 +71,13 @@ class EspacioController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al crear espacio:', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return redirect()
                 ->back()
                 ->withInput()
-                ->with('error', 'Error al crear el espacio: '.$e->getMessage());
+                ->with('error', 'Error al crear el espacio: ' . $e->getMessage());
         }
     }
 
@@ -130,12 +131,12 @@ class EspacioController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al actualizar espacio:', [
                 'error' => $e->getMessage(),
-                'espacio_id' => $id_espacio,
+                'espacio_id' => $id_espacio
             ]);
 
             return redirect()
                 ->route('spaces_index')
-                ->with('error', 'Error al actualizar el espacio: '.$e->getMessage());
+                ->with('error', 'Error al actualizar el espacio: ' . $e->getMessage());
         }
     }
 
@@ -156,12 +157,12 @@ class EspacioController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al eliminar espacio:', [
                 'error' => $e->getMessage(),
-                'espacio_id' => $id_espacio,
+                'espacio_id' => $id_espacio
             ]);
 
             return redirect()
                 ->route('spaces_index')
-                ->with('error', 'Error al eliminar el espacio: '.$e->getMessage());
+                ->with('error', 'Error al eliminar el espacio: ' . $e->getMessage());
         }
     }
 
@@ -204,7 +205,7 @@ class EspacioController extends Controller
                     'Sala de Estudio',
                     'Gimnasio',
                     'Sala Multiusos',
-                ]),
+                ])
             ],
             'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'])],
             'puestos_disponibles' => ['nullable', 'integer', 'min:1'],
@@ -221,7 +222,7 @@ class EspacioController extends Controller
         ]);
 
         $piso = Piso::with('facultad')->find($validated['piso_id']);
-        if (! $piso || ! $piso->facultad) {
+        if (!$piso || !$piso->facultad) {
             throw ValidationException::withMessages([
                 'piso_id' => 'El piso seleccionado no tiene una facultad válida.',
             ]);
@@ -257,8 +258,8 @@ class EspacioController extends Controller
         $prefijo = tenant_prefijo();
         if ($prefijo) {
             $prefijoNormalizado = strtoupper(trim($prefijo));
-            if ($prefijoNormalizado !== '' && ! str_starts_with(strtoupper($idEspacio), $prefijoNormalizado)) {
-                $idEspacio = $prefijoNormalizado.$idEspacio;
+            if ($prefijoNormalizado !== '' && !str_starts_with(strtoupper($idEspacio), $prefijoNormalizado)) {
+                $idEspacio = $prefijoNormalizado . $idEspacio;
             }
         }
 
@@ -274,16 +275,16 @@ class EspacioController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if (!$user) {
             abort(403, 'Usuario no autenticado.');
         }
 
         // Permiso total para Superusuarios, RUN 19716146, Administradores y Super Admin
-        if ($user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin')) {
+        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin')) {
             return;
         }
 
-        if (! $user->id_sede) {
+        if (!$user->id_sede) {
             abort(403, 'Tu cuenta no tiene una sede asignada.');
         }
 
@@ -300,14 +301,14 @@ class EspacioController extends Controller
         $user = Auth::user();
 
         // Permiso total para Superusuarios, RUN 19716146, Administradores y Super Admin
-        if ($user && ($user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin'))) {
+        if ($user && ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin'))) {
             return;
         }
 
         $espacio->loadMissing('piso.facultad');
 
         $idSede = $espacio->piso?->facultad?->id_sede;
-        if (! $idSede) {
+        if (!$idSede) {
             abort(403, 'No se pudo determinar la sede del espacio.');
         }
 
@@ -329,15 +330,15 @@ class EspacioController extends Controller
     {
         // Auto-curación para Los Ángeles: asegurar que los edificios tengan sus nombres oficiales
         if ($facultadId === 'IT_LA') {
-            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function ($q) {
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function($q) {
                 $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 1')->orWhere('nombre_piso', 'LIKE', '%1er%');
             })->update(['nombre_piso' => 'CAUPOLICÁN 276']);
 
-            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function ($q) {
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function($q) {
                 $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 2');
             })->update(['nombre_piso' => 'VILLAGRÁN 220']);
 
-            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function ($q) {
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
                 $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
             })->update(['nombre_piso' => 'VILLAGRÁN 251']);
 
@@ -348,7 +349,7 @@ class EspacioController extends Controller
                 if (file_exists($file)) {
                     $todos = require $file;
                     foreach ($todos as $e) {
-                        if (! Espacio::where('id_espacio', $e['id_espacio'])->exists()) {
+                        if (!Espacio::where('id_espacio', $e['id_espacio'])->exists()) {
                             if (str_starts_with($e['id_espacio'], 'LA-4') || in_array($e['piso_id'] ?? null, [12, 13])) {
                                 $e['piso_id'] = $piso251->id;
                             }
@@ -370,10 +371,9 @@ class EspacioController extends Controller
                     $piso->nombre_piso = 'CAUPOLICÁN 276';
                 } elseif ($piso->numero_piso == 2 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 2')) {
                     $piso->nombre_piso = 'VILLAGRÁN 220';
-                } elseif ($piso->numero_piso == 3 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 3' || ! str_contains($piso->nombre_piso, '251'))) {
+                } elseif ($piso->numero_piso == 3 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 3' || !str_contains($piso->nombre_piso, '251'))) {
                     $piso->nombre_piso = 'VILLAGRÁN 251';
                 }
-
                 return $piso;
             });
         }
@@ -396,14 +396,12 @@ class EspacioController extends Controller
     {
         try {
             $sedes = Sede::where('id_universidad', $universidadId)->get();
-
             return response()->json($sedes);
         } catch (\Exception $e) {
             Log::error('Error al obtener sedes:', [
                 'universidad_id' => $universidadId,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
-
             return response()->json(['error' => 'Error al obtener las sedes'], 500);
         }
     }
@@ -415,14 +413,12 @@ class EspacioController extends Controller
     {
         try {
             $facultades = Facultad::where('id_sede', $sedeId)->get();
-
             return response()->json($facultades);
         } catch (\Exception $e) {
             Log::error('Error al obtener facultades:', [
                 'sede_id' => $sedeId,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
-
             return response()->json(['error' => 'Error al obtener las facultades'], 500);
         }
     }
@@ -439,6 +435,7 @@ class EspacioController extends Controller
 
         // Log para debugging
 
+
         // Mapeo de días a códigos
         $codigosDias = [
             'lunes' => 'LU',
@@ -447,7 +444,7 @@ class EspacioController extends Controller
             'jueves' => 'JU',
             'viernes' => 'VI',
             'sabado' => 'SA',
-            'domingo' => 'DO',
+            'domingo' => 'DO'
         ];
 
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
@@ -457,10 +454,11 @@ class EspacioController extends Controller
 
         // Log para debugging del módulo actual
 
-        if (! $moduloActual) {
+
+        if (!$moduloActual) {
             Log::warning('modulosDisponibles - No se pudo determinar el módulo actual', [
                 'horaActual' => $horaActual,
-                'diaActual' => $diaActual,
+                'diaActual' => $diaActual
             ]);
 
             return response()->json([
@@ -470,15 +468,15 @@ class EspacioController extends Controller
                 'modulo_actual' => null,
                 'detalles' => [
                     'razon' => 'fuera_horario',
-                    'descripcion' => 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00)',
-                ],
+                    'descripcion' => 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00)'
+                ]
             ]);
         }
 
         // Obtener todas las planificaciones para este espacio en este día en el período actual
-        $periodoActual = SemesterHelper::getCurrentPeriod();
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
         $planificaciones = Planificacion_Asignatura::where('id_espacio', $espacioId)
-            ->where('id_modulo', 'like', $codigoDia.'.%')
+            ->where('id_modulo', 'like', $codigoDia . '.%')
             ->whereHas('horario', function ($q) use ($periodoActual) {
                 $q->where('periodo', $periodoActual);
             })
@@ -500,7 +498,7 @@ class EspacioController extends Controller
 
             // Determinar qué módulos cubre esta reserva
             for ($i = 1; $i <= 15; $i++) {
-                $moduloCodigo = $codigoDia.'.'.$i;
+                $moduloCodigo = $codigoDia . '.' . $i;
                 $horarioModulo = $this->obtenerHorarioModulo($i, $diaActual);
 
                 if (
@@ -523,7 +521,7 @@ class EspacioController extends Controller
         $proximaClase = null;
 
         for ($i = $moduloActual; $i <= 15; $i++) {
-            $moduloCodigo = $codigoDia.'.'.$i;
+            $moduloCodigo = $codigoDia . '.' . $i;
 
             $ocupadoPorReservaActiva = in_array($moduloCodigo, $modulosOcupadosPorReservas);
             $ocupadoPorPlanificacion = in_array($moduloCodigo, $planificaciones);
@@ -544,7 +542,7 @@ class EspacioController extends Controller
         // Verificar si hay clases próximas (dentro de 2 módulos)
         $clasesProximas = [];
         for ($i = $moduloActual + $maxModulos; $i <= min(15, $moduloActual + $maxModulos + 2); $i++) {
-            $moduloCodigo = $codigoDia.'.'.$i;
+            $moduloCodigo = $codigoDia . '.' . $i;
             if (in_array($moduloCodigo, $planificaciones)) {
                 $clasesProximas[] = $this->obtenerInfoProximaClase($moduloCodigo, $espacioId);
             }
@@ -557,7 +555,7 @@ class EspacioController extends Controller
             $modulosDetalle[] = [
                 'modulo' => $m,
                 'inicio' => $horario['inicio'] ?? null,
-                'fin' => $horario['fin'] ?? null,
+                'fin' => $horario['fin'] ?? null
             ];
         }
 
@@ -573,8 +571,8 @@ class EspacioController extends Controller
             'detalles' => [
                 'planificaciones_encontradas' => count($planificaciones),
                 'reservas_activas' => count($reservasActivas),
-                'modulos_ocupados' => count($modulosOcupados),
-            ],
+                'modulos_ocupados' => count($modulosOcupados)
+            ]
         ]);
 
         // Log final para debugging
@@ -588,11 +586,10 @@ class EspacioController extends Controller
     {
         $horariosDia = ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
 
-        if (! $horariosDia) {
+        if (!$horariosDia) {
             Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
-                'diaActual' => $diaActual,
+                'diaActual' => $diaActual
             ]);
-
             return null;
         }
 
@@ -615,7 +612,7 @@ class EspacioController extends Controller
 
         Log::warning('determinarModuloActual - No se encontró módulo para la hora:', [
             'horaActual' => $horaActual,
-            'diaActual' => $diaActual,
+            'diaActual' => $diaActual
         ]);
 
         return null;
@@ -634,7 +631,7 @@ class EspacioController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
-        $periodoActual = SemesterHelper::getCurrentPeriod();
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
         $planificacion = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
@@ -650,7 +647,7 @@ class EspacioController extends Controller
                 // acceder al profesor a través del horario
                 'profesor' => $planificacion->horario->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
-                'hora_termino' => $planificacion->modulo->hora_termino ?? '',
+                'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
         }
 
@@ -664,32 +661,31 @@ class EspacioController extends Controller
     {
         try {
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
-            $qrService = new QRService;
+            $qrService = new QRService();
 
             // Generar el código QR
             $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
 
             // Verificar si el archivo existe
-            if (! Storage::disk('public')->exists($qrPath)) {
+            if (!Storage::disk('public')->exists($qrPath)) {
                 return redirect()->back()->with('error', 'No se pudo generar el código QR.');
             }
 
             // Descargar el archivo usando response()->download con la ruta completa
             // Asumir storage/app/public como disco 'public'
-            $fullPath = storage_path('app/public/'.ltrim($qrPath, '/'));
+            $fullPath = storage_path('app/public/' . ltrim($qrPath, '/'));
             if (file_exists($fullPath)) {
-                return response()->download($fullPath, 'QR_'.$espacio->id_espacio.'.png');
+                return response()->download($fullPath, 'QR_' . $espacio->id_espacio . '.png');
             }
-
             return redirect()->back()->with('error', 'No se pudo encontrar el archivo QR generado.');
 
         } catch (\Exception $e) {
             Log::error('Error al descargar QR individual:', [
                 'error' => $e->getMessage(),
-                'espacio_id' => $id_espacio,
+                'espacio_id' => $id_espacio
             ]);
 
-            return redirect()->back()->with('error', 'Error al descargar el código QR: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error al descargar el código QR: ' . $e->getMessage());
         }
     }
 
@@ -700,19 +696,19 @@ class EspacioController extends Controller
     {
         try {
             $espacios = Espacio::all();
-            $qrService = new QRService;
+            $qrService = new QRService();
 
             // Crear archivo ZIP temporal
-            $zipName = 'QRs_Espacios_'.date('Y-m-d_H-i-s').'.zip';
-            $zipPath = storage_path('app/temp/'.$zipName);
+            $zipName = 'QRs_Espacios_' . date('Y-m-d_H-i-s') . '.zip';
+            $zipPath = storage_path('app/temp/' . $zipName);
 
             // Crear directorio temporal si no existe
-            if (! file_exists(storage_path('app/temp'))) {
+            if (!file_exists(storage_path('app/temp'))) {
                 mkdir(storage_path('app/temp'), 0755, true);
             }
 
-            $zip = new ZipArchive;
-            if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE) !== TRUE) {
                 return redirect()->back()->with('error', 'No se pudo crear el archivo ZIP.');
             }
 
@@ -723,7 +719,7 @@ class EspacioController extends Controller
                 // Verificar si el archivo existe
                 if (Storage::disk('public')->exists($qrPath)) {
                     $qrContent = Storage::disk('public')->get($qrPath);
-                    $zip->addFromString('QR_'.$espacio->id_espacio.'.png', $qrContent);
+                    $zip->addFromString('QR_' . $espacio->id_espacio . '.png', $qrContent);
                 }
             }
 
@@ -734,10 +730,10 @@ class EspacioController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Error al descargar QRs en ZIP:', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Error al generar el archivo ZIP: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error al generar el archivo ZIP: ' . $e->getMessage());
         }
     }
 
@@ -750,7 +746,7 @@ class EspacioController extends Controller
             // Obtener espacios ordenados y agrupados por piso
             $espacios = Espacio::orderBy('piso_id')->orderBy('id_espacio')->get();
             $espaciosPorPiso = $espacios->groupBy('piso_id');
-            $qrService = new QRService;
+            $qrService = new QRService();
 
             // HTML para el PDF
             $html = '<!DOCTYPE html>
@@ -842,21 +838,21 @@ class EspacioController extends Controller
             $firstPiso = true;
 
             foreach ($espaciosPorPiso as $pisoId => $espaciosDelPiso) {
-                if (! $firstPiso) {
+                if (!$firstPiso) {
                     $html .= '<div class="page-break"></div>';
                 }
-
+                
                 $html .= '<div class="header">';
                 if ($firstPiso) {
                     $html .= '<h1>Códigos QR de Espacios</h1>
                               <p>Códigos QR generados por piso</p>
-                              <p>Generado: '.now()->format('d/m/Y H:i:s').'</p>';
+                              <p>Generado: ' . now()->format('d/m/Y H:i:s') . '</p>';
                 }
                 $html .= '</div>';
-
-                $nombrePiso = $pisoId ? 'Piso '.$pisoId : 'Sin piso asignado';
-                $html .= '<div class="piso-header">'.htmlspecialchars($nombrePiso).'</div>';
-
+                
+                $nombrePiso = $pisoId ? 'Piso ' . $pisoId : 'Sin piso asignado';
+                $html .= '<div class="piso-header">' . htmlspecialchars($nombrePiso) . '</div>';
+                
                 $html .= '<table>';
                 $count = 0;
                 $itemsPerRow = 5;
@@ -879,9 +875,9 @@ class EspacioController extends Controller
                         $base64QR = base64_encode($qrContent);
 
                         $html .= '<td class="qr-container">
-                            <img src="data:image/png;base64,'.$base64QR.'" class="qr-image" alt="QR '.$espacio->id_espacio.'">
-                            <div class="qr-id">'.htmlspecialchars($espacio->id_espacio).'</div>
-                            <div class="qr-name">'.htmlspecialchars($espacio->nombre_espacio ?? '').'</div>
+                            <img src="data:image/png;base64,' . $base64QR . '" class="qr-image" alt="QR ' . $espacio->id_espacio . '">
+                            <div class="qr-id">' . htmlspecialchars($espacio->id_espacio) . '</div>
+                            <div class="qr-name">' . htmlspecialchars($espacio->nombre_espacio ?? '') . '</div>
                         </td>';
 
                         $count++;
@@ -895,7 +891,7 @@ class EspacioController extends Controller
                         $html .= '<td class="empty-td"></td>';
                     }
                 }
-
+                
                 if ($count > 0) {
                     $html .= '</tr>';
                 }
@@ -908,20 +904,20 @@ class EspacioController extends Controller
             </html>';
 
             // Crear PDF
-            $dompdf = new Dompdf;
+            $dompdf = new Dompdf();
             $dompdf->loadHtml($html);
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
 
             // Descargar el PDF
-            return $dompdf->stream('QRs_Espacios_'.date('Y-m-d_H-i-s').'.pdf');
+            return $dompdf->stream('QRs_Espacios_' . date('Y-m-d_H-i-s') . '.pdf');
 
         } catch (\Exception $e) {
             Log::error('Error al descargar QRs en PDF:', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()->with('error', 'Error al generar el PDF: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error al generar el PDF: ' . $e->getMessage());
         }
     }
 
@@ -940,7 +936,7 @@ class EspacioController extends Controller
                     $query->where('run_profesor', $runProfesor)
                         ->where('periodo', $periodoActual);
                 })
-                ->where('id_modulo', 'like', $codigoDia.'.%')
+                ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->get()
                 ->map(function ($planificacion) {
                     return [
@@ -948,26 +944,26 @@ class EspacioController extends Controller
                         'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'No especificado',
                         'modulo' => $planificacion->modulo->id_modulo ?? 'No especificado',
                         'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
-                        'hora_termino' => $planificacion->modulo->hora_termino ?? '',
+                        'hora_termino' => $planificacion->modulo->hora_termino ?? ''
                     ];
                 });
 
             return response()->json([
                 'success' => true,
                 'asignaturas' => $asignaturas,
-                'total' => $asignaturas->count(),
+                'total' => $asignaturas->count()
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al obtener asignaturas del profesor:', [
                 'run_profesor' => $runProfesor,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al obtener las asignaturas del profesor',
-                'asignaturas' => [],
+                'asignaturas' => []
             ], 500);
         }
     }
@@ -984,7 +980,7 @@ class EspacioController extends Controller
             }
 
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            if (! $espacio) {
+            if (!$espacio) {
                 return response()->json(['success' => false, 'mensaje' => 'Espacio no encontrado'], 404);
             }
 
@@ -1000,7 +996,7 @@ class EspacioController extends Controller
                 'thursday' => 'jueves',
                 'friday' => 'viernes',
                 'saturday' => 'sábado',
-                'sunday' => 'domingo',
+                'sunday' => 'domingo'
             ];
             $codigoDia = $diasEnEspanol[$diaActual] ?? 'lunes';
 
@@ -1037,10 +1033,10 @@ class EspacioController extends Controller
             // 2.b. Planificación de colaborador actual
             $planColaboradorActual = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
-                ->whereHas('modulo', fn ($q) => $q->where('dia', $codigoDia)
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
                     ->where('hora_termino', '>', $horaActual))
-                ->whereHas('profesorColaborador', fn ($q) => $q->where('estado', 'activo')
+                ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
                     ->where('fecha_inicio', '<=', $fechaActual)
                     ->where('fecha_termino', '>=', $fechaActual))
                 ->first();
@@ -1058,8 +1054,8 @@ class EspacioController extends Controller
             // 3.b. Próxima planificación de colaborador
             $planColaboradorProxima = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
-                ->whereHas('modulo', fn ($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
-                ->whereHas('profesorColaborador', fn ($q) => $q->where('estado', 'activo')
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
+                ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
                     ->where('fecha_inicio', '<=', $fechaActual)
                     ->where('fecha_termino', '>=', $fechaActual))
                 ->join('modulos', 'planificaciones_profesores_colaboradores.id_modulo', '=', 'modulos.id_modulo')
@@ -1097,7 +1093,7 @@ class EspacioController extends Controller
 
             // 4. Planificación anterior (una query)
             $horaCorteAnterior = $horaActual;
-            $reservaEnCursoParaCorte = $reservaHoy->first(fn ($r) => $r->estado === 'activa' && $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual));
+            $reservaEnCursoParaCorte = $reservaHoy->first(fn($r) => $r->estado === 'activa' && $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual));
             if ($reservaEnCursoParaCorte && $reservaEnCursoParaCorte->hora) {
                 $horaCorteAnterior = min($horaActual, $reservaEnCursoParaCorte->hora);
             }
@@ -1138,14 +1134,15 @@ class EspacioController extends Controller
 
             // ── Determinar ocupante actual ────────────────────────────────────────────
             // Prioridad: reserva activa en curso > reserva activa vencida > reserva programada > planificación
-            $reservaActiva = $reservaHoy->filter(fn ($r) => $r->estado === 'activa')
+            $reservaActiva = $reservaHoy->filter(fn($r) => $r->estado === 'activa')
                 ->first(
-                    fn ($r) => $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual)
+                    fn($r) =>
+                    $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual)
                 );
 
             // Reserva activa vencida (fallback)
-            if (! $reservaActiva) {
-                $reservaActiva = $reservaHoy->filter(fn ($r) => $r->estado === 'activa' && $r->hora_salida !== null && $r->hora_salida <= $horaActual)->first();
+            if (!$reservaActiva) {
+                $reservaActiva = $reservaHoy->filter(fn($r) => $r->estado === 'activa' && $r->hora_salida !== null && $r->hora_salida <= $horaActual)->first();
             }
 
             if ($reservaActiva) {
@@ -1170,9 +1167,10 @@ class EspacioController extends Controller
                 }
             } else {
                 // Buscar reserva programada en curso
-                $reservaProgramada = $reservaHoy->filter(fn ($r) => $r->estado === 'programada')
+                $reservaProgramada = $reservaHoy->filter(fn($r) => $r->estado === 'programada')
                     ->first(
-                        fn ($r) => $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual)
+                        fn($r) =>
+                        $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual)
                     );
 
                 if ($reservaProgramada) {
@@ -1238,7 +1236,7 @@ class EspacioController extends Controller
             }
 
             // ── Próxima clase ────────────────────────────────────────────────────────
-            $proxFuturaReserva = $reservaHoy->filter(fn ($r) => $r->hora > $horaActual && $r->tipo_reserva !== 'espontanea')->first();
+            $proxFuturaReserva = $reservaHoy->filter(fn($r) => $r->hora > $horaActual && $r->tipo_reserva !== 'espontanea')->first();
             if ($proxFuturaReserva) {
                 $response['proxima_clase'] = [
                     'asignatura' => $proxFuturaReserva->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura',
@@ -1269,7 +1267,7 @@ class EspacioController extends Controller
             $idAsignaturaActual = $response['id_asignatura'] ?? ($reservaActiva->id_asignatura ?? ($planActual->id_asignatura ?? null));
             $nombreAsignaturaActual = $response['asignatura'] ?? null;
 
-            if ($reservaAnterior && (! $idAsignaturaActual || $reservaAnterior->id_asignatura !== $idAsignaturaActual)) {
+            if ($reservaAnterior && (!$idAsignaturaActual || $reservaAnterior->id_asignatura !== $idAsignaturaActual)) {
                 $esEspontanea = $reservaAnterior->tipo_reserva === 'espontanea';
                 $response['clase_anterior'] = [
                     'asignatura' => $esEspontanea ? 'Reserva espontánea' : ($reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura'),
@@ -1286,7 +1284,7 @@ class EspacioController extends Controller
                     $esMismaClaseEnCurso = true;
                 }
 
-                if (! $esMismaClaseEnCurso) {
+                if (!$esMismaClaseEnCurso) {
                     $response['clase_anterior'] = [
                         'asignatura' => $planAnterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
                         'profesor' => $planAnterior->horario->profesor->name ?? 'No especificado',
@@ -1305,9 +1303,8 @@ class EspacioController extends Controller
         } catch (\Exception $e) {
             Log::error("Error al obtener información del espacio {$idEspacio}:", [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json(['success' => false, 'mensaje' => 'Error interno del servidor'], 500);
         }
     }
@@ -1322,7 +1319,7 @@ class EspacioController extends Controller
         // El profesor ya viene cargado con eager loading desde la reserva
         $profesorNombre = $reserva->profesor?->name;
 
-        if (! $profesorNombre) {
+        if (!$profesorNombre) {
             // Fallback: solo si realmente no está en la relación
             $prof = Profesor::select('name', 'run_profesor')->where('run_profesor', $runProfesor)->first();
             $profesorNombre = $prof?->name ?? 'Profesor no encontrado';
@@ -1336,8 +1333,8 @@ class EspacioController extends Controller
         } else {
             // Solo si es clase regular sin asignatura en la reserva, buscar en planificación
             $plan = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura'])
-                ->whereHas('horario', fn ($q) => $q->where('run_profesor', $runProfesor))
-                ->whereHas('modulo', fn ($q) => $q->where('dia', $codigoDia)
+                ->whereHas('horario', fn($q) => $q->where('run_profesor', $runProfesor))
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
                     ->where('hora_termino', '>', $horaActual))
                 ->select('planificacion_asignaturas.id_asignatura')
@@ -1418,6 +1415,7 @@ class EspacioController extends Controller
     }
 
     /**
+
      * Obtiene información de un profesor
      */
     private function obtenerInformacionProfesor($reserva, $horaActual)
@@ -1430,9 +1428,8 @@ class EspacioController extends Controller
                 ->where('run_profesor', $runProfesor)
                 ->first();
 
-            if (! $profesor) {
-                Log::warning('Profesor no encontrado en BD', ['run_profesor' => $runProfesor]);
-
+            if (!$profesor) {
+                Log::warning("Profesor no encontrado en BD", ['run_profesor' => $runProfesor]);
                 return [
                     'success' => true,
                     'tipo_ocupacion' => 'ocupado_sin_info',
@@ -1441,15 +1438,14 @@ class EspacioController extends Controller
                     'tipo_reserva' => $reserva->tipo_reserva,
                     'asignatura' => null,
                     'hora_inicio' => $reserva->hora,
-                    'hora_salida' => $reserva->hora_salida,
+                    'hora_salida' => $reserva->hora_salida
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Error al obtener información del profesor', [
+            Log::error("Error al obtener información del profesor", [
                 'run_profesor' => $reserva->run_profesor,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
-
             return [
                 'success' => true,
                 'tipo_ocupacion' => 'ocupado_sin_info',
@@ -1458,7 +1454,7 @@ class EspacioController extends Controller
                 'tipo_reserva' => $reserva->tipo_reserva,
                 'asignatura' => null,
                 'hora_inicio' => $reserva->hora,
-                'hora_salida' => $reserva->hora_salida,
+                'hora_salida' => $reserva->hora_salida
             ];
         }
 
@@ -1484,7 +1480,7 @@ class EspacioController extends Controller
                     'thursday' => 'JU',
                     'friday' => 'VI',
                     'saturday' => 'SA',
-                    'sunday' => 'DO',
+                    'sunday' => 'DO'
                 ];
                 $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
@@ -1496,7 +1492,7 @@ class EspacioController extends Controller
                         $query->where('run_profesor', $runProfesor)
                             ->where('periodo', $periodoActual);
                     })
-                    ->where('id_modulo', 'like', $codigoDia.'.%')
+                    ->where('id_modulo', 'like', $codigoDia . '.%')
                     ->get();
 
                 // Filtrar en memoria por los módulos cuyo horario contiene la hora actual
@@ -1508,9 +1504,9 @@ class EspacioController extends Controller
 
                 $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
             } catch (\Exception $e) {
-                Log::error('Error al obtener planificación del profesor', [
+                Log::error("Error al obtener planificación del profesor", [
                     'run_profesor' => $runProfesor,
-                    'error' => $e->getMessage(),
+                    'error' => $e->getMessage()
                 ]);
                 $asignatura = null;
             }
@@ -1524,7 +1520,7 @@ class EspacioController extends Controller
             'asignatura' => $asignatura,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
-            'tipo_reserva' => $reserva->tipo_reserva,
+            'tipo_reserva' => $reserva->tipo_reserva
         ];
     }
 
@@ -1543,7 +1539,7 @@ class EspacioController extends Controller
                 'jueves' => 'JU',
                 'viernes' => 'VI',
                 'sábado' => 'SA',
-                'domingo' => 'DO',
+                'domingo' => 'DO'
             ];
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
             $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
@@ -1570,7 +1566,7 @@ class EspacioController extends Controller
                     'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                     'hora_inicio' => $planificacion->modulo->hora_inicio,
                     'hora_salida' => $planificacion->modulo->hora_termino,
-                    'tipo_reserva' => 'clase_regular',
+                    'tipo_reserva' => 'clase_regular'
                 ];
             }
 
@@ -1596,12 +1592,12 @@ class EspacioController extends Controller
                     'asignatura' => 'Clase Temporal / Colaborador',
                     'hora_inicio' => $planColaborador->modulo->hora_inicio,
                     'hora_salida' => $planColaborador->modulo->hora_termino,
-                    'tipo_reserva' => 'clase_colaborador',
+                    'tipo_reserva' => 'clase_colaborador'
                 ];
             }
 
         } catch (\Exception $e) {
-            Log::error("Error al obtener planificación actual para espacio {$idEspacio}: ".$e->getMessage());
+            Log::error("Error al obtener planificación actual para espacio {$idEspacio}: " . $e->getMessage());
         }
 
         return null;
@@ -1617,7 +1613,7 @@ class EspacioController extends Controller
         // Usar el método optimizado del modelo Solicitante
         $solicitante = Solicitante::buscarActivoPorRun($runSolicitante);
 
-        if (! $solicitante) {
+        if (!$solicitante) {
             // Verificar si es un usuario del sistema (estudiante, admin, etc.)
             $usuario = User::where('run', $runSolicitante)->first();
             if ($usuario) {
@@ -1633,7 +1629,7 @@ class EspacioController extends Controller
                     'fecha_registro' => $usuario->created_at ?? null,
                     'hora_inicio' => $reserva->hora,
                     'hora_salida' => $reserva->hora_salida,
-                    'tipo_reserva' => $reserva->tipo_reserva,
+                    'tipo_reserva' => $reserva->tipo_reserva
                 ];
             }
 
@@ -1644,7 +1640,7 @@ class EspacioController extends Controller
                 'tipo_reserva' => $reserva->tipo_reserva,
                 'asignatura' => null,
                 'hora_inicio' => $reserva->hora,
-                'hora_salida' => $reserva->hora_salida,
+                'hora_salida' => $reserva->hora_salida
             ];
         }
 
@@ -1668,7 +1664,7 @@ class EspacioController extends Controller
             'fecha_registro' => $solicitante->fecha_registro ?? null,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
-            'tipo_reserva' => $reserva->tipo_reserva,
+            'tipo_reserva' => $reserva->tipo_reserva
         ];
     }
 
@@ -1698,7 +1694,7 @@ class EspacioController extends Controller
                 'profesor' => $reservaFutura->profesor?->name ?? 'No especificado',
                 'profesor_run' => $reservaFutura->run_profesor ?? null,
                 'hora_inicio' => $reservaFutura->hora ?? null,
-                'hora_termino' => $reservaFutura->hora_salida ?? null,
+                'hora_termino' => $reservaFutura->hora_salida ?? null
             ];
         }
 
@@ -1711,7 +1707,7 @@ class EspacioController extends Controller
             'thursday' => 'JU',
             'friday' => 'VI',
             'saturday' => 'SA',
-            'sunday' => 'DO',
+            'sunday' => 'DO'
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
@@ -1730,7 +1726,7 @@ class EspacioController extends Controller
             ->select('planificacion_asignaturas.*')
             ->first();
 
-        if (! $proxima) {
+        if (!$proxima) {
             return null;
         }
 
@@ -1739,7 +1735,7 @@ class EspacioController extends Controller
             'profesor' => $proxima->horario->profesor->name ?? 'No especificado',
             'profesor_run' => $proxima->horario->profesor->run_profesor ?? null,
             'hora_inicio' => $proxima->modulo->hora_inicio ?? null,
-            'hora_termino' => $proxima->modulo->hora_termino ?? null,
+            'hora_termino' => $proxima->modulo->hora_termino ?? null
         ];
     }
 
@@ -1770,7 +1766,7 @@ class EspacioController extends Controller
                 'profesor' => $reservaAnterior->profesor?->name ?? 'No especificado',
                 'profesor_run' => $reservaAnterior->run_profesor ?? null,
                 'hora_inicio' => $reservaAnterior->hora ?? null,
-                'hora_termino' => $reservaAnterior->hora_salida ?? null,
+                'hora_termino' => $reservaAnterior->hora_salida ?? null
             ];
         }
 
@@ -1783,7 +1779,7 @@ class EspacioController extends Controller
             'thursday' => 'JU',
             'friday' => 'VI',
             'saturday' => 'SA',
-            'sunday' => 'DO',
+            'sunday' => 'DO'
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
@@ -1807,7 +1803,7 @@ class EspacioController extends Controller
                 'profesor' => $anterior->horario->profesor->name ?? 'No especificado',
                 'profesor_run' => $anterior->horario->profesor->run_profesor ?? null,
                 'hora_inicio' => $anterior->modulo->hora_inicio ?? null,
-                'hora_termino' => $anterior->modulo->hora_termino ?? null,
+                'hora_termino' => $anterior->modulo->hora_termino ?? null
             ];
         }
 

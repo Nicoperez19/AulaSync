@@ -8,13 +8,11 @@ use Livewire\WithPagination;
 
 class JefesCarreraTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $sortField = 'nombre';
-
     public $sortDirection = 'asc';
-
     public $perPage = 10;
 
     protected $queryString = [
@@ -59,11 +57,11 @@ class JefesCarreraTable extends Component
 
                 $query->where(function ($q) use ($terms) {
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre', 'like', '%'.$t.'%')
-                            ->orWhere('email', 'like', '%'.$t.'%')
-                            ->orWhereHas('carrera', function ($cq) use ($t) {
-                                $cq->where('nombre', 'like', '%'.$t.'%');
-                            });
+                        $q->orWhere('nombre', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhereHas('carrera', function ($cq) use ($t) {
+                              $cq->where('nombre', 'like', '%' . $t . '%');
+                          });
                     }
                 });
             })

@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\BienvenidaUsuarioMail;
-use App\Models\Configuracion;
-use App\Models\Facultad;
-use App\Models\PeriodoAcademico;
-use App\Models\Sede;
 use App\Models\Tenant;
+use App\Models\Sede;
 use App\Models\User;
+use App\Models\Configuracion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
+use App\Mail\BienvenidaUsuarioMail;
+use Illuminate\Support\Facades\Mail;
 
 class TenantInitializationController extends Controller
 {
@@ -24,8 +22,8 @@ class TenantInitializationController extends Controller
     public function index()
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('login');
         }
 
@@ -36,13 +34,13 @@ class TenantInitializationController extends Controller
         // El paso 0 es la verificación de contraseña
         $step = $tenant->initialization_step ?? 0;
         $sede = $tenant->sede;
-
+        
         // Verificar si existe un administrador para ESTA sede específica
         $existingAdmin = null;
         if ($step === 1 && $sede) {
             // Buscar administradores cuya facultad pertenezca a esta sede
-            $facultadesDeEstaSede = Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
-
+            $facultadesDeEstaSede = \App\Models\Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
+            
             $existingAdmin = User::role('Administrador')
                 ->whereIn('id_facultad', $facultadesDeEstaSede)
                 ->first();
@@ -57,8 +55,8 @@ class TenantInitializationController extends Controller
     public function verifyPassword(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -69,7 +67,7 @@ class TenantInitializationController extends Controller
         ]);
 
         $correctPassword = config('multitenancy.init_password', env('TENANT_INIT_PASSWORD', 'aulasync2024'));
-
+        
         if ($request->init_password !== $correctPassword) {
             return redirect()->back()->with('error', 'Contraseña incorrecta. Por favor, intente nuevamente.');
         }
@@ -87,8 +85,8 @@ class TenantInitializationController extends Controller
     public function storeAdmin(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -111,7 +109,7 @@ class TenantInitializationController extends Controller
 
         // Obtener la sede actual para asignar la facultad correcta
         $sede = Sede::find($tenant->sede_id);
-        $facultad = Facultad::where('id_sede', $sede->id_sede)->first();
+        $facultad = \App\Models\Facultad::where('id_sede', $sede->id_sede)->first();
 
         // Crear el usuario administrador
         $user = User::create([
@@ -135,11 +133,11 @@ class TenantInitializationController extends Controller
             $roleName = $adminRole ? $adminRole->name : 'Administrador';
             Mail::to($user->email)->send(new BienvenidaUsuarioMail($user, $validated['password'], $roleName, route('login')));
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de bienvenida al administrador en wizard: '.$e->getMessage());
+            Log::error('Error al enviar correo de bienvenida al administrador en wizard: ' . $e->getMessage());
         }
 
         // Autenticar al usuario en la sesión para los pasos siguientes
-        Auth::login($user);
+        \Illuminate\Support\Facades\Auth::login($user);
 
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(2);
@@ -154,8 +152,8 @@ class TenantInitializationController extends Controller
     public function loginAdmin(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -170,15 +168,15 @@ class TenantInitializationController extends Controller
 
         // Verificar credenciales
         $user = User::where('email', $validated['email'])->first();
-
-        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+        
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
             return redirect()->back()
                 ->with('error', 'Credenciales incorrectas. Por favor, intente nuevamente.')
                 ->withInput(['email' => $validated['email']]);
         }
 
         // Verificar que sea administrador o superusuario
-        if (! $user->is_superuser && (string) $user->run !== '19716146' && ! $user->hasRole('Administrador') && ! $user->hasRole('Super Admin')) {
+        if (!$user->is_superuser && (string)$user->run !== '19716146' && !$user->hasRole('Administrador') && !$user->hasRole('Super Admin')) {
             return redirect()->back()
                 ->with('error', 'Este usuario no tiene permisos de administrador.')
                 ->withInput(['email' => $validated['email']]);
@@ -186,21 +184,21 @@ class TenantInitializationController extends Controller
 
         // Verificar que el usuario pertenezca a esta sede
         $sede = Sede::find($tenant->sede_id);
-        $facultadesDeEstaSede = Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
-
-        if (! $user->id_facultad || ! $facultadesDeEstaSede->contains($user->id_facultad)) {
+        $facultadesDeEstaSede = \App\Models\Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
+        
+        if (!$user->id_facultad || !$facultadesDeEstaSede->contains($user->id_facultad)) {
             return redirect()->back()
                 ->with('error', 'Este administrador no pertenece a esta sede.')
                 ->withInput(['email' => $validated['email']]);
         }
 
         // Asegurar que el usuario tenga la sede asignada
-        if (! $user->id_sede) {
+        if (!$user->id_sede) {
             $user->update(['id_sede' => $sede->id_sede]);
         }
 
         // Autenticar al usuario en la sesión para los pasos siguientes
-        Auth::login($user);
+        \Illuminate\Support\Facades\Auth::login($user);
 
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(2);
@@ -215,8 +213,8 @@ class TenantInitializationController extends Controller
     public function storeLogo(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -230,21 +228,21 @@ class TenantInitializationController extends Controller
         ]);
 
         $sede = $tenant->sede;
-
+        
         if ($request->hasFile('logo')) {
             $file = $request->file('logo');
-            $filename = $sede->id_sede.'_logo_'.time().'.'.$file->getClientOriginalExtension();
-
+            $filename = $sede->id_sede . '_logo_' . time() . '.' . $file->getClientOriginalExtension();
+            
             // Guardar el logo
             $file->storeAs('public/sedes/logos', $filename);
-
+            
             // Actualizar la sede
             $sede->update(['logo' => $filename]);
 
             // También guardar en configuración para compatibilidad
             Configuracion::set(
-                "logo_institucional_{$sede->id_sede}",
-                $filename,
+                "logo_institucional_{$sede->id_sede}", 
+                $filename, 
                 "Logo institucional de la sede {$sede->nombre_sede}"
             );
         }
@@ -262,8 +260,8 @@ class TenantInitializationController extends Controller
     public function confirmSedeInfo(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -280,15 +278,15 @@ class TenantInitializationController extends Controller
         ]);
 
         $sede = $tenant->sede;
-
+        
         // Actualizar sede (sin prefijo_espacios que va en tenant)
         $sedeData = $validated;
         unset($sedeData['prefijo_espacios']);
         $sede->update($sedeData);
-
+        
         // También actualizar prefijo_sala en sede para compatibilidad
         $sede->update(['prefijo_sala' => strtoupper($validated['prefijo_espacios'])]);
-
+        
         // Actualizar prefijo_espacios en tenant
         $tenant->update(['prefijo_espacios' => strtoupper($validated['prefijo_espacios'])]);
 
@@ -305,8 +303,8 @@ class TenantInitializationController extends Controller
     public function uploadBulkData(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -326,26 +324,25 @@ class TenantInitializationController extends Controller
             // Redirigir a la ruta de carga masiva existente para procesar
             // Guardamos el archivo temporalmente y redirigimos
             $file = $request->file('file');
-            $filename = 'init_'.time().'_'.$file->getClientOriginalName();
+            $filename = 'init_' . time() . '_' . $file->getClientOriginalName();
             $file->storeAs('datos_subidos', $filename, 'public');
-
+            
             // Guardar en sesión para el procesamiento posterior
             session([
                 'init_bulk_file' => $filename,
                 'init_bulk_semestre' => $validated['semestre_selector'],
             ]);
-
+            
             // Avanzar al siguiente paso
             $tenant->setInitializationStep(5);
 
             return redirect()->route('tenant.initialization.index')
                 ->with('success', 'Archivo cargado correctamente. Los datos serán procesados en segundo plano.');
-
+                
         } catch (\Exception $e) {
-            Log::error('Error en carga masiva durante inicialización: '.$e->getMessage());
-
+            Log::error('Error en carga masiva durante inicialización: ' . $e->getMessage());
             return redirect()->back()
-                ->with('error', 'Error al procesar el archivo: '.$e->getMessage());
+                ->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
         }
     }
 
@@ -355,8 +352,8 @@ class TenantInitializationController extends Controller
     public function skipBulkLoad(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -373,8 +370,8 @@ class TenantInitializationController extends Controller
     public function completeBulkLoad(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -391,8 +388,8 @@ class TenantInitializationController extends Controller
     public function storeAcademicPeriods(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -412,7 +409,7 @@ class TenantInitializationController extends Controller
         ]);
 
         $year = date('Y');
-
+        
         // Guardar períodos en configuración
         Configuracion::set(
             "periodo_1_{$year}_{$tenant->sede_id}",
@@ -439,14 +436,14 @@ class TenantInitializationController extends Controller
         Configuracion::set(
             "periodos_academicos_definidos_{$tenant->sede_id}",
             'true',
-            'Indica si los períodos académicos están definidos para la sede'
+            "Indica si los períodos académicos están definidos para la sede"
         );
 
         // IMPORTANTE: SemesterHelper lee el período actual desde la tabla `periodos_academicos`
         // (BD central), NO desde Configuracion. Sin esto, las fechas del wizard no tenían efecto
         // y el sistema podía seguir operando sobre el semestre equivocado.
         foreach ([1 => ['periodo1_inicio', 'periodo1_fin'], 2 => ['periodo2_inicio', 'periodo2_fin']] as $semestre => [$ini, $fin]) {
-            PeriodoAcademico::updateOrCreate(
+            \App\Models\PeriodoAcademico::updateOrCreate(
                 ['anio' => (int) $year, 'semestre' => $semestre],
                 [
                     'fecha_inicio' => $validated[$ini],
@@ -458,7 +455,7 @@ class TenantInitializationController extends Controller
         }
 
         // Auto-sincronizar: solo el semestre correspondiente a la fecha de hoy queda activo
-        PeriodoAcademico::sincronizarEstadosSegunFechas();
+        \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
 
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(6);
@@ -473,8 +470,8 @@ class TenantInitializationController extends Controller
     public function skipAcademicPeriods(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -482,13 +479,13 @@ class TenantInitializationController extends Controller
         Configuracion::set(
             "periodos_academicos_definidos_{$tenant->sede_id}",
             'false',
-            'Indica si los períodos académicos están definidos para la sede'
+            "Indica si los períodos académicos están definidos para la sede"
         );
 
         Configuracion::set(
             "periodos_ultima_notificacion_{$tenant->sede_id}",
             now()->toDateString(),
-            'Última fecha de notificación sobre períodos académicos'
+            "Última fecha de notificación sobre períodos académicos"
         );
 
         // Avanzar al siguiente paso
@@ -504,8 +501,8 @@ class TenantInitializationController extends Controller
     public function skipDigitalPlan(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -522,8 +519,8 @@ class TenantInitializationController extends Controller
     public function complete(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
@@ -539,8 +536,8 @@ class TenantInitializationController extends Controller
     public function success()
     {
         $tenant = Tenant::current();
-
-        if (! $tenant || ! $tenant->is_initialized) {
+        
+        if (!$tenant || !$tenant->is_initialized) {
             return redirect()->route('tenant.initialization.index');
         }
 
@@ -553,13 +550,13 @@ class TenantInitializationController extends Controller
     public function previousStep(Request $request)
     {
         $tenant = Tenant::current();
-
-        if (! $tenant) {
+        
+        if (!$tenant) {
             return redirect()->route('sedes.selection');
         }
 
         $currentStep = $tenant->initialization_step;
-
+        
         if ($currentStep > 1) {
             $tenant->setInitializationStep($currentStep - 1);
         }

@@ -1,16 +1,13 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Helpers\SemesterHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Asistencia;
 use App\Models\Espacio;
-use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
 use Carbon\Carbon;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -21,8 +18,8 @@ class ProgramacionSemanalController extends Controller
      * GET /api/programacion-semanal/{id_espacio}
      * Consulta la programación semanal por sala de clases
      *
-     * @param  string  $id_espacio
-     * @return JsonResponse
+     * @param string $id_espacio
+     * @return \Illuminate\Http\JsonResponse
      */
     public function obtenerProgramacionSemanal($id_espacio)
     {
@@ -30,10 +27,10 @@ class ProgramacionSemanalController extends Controller
             // Verificar que el espacio existe
             $espacio = Espacio::find($id_espacio);
 
-            if (! $espacio) {
+            if (!$espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Espacio no encontrado',
+                    'message' => 'Espacio no encontrado'
                 ], 404);
             }
 
@@ -45,7 +42,7 @@ class ProgramacionSemanalController extends Controller
                 'modulo',
                 'horario.profesor',
                 'asignatura.carrera',
-                'espacio',
+                'espacio'
             ])
                 ->where('id_espacio', $id_espacio)
                 ->whereHas('horario', function ($query) use ($periodo) {
@@ -54,7 +51,7 @@ class ProgramacionSemanalController extends Controller
                 ->get()
                 ->unique(function ($item) {
                     // Clave única: modulo + asignatura + profesor
-                    return $item->id_modulo.'-'.$item->id_asignatura.'-'.($item->horario->profesor->run_profesor ?? 'null');
+                    return $item->id_modulo . '-' . $item->id_asignatura . '-' . ($item->horario->profesor->run_profesor ?? 'null');
                 })
                 ->groupBy(function ($item) {
                     return $item->modulo->dia;
@@ -84,7 +81,7 @@ class ProgramacionSemanalController extends Controller
                                 'run' => $planificacion->horario->profesor->run_profesor ?? null,
                                 'nombre' => $planificacion->horario->profesor->name ?? 'Sin asignar',
                                 'email' => $planificacion->horario->profesor->email ?? null,
-                            ],
+                            ]
                         ];
                     })->sortBy('modulo_num')->values()->all();
 
@@ -99,9 +96,8 @@ class ProgramacionSemanalController extends Controller
                                 'hora_inicio' => $r['hora_inicio'],
                                 'hora_termino' => $r['hora_termino'],
                                 'profesor_a_cargo' => $r['profesor'],
-                                'asignatura' => $r['asignatura'],
+                                'asignatura' => $r['asignatura']
                             ];
-
                             continue;
                         }
 
@@ -124,7 +120,7 @@ class ProgramacionSemanalController extends Controller
                                 'hora_inicio' => $r['hora_inicio'],
                                 'hora_termino' => $r['hora_termino'],
                                 'profesor_a_cargo' => $r['profesor'],
-                                'asignatura' => $r['asignatura'],
+                                'asignatura' => $r['asignatura']
                             ];
                         }
                     }
@@ -142,14 +138,14 @@ class ProgramacionSemanalController extends Controller
                         'capacidad_maxima' => $espacio->capacidad_maxima,
                     ],
                     'periodo' => $periodo,
-                    'programacion_semanal' => $programacion,
-                ],
+                    'programacion_semanal' => $programacion
+                ]
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener la programación semanal',
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -189,7 +185,8 @@ class ProgramacionSemanalController extends Controller
      *   "finalizar_ahora": true
      * }
      *
-     * @return JsonResponse
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function registrarAsistencia(Request $request)
     {
@@ -202,7 +199,7 @@ class ProgramacionSemanalController extends Controller
                 'lista_asistencia.*.nombre' => 'required|string',
                 'lista_asistencia.*.hora_llegada' => 'required|date_format:H:i:s',
                 'lista_asistencia.*.observaciones' => 'nullable|string',
-                'finalizar_ahora' => 'nullable|boolean',
+                'finalizar_ahora' => 'nullable|boolean'
             ], [
                 'id_reserva.required' => 'El ID de reserva es obligatorio',
                 'id_reserva.exists' => 'La reserva no existe',
@@ -211,24 +208,24 @@ class ProgramacionSemanalController extends Controller
                 'lista_asistencia.*.rut.required' => 'El RUT del asistente es obligatorio',
                 'lista_asistencia.*.nombre.required' => 'El nombre del asistente es obligatorio',
                 'lista_asistencia.*.hora_llegada.required' => 'La hora de llegada es obligatoria',
-                'lista_asistencia.*.hora_llegada.date_format' => 'La hora de llegada debe tener el formato HH:MM:SS (ej: 14:30:00)',
+                'lista_asistencia.*.hora_llegada.date_format' => 'La hora de llegada debe tener el formato HH:MM:SS (ej: 14:30:00)'
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Errores de validación',
-                    'errors' => $validator->errors(),
+                    'errors' => $validator->errors()
                 ], 422);
             }
 
             // Obtener la reserva con sus relaciones
             $reserva = Reserva::with(['espacio', 'profesor', 'asignatura'])->find($request->id_reserva);
 
-            if (! $reserva) {
+            if (!$reserva) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Reserva no encontrada',
+                    'message' => 'Reserva no encontrada'
                 ], 404);
             }
 
@@ -240,8 +237,8 @@ class ProgramacionSemanalController extends Controller
                     'data' => [
                         'reserva_id' => $reserva->id_reserva,
                         'estado' => $reserva->estado,
-                        'hora_salida' => $reserva->hora_salida,
-                    ],
+                        'hora_salida' => $reserva->hora_salida
+                    ]
                 ], 400);
             }
 
@@ -262,7 +259,7 @@ class ProgramacionSemanalController extends Controller
                     'rut_asistente' => $asistente['rut'],
                     'nombre_asistente' => $asistente['nombre'],
                     'hora_llegada' => $asistente['hora_llegada'],
-                    'observaciones' => $asistente['observaciones'] ?? null,
+                    'observaciones' => $asistente['observaciones'] ?? null
                 ]);
 
                 $asistenciasRegistradas[] = [
@@ -270,7 +267,7 @@ class ProgramacionSemanalController extends Controller
                     'rut' => $asistencia->rut_asistente,
                     'nombre' => $asistencia->nombre_asistente,
                     'hora_llegada' => $asistencia->hora_llegada,
-                    'observaciones' => $asistencia->observaciones,
+                    'observaciones' => $asistencia->observaciones
                 ];
             }
 
@@ -301,13 +298,13 @@ class ProgramacionSemanalController extends Controller
                         'espacio' => [
                             'id' => $reserva->espacio->id_espacio ?? null,
                             'nombre' => $reserva->espacio->nombre_espacio ?? 'N/A',
-                            'estado' => $reserva->espacio->estado ?? 'N/A',
+                            'estado' => $reserva->espacio->estado ?? 'N/A'
                         ],
                         'asignatura' => $reserva->asignatura ? [
                             'id' => $reserva->asignatura->id_asignatura,
                             'codigo' => $reserva->asignatura->codigo_asignatura,
                             'nombre' => $reserva->asignatura->nombre_asignatura,
-                            'seccion' => $reserva->asignatura->seccion,
+                            'seccion' => $reserva->asignatura->seccion
                         ] : null,
                         'fecha' => $reserva->fecha_reserva,
                         'hora_inicio' => $reserva->hora,
@@ -315,13 +312,13 @@ class ProgramacionSemanalController extends Controller
                         'estado' => $reserva->estado,
                         'profesor' => [
                             'run' => $reserva->profesor->run_profesor ?? null,
-                            'nombre' => $reserva->profesor->name ?? 'N/A',
-                        ],
+                            'nombre' => $reserva->profesor->name ?? 'N/A'
+                        ]
                     ],
                     'asistencias_registradas' => $asistenciasRegistradas,
                     'total_asistentes' => count($asistenciasRegistradas),
-                    'finalizada' => $finalizarAhora,
-                ],
+                    'finalizada' => $finalizarAhora
+                ]
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -330,7 +327,7 @@ class ProgramacionSemanalController extends Controller
                 'success' => false,
                 'message' => 'Error al registrar la asistencia',
                 'error' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
@@ -349,8 +346,8 @@ class ProgramacionSemanalController extends Controller
      * Ejemplo de uso:
      * GET /api/reservas/activa/TH-03
      *
-     * @param  string  $id_espacio  - ID del espacio (ej: TH-03, TH-LAB1, etc.)
-     * @return JsonResponse
+     * @param string $id_espacio - ID del espacio (ej: TH-03, TH-LAB1, etc.)
+     * @return \Illuminate\Http\JsonResponse
      */
     public function obtenerReservaActiva($id_espacio)
     {
@@ -358,11 +355,11 @@ class ProgramacionSemanalController extends Controller
             // Verificar que el espacio existe
             $espacio = Espacio::find($id_espacio);
 
-            if (! $espacio) {
+            if (!$espacio) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Espacio no encontrado',
-                    'id_espacio' => $id_espacio,
+                    'id_espacio' => $id_espacio
                 ], 404);
             }
 
@@ -376,7 +373,7 @@ class ProgramacionSemanalController extends Controller
                 'profesor',
                 'asignatura.profesor',
                 'solicitante',
-                'asistencias',
+                'asistencias'
             ])
                 ->where('id_espacio', $id_espacio)
                 ->where('estado', 'activa')
@@ -394,7 +391,7 @@ class ProgramacionSemanalController extends Controller
             $espacioOcupado = ($reserva !== null) || ($espacio->estado === 'Ocupado');
 
             // Si no hay reserva activa
-            if (! $reserva) {
+            if (!$reserva) {
                 $mensaje = $espacio->estado === 'Ocupado'
                     ? 'El espacio está ocupado pero no tiene una reserva formal activa'
                     : 'El espacio está disponible, no hay reserva activa en este momento';
@@ -409,15 +406,15 @@ class ProgramacionSemanalController extends Controller
                             'tipo' => $espacio->tipo_espacio,
                             'estado' => $espacio->estado,
                             'puestos_disponibles' => $espacio->puestos_disponibles,
-                            'ocupado' => $espacioOcupado,
+                            'ocupado' => $espacioOcupado
                         ],
                         'reserva_activa' => null,
                         'fecha_consulta' => $fechaActual,
                         'hora_consulta' => $horaActual,
                         'nota' => $espacio->estado === 'Ocupado'
                             ? 'El espacio puede estar siendo usado sin una reserva formal'
-                            : null,
-                    ],
+                            : null
+                    ]
                 ], 200);
             }
 
@@ -429,7 +426,7 @@ class ProgramacionSemanalController extends Controller
                     'run' => $reserva->profesor->run_profesor,
                     'nombre' => $reserva->profesor->name,
                     'email' => $reserva->profesor->email ?? null,
-                    'celular' => $reserva->profesor->celular ?? null,
+                    'celular' => $reserva->profesor->celular ?? null
                 ];
             } elseif ($reserva->run_solicitante && $reserva->solicitante) {
                 $usuarioReserva = [
@@ -437,7 +434,7 @@ class ProgramacionSemanalController extends Controller
                     'run' => $reserva->solicitante->run_solicitante,
                     'nombre' => $reserva->solicitante->nombre,
                     'email' => $reserva->solicitante->correo ?? null,
-                    'telefono' => $reserva->solicitante->telefono ?? null,
+                    'telefono' => $reserva->solicitante->telefono ?? null
                 ];
             }
 
@@ -451,8 +448,8 @@ class ProgramacionSemanalController extends Controller
                     'seccion' => $reserva->asignatura->seccion ?? null,
                     'profesor_titular' => $reserva->asignatura->profesor ? [
                         'run' => $reserva->asignatura->profesor->run_profesor,
-                        'nombre' => $reserva->asignatura->profesor->name,
-                    ] : null,
+                        'nombre' => $reserva->asignatura->profesor->name
+                    ] : null
                 ];
             }
 
@@ -465,14 +462,14 @@ class ProgramacionSemanalController extends Controller
                         'rut' => $asistencia->rut_asistente,
                         'nombre' => $asistencia->nombre_asistente,
                         'hora_llegada' => $asistencia->hora_llegada,
-                        'observaciones' => $asistencia->observaciones,
+                        'observaciones' => $asistencia->observaciones
                     ];
-                }),
+                })
             ];
 
             // Si no hay hora_salida, obtenerla desde la tabla Modulo
             $horaFin = $reserva->hora_salida;
-            if (! $horaFin && $reserva->modulos > 0) {
+            if (!$horaFin && $reserva->modulos > 0) {
                 // Obtener el día de la semana de la reserva
                 $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
                 $diaReserva = $diasSemana[Carbon::parse($reserva->fecha_reserva)->dayOfWeek];
@@ -486,8 +483,8 @@ class ProgramacionSemanalController extends Controller
                     $indexDia = array_search($diaReserva, $diasArray);
                     $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
 
-                    $idModuloFinal = $prefijo.'.'.$numeroModuloFinal;
-                    $moduloFinal = Modulo::where('id_modulo', $idModuloFinal)->first();
+                    $idModuloFinal = $prefijo . '.' . $numeroModuloFinal;
+                    $moduloFinal = \App\Models\Modulo::where('id_modulo', $idModuloFinal)->first();
 
                     if ($moduloFinal) {
                         $horaFin = $moduloFinal->hora_termino;
@@ -510,7 +507,7 @@ class ProgramacionSemanalController extends Controller
                     $inscritosData = [
                         'total_inscritos' => $inscritos->inscritos ?? 0,
                         'presentes' => $reserva->asistencias->count(),
-                        'ausentes' => ($inscritos->inscritos ?? 0) - $reserva->asistencias->count(),
+                        'ausentes' => ($inscritos->inscritos ?? 0) - $reserva->asistencias->count()
                     ];
                 }
             }
@@ -530,7 +527,7 @@ class ProgramacionSemanalController extends Controller
                         'duracion_minutos' => $duracion,
                         'modulos' => $reserva->modulos,
                         'observaciones' => $reserva->observaciones,
-                        'creada_el' => $reserva->created_at->format('Y-m-d H:i:s'),
+                        'creada_el' => $reserva->created_at->format('Y-m-d H:i:s')
                     ],
                     'espacio' => [
                         'id' => $espacio->id_espacio,
@@ -538,22 +535,22 @@ class ProgramacionSemanalController extends Controller
                         'tipo' => $espacio->tipo_espacio,
                         'estado' => $espacio->estado,
                         'puestos_disponibles' => $espacio->puestos_disponibles,
-                        'ocupado' => true,  // Siempre ocupado si hay reserva activa
+                        'ocupado' => true  // Siempre ocupado si hay reserva activa
                     ],
                     'usuario_reserva' => $usuarioReserva,
                     'asignatura' => $asignaturaData,
                     'inscritos' => $inscritosData,
                     'asistencia_registrada' => $asistenciaData,
                     'fecha_consulta' => $fechaActual,
-                    'hora_consulta' => $horaActual,
-                ],
+                    'hora_consulta' => $horaActual
+                ]
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener la reserva activa',
                 'error' => $e->getMessage(),
-                'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
@@ -571,8 +568,8 @@ class ProgramacionSemanalController extends Controller
 
         // Buscar el módulo que comienza con esta hora
         for ($i = 1; $i <= 15; $i++) {
-            $idModulo = $prefijo.'.'.$i;
-            $modulo = Modulo::where('id_modulo', $idModulo)->first();
+            $idModulo = $prefijo . '.' . $i;
+            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
 
             if ($modulo && $modulo->hora_inicio === $horaInicio) {
                 // Calcular el módulo final

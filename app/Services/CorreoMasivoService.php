@@ -2,13 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\AsistenteAcademico;
-use App\Models\DestinatarioCorreo;
 use App\Models\TipoCorreoMasivo;
-use Illuminate\Mail\Mailable;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
+use App\Models\DestinatarioCorreo;
+use App\Models\AsistenteAcademico;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio para enviar correos masivos usando el sistema de administración
@@ -22,25 +20,27 @@ class CorreoMasivoService
 {
     /**
      * Obtiene el ID del área académica si el usuario autenticado es asistente académico
+     * 
+     * @return string|null
      */
     private function obtenerAreaAcademicaAsistente(): ?string
     {
-        if (! auth()->check()) {
+        if (!auth()->check()) {
             return null;
         }
 
         $userEmail = auth()->user()->email;
         $asistente = AsistenteAcademico::where('email', $userEmail)->first();
-
+        
         return $asistente ? $asistente->id_area_academica : null;
     }
 
     /**
      * Envía un correo masivo a los destinatarios habilitados para un tipo específico
      *
-     * @param  string  $codigoTipoCorreo  Código del tipo de correo
-     * @param  Mailable  $mailable  Clase Mailable a enviar
-     * @param  array  $destinatariosExcluidos  IDs de destinatarios a excluir (opcional)
+     * @param string $codigoTipoCorreo Código del tipo de correo
+     * @param \Illuminate\Mail\Mailable $mailable Clase Mailable a enviar
+     * @param array $destinatariosExcluidos IDs de destinatarios a excluir (opcional)
      * @return array Resultados del envío
      */
     public function enviarCorreoMasivo(
@@ -53,14 +53,13 @@ class CorreoMasivoService
             ->activos()
             ->first();
 
-        if (! $tipoCorreo) {
+        if (!$tipoCorreo) {
             Log::error("Tipo de correo no encontrado: {$codigoTipoCorreo}");
-
             return [
                 'success' => false,
                 'message' => 'Tipo de correo no encontrado o inactivo',
                 'enviados' => 0,
-                'errores' => 0,
+                'errores' => 0
             ];
         }
 
@@ -68,21 +67,20 @@ class CorreoMasivoService
         $destinatarios = $tipoCorreo->destinatariosHabilitados()
             ->with('user')
             ->get()
-            ->filter(function ($destinatario) use ($destinatariosExcluidos) {
+            ->filter(function($destinatario) use ($destinatariosExcluidos) {
                 // Filtrar destinatarios excluidos y sin email
-                return ! in_array($destinatario->id, $destinatariosExcluidos)
+                return !in_array($destinatario->id, $destinatariosExcluidos)
                     && $destinatario->user
                     && $destinatario->user->email;
             });
 
         if ($destinatarios->isEmpty()) {
             Log::warning("No hay destinatarios habilitados para: {$codigoTipoCorreo}");
-
             return [
                 'success' => false,
                 'message' => 'No hay destinatarios habilitados',
                 'enviados' => 0,
-                'errores' => 0,
+                'errores' => 0
             ];
         }
 
@@ -102,10 +100,10 @@ class CorreoMasivoService
                 $erroresDetalle[] = [
                     'destinatario' => $destinatario->user->name,
                     'email' => $destinatario->user->email,
-                    'error' => $e->getMessage(),
+                    'error' => $e->getMessage()
                 ];
 
-                Log::error("Error enviando correo a {$destinatario->user->email}: ".$e->getMessage());
+                Log::error("Error enviando correo a {$destinatario->user->email}: " . $e->getMessage());
             }
         }
 
@@ -115,14 +113,15 @@ class CorreoMasivoService
             'enviados' => $enviados,
             'errores' => $errores,
             'errores_detalle' => $erroresDetalle,
-            'tipo_correo' => $tipoCorreo->nombre,
+            'tipo_correo' => $tipoCorreo->nombre
         ];
     }
 
     /**
      * Envía informe semanal de clases no realizadas
      *
-     * @param  array  $datos  Datos para el informe
+     * @param array $datos Datos para el informe
+     * @return array
      */
     public function enviarInformeClasesNoRealizadas(array $datos): array
     {
@@ -139,14 +138,15 @@ class CorreoMasivoService
 
         return [
             'success' => false,
-            'message' => 'Implementar la clase Mailable correspondiente',
+            'message' => 'Implementar la clase Mailable correspondiente'
         ];
     }
 
     /**
      * Obtiene la lista de destinatarios para un tipo de correo
      *
-     * @return Collection
+     * @param string $codigoTipoCorreo
+     * @return \Illuminate\Support\Collection
      */
     public function obtenerDestinatarios(string $codigoTipoCorreo)
     {
@@ -154,17 +154,17 @@ class CorreoMasivoService
             ->activos()
             ->first();
 
-        if (! $tipoCorreo) {
+        if (!$tipoCorreo) {
             return collect([]);
         }
 
         return $tipoCorreo->destinatariosHabilitados()
             ->with('user')
             ->get()
-            ->filter(function ($destinatario) {
+            ->filter(function($destinatario) {
                 return $destinatario->user && $destinatario->user->email;
             })
-            ->map(function ($destinatario) {
+            ->map(function($destinatario) {
                 return [
                     'id' => $destinatario->id,
                     'nombre' => $destinatario->user->name,
@@ -178,7 +178,9 @@ class CorreoMasivoService
     /**
      * Verifica si un usuario está habilitado para recibir un tipo de correo
      *
-     * @param  int  $userId  RUN del usuario
+     * @param string $codigoTipoCorreo
+     * @param int $userId RUN del usuario
+     * @return bool
      */
     public function usuarioEstaHabilitado(string $codigoTipoCorreo, int $userId): bool
     {
@@ -186,7 +188,7 @@ class CorreoMasivoService
             ->activos()
             ->first();
 
-        if (! $tipoCorreo) {
+        if (!$tipoCorreo) {
             return false;
         }
 
@@ -194,7 +196,7 @@ class CorreoMasivoService
             ->activos()
             ->first();
 
-        if (! $destinatario) {
+        if (!$destinatario) {
             return false;
         }
 
@@ -206,6 +208,9 @@ class CorreoMasivoService
 
     /**
      * Obtiene la configuración de un tipo de correo
+     *
+     * @param string $codigoTipoCorreo
+     * @return array|null
      */
     public function obtenerConfiguracion(string $codigoTipoCorreo): ?array
     {

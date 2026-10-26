@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class Planificacion_Asignatura extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
-
     protected $table = 'planificacion_asignaturas';
 
     protected $primaryKey = 'id';
@@ -92,17 +91,17 @@ class Planificacion_Asignatura extends Model
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
 
-    public function horario(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function horario()
     {
         return $this->belongsTo(Horario::class, 'id_horario', 'id_horario');
     }
 
-    public function modulo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function modulo()
     {
         return $this->belongsTo(Modulo::class, 'id_modulo', 'id_modulo');
     }
 
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }

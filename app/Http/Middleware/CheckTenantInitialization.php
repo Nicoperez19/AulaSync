@@ -23,7 +23,7 @@ class CheckTenantInitialization
     /**
      * Handle an incoming request.
      *
-     * @param  Closure(Request): (Response)  $next
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -41,9 +41,9 @@ class CheckTenantInitialization
         }
 
         $tenant = Tenant::current();
-
+        
         // Si no hay tenant, continuar normalmente
-        if (! $tenant) {
+        if (!$tenant) {
             return $next($request);
         }
 

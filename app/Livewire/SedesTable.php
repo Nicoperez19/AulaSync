@@ -8,11 +8,10 @@ use Livewire\WithPagination;
 
 class SedesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $sortField = 'id_sede';
-
     public $sortDirection = 'asc';
 
     protected $queryString = [
@@ -56,13 +55,13 @@ class SedesTable extends Component
                 $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
                 $query->where(function ($q) use ($terms, $searchTerm) {
-                    $q->where('id_sede', 'like', '%'.$searchTerm.'%');
+                    $q->where('id_sede', 'like', '%' . $searchTerm . '%');
 
                     foreach ($terms as $t) {
-                        $q->orWhere('nombre_sede', 'like', '%'.$t.'%')
-                            ->orWhereHas('universidad', function ($subQuery) use ($t) {
-                                $subQuery->where('nombre_universidad', 'like', '%'.$t.'%');
-                            });
+                        $q->orWhere('nombre_sede', 'like', '%' . $t . '%')
+                          ->orWhereHas('universidad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_universidad', 'like', '%' . $t . '%');
+                          });
                     }
                 });
             })
@@ -76,8 +75,8 @@ class SedesTable extends Component
                         break;
                     case 'universidad':
                         $query->join('universidades', 'sedes.id_universidad', '=', 'universidades.id_universidad')
-                            ->orderBy('universidades.nombre_universidad', $this->sortDirection)
-                            ->select('sedes.*');
+                              ->orderBy('universidades.nombre_universidad', $this->sortDirection)
+                              ->select('sedes.*');
                         break;
                     default:
                         $query->orderBy('id_sede', 'asc');
@@ -87,4 +86,4 @@ class SedesTable extends Component
 
         return view('livewire.sedes-table', compact('sedes'));
     }
-}
+} 

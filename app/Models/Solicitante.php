@@ -2,20 +2,20 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use App\Traits\BelongsToTenant;
 
 /**
  * Modelo Solicitante
- *
+ * 
  * Maneja usuarios externos que solicitan espacios pero no son profesores registrados.
  * Estos usuarios pueden ser estudiantes, personal administrativo, o visitantes.
  */
 class Solicitante extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
 
@@ -26,7 +26,7 @@ class Solicitante extends Model
         'telefono',
         'tipo_solicitante', // 'estudiante', 'personal', 'visitante', etc.
         'activo',
-        'fecha_registro',
+        'fecha_registro'
     ];
 
     protected $casts = [
@@ -37,7 +37,7 @@ class Solicitante extends Model
     /**
      * Relación con las reservas realizadas por este solicitante
      */
-    public function reservas(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reservas()
     {
         return $this->hasMany(Reserva::class, 'run_solicitante', 'run_solicitante');
     }
@@ -64,20 +64,20 @@ class Solicitante extends Model
     public static function buscarPorRun($runSolicitante)
     {
         $cacheKey = "solicitante_run_{$runSolicitante}";
-
+        
         return Cache::remember($cacheKey, 300, function () use ($runSolicitante) {
             return static::select(
-                'nombre',
-                'run_solicitante',
-                'correo',
-                'telefono',
+                'nombre', 
+                'run_solicitante', 
+                'correo', 
+                'telefono', 
                 'tipo_solicitante',
                 'activo',
                 'fecha_registro'
             )
-                ->where('run_solicitante', $runSolicitante)
-                ->where('activo', true)
-                ->first();
+            ->where('run_solicitante', $runSolicitante)
+            ->where('activo', true)
+            ->first();
         });
     }
 
@@ -87,20 +87,20 @@ class Solicitante extends Model
     public static function buscarActivoPorRun($runSolicitante)
     {
         $cacheKey = "solicitante_activo_{$runSolicitante}";
-
+        
         return Cache::remember($cacheKey, 300, function () use ($runSolicitante) {
             return static::select(
-                'nombre',
-                'run_solicitante',
-                'correo',
-                'telefono',
+                'nombre', 
+                'run_solicitante', 
+                'correo', 
+                'telefono', 
                 'tipo_solicitante',
                 'activo',
                 'fecha_registro'
             )
-                ->where('run_solicitante', $runSolicitante)
-                ->where('activo', true)
-                ->first();
+            ->where('run_solicitante', $runSolicitante)
+            ->where('activo', true)
+            ->first();
         });
     }
 
@@ -157,4 +157,4 @@ class Solicitante extends Model
             ->whereDate('fecha_reserva', now()->toDateString())
             ->count();
     }
-}
+} 

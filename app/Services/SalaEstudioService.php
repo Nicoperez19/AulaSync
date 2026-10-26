@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\VetoSalaEstudio;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class SalaEstudioService
 {
@@ -29,9 +30,9 @@ class SalaEstudioService
         $espaciosEstudio = Espacio::on('tenant')
             ->where(function ($q) {
                 $q->where('tipo_espacio', 'like', '%estudio%')
-                    ->orWhere('tipo_espacio', 'like', '%Estudio%')
-                    ->orWhere('nombre_espacio', 'like', '%estudio%')
-                    ->orWhere('nombre_espacio', 'like', '%Estudio%');
+                  ->orWhere('tipo_espacio', 'like', '%Estudio%')
+                  ->orWhere('nombre_espacio', 'like', '%estudio%')
+                  ->orWhere('nombre_espacio', 'like', '%Estudio%');
             })
             ->pluck('id_espacio');
 
@@ -40,15 +41,15 @@ class SalaEstudioService
             ->orderBy('fecha_reserva', 'desc')
             ->orderBy('hora', 'desc');
 
-        if (! empty($filtros['estado']) && $filtros['estado'] !== 'todos') {
+        if (!empty($filtros['estado']) && $filtros['estado'] !== 'todos') {
             $query->where('estado', $filtros['estado']);
         }
 
-        if (! empty($filtros['espacio']) && $filtros['espacio'] !== 'todos') {
+        if (!empty($filtros['espacio']) && $filtros['espacio'] !== 'todos') {
             $query->where('id_espacio', $filtros['espacio']);
         }
 
-        if (! empty($filtros['fecha'])) {
+        if (!empty($filtros['fecha'])) {
             $query->whereDate('fecha_reserva', $filtros['fecha']);
         }
 
@@ -75,7 +76,7 @@ class SalaEstudioService
             $vencida = false;
             $proximaVencer = false;
             if ($reserva->estado === 'activa' && $reserva->fecha_reserva && $reserva->hora) {
-                $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva).' '.$reserva->hora;
+                $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva) . ' ' . $reserva->hora;
                 $inicio = Carbon::parse($inicioStr);
                 $minutosTranscurridos = (int) $inicio->diffInMinutes(now(), false);
 
@@ -139,15 +140,15 @@ class SalaEstudioService
 
         $runBase = preg_replace('/[^0-9]/', '', $runClean);
         $dv = strtoupper(substr($runClean, -1));
-        $runConGuion = (is_numeric($dv) ? $runClean : (strlen($runBase) >= 7 ? substr($runBase, 0, -1).'-'.$dv : $runClean));
-        $runSinGuion = $runBase.(is_numeric($dv) ? '' : $dv);
+        $runConGuion = (is_numeric($dv) ? $runClean : (strlen($runBase) >= 7 ? substr($runBase, 0, -1) . '-' . $dv : $runClean));
+        $runSinGuion = $runBase . (is_numeric($dv) ? '' : $dv);
 
         $veto = VetoSalaEstudio::vetoActivo($runClean) ?? VetoSalaEstudio::vetoActivo($runBase);
         if ($veto) {
             return [
                 'success' => false,
                 'status' => 403,
-                'message' => '🚫 Acceso Denegado: Usuario vetado. Motivo: '.$veto->observacion,
+                'message' => '🚫 Acceso Denegado: Usuario vetado. Motivo: ' . $veto->observacion,
                 'vetado' => true,
             ];
         }
@@ -157,7 +158,7 @@ class SalaEstudioService
 
         $run = $solicitante ? $solicitante->run_solicitante : ($usuario ? $usuario->run : $runClean);
 
-        if (! $usuario && ! $solicitante && ! empty($validated['nombre']) && ! empty($validated['correo'])) {
+        if (!$usuario && !$solicitante && !empty($validated['nombre']) && !empty($validated['correo'])) {
             $solicitante = Solicitante::on('tenant')->create([
                 'run_solicitante' => $runClean,
                 'nombre' => $validated['nombre'],
@@ -168,7 +169,7 @@ class SalaEstudioService
             $run = $solicitante->run_solicitante;
         }
 
-        if (! $usuario && ! $solicitante) {
+        if (!$usuario && !$solicitante) {
             return [
                 'success' => false,
                 'status' => 200,
@@ -186,7 +187,7 @@ class SalaEstudioService
             ->whereNull('hora_salida')
             ->where(function ($q) use ($runClean, $runBase, $runConGuion, $runSinGuion) {
                 $q->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])
-                    ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
+                  ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
             })
             ->whereDate('fecha_reserva', today())
             ->first();
@@ -194,7 +195,7 @@ class SalaEstudioService
         if ($reservaActiva) {
             $reservaActiva->estado = 'finalizada';
             $reservaActiva->hora_salida = now()->format('H:i:s');
-            $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '').' | Sala devuelta mediante escáner');
+            $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Sala devuelta mediante escáner');
             $reservaActiva->save();
 
             $espacioLiberado = Espacio::on('tenant')->where('id_espacio', $reservaActiva->id_espacio)->first();
@@ -228,7 +229,7 @@ class SalaEstudioService
             ->whereNull('hora_salida')
             ->where(function ($q) use ($runClean, $runBase, $runConGuion, $runSinGuion) {
                 $q->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])
-                    ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
+                  ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
             })
             ->whereDate('fecha_reserva', today())
             ->count();
@@ -241,17 +242,17 @@ class SalaEstudioService
             ];
         }
 
-        $idEspacioLimpio = strtoupper(str_replace("'", '-', $idEspacioRaw));
+        $idEspacioLimpio = strtoupper(str_replace("'", "-", $idEspacioRaw));
 
         $espacio = Espacio::on('tenant')->whereIn('id_espacio', [$idEspacioRaw, $idEspacioLimpio])->first();
-        if (! $espacio) {
+        if (!$espacio) {
             $idSoloAlfa = preg_replace('/[^A-Z0-9]/i', '', $idEspacioRaw);
             $espacio = Espacio::on('tenant')->get()->first(function ($e) use ($idSoloAlfa) {
                 return preg_replace('/[^A-Z0-9]/i', '', $e->id_espacio) === $idSoloAlfa;
             });
         }
 
-        if (! $espacio) {
+        if (!$espacio) {
             return [
                 'success' => false,
                 'status' => 404,
@@ -301,8 +302,8 @@ class SalaEstudioService
             ->where('estado', 'activa')
             ->where(function ($q) use ($espaciosEstudio) {
                 $q->whereIn('id_espacio', $espaciosEstudio)
-                    ->orWhere('observaciones', 'like', '%Sala de estudio%')
-                    ->orWhere('tipo_reserva', 'espontanea');
+                  ->orWhere('observaciones', 'like', '%Sala de estudio%')
+                  ->orWhere('tipo_reserva', 'espontanea');
             })
             ->whereDate('fecha_reserva', today())
             ->get();
@@ -312,7 +313,7 @@ class SalaEstudioService
 
         foreach ($reservasActivas as $reserva) {
             if ($reserva->fecha_reserva && $reserva->hora) {
-                $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva).' '.$reserva->hora;
+                $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva) . ' ' . $reserva->hora;
                 $inicio = Carbon::parse($inicioStr);
                 $minutosTranscurridos = (int) $inicio->diffInMinutes(now(), false);
 

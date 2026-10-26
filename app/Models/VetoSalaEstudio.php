@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class VetoSalaEstudio extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
 
@@ -34,7 +34,7 @@ class VetoSalaEstudio extends Model
     /**
      * Relación con el solicitante vetado
      */
-    public function solicitante(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function solicitante()
     {
         return $this->belongsTo(Solicitante::class, 'run_vetado', 'run_solicitante');
     }
@@ -42,7 +42,7 @@ class VetoSalaEstudio extends Model
     /**
      * Relación con la reserva que originó el veto
      */
-    public function reservaOrigen(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function reservaOrigen()
     {
         return $this->belongsTo(Reserva::class, 'id_reserva_origen');
     }

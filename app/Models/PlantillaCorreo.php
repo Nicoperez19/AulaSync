@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlantillaCorreo extends Model
 {
+    use HasFactory;
 
     protected $connection = 'tenant';
-
     protected $table = 'plantillas_correos';
 
     protected $fillable = [
@@ -64,28 +64,31 @@ class PlantillaCorreo extends Model
 
     /**
      * Reemplaza variables en el contenido HTML
-     *
-     * @param  array  $datos  ['nombre' => 'Juan', 'fecha' => '2025-10-07', ...]
+     * 
+     * @param array $datos ['nombre' => 'Juan', 'fecha' => '2025-10-07', ...]
+     * @return string
      */
     public function renderizarContenido(array $datos): string
     {
         $contenido = $this->getContenidoCompleto();
-
+        
         foreach ($datos as $variable => $valor) {
-            $contenido = str_replace('{{'.$variable.'}}', $valor, $contenido);
+            $contenido = str_replace("{{" . $variable . "}}", $valor, $contenido);
         }
-
+        
         return $contenido;
     }
 
     /**
      * Obtiene el contenido HTML completo con header y footer fijos
+     * 
+     * @return string
      */
     public function getContenidoCompleto(): string
     {
         $logoUrl = asset('images/logo.png');
         $year = date('Y');
-
+        
         $headerHTML = <<<HTML
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white;">
             <img src="{$logoUrl}" alt="Logo Institución" style="max-width: 150px; margin-bottom: 10px;" onerror="this.style.display='none'">
@@ -93,7 +96,7 @@ class PlantillaCorreo extends Model
             <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 14px;">Notificación Automática</p>
         </div>
         HTML;
-
+        
         $footerHTML = <<<HTML
         <div style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 3px solid #667eea; margin-top: 30px;">
             <p style="margin: 0 0 10px 0;"><strong>Este correo fue generado automáticamente por SIA</strong></p>
@@ -102,7 +105,7 @@ class PlantillaCorreo extends Model
             <p style="margin: 10px 0 0 0; font-size: 11px;">&copy; {$year} SIA - UCSC. Todos los derechos reservados.</p>
         </div>
         HTML;
-
+        
         return <<<HTML
         <!DOCTYPE html>
         <html lang="es">
@@ -130,7 +133,6 @@ class PlantillaCorreo extends Model
     public function getVariablesUsadas(): array
     {
         preg_match_all('/\{\{([^}]+)\}\}/', $this->contenido_html, $matches);
-
         return array_unique($matches[1]);
     }
 }

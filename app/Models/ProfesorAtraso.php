@@ -2,16 +2,15 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class ProfesorAtraso extends Model
 {
-    use BelongsToTenant, HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
     protected $connection = 'tenant';
-
     protected $table = 'profesor_atrasos';
 
     protected $fillable = [
@@ -41,10 +40,7 @@ class ProfesorAtraso extends Model
      */
     public function getHoraProgramadaFormateadaAttribute()
     {
-        if (! $this->hora_programada) {
-            return '-';
-        }
-
+        if (!$this->hora_programada) return '-';
         return substr($this->hora_programada, 0, 5);
     }
 
@@ -53,17 +49,14 @@ class ProfesorAtraso extends Model
      */
     public function getHoraLlegadaFormateadaAttribute()
     {
-        if (! $this->hora_llegada) {
-            return '-';
-        }
-
+        if (!$this->hora_llegada) return '-';
         return substr($this->hora_llegada, 0, 5);
     }
 
     /**
      * Relación con la planificación
      */
-    public function planificacion(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function planificacion()
     {
         return $this->belongsTo(Planificacion_Asignatura::class, 'id_planificacion');
     }
@@ -71,7 +64,7 @@ class ProfesorAtraso extends Model
     /**
      * Relación con la asignatura
      */
-    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura');
     }
@@ -79,7 +72,7 @@ class ProfesorAtraso extends Model
     /**
      * Relación con el espacio
      */
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
@@ -87,7 +80,7 @@ class ProfesorAtraso extends Model
     /**
      * Relación con el profesor
      */
-    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function profesor()
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }

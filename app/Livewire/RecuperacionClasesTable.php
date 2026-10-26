@@ -2,39 +2,31 @@
 
 namespace App\Livewire;
 
-use App\Mail\NotificacionRecuperacionClase;
-use App\Models\Espacio;
-use App\Models\Modulo;
-use App\Models\Notificacion;
-use App\Models\Profesor;
 use App\Models\RecuperacionClase;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Profesor;
+use App\Models\Modulo;
+use App\Models\Espacio;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NotificacionRecuperacionClase;
 
 class RecuperacionClasesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $estado = '';
-
     public $sortField = 'fecha_clase_original';
-
     public $sortDirection = 'desc';
-
+    
     // Propiedades para el modal de reagendar
     public $showReagendarModal = false;
-
     public $recuperacionId;
-
     public $fecha_reagendada = '';
-
     public $id_modulo_reagendado = '';
-
     public $id_espacio_reagendado = '';
-
     public $notas = '';
 
     protected $queryString = ['search', 'estado'];
@@ -101,7 +93,7 @@ class RecuperacionClasesTable extends Component
         ]);
 
         // Crear notificación de clase reagendada
-        Notificacion::crearNotificacionClaseReagendada($recuperacion);
+        \App\Models\Notificacion::crearNotificacionClaseReagendada($recuperacion);
 
         session()->flash('message', 'Clase reagendada exitosamente.');
         $this->closeReagendarModal();
@@ -117,33 +109,33 @@ class RecuperacionClasesTable extends Component
             if ($recuperacion->profesor && $recuperacion->profesor->email) {
                 Mail::to($recuperacion->profesor->email)
                     ->send(new NotificacionRecuperacionClase($recuperacion));
-
+                
                 $recuperacion->marcarComoNotificado();
-
+                
                 // Mensaje de éxito
                 $this->dispatch('notify', [
                     'type' => 'success',
-                    'message' => 'Correo enviado exitosamente a '.$recuperacion->profesor->email,
+                    'message' => 'Correo enviado exitosamente a ' . $recuperacion->profesor->email
                 ]);
-
+                
                 session()->flash('message', 'Notificación enviada exitosamente.');
             } else {
                 // Mensaje de error
                 $this->dispatch('notify', [
                     'type' => 'error',
-                    'message' => 'El profesor no tiene email registrado',
+                    'message' => 'El profesor no tiene email registrado'
                 ]);
-
+                
                 session()->flash('error', 'El profesor no tiene email registrado.');
             }
         } catch (\Exception $e) {
             // Mensaje de error
             $this->dispatch('notify', [
                 'type' => 'error',
-                'message' => 'Error al enviar: '.$e->getMessage(),
+                'message' => 'Error al enviar: ' . $e->getMessage()
             ]);
-
-            session()->flash('error', 'Error al enviar notificación: '.$e->getMessage());
+            
+            session()->flash('error', 'Error al enviar notificación: ' . $e->getMessage());
         }
     }
 
@@ -173,22 +165,22 @@ class RecuperacionClasesTable extends Component
             ->when($this->search, function ($q) {
                 $rawSearch = trim($this->search);
                 $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
-                $words = array_values(array_filter(explode(' ', $rawSearch), fn ($w) => mb_strlen(trim($w)) > 0));
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
 
                 $q->where(function ($sub) use ($rawSearch, $words, $cleanRun) {
-                    if (! empty($words)) {
+                    if (!empty($words)) {
                         $sub->whereHas('profesor', function ($query) use ($words) {
                             foreach ($words as $word) {
-                                $query->where('name', 'like', '%'.$word.'%');
+                                $query->where('name', 'like', '%' . $word . '%');
                             }
                         });
                     }
                     $sub->orWhereHas('asignatura', function ($query) use ($rawSearch) {
-                        $query->where('nombre_asignatura', 'like', '%'.$rawSearch.'%');
+                        $query->where('nombre_asignatura', 'like', '%' . $rawSearch . '%');
                     });
-                    if (! empty($cleanRun)) {
+                    if (!empty($cleanRun)) {
                         $sub->orWhereHas('profesor', function ($query) use ($cleanRun) {
-                            $query->where('run_profesor', 'like', '%'.$cleanRun.'%');
+                            $query->where('run_profesor', 'like', '%' . $cleanRun . '%');
                         });
                     }
                 });
@@ -199,14 +191,14 @@ class RecuperacionClasesTable extends Component
             ->orderBy($this->sortField, $this->sortDirection);
 
         $recuperaciones = $query->paginate(15);
-
+        
         // Filtrar módulos por el día de la fecha seleccionada
         $modulosQuery = Modulo::query();
         if ($this->fecha_reagendada) {
             $prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
             $diaSemana = date('w', strtotime($this->fecha_reagendada));
             $prefijo = $prefijos[$diaSemana];
-            $modulosQuery->where('id_modulo', 'like', $prefijo.'.%');
+            $modulosQuery->where('id_modulo', 'like', $prefijo . '.%');
         } else {
             // Si no hay fecha, no mostrar módulos para forzar la selección de fecha primero
             $modulosQuery->whereRaw('1 = 0');
@@ -214,21 +206,21 @@ class RecuperacionClasesTable extends Component
 
         $modulos = $modulosQuery->get()->sort(function ($a, $b) {
             $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
-
+            
             // Extraer día y número: "LU.1" -> "LU" y 1
             $partsA = explode('.', $a->id_modulo);
             $partsB = explode('.', $b->id_modulo);
-
+            
             $diaA = $partsA[0];
-            $numA = isset($partsA[1]) ? (int) $partsA[1] : 0;
-
+            $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+            
             $diaB = $partsB[0];
-            $numB = isset($partsB[1]) ? (int) $partsB[1] : 0;
-
+            $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+            
             if ($diaA !== $diaB) {
                 return ($dias[$diaA] ?? 99) <=> ($dias[$diaB] ?? 99);
             }
-
+            
             return $numA <=> $numB;
         });
         $espacios = Espacio::orderBy('nombre_espacio')->get();

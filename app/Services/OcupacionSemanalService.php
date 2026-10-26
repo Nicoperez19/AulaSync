@@ -9,6 +9,7 @@ use App\Models\OcupacionSemanalSnapshot;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class OcupacionSemanalService
 {
@@ -45,18 +46,18 @@ class OcupacionSemanalService
         if ($tipoFilter === 'laboratorios') {
             $espaciosQuery->where(function ($q) {
                 $q->where('tipo_espacio', 'like', '%laboratorio%')
-                    ->orWhere('tipo_espacio', 'like', '%lab%');
+                  ->orWhere('tipo_espacio', 'like', '%lab%');
             });
         } elseif ($tipoFilter === 'salas_clases' || $tipoFilter === 'aula' || $tipoFilter === 'clases') {
             $espaciosQuery->where(function ($q) {
                 $q->where('tipo_espacio', 'like', '%clase%')
-                    ->orWhere('tipo_espacio', 'like', '%aula%')
-                    ->orWhere('tipo_espacio', 'like', '%taller%');
+                  ->orWhere('tipo_espacio', 'like', '%aula%')
+                  ->orWhere('tipo_espacio', 'like', '%taller%');
             });
         } elseif ($tipoFilter === 'salas_estudio' || $tipoFilter === 'estudio') {
             $espaciosQuery->where(function ($q) {
                 $q->where('tipo_espacio', 'like', '%estudio%')
-                    ->orWhere('tipo_espacio', 'like', '%biblioteca%');
+                  ->orWhere('tipo_espacio', 'like', '%biblioteca%');
             });
         }
 
@@ -140,7 +141,7 @@ class OcupacionSemanalService
             ->whereIn('estado', ['activa', 'finalizada'])
             ->where(function ($q) {
                 $q->whereNull('hubo_asistentes')
-                    ->orWhere('hubo_asistentes', true);
+                  ->orWhere('hubo_asistentes', true);
             })
             ->get()
             ->groupBy(function ($reserva) {
@@ -190,14 +191,13 @@ class OcupacionSemanalService
 
             $reservasDia = $reservasSemana->get($fechaDelDia, collect());
 
-            for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
+            for ($moduloNum = 1; $moduloNum <= 15; ++$moduloNum) {
                 if ($moduloNum > $maxModulos) {
                     $ocupacion[$dia][$moduloNum] = null; // Módulo no disponible (N/A)
-
                     continue;
                 }
 
-                $idModuloStr = $prefijo.'.'.$moduloNum;
+                $idModuloStr = $prefijo . '.' . $moduloNum;
                 $espaciosUsados = [];
 
                 // 1. Programación de clases (sólo en días hábiles regulares sin feriado/receso activo,
@@ -297,7 +297,7 @@ class OcupacionSemanalService
                     $valoresValidos[] = $valInt;
                     $valoresDia[] = $valInt;
 
-                    if (! isset($promediosPorModulo[$mod])) {
+                    if (!isset($promediosPorModulo[$mod])) {
                         $promediosPorModulo[$mod] = [];
                     }
                     $promediosPorModulo[$mod][] = $valInt;
@@ -341,7 +341,7 @@ class OcupacionSemanalService
             ->where('tipo_filtro', $tipoFilter)
             ->first();
 
-        if ($existente && ! $forzar) {
+        if ($existente && !$forzar) {
             return $existente;
         }
 
@@ -376,7 +376,6 @@ class OcupacionSemanalService
         foreach (self::TIPOS_FILTRO as $tipo) {
             $snapshots[$tipo] = $this->guardarSnapshot($lunesDate, $tipo, $forzar, $userId, $origen);
         }
-
         return $snapshots;
     }
 

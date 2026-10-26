@@ -9,6 +9,7 @@ use App\Models\Facultad;
 
 class SpacesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';  
     public $sortField = 'id_espacio';

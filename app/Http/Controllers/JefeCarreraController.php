@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Carrera;
 use App\Models\JefeCarrera;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\Carrera;
 use Illuminate\Http\Request;
 
 class JefeCarreraController extends Controller
@@ -16,7 +15,6 @@ class JefeCarreraController extends Controller
     {
         try {
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
-
             return view('jefes-carrera.index', compact('carreras'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los jefes de carrera.'])->withInput();
@@ -44,6 +42,7 @@ class JefeCarreraController extends Controller
         }
     }
 
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -52,12 +51,11 @@ class JefeCarreraController extends Controller
         try {
             $jefeCarrera = JefeCarrera::with('carrera')->findOrFail($id);
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
-
             return view('jefes-carrera.edit', compact('jefeCarrera', 'carreras'));
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('jefes-carrera.index')->withErrors(['error' => 'Jefe de carrera no encontrado.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar el jefe de carrera: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar el jefe de carrera: ' . $e->getMessage()]);
         }
     }
 
@@ -69,7 +67,7 @@ class JefeCarreraController extends Controller
         try {
             $request->validate([
                 'nombre' => 'required|string|max:100',
-                'email' => 'required|email|unique:jefes_carrera,email,'.$id,
+                'email' => 'required|email|unique:jefes_carrera,email,' . $id,
                 'telefono' => 'nullable|string|max:20',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
@@ -83,10 +81,10 @@ class JefeCarreraController extends Controller
             ]);
 
             return redirect()->route('jefes-carrera.index')->with('success', 'Jefe de carrera actualizado exitosamente.');
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('jefes-carrera.index')->withErrors(['error' => 'Jefe de carrera no encontrado.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar el jefe de carrera: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar el jefe de carrera: ' . $e->getMessage()]);
         }
     }
 
@@ -98,12 +96,11 @@ class JefeCarreraController extends Controller
         try {
             $jefeCarrera = JefeCarrera::findOrFail($id);
             $jefeCarrera->delete();
-
             return redirect()->route('jefes-carrera.index')->with('success', 'Jefe de carrera eliminado exitosamente.');
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Jefe de carrera no encontrado.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el jefe de carrera: '.$e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar el jefe de carrera: ' . $e->getMessage()], 500);
         }
     }
 }

@@ -2,25 +2,23 @@
 
 namespace App\Services;
 
-use App\Helpers\ModulosHelper;
-use App\Models\ClaseNoRealizada;
-use App\Models\DiaFeriado;
-use App\Models\PeriodoAcademico;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ProfesorColaborador;
+use App\Models\ClaseNoRealizada;
 use App\Models\Reserva;
+use App\Models\DiaFeriado;
 use App\Models\Modulo;
 use App\Models\SesionAsistencia;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
+use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
 
 class TodasClasesService
 {
     protected $clasesNoRealizadasCache = [];
-
     protected $reservasCache = [];
     protected $reservasPorFechaCache = [];
     protected $sesionesAsistenciaCache = [];
@@ -37,6 +35,8 @@ class TodasClasesService
         @ini_set('memory_limit', '512M');
         @set_time_limit(180);
         @ini_set('max_execution_time', '180');
+        
+        $clasesData = new Collection();
 
         \App\Helpers\SemesterHelper::asegurarSeparacionSemestres();
 
@@ -95,7 +95,7 @@ class TodasClasesService
         $fechasFeriado = [];
         foreach ($feriadosEnRango as $feriado) {
             $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
-            $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
+            $fin    = Carbon::parse($feriado->fecha_fin)->startOfDay();
             while ($cursor <= $fin) {
                 $fechasFeriado[$cursor->format('Y-m-d')] = $feriado->nombre;
                 $cursor->addDay();
@@ -133,7 +133,7 @@ class TodasClasesService
         if ($search) {
             $this->aplicarFiltroBusquedaClaseNoRealizada($clasesNoRealizadasQuery, $search);
         }
-
+        
         $this->clasesNoRealizadasCache = [];
         $todasClasesNoRealizadas = $clasesNoRealizadasQuery->get();
         $clasesNoRealizadasUsadasIds = [];
@@ -161,7 +161,7 @@ class TodasClasesService
             ->whereBetween('fecha_reserva', [$fechaInicio->toDateString(), $fechaFin->toDateString()])
             ->where(function($q) {
                 $q->whereNotNull('run_profesor')
-                    ->orWhereNotNull('run_solicitante');
+                  ->orWhereNotNull('run_solicitante');
             })
             ->whereNotNull('hora')
             ->get();
@@ -274,14 +274,14 @@ class TodasClasesService
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 $relEspacio,
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
-                'horario' => function ($query) {
+                'horario' => function($query) {
                     $query->select('id_horario', 'run_profesor', 'periodo')
                         ->with([
                             'profesor:run_profesor,name,id_carrera,id_area_academica',
                             'profesor.carrera:id_carrera,nombre',
                             'profesor.areaAcademica:id_area_academica,nombre_area_academica',
                         ]);
-                },
+                }
             ])
             ->whereHas('modulo')
             ->whereHas('horario.profesor');
@@ -297,15 +297,15 @@ class TodasClasesService
 
         if ($search) {
             $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
-            $searchTerm = '%'.trim($search).'%';
+            $searchTerm = '%' . trim($search) . '%';
             $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
 
-            $query->where(function ($q) use ($searchTerm, $palabras, $cleanRun) {
-                $q->whereHas('asignatura', function ($aq) use ($searchTerm) {
+            $query->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
+                $q->whereHas('asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
-                        ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                       ->orWhere('codigo_asignatura', 'like', $searchTerm);
                 })
-                    ->orWhere('id_espacio', 'like', $searchTerm);
+                ->orWhere('id_espacio', 'like', $searchTerm);
 
                 if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
                     $q->whereHas('horario.profesor', function($pq) use ($cleanRun) {
@@ -318,7 +318,7 @@ class TodasClasesService
                     $q->whereHas('horario.profesor', function($pq) use ($palabras) {
                         $pq->where(function($nameQ) use ($palabras) {
                             foreach ($palabras as $p) {
-                                $nameQ->where('name', 'like', '%'.$p.'%');
+                                $nameQ->where('name', 'like', '%' . $p . '%');
                             }
                         });
                     });
@@ -341,7 +341,7 @@ class TodasClasesService
             $estado
         ) {
             foreach ($planificaciones as $planificacion) {
-                if (! $planificacion->modulo || ! $planificacion->horario || ! $planificacion->horario->profesor) {
+                if (!$planificacion->modulo || !$planificacion->horario || !$planificacion->horario->profesor) {
                     continue;
                 }
 
@@ -468,10 +468,9 @@ class TodasClasesService
                                 'observaciones'     => $observaciones,
                                 'rol_bloque'        => 'titular',
                             ]);
-
                             continue;
                         }
-
+                        
                         $ahora = Carbon::now();
                         $fechaClase = Carbon::parse($fechaStr);
                         $horaFinModulo = Carbon::parse($planificacion->modulo->hora_termino);
@@ -534,10 +533,10 @@ class TodasClasesService
                             $estadoStr = match($claseNoRealizada->estado) {
                                 'no_realizada' => 'No Registrada',
                                 'realizada', 'registrada' => 'Realizada',
-                                'justificado' => 'Justificada',
-                                'recuperada' => 'Recuperada',
-                                'pendiente' => 'Pendiente de Recuperación',
-                                default => 'No Registrada',
+                                'justificado'  => 'Justificada',
+                                'recuperada'   => 'Recuperada',
+                                'pendiente'    => 'Pendiente de Recuperación',
+                                default        => 'No Registrada',
                             };
                             $motivo = $claseNoRealizada->motivo;
                             $observaciones = $claseNoRealizada->observaciones;
@@ -567,11 +566,11 @@ class TodasClasesService
                         if ($estadoStr === 'Planificada') {
                             continue;
                         }
-
+                        
                         if ($estado && $estadoStr !== $this->transformEstado($estado)) {
                             continue;
                         }
-
+                        
                         $clasesData->push([
                             'id' => $claseId,
                             'fecha' => clone $fecha,
@@ -600,7 +599,7 @@ class TodasClasesService
                     }
                 }
             }
-
+            
             unset($planificaciones);
             gc_collect_cycles();
         });
@@ -638,13 +637,13 @@ class TodasClasesService
 
         if ($search) {
             $palabras = array_values(array_filter(preg_split('/\s+/', trim($search))));
-            $searchTerm = '%'.trim($search).'%';
+            $searchTerm = '%' . trim($search) . '%';
             $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
 
-            $queryColab->where(function ($q) use ($searchTerm, $palabras, $cleanRun) {
-                $q->whereHas('profesorColaborador.asignatura', function ($aq) use ($searchTerm) {
+            $queryColab->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
+                $q->whereHas('profesorColaborador.asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
-                        ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                       ->orWhere('codigo_asignatura', 'like', $searchTerm);
                 })
                 ->orWhereHas('profesorColaborador', function($cq) use ($searchTerm) {
                     $cq->where('nombre_asignatura_temporal', 'like', $searchTerm);
@@ -662,7 +661,7 @@ class TodasClasesService
                     $q->whereHas('profesorColaborador.profesor', function($pq) use ($palabras) {
                         $pq->where(function($nameQ) use ($palabras) {
                             foreach ($palabras as $p) {
-                                $nameQ->where('name', 'like', '%'.$p.'%');
+                                $nameQ->where('name', 'like', '%' . $p . '%');
                             }
                         });
                     });
@@ -687,7 +686,7 @@ class TodasClasesService
         ) {
             foreach ($planificacionesColab as $planificacion) {
                 $colab = $planificacion->profesorColaborador;
-                if (! $planificacion->modulo || ! $colab || ! $colab->profesor) {
+                if (!$planificacion->modulo || !$colab || !$colab->profesor) {
                     continue;
                 }
 
@@ -766,9 +765,9 @@ class TodasClasesService
                     if ($diaFecha === $diaModulo) {
                         $runProfesor = $this->normalizeRun($profesorModel->run_profesor);
 
-                        $claveClase = $fechaStr.'_'.
-                                      $planificacion->id_espacio.'_'.
-                                      $planificacion->id_modulo.'_'.
+                        $claveClase = $fechaStr . '_' . 
+                                      $planificacion->id_espacio . '_' . 
+                                      $planificacion->id_modulo . '_' . 
                                       $runProfesor;
 
                         $estadoStr = 'Planificada';
@@ -828,7 +827,6 @@ class TodasClasesService
                                 'observaciones'     => $observaciones,
                                 'rol_bloque'        => 'colaborador',
                             ]);
-
                             continue;
                         }
 
@@ -898,10 +896,10 @@ class TodasClasesService
                             $estadoStr = match($claseNoRealizada->estado) {
                                 'no_realizada' => 'No Registrada',
                                 'realizada', 'registrada' => 'Realizada',
-                                'justificado' => 'Justificada',
-                                'recuperada' => 'Recuperada',
-                                'pendiente' => 'Pendiente de Recuperación',
-                                default => 'No Registrada',
+                                'justificado'  => 'Justificada',
+                                'recuperada'   => 'Recuperada',
+                                'pendiente'    => 'Pendiente de Recuperación',
+                                default        => 'No Registrada',
                             };
                             $motivo = $claseNoRealizada->motivo;
                             $observaciones = $claseNoRealizada->observaciones;
@@ -1167,15 +1165,15 @@ class TodasClasesService
         $this->reservasPorFechaCache = [];
         $this->sesionesAsistenciaCache = [];
 
-        $clasesData = $clasesData->unique(function ($item) {
-            return $item['fecha']->format('Y-m-d').'_'.$item['espacio'].'_'.$item['modulo'].'_'.$this->normalizeRun($item['run_profesor']).'_'.($item['id_asignatura'] ?? '');
+        $clasesData = $clasesData->unique(function($item) {
+            return $item['fecha']->format('Y-m-d') . '_' . $item['espacio'] . '_' . $item['modulo'] . '_' . $this->normalizeRun($item['run_profesor']) . '_' . ($item['id_asignatura'] ?? '');
         });
 
-        $clasesAgrupadas = $clasesData->groupBy(function ($item) {
-            return $item['fecha']->format('Y-m-d').'_'.$item['espacio'].'_'.$this->normalizeRun($item['run_profesor']).'_'.($item['id_asignatura'] ?? '');
+        $clasesAgrupadas = $clasesData->groupBy(function($item) {
+            return $item['fecha']->format('Y-m-d') . '_' . $item['espacio'] . '_' . $this->normalizeRun($item['run_profesor']) . '_' . ($item['id_asignatura'] ?? '');
         });
 
-        $clasesProcesadas = new Collection;
+        $clasesProcesadas = new Collection();
 
         foreach ($clasesAgrupadas as $grupoKey => $items) {
             $itemsOrdenados = $items->sortBy('hora_inicio')->values();
@@ -1185,7 +1183,7 @@ class TodasClasesService
             $ultimoModuloNum = null;
 
             foreach ($itemsOrdenados as $item) {
-                $moduloNum = (int) $item['modulo'];
+                $moduloNum = (int)$item['modulo'];
                 if (empty($bloqueActual)) {
                     $bloqueActual[] = $item;
                 } else {
@@ -1198,7 +1196,7 @@ class TodasClasesService
                 }
                 $ultimoModuloNum = $moduloNum;
             }
-            if (! empty($bloqueActual)) {
+            if (!empty($bloqueActual)) {
                 $bloquesConsecutivos[] = $bloqueActual;
             }
 
@@ -1232,7 +1230,7 @@ class TodasClasesService
 
                 $horaSalidaBloque = null;
                 foreach ($bloqueItems as $item) {
-                    if ($item['estado'] === 'Realizada' && ! empty($item['hora_salida'])) {
+                    if ($item['estado'] === 'Realizada' && !empty($item['hora_salida'])) {
                         $horaSalidaBloque = $item['hora_salida'];
                         break;
                     }
@@ -1267,7 +1265,7 @@ class TodasClasesService
                         if ($item['estado'] === 'Realizada' && !empty($item['hora_entrada']) && !$moduloCubiertoPorColaborador) {
                             $toleranciaMinutos = 10 * ($posicionN - 1);
 
-                            $horarioCanon = ModulosHelper::getHorarioModulo($item['dia'], (int) $item['modulo']);
+                            $horarioCanon    = ModulosHelper::getHorarioModulo($item['dia'], (int) $item['modulo']);
                             $horaFinCanonica = $horarioCanon ? $horarioCanon['fin'] : $item['hora_fin'];
                             $horaMinimaSalida = Carbon::parse($horaFinCanonica)->subMinutes($toleranciaMinutos);
 
@@ -1280,8 +1278,8 @@ class TodasClasesService
                                     if ($minutosAntes >= 5 && $modulosCompletados < $totalModulosBloque) {
                                         $item['estado'] = 'Realizada';
                                         $obsRetiro = "Retiro anticipado: Se retiró {$minutosAntes} min antes del mínimo (completó {$modulosCompletados} de {$totalModulosBloque} módulos)";
-                                        $item['observaciones'] = ! empty($item['observaciones'])
-                                            ? $item['observaciones'].' | '.$obsRetiro
+                                        $item['observaciones'] = !empty($item['observaciones']) 
+                                            ? $item['observaciones'] . " | " . $obsRetiro 
                                             : $obsRetiro;
                                     }
                                 }
@@ -1298,13 +1296,13 @@ class TodasClasesService
                 }
 
                 $realizadas = $bloqueItems->filter(function ($item) {
-                    return $item['estado'] === 'Realizada' && ! empty($item['hora_entrada']) && $item['hora_entrada'] !== 'N/A';
+                    return $item['estado'] === 'Realizada' && !empty($item['hora_entrada']) && $item['hora_entrada'] !== 'N/A';
                 });
                 $totalRealizadas = $realizadas->count();
 
                 if ($totalRealizadas > 1) {
                     $firstIndex = $realizadas->keys()->first();
-                    $lastIndex = $realizadas->keys()->last();
+                    $lastIndex  = $realizadas->keys()->last();
 
                     foreach ($bloqueItems as $index => $item) {
                         if ($index === $firstIndex) {
@@ -1313,7 +1311,7 @@ class TodasClasesService
                             $item['hora_entrada'] = null;
                         } elseif ($realizadas->has($index)) {
                             $item['hora_entrada'] = null;
-                            $item['hora_salida'] = null;
+                            $item['hora_salida']  = null;
                         }
                         $clasesProcesadas->push($item);
                     }
@@ -1345,7 +1343,7 @@ class TodasClasesService
         }
 
         if ($ua) {
-            $uaStr = trim((string) $ua);
+            $uaStr = trim((string)$ua);
             $uaNorm = mb_strtolower($uaStr, 'UTF-8');
 
             \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
@@ -1363,7 +1361,7 @@ class TodasClasesService
                 return str_contains($carreraNombre, $uaNorm);
             });
 
-            Log::debug('[TodasClasesService] Resultado filtro UA', [
+            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
                 'total_despues_filtro' => $clasesData->count(),
             ]);
         }
@@ -1659,27 +1657,26 @@ class TodasClasesService
 
     private function transformEstado($estado)
     {
-        return match ($estado) {
-            'no_realizada' => 'No Registrada',
+        return match($estado) {
+            'no_realizada'            => 'No Registrada',
             'realizada', 'registrada' => 'Realizada',
-            'justificado' => 'Justificada',
-            'recuperada' => 'Recuperada',
-            'pendiente' => 'Pendiente de Recuperación',
-            'feriado' => 'Feriado/Justificado',
-            default => $estado,
+            'justificado'             => 'Justificada',
+            'recuperada'              => 'Recuperada',
+            'pendiente'               => 'Pendiente de Recuperación',
+            'feriado'                 => 'Feriado/Justificado',
+            default                   => $estado,
         };
     }
 
     private function normalizeRun($run)
     {
-        if (! $run) {
+        if (!$run) {
             return '';
         }
         if (str_contains($run, '-')) {
             $parts = explode('-', $run);
             $run = $parts[0];
         }
-
         return preg_replace('/[^0-9]/', '', $run);
     }
 
@@ -1688,19 +1685,18 @@ class TodasClasesService
      */
     private function resolverUa($asignatura, $profesor = null): string
     {
-        if ($asignatura && ! empty($asignatura->id_carrera)) {
+        if ($asignatura && !empty($asignatura->id_carrera)) {
             return (string) $asignatura->id_carrera;
         }
-        if ($profesor && ! empty($profesor->id_carrera)) {
+        if ($profesor && !empty($profesor->id_carrera)) {
             return (string) $profesor->id_carrera;
         }
-        if ($asignatura && $asignatura->carrera && ! empty($asignatura->carrera->id_carrera)) {
+        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->id_carrera)) {
             return (string) $asignatura->carrera->id_carrera;
         }
-        if ($profesor && $profesor->carrera && ! empty($profesor->carrera->id_carrera)) {
+        if ($profesor && $profesor->carrera && !empty($profesor->carrera->id_carrera)) {
             return (string) $profesor->carrera->id_carrera;
         }
-
         return 'N/A';
     }
 
@@ -1709,19 +1705,18 @@ class TodasClasesService
      */
     private function resolverNombreUa($asignatura, $profesor = null): string
     {
-        if ($asignatura && $asignatura->carrera && ! empty($asignatura->carrera->nombre)) {
+        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
             return (string) $asignatura->carrera->nombre;
         }
-        if ($profesor && $profesor->carrera && ! empty($profesor->carrera->nombre)) {
+        if ($profesor && $profesor->carrera && !empty($profesor->carrera->nombre)) {
             return (string) $profesor->carrera->nombre;
         }
-        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && ! empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
+        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
             return (string) $asignatura->carrera->areaAcademica->nombre_area_academica;
         }
-        if ($profesor && $profesor->areaAcademica && ! empty($profesor->areaAcademica->nombre_area_academica)) {
+        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->nombre_area_academica)) {
             return (string) $profesor->areaAcademica->nombre_area_academica;
         }
-
         return '';
     }
 

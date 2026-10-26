@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TipoCorreoMasivo extends Model
 {
+    use HasFactory;
 
     protected $connection = 'tenant';
-
     protected $table = 'tipos_correos_masivos';
 
     protected $fillable = [
@@ -39,8 +39,8 @@ class TipoCorreoMasivo extends Model
             'tipo_correo_masivo_id',
             'destinatario_correo_id'
         )
-            ->withPivot('habilitado')
-            ->withTimestamps();
+        ->withPivot('habilitado')
+        ->withTimestamps();
     }
 
     /**

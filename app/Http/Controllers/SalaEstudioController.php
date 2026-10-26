@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\VetosExport;
 use App\Models\Espacio;
+use App\Models\User;
 use App\Models\Reserva;
 use App\Models\Solicitante;
-use App\Models\User;
 use App\Models\VetoSalaEstudio;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\VetosExport;
 
 class SalaEstudioController extends Controller
 {
@@ -25,7 +26,7 @@ class SalaEstudioController extends Controller
         try {
             $request->validate([
                 'id_espacio' => 'required|string',
-                'run' => 'required|string',
+                'run' => 'required|string'
             ]);
 
             $idEspacio = $request->id_espacio;
@@ -36,7 +37,7 @@ class SalaEstudioController extends Controller
 
             // Verificar si el usuario está vetado
             $veto = VetoSalaEstudio::vetoActivo($run);
-            if (! $veto) {
+            if (!$veto) {
                 $veto = VetoSalaEstudio::vetoActivo($runLimpio);
             }
 
@@ -48,8 +49,8 @@ class SalaEstudioController extends Controller
                     'veto' => [
                         'motivo' => $veto->observacion,
                         'fecha_veto' => $veto->fecha_veto->format('d/m/Y H:i'),
-                        'tipo' => $veto->tipo_veto,
-                    ],
+                        'tipo' => $veto->tipo_veto
+                    ]
                 ], 403);
             }
 
@@ -59,7 +60,7 @@ class SalaEstudioController extends Controller
                 ->first();
 
             // Si no existe como usuario, intentar crearlo desde solicitantes
-            if (! $usuario) {
+            if (!$usuario) {
                 // Intentar crear desde solicitantes
                 $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                     ->orWhere('run_solicitante', $runLimpio)
@@ -68,7 +69,7 @@ class SalaEstudioController extends Controller
                 if ($solicitante) {
                     // Crear usuario desde solicitante
                     try {
-                        $usuario = new User;
+                        $usuario = new User();
                         $usuario->run = $solicitante->run_solicitante;
                         $usuario->name = $solicitante->nombre;
                         $usuario->email = $solicitante->correo;
@@ -76,22 +77,23 @@ class SalaEstudioController extends Controller
                         $usuario->celular = $solicitante->telefono;
                         $usuario->save();
 
+
                     } catch (\Exception $e) {
                         Log::error('Error al crear usuario desde solicitante', [
                             'error' => $e->getMessage(),
-                            'run' => $solicitante->run_solicitante,
+                            'run' => $solicitante->run_solicitante
                         ]);
-
+                        
                         return response()->json([
                             'success' => false,
-                            'mensaje' => 'Error al crear usuario: '.$e->getMessage(),
+                            'mensaje' => 'Error al crear usuario: ' . $e->getMessage()
                         ], 500);
                     }
                 } else {
                     // No existe en ninguna tabla
                     return response()->json([
                         'success' => false,
-                        'mensaje' => 'Usuario no encontrado en el sistema',
+                        'mensaje' => 'Usuario no encontrado en el sistema'
                     ], 404);
                 }
             }
@@ -99,17 +101,17 @@ class SalaEstudioController extends Controller
             // Verificar que el espacio existe y es sala de estudio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
 
-            if (! $espacio) {
+            if (!$espacio) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado',
+                    'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
 
             if (strtolower($espacio->tipo_espacio) !== 'sala de estudio') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio no es una sala de estudio',
+                    'mensaje' => 'El espacio no es una sala de estudio'
                 ], 400);
             }
 
@@ -138,6 +140,8 @@ class SalaEstudioController extends Controller
                     $espacio->save();
                 }
 
+
+
                 return response()->json([
                     'success' => true,
                     'accion' => 'salida',
@@ -145,7 +149,7 @@ class SalaEstudioController extends Controller
                     'nombre' => $usuario->name,
                     'run' => $usuario->run,
                     'hora_entrada' => Carbon::parse($reservaExistente->hora)->format('H:i'),
-                    'hora_salida' => Carbon::now()->format('H:i'),
+                    'hora_salida' => Carbon::now()->format('H:i')
                 ]);
             }
 
@@ -158,12 +162,12 @@ class SalaEstudioController extends Controller
             if ($espacio->capacidad_maxima && $reservasActivas >= $espacio->capacidad_maxima) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Capacidad máxima alcanzada',
+                    'mensaje' => 'Capacidad máxima alcanzada'
                 ], 400);
             }
 
             // Crear la reserva/registro de acceso (entrada)
-            $reserva = new Reserva;
+            $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->id_espacio = $idEspacio;
             $reserva->run_solicitante = $usuario->run;
@@ -181,24 +185,26 @@ class SalaEstudioController extends Controller
                 $espacio->save();
             }
 
+
+
             return response()->json([
                 'success' => true,
                 'accion' => 'entrada',
                 'mensaje' => 'Acceso registrado exitosamente',
                 'nombre' => $usuario->name,
                 'run' => $usuario->run,
-                'hora_registro' => Carbon::now()->format('H:i'),
+                'hora_registro' => Carbon::now()->format('H:i')
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al registrar acceso a sala de estudio', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al registrar acceso: '.$e->getMessage(),
+                'mensaje' => 'Error al registrar acceso: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -219,7 +225,7 @@ class SalaEstudioController extends Controller
             $alumnos = $reservas->map(function ($reserva) {
                 // Intentar obtener nombre del solicitante o del usuario
                 $nombre = 'Usuario desconocido';
-
+                
                 if ($reserva->run_solicitante) {
                     // Primero buscar en la tabla solicitantes
                     if ($reserva->solicitante) {
@@ -236,25 +242,25 @@ class SalaEstudioController extends Controller
                 return [
                     'run' => $reserva->run_solicitante,
                     'nombre' => $nombre,
-                    'hora_registro' => Carbon::parse($reserva->hora)->format('H:i'),
+                    'hora_registro' => Carbon::parse($reserva->hora)->format('H:i')
                 ];
             });
 
             return response()->json([
                 'success' => true,
-                'alumnos' => $alumnos,
+                'alumnos' => $alumnos
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al obtener alumnos registrados en sala de estudio', [
                 'espacio' => $idEspacio,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al obtener alumnos registrados',
-                'alumnos' => [],
+                'alumnos' => []
             ], 500);
         }
     }
@@ -268,14 +274,14 @@ class SalaEstudioController extends Controller
             $request->validate([
                 'run' => 'required|string',
                 'observacion' => 'required|string',
-                'id_reserva' => 'nullable|string',
+                'id_reserva' => 'nullable|string'
             ]);
 
             // Verificar si ya existe un veto activo
             if (VetoSalaEstudio::estaVetado($request->run)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Este usuario ya tiene un veto activo',
+                    'message' => 'Este usuario ya tiene un veto activo'
                 ], 400);
             }
 
@@ -286,23 +292,23 @@ class SalaEstudioController extends Controller
                 'observacion' => $request->observacion,
                 'estado' => 'activo',
                 'vetado_por' => Auth::user()->name ?? 'Sistema',
-                'fecha_veto' => now(),
+                'fecha_veto' => now()
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Veto individual aplicado correctamente',
-                'veto' => $veto,
+                'veto' => $veto
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al aplicar veto individual', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al aplicar el veto',
+                'message' => 'Error al aplicar el veto'
             ], 500);
         }
     }
@@ -315,18 +321,18 @@ class SalaEstudioController extends Controller
         try {
             $request->validate([
                 'id_reserva' => 'required|string',
-                'observacion' => 'required|string',
+                'observacion' => 'required|string'
             ]);
 
             // Obtener la reserva origen para obtener datos del grupo
             $reservaOrigen = Reserva::where('id_reserva', $request->id_reserva)->firstOrFail();
-
+            
             // Obtener todas las reservas del mismo grupo
             $reservasGrupo = Reserva::where('id_espacio', $reservaOrigen->id_espacio)
                 ->where('fecha_reserva', $reservaOrigen->fecha_reserva)
                 ->whereBetween('hora', [
                     Carbon::parse($reservaOrigen->hora)->subMinutes(30)->format('H:i:s'),
-                    Carbon::parse($reservaOrigen->hora)->addMinutes(30)->format('H:i:s'),
+                    Carbon::parse($reservaOrigen->hora)->addMinutes(30)->format('H:i:s')
                 ])
                 ->where('tipo_reserva', 'espontanea')
                 ->where('observaciones', 'Sala de Estudio')
@@ -340,7 +346,6 @@ class SalaEstudioController extends Controller
                     // Verificar si ya está vetado
                     if (VetoSalaEstudio::estaVetado($reserva->run_solicitante)) {
                         $yaVetados[] = $reserva->run_solicitante;
-
                         continue;
                     }
 
@@ -351,7 +356,7 @@ class SalaEstudioController extends Controller
                         'observacion' => $request->observacion,
                         'estado' => 'activo',
                         'vetado_por' => Auth::user()->name ?? 'Sistema',
-                        'fecha_veto' => now(),
+                        'fecha_veto' => now()
                     ]);
 
                     $vetados[] = $reserva->run_solicitante;
@@ -365,18 +370,18 @@ class SalaEstudioController extends Controller
                 'ya_vetados' => count($yaVetados),
                 'detalles' => [
                     'nuevos_vetos' => $vetados,
-                    'ya_vetados' => $yaVetados,
-                ],
+                    'ya_vetados' => $yaVetados
+                ]
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al aplicar veto grupal', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al aplicar el veto grupal',
+                'message' => 'Error al aplicar el veto grupal'
             ], 500);
         }
     }
@@ -392,31 +397,31 @@ class SalaEstudioController extends Controller
             if ($veto->estado !== 'activo') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Este veto ya fue liberado',
+                    'message' => 'Este veto ya fue liberado'
                 ], 400);
             }
 
             $veto->update([
                 'estado' => 'liberado',
                 'liberado_por' => Auth::user()->name ?? 'Sistema',
-                'fecha_liberacion' => now(),
+                'fecha_liberacion' => now()
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Veto liberado correctamente',
-                'veto' => $veto,
+                'veto' => $veto
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al liberar veto', [
                 'id' => $id,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al liberar el veto',
+                'message' => 'Error al liberar el veto'
             ], 500);
         }
     }
@@ -428,30 +433,30 @@ class SalaEstudioController extends Controller
     {
         try {
             $request->validate([
-                'observacion' => 'required|string',
+                'observacion' => 'required|string'
             ]);
 
             $veto = VetoSalaEstudio::findOrFail($id);
 
             $veto->update([
-                'observacion' => $request->observacion,
+                'observacion' => $request->observacion
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Observación actualizada correctamente',
-                'veto' => $veto,
+                'veto' => $veto
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al actualizar veto', [
                 'id' => $id,
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar el veto',
+                'message' => 'Error al actualizar el veto'
             ], 500);
         }
     }
@@ -471,14 +476,14 @@ class SalaEstudioController extends Controller
                 'fecha_veto',
                 'vetado_por',
                 'fecha_liberacion',
-                'liberado_por',
+                'liberado_por'
             ])
-                ->with(['solicitante:run_solicitante,nombre']); // Solo cargar campos necesarios
+            ->with(['solicitante:run_solicitante,nombre']); // Solo cargar campos necesarios
 
             // Filtrar por estado
             if ($request->has('estado') && $request->estado) {
                 $query->where('estado', $request->estado);
-            } elseif (! $request->has('estado')) {
+            } elseif (!$request->has('estado')) {
                 $query->where('estado', 'activo'); // Por defecto solo mostrar activos
             }
 
@@ -488,24 +493,24 @@ class SalaEstudioController extends Controller
             }
 
             $vetos = $query->orderBy('fecha_veto', 'desc')
-                ->limit(500) // Limitar resultados para evitar sobrecarga
-                ->get();
+                          ->limit(500) // Limitar resultados para evitar sobrecarga
+                          ->get();
 
             return response()->json([
                 'success' => true,
-                'vetos' => $vetos,
+                'vetos' => $vetos
             ]);
 
         } catch (\Exception $e) {
             Log::error('Error al listar vetados', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener la lista de vetados',
-                'vetos' => [],
+                'vetos' => []
             ], 500);
         }
     }
@@ -517,20 +522,20 @@ class SalaEstudioController extends Controller
     {
         try {
             $estado = $request->get('estado', '');
-
-            $fileName = 'usuarios-vetados-'.($estado ?: 'todos').'-'.date('Y-m-d').'.xlsx';
-
+            
+            $fileName = 'usuarios-vetados-' . ($estado ?: 'todos') . '-' . date('Y-m-d') . '.xlsx';
+            
             return Excel::download(new VetosExport($estado), $fileName);
 
         } catch (\Exception $e) {
             Log::error('Error al exportar vetados', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al exportar la lista de vetados',
+                'message' => 'Error al exportar la lista de vetados'
             ], 500);
         }
     }

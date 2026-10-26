@@ -9,6 +9,7 @@ use Livewire\WithPagination;
 
 class DiasFeriadosTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
 
@@ -146,13 +147,13 @@ class DiasFeriadosTable extends Component
         if ($this->search) {
             // Optimización: Usar búsqueda más eficiente y evitar operaciones lentas de mbstring
             $searchTerm = trim($this->search);
-
+            
             // Si el término de búsqueda es corto, usar búsqueda simple
             if (strlen($searchTerm) > 0) {
                 $query->where(function ($q) use ($searchTerm) {
                     // Usar LOWER() en la base de datos en lugar de mb_stripos en PHP
-                    $q->whereRaw('LOWER(nombre) LIKE ?', ['%'.strtolower($searchTerm).'%'])
-                        ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%'.strtolower($searchTerm).'%']);
+                    $q->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                      ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
                 });
             }
         }

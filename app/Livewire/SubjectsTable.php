@@ -9,6 +9,7 @@ use App\Models\Asignatura;
 
 class SubjectsTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
     public $sortField = 'id_asignatura';

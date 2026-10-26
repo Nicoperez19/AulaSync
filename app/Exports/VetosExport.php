@@ -4,15 +4,15 @@ namespace App\Exports;
 
 use App\Models\VetoSalaEstudio;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class VetosExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles
+class VetosExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths
 {
     protected $estado;
 
@@ -32,17 +32,17 @@ class VetosExport implements FromCollection, WithColumnWidths, WithHeadings, Wit
             'fecha_veto',
             'vetado_por',
             'fecha_liberacion',
-            'liberado_por',
+            'liberado_por'
         ])
-            ->with(['solicitante:run,nombre']); // Solo cargar campos necesarios
+        ->with(['solicitante:run,nombre']); // Solo cargar campos necesarios
 
         if ($this->estado) {
             $query->where('estado', $this->estado);
         }
 
         return $query->orderBy('fecha_veto', 'desc')
-            ->limit(10000) // Límite para exportación
-            ->get();
+                    ->limit(10000) // Límite para exportación
+                    ->get();
     }
 
     public function headings(): array
@@ -57,7 +57,7 @@ class VetosExport implements FromCollection, WithColumnWidths, WithHeadings, Wit
             'Fecha Veto',
             'Vetado Por',
             'Fecha Liberación',
-            'Liberado Por',
+            'Liberado Por'
         ];
     }
 
@@ -73,7 +73,7 @@ class VetosExport implements FromCollection, WithColumnWidths, WithHeadings, Wit
             $veto->fecha_veto->format('d/m/Y H:i'),
             $veto->vetado_por ?? 'Sistema',
             $veto->fecha_liberacion ? $veto->fecha_liberacion->format('d/m/Y H:i') : '-',
-            $veto->liberado_por ?? '-',
+            $veto->liberado_por ?? '-'
         ];
     }
 

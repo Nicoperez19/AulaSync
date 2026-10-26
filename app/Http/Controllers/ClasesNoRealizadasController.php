@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\TodasClasesExport;
-use App\Helpers\SemesterHelper;
-use App\Models\ProfesorAtraso;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Exports\TodasClasesExport;
+use App\Models\ProfesorAtraso;
+use App\Helpers\SemesterHelper;
 use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class ClasesNoRealizadasController extends Controller
 {
@@ -16,13 +16,13 @@ class ClasesNoRealizadasController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
         $user = auth()->user();
         $isSuperAdmin = $user && $user->isSuperAdmin();
-
+        
         // Verificar si el periodo académico ha iniciado
         $periodoActual = SemesterHelper::getPeriodoActual();
         $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
-
+        
         // Si el periodo no ha iniciado o el usuario no es superadmin, no se calculan atrasos
-        if ($periodoNoIniciado || ! $isSuperAdmin) {
+        if ($periodoNoIniciado || !$isSuperAdmin) {
             $totalAtrasos = 0;
             $promedioMinutosAtraso = 0;
         } else {
@@ -31,7 +31,7 @@ class ClasesNoRealizadasController extends Controller
             $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
                 ->avg('minutos_atraso') ?? 0;
         }
-
+        
         return view('admin.clases-no-realizadas', compact(
             'totalAtrasos',
             'promedioMinutosAtraso',
@@ -50,7 +50,7 @@ class ClasesNoRealizadasController extends Controller
         if ($periodoActual && $periodoActual->noHaIniciado()) {
             return back()->with('error', 'No se puede exportar porque el periodo académico aún no ha iniciado.');
         }
-
+        
         $request->validate([
             'search' => 'nullable|string|max:255',
             'estado' => 'nullable|in:no_realizada,realizada,registrada,justificado,recuperada,pendiente',
@@ -75,7 +75,7 @@ class ClasesNoRealizadasController extends Controller
         }
 
         if ($ua) {
-            $nombreArchivo .= '_UA_'.preg_replace('/[^A-Za-z0-9_\-]/', '', $ua);
+            $nombreArchivo .= '_UA_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $ua);
         }
 
         if ($fechaInicio && $fechaFin) {
@@ -84,7 +84,7 @@ class ClasesNoRealizadasController extends Controller
         } elseif (!$periodo) {
             $nombreArchivo .= '_' . Carbon::now()->format('d-m-Y');
         }
-
+        
         $nombreArchivo .= '.xlsx';
 
         return Excel::download(

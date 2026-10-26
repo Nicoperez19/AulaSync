@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Asignatura;
-use App\Models\Carrera;
 use App\Models\Profesor;
+use App\Models\Carrera;
+use App\Models\Asignatura;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+
+use Spatie\Permission\Models\Role;
+
+
+
 use Illuminate\Http\Request;
 
 class AsignaturaController extends Controller
@@ -16,12 +21,11 @@ class AsignaturaController extends Controller
     public function index()
     {
         $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10);
-        $profesores = Profesor::all();
+        $profesores = Profesor::all();       
         $carreras = Carrera::all();
 
         return view('asignaturas.index', compact('asignaturas', 'profesores', 'carreras'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -66,7 +70,7 @@ class AsignaturaController extends Controller
 
             return redirect()->route('asignaturas.index')->with('success', 'Asignatura creada exitosamente.');
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al crear la asignatura: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al crear la asignatura: ' . $e->getMessage()]);
         }
     }
 
@@ -87,12 +91,12 @@ class AsignaturaController extends Controller
             $asignatura = Asignatura::findOrFail($id);
             $profesores = Profesor::all();
             $carreras = Carrera::all();
-
+            
             return view('asignaturas.edit', compact('asignatura', 'profesores', 'carreras'));
         } catch (ModelNotFoundException $e) {
             return redirect()->route('asignaturas.index')->withErrors(['error' => 'Asignatura no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar la asignatura: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar la asignatura: ' . $e->getMessage()]);
         }
     }
 
@@ -103,7 +107,7 @@ class AsignaturaController extends Controller
     {
         try {
             $request->validate([
-                'id_asignatura' => 'required|string|max:20|unique:tenant.asignaturas,id_asignatura,'.$id.',id_asignatura',
+                'id_asignatura' => 'required|string|max:20|unique:tenant.asignaturas,id_asignatura,' . $id . ',id_asignatura',
                 'codigo_asignatura' => 'required|string|max:100',
                 'nombre_asignatura' => 'required|string|max:100',
                 'seccion' => 'required|string|max:50',
@@ -135,7 +139,7 @@ class AsignaturaController extends Controller
         } catch (ModelNotFoundException $e) {
             return redirect()->route('asignaturas.index')->withErrors(['error' => 'Asignatura no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la asignatura: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la asignatura: ' . $e->getMessage()]);
         }
     }
 
@@ -147,13 +151,12 @@ class AsignaturaController extends Controller
         try {
             $asignaturas = Asignatura::findOrFail($id);
             $asignaturas->delete();
-
             return redirect()->route('asignaturas.index')->with('success', 'Asignatura eliminado exitosamente.');
 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Asignatura no encontrado.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar la asignatura: '.$e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar la asignatura: ' . $e->getMessage()], 500);
         }
 
     }

@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+use App\Traits\BelongsToTenant;
 
 class Asistencia extends Model
 {
-    use BelongsToTenant, HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
     protected $connection = 'tenant';
-
     protected $table = 'asistencias';
 
     protected $fillable = [
@@ -37,20 +36,18 @@ class Asistencia extends Model
      * Constantes para tipo de entrada
      */
     const TIPO_PLANIFICADA = 'planificada';
-
     const TIPO_ESPONTANEA = 'espontanea';
 
     /**
      * Constantes para estado
      */
     const ESTADO_PRESENTE = 'presente';
-
     const ESTADO_FINALIZADO = 'finalizado';
 
     /**
      * Relación con la reserva
      */
-    public function reserva(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function reserva()
     {
         return $this->belongsTo(Reserva::class, 'id_reserva', 'id_reserva');
     }
@@ -58,7 +55,7 @@ class Asistencia extends Model
     /**
      * Relación con la asignatura
      */
-    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
@@ -66,7 +63,7 @@ class Asistencia extends Model
     /**
      * Relación con el espacio
      */
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
@@ -118,7 +115,6 @@ class Asistencia extends Model
     {
         $this->hora_salida = Carbon::now()->format('H:i:s');
         $this->estado = self::ESTADO_FINALIZADO;
-
         return $this->save();
     }
 
@@ -127,10 +123,10 @@ class Asistencia extends Model
      */
     public function getDuracionMinutosAttribute(): ?int
     {
-        if (! $this->hora_salida) {
+        if (!$this->hora_salida) {
             return null;
         }
-
+        
         return Carbon::parse($this->hora_llegada)->diffInMinutes(Carbon::parse($this->hora_salida));
     }
 }

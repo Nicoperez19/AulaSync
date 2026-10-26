@@ -46,11 +46,11 @@ class CrearReservaRapidaRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
-            if ($this->input('tipo') === 'colaborador' && ! $this->filled('id_asignatura')) {
+            if ($this->input('tipo') === 'colaborador' && !$this->filled('id_asignatura')) {
                 $validator->errors()->add('id_asignatura', 'Debe seleccionar una asignatura para las reservas de profesor colaborador.');
             }
 
-            if ($this->input('tipo') === 'solicitante' && ! $this->filled('nombre_actividad')) {
+            if ($this->input('tipo') === 'solicitante' && !$this->filled('nombre_actividad')) {
                 $validator->errors()->add('nombre_actividad', 'Debe indicar el nombre de la actividad para reservas de solicitantes externos.');
             }
         });

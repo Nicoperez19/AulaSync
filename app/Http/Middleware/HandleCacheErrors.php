@@ -4,8 +4,8 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 use Symfony\Component\HttpFoundation\Response;
 
 class HandleCacheErrors
@@ -13,26 +13,26 @@ class HandleCacheErrors
     /**
      * Handle an incoming request.
      *
-     * @param  Closure(Request): (Response)  $next
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         try {
             // Verificar que el directorio de caché existe antes de procesar la request
             $this->ensureCacheDirectoryExists();
-
+            
             return $next($request);
-
+            
         } catch (\Exception $e) {
             // Si es un error relacionado con caché, intentar reparar
             if ($this->isCacheRelatedError($e)) {
                 Log::warning('Error de caché detectado, intentando reparar', [
                     'error' => $e->getMessage(),
-                    'url' => $request->url(),
+                    'url' => $request->url()
                 ]);
-
+                
                 $this->repairCacheIssue($e);
-
+                
                 // Intentar procesar la request nuevamente
                 try {
                     return $next($request);
@@ -40,14 +40,14 @@ class HandleCacheErrors
                     Log::error('Error secundario después de reparación de caché', [
                         'primary_error' => $e->getMessage(),
                         'secondary_error' => $secondaryError->getMessage(),
-                        'url' => $request->url(),
+                        'url' => $request->url()
                     ]);
-
+                    
                     // Si aún falla, retornar respuesta sin caché
                     return $this->handleWithoutCache($request, $next);
                 }
             }
-
+            
             // Si no es un error de caché, re-lanzar
             throw $e;
         }
@@ -63,17 +63,17 @@ class HandleCacheErrors
             'Failed to open stream',
             'No such file or directory',
             'storage/framework/cache',
-            'Permission denied',
+            'Permission denied'
         ];
 
         $errorMessage = $e->getMessage();
-
+        
         foreach ($cacheErrorPatterns as $pattern) {
             if (stripos($errorMessage, $pattern) !== false) {
                 return true;
             }
         }
-
+        
         return false;
     }
 
@@ -85,19 +85,19 @@ class HandleCacheErrors
         try {
             // 1. Crear directorios faltantes
             $this->ensureCacheDirectoryExists();
-
+            
             // 2. Si es un error de permisos, intentar arreglarlos
             if (stripos($e->getMessage(), 'Permission denied') !== false) {
                 $this->fixPermissions();
             }
-
+            
             // 3. Si es un error de directorio faltante, crearlo
             if (stripos($e->getMessage(), 'No such file or directory') !== false) {
                 $this->createMissingDirectory($e);
             }
-
+            
         } catch (\Exception $repairError) {
-            Log::error('Error al intentar reparar problema de caché: '.$repairError->getMessage());
+            Log::error('Error al intentar reparar problema de caché: ' . $repairError->getMessage());
         }
     }
 
@@ -111,13 +111,13 @@ class HandleCacheErrors
         if (preg_match('/file_put_contents\(([^)]+)\)/', $message, $matches)) {
             $filePath = $matches[1];
             $directory = dirname($filePath);
-
-            if (! File::exists($directory)) {
+            
+            if (!File::exists($directory)) {
                 try {
                     File::makeDirectory($directory, 0755, true);
                     Log::info("Directorio de caché creado: {$directory}");
                 } catch (\Exception $createError) {
-                    Log::warning("No se pudo crear directorio: {$directory} - ".$createError->getMessage());
+                    Log::warning("No se pudo crear directorio: {$directory} - " . $createError->getMessage());
                 }
             }
         }
@@ -136,12 +136,12 @@ class HandleCacheErrors
         ];
 
         foreach ($cacheDirectories as $directory) {
-            if (! File::exists($directory)) {
+            if (!File::exists($directory)) {
                 try {
                     File::makeDirectory($directory, 0755, true);
                 } catch (\Exception $e) {
                     // Log pero no fallar
-                    Log::warning("No se pudo crear directorio de caché: {$directory} - ".$e->getMessage());
+                    Log::warning("No se pudo crear directorio de caché: {$directory} - " . $e->getMessage());
                 }
             }
         }
@@ -176,7 +176,7 @@ class HandleCacheErrors
     {
         // Temporalmente deshabilitar caché para esta request
         config(['cache.default' => 'array']);
-
+        
         try {
             return $next($request);
         } catch (\Exception $e) {
@@ -184,13 +184,13 @@ class HandleCacheErrors
             Log::error('Error crítico después de deshabilitar caché', [
                 'error' => $e->getMessage(),
                 'url' => $request->url(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
-
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error temporal del sistema. Por favor, intente nuevamente.',
-                'code' => 'CACHE_ERROR',
+                'code' => 'CACHE_ERROR'
             ], 503);
         }
     }

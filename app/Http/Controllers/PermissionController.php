@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
+
+use Illuminate\Http\Request;
 
 class PermissionController extends Controller
 {
@@ -45,6 +45,8 @@ class PermissionController extends Controller
         }
     }
 
+
+
     /**
      * Display the specified resource.
      */
@@ -59,7 +61,6 @@ class PermissionController extends Controller
     public function edit(string $id)
     {
         $permission = Permission::findOrFail($id);
-
         return view('permisos.index', compact('permission'));
     }
 
@@ -92,29 +93,27 @@ class PermissionController extends Controller
         try {
             $permission = Permission::findOrFail($id);
             $permission->delete();
-
+            
             // Verificar si la petición espera JSON
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
                 return response()->json([
-                    'success' => true,
-                    'message' => 'Permiso eliminado exitosamente.',
+                    'success' => true, 
+                    'message' => 'Permiso eliminado exitosamente.'
                 ]);
             }
-
+            
             return redirect()->route('permissions.index')->with('success', 'Permiso eliminado exitosamente.');
 
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
                 return response()->json(['success' => false, 'message' => 'Permiso no encontrado.'], 404);
             }
-
             return redirect()->route('permissions.index')->with('error', 'Permiso no encontrado.');
         } catch (\Exception $e) {
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
-                return response()->json(['success' => false, 'message' => 'Error al borrar el permiso: '.$e->getMessage()], 500);
+                return response()->json(['success' => false, 'message' => 'Error al borrar el permiso: ' . $e->getMessage()], 500);
             }
-
-            return redirect()->route('permissions.index')->with('error', 'Error al borrar el permiso: '.$e->getMessage());
+            return redirect()->route('permissions.index')->with('error', 'Error al borrar el permiso: ' . $e->getMessage());
         }
     }
 }

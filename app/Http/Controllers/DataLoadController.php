@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\EspacioAliasHelper;
-use App\Helpers\ModulosHelper;
-use App\Helpers\SemesterHelper;
-use App\Models\AreaAcademica;
 use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\DataLoad;
@@ -13,13 +10,11 @@ use App\Models\Espacio;
 use App\Models\Facultad;
 use App\Models\Horario;
 use App\Models\Modulo;
+use App\Models\Piso;
 use App\Models\Planificacion_Asignatura;
-use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Profesor;
 use App\Models\ProfesorColaborador;
-use App\Models\Scopes\TenantScope;
 use App\Models\Sede;
-use App\Models\Tenant;
 use App\Services\QRService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +22,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Helpers\ModulosHelper;
+use App\Helpers\SemesterHelper;
 
 class DataLoadController extends Controller
 {
@@ -58,11 +55,11 @@ class DataLoadController extends Controller
                 $anio = $matches[1];
                 $semestre = $matches[2];
 
-                if (! in_array($anio, $aniosDisponibles)) {
+                if (!in_array($anio, $aniosDisponibles)) {
                     $aniosDisponibles[] = $anio;
                 }
 
-                if (! in_array($semestre, $semestresDisponibles)) {
+                if (!in_array($semestre, $semestresDisponibles)) {
                     $semestresDisponibles[] = $semestre;
                 }
             }
@@ -74,14 +71,14 @@ class DataLoadController extends Controller
         $query = DataLoad::latest();
 
         if ($semestreFiltro && $anioFiltro) {
-            $periodoFiltro = $anioFiltro.'-'.$semestreFiltro;
+            $periodoFiltro = $anioFiltro . '-' . $semestreFiltro;
 
             $query->whereHas('profesor.horarios', function ($q) use ($periodoFiltro) {
                 $q->where('periodo', $periodoFiltro);
             });
         } elseif ($anioFiltro) {
             $query->whereHas('profesor.horarios', function ($q) use ($anioFiltro) {
-                $q->where('periodo', 'like', $anioFiltro.'-%');
+                $q->where('periodo', 'like', $anioFiltro . '-%');
             });
         }
 
@@ -102,20 +99,20 @@ class DataLoadController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-            'semestre_selector' => 'required|in:1,2',
+            'semestre_selector' => 'required|in:1,2'
         ]);
 
         $semestreSeleccionado = $request->input('semestre_selector');
         // Usar el año académico configurado en lugar de la fecha del sistema
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $periodoSeleccionado = $anioActual.'-'.$semestreSeleccionado;
+        $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
+        $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
 
         try {
             $file = $request->file('file');
             $fileName = $file->getClientOriginalName();
             $fileExtension = $file->getClientOriginalExtension();
 
-            $uniqueFileName = date('Y-m-d_His').'_'.Auth::user()->run.'_'.Str::random(10).'.'.$fileExtension;
+            $uniqueFileName = date('Y-m-d_His') . '_' . Auth::user()->run . '_' . Str::random(10) . '.' . $fileExtension;
             $path = $file->storeAs('datos_subidos', $uniqueFileName, 'public');
 
             $dataLoad = DataLoad::create([
@@ -124,7 +121,7 @@ class DataLoadController extends Controller
                 'tipo_carga' => $fileExtension,
                 'registros_cargados' => 0,
                 'estado' => 'pendiente',
-                'user_run' => Auth::user()->run,
+                'user_run' => Auth::user()->run
             ]);
 
             $rows = Excel::toArray([], $file)[0];
@@ -140,8 +137,8 @@ class DataLoadController extends Controller
             $espaciosFaltantes = [];      // Lista de espacios que no se encontraron en BD
 
             // Encabezados de la primera fila
-            $headers = isset($rows[0]) ? array_map(function ($h) {
-                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string) $h)));
+            $headers = isset($rows[0]) ? array_map(function($h) {
+                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
             }, $rows[0]) : [];
 
             // ── NUEVA CAPA DE SEGURIDAD: VERIFICACIÓN DEL SEMESTRE EN EL ARCHIVO ──
@@ -149,7 +146,7 @@ class DataLoadController extends Controller
                 'SEMESTRE', 'SEM', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
                 'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
                 'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
-                'ANIO_SEMESTRE', 'ANIOSEMESTRE', 'TERMINO', 'TERM',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE', 'TERMINO', 'TERM'
             ];
 
             $colSemestreIdx = null;
@@ -159,7 +156,7 @@ class DataLoadController extends Controller
                 'SEMESTRE', 'SEMESTRE_ACADEMICO', 'SEMESTREACADEMICO',
                 'PERIODO', 'PERIODO_ACADEMICO', 'PERIODOACADEMICO',
                 'COD_PERIODO', 'CODPERIODO', 'CODIGO_PERIODO', 'CODIGOPERIODO',
-                'ANIO_SEMESTRE', 'ANIOSEMESTRE',
+                'ANIO_SEMESTRE', 'ANIOSEMESTRE'
             ];
             foreach ($headers as $colIdx => $headerName) {
                 if ($colSemestreIdx === null && in_array($headerName, $posiblesHeadersSemestre)) {
@@ -175,19 +172,17 @@ class DataLoadController extends Controller
             }
 
             if ($colPeriodoAcademicoIdx !== null) {
-                $parseSemestreValor = function ($val) {
-                    if ($val === null || $val === '') {
-                        return null;
-                    }
-                    $v = strtoupper(trim((string) $val));
+                $parseSemestreValor = function($val) {
+                    if ($val === null || $val === '') return null;
+                    $v = strtoupper(trim((string)$val));
 
                     // Formatos con año: 2026-1, 2026-2, 2026/1, 2026/2, 2026_1, 2026_2
                     if (preg_match('/(?:\d{4}|\d{2})[-_\/]([12])\b/', $v, $m)) {
-                        return (int) $m[1];
+                        return (int)$m[1];
                     }
                     // Formatos compactos: 202610, 202620, 20261, 20262
                     if (preg_match('/^\d{4}([12])0?$/', $v, $m)) {
-                        return (int) $m[1];
+                        return (int)$m[1];
                     }
                     // Textos descriptivos
                     if (str_contains($v, 'SEGUNDO') || str_contains($v, '2DO') || str_contains($v, '2°') || str_contains($v, '2DO.')) {
@@ -198,13 +193,12 @@ class DataLoadController extends Controller
                     }
                     // Dígito exacto 1 o 2
                     if ($v === '1' || $v === '2') {
-                        return (int) $v;
+                        return (int)$v;
                     }
                     // Otros números (ej: 3 al 12) -> corresponden a nivel curricular de malla, no a período
                     if (is_numeric($v)) {
-                        return (int) $v;
+                        return (int)$v;
                     }
-
                     return null;
                 };
 
@@ -225,26 +219,26 @@ class DataLoadController extends Controller
                 // Si predominan números mayores a 2, es nivel curricular de carrera, no período académico
                 $esMallaCurricular = $conteoSemestres['otros'] > 0 && ($conteoSemestres['otros'] / max(1, $filasVerificadas + $conteoSemestres['otros'])) > 0.15;
 
-                if (! $esMallaCurricular && $filasVerificadas > 0) {
+                if (!$esMallaCurricular && $filasVerificadas > 0) {
                     $semestreArchivo = $conteoSemestres[1] > $conteoSemestres[2] ? 1 : 2;
-                    $semestreSeleccionadoInt = (int) $semestreSeleccionado;
+                    $semestreSeleccionadoInt = (int)$semestreSeleccionado;
 
                     // Si la mayoría del archivo contiene un semestre DISTINTO al que seleccionó el usuario
                     if ($semestreArchivo !== $semestreSeleccionadoInt && ($conteoSemestres[$semestreArchivo] / $filasVerificadas) >= 0.7) {
                         // Eliminar archivo temporal recién subido
-                        if (Storage::disk('public')->exists($path)) {
-                            Storage::disk('public')->delete($path);
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                            \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
                         }
                         $dataLoad->update([
                             'estado' => 'error',
-                            'registros_cargados' => 0,
+                            'registros_cargados' => 0
                         ]);
 
                         $msgError = "Inconsistencia de Semestre: El archivo contiene asignaturas del Semestre {$semestreArchivo} (detectado en columna '{$headerPeriodoAcademicoEncontrado}' con {$conteoSemestres[$semestreArchivo]} filas), pero seleccionaste el Semestre {$semestreSeleccionadoInt} en el formulario. Por favor verifica el archivo o selecciona el Semestre {$semestreArchivo} para procesarlo.";
-                        Log::warning('⛔ '.$msgError);
+                        Log::warning("⛔ " . $msgError);
 
                         return response()->json([
-                            'message' => $msgError,
+                            'message' => $msgError
                         ], 422);
                     }
 
@@ -255,7 +249,7 @@ class DataLoadController extends Controller
             // Actualizar estado inicial
             $dataLoad->update([
                 'estado' => 'procesando',
-                'registros_cargados' => 0,
+                'registros_cargados' => 0
             ]);
 
             // Asegurar separación de semestres previos antes de procesar la carga
@@ -308,7 +302,7 @@ class DataLoadController extends Controller
                     $modulosDia = $horariosModulos[$claveDia] ?? [];
 
                     foreach ($modulosDia as $numeroModulo => $horario) {
-                        $idModulo = $codigoDia.'.'.$numeroModulo;
+                        $idModulo = $codigoDia . '.' . $numeroModulo;
                         Modulo::firstOrCreate(
                             ['id_modulo' => $idModulo],
                             ['dia' => $nombreDia, 'hora_inicio' => $horario['inicio'], 'hora_termino' => $horario['fin']]
@@ -323,14 +317,14 @@ class DataLoadController extends Controller
 
             // PRESERVAR ESPACIOS DEL SEEDER: Solo eliminar espacios SIN piso_id válido (creados por cargas anteriores)
             // Los espacios con piso_id configurado vienen del seeder y deben mantenerse
-            $tenant = Tenant::current();
+            $tenant = \App\Models\Tenant::current();
             if ($tenant) {
                 // Contar espacios del seeder (con piso_id configurado)
                 $espaciosSeeder = Espacio::whereNotNull('piso_id')->count();
                 // Eliminar solo espacios sin piso_id (generados por cargas masivas previas)
                 $espaciosEliminados = Espacio::whereNull('piso_id')->delete();
-                Log::info('Espacios del seeder preservados: '.$espaciosSeeder);
-                Log::info('Espacios sin piso eliminados del tenant '.$tenant->domain.': '.$espaciosEliminados);
+                Log::info('Espacios del seeder preservados: ' . $espaciosSeeder);
+                Log::info('Espacios sin piso eliminados del tenant ' . $tenant->domain . ': ' . $espaciosEliminados);
             }
 
             // Obtener la sede actual del tenant
@@ -346,36 +340,36 @@ class DataLoadController extends Controller
             // LOGS DETALLADOS DE CONFIGURACIÓN DEL TENANT
             Log::info('═══════════════════════════════════════════════════════════');
             Log::info('🔧 CONFIGURACIÓN DEL TENANT PARA IMPORTACIÓN');
-            Log::info('  → Tenant ID: '.($tenant ? $tenant->id : 'NO CONFIGURADO'));
-            Log::info('  → Prefijo espacios (raw): "'.($tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios : 'NO CONFIGURADO').'"');
-            Log::info('  → Prefijo espacios (normalizado): "'.$prefijoTenantFiltro.'"');
-            Log::info('  → Sede ID: '.($tenant ? $tenant->sede_id : 'N/A'));
-            Log::info('  → Nombre sede: '.($nombreSedeActual ?? 'N/A'));
-            Log::info('  → Filtro espacios: '.($prefijoTenantFiltro ? $prefijoTenantFiltro.'-*' : 'NO CONFIGURADO'));
+            Log::info('  → Tenant ID: ' . ($tenant ? $tenant->id : 'NO CONFIGURADO'));
+            Log::info('  → Prefijo espacios (raw): "' . ($tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios : 'NO CONFIGURADO') . '"');
+            Log::info('  → Prefijo espacios (normalizado): "' . $prefijoTenantFiltro . '"');
+            Log::info('  → Sede ID: ' . ($tenant ? $tenant->sede_id : 'N/A'));
+            Log::info('  → Nombre sede: ' . ($nombreSedeActual ?? 'N/A'));
+            Log::info('  → Filtro espacios: ' . ($prefijoTenantFiltro ? $prefijoTenantFiltro . '-*' : 'NO CONFIGURADO'));
             Log::info('═══════════════════════════════════════════════════════════');
 
             // Si no existe facultad, crear una genérica para la sede
-            if ($sedeActual && ! $facultadDeLaSede) {
+            if ($sedeActual && !$facultadDeLaSede) {
                 try {
                     $facultadDeLaSede = Facultad::create([
-                        'id_facultad' => $sedeActual->id_sede.'_FAC',
-                        'nombre_facultad' => 'Facultad de '.$sedeActual->nombre_sede,
+                        'id_facultad' => $sedeActual->id_sede . '_FAC',
+                        'nombre_facultad' => 'Facultad de ' . $sedeActual->nombre_sede,
                         'id_sede' => $sedeActual->id_sede,
                         'id_universidad' => $sedeActual->id_universidad,
                     ]);
-                    Log::info('Facultad genérica creada: '.$facultadDeLaSede->id_facultad);
+                    Log::info('Facultad genérica creada: ' . $facultadDeLaSede->id_facultad);
                 } catch (\Exception $e) {
-                    Log::error('No se pudo crear facultad genérica: '.$e->getMessage());
+                    Log::error('No se pudo crear facultad genérica: ' . $e->getMessage());
                 }
             }
 
             // IMPORTANTE: Los espacios YA DEBEN EXISTIR en la BD (creados manualmente o por seeder)
             // No se crean espacios durante la importación, solo se usan los existentes
-            Log::info('✓ Espacios existentes en BD del tenant: '.Espacio::count().' (no se crearán nuevos)');
+            Log::info('✓ Espacios existentes en BD del tenant: ' . Espacio::count() . ' (no se crearán nuevos)');
 
             // Encabezados de la primera fila
-            $headers = isset($rows[0]) ? array_map(function ($h) {
-                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string) $h)));
+            $headers = isset($rows[0]) ? array_map(function($h) {
+                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
             }, $rows[0]) : [];
 
             // FORMATO ESTÁNDAR PARA TODAS LAS SEDES
@@ -399,40 +393,26 @@ class DataLoadController extends Controller
 
             // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
             foreach ($headers as $colIdx => $headerName) {
-                if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) {
-                    $colMap['run_profesor'] = $colIdx;
-                }
-                if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) {
-                    $colMap['nombre_profesor'] = $colIdx;
-                }
-                if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) {
-                    $colMap['horario'] = $colIdx;
-                }
+                if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
+                if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
+                if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
                 if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIOPROFESOR', 'HORARIO_PROF', 'HORARIO_DOCENTE', 'HORARIODOCENTE', 'HORARIO_DOCENTES', 'HORARIODOCENTES', 'HORARIO_PROFESORES', 'HORARIOPROFESORES', 'HORARIO_POR_DOCENTE', 'HORARIOPORDOCENTE', 'HORARIO_POR_PROFESOR', 'HORARIOPORPROFESOR'])) {
                     $colMap['horario_profesor'] = $colIdx;
                     $tieneColumnaHorarioProfesor = true;
                 }
-                if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) {
-                    $colMap['tipo_profesor'] = $colIdx;
-                }
-                if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) {
-                    $colMap['sede'] = $colIdx;
-                }
-                if (in_array($headerName, ['UA', 'UNIDAD_ACADEMICA', 'UNIDADACADEMICA', 'ID_CARRERA', 'COD_CARRERA', 'CODCARRERA'])) {
-                    $colMap['id_carrera'] = $colIdx;
-                }
-                if (in_array($headerName, ['NOMBRE_CARRERA', 'CARRERA'])) {
-                    $colMap['nombre_carrera'] = $colIdx;
-                }
+                if (in_array($headerName, ['TIPO_PROFESOR', 'TIPOPROFESOR', 'TIPO_DOCENTE', 'TIPODOCENTE', 'TIPO_DE_DOCENTE', 'TIPODEDOCENTE', 'ROL_DOCENTE', 'ROLDOCENTE', 'CARGO_DOCENTE', 'CARGODOCENTE'])) $colMap['tipo_profesor'] = $colIdx;
+                if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
+                if (in_array($headerName, ['UA', 'UNIDAD_ACADEMICA', 'UNIDADACADEMICA', 'ID_CARRERA', 'COD_CARRERA', 'CODCARRERA'])) $colMap['id_carrera'] = $colIdx;
+                if (in_array($headerName, ['NOMBRE_CARRERA', 'CARRERA'])) $colMap['nombre_carrera'] = $colIdx;
             }
             if ($colSemestreIdx !== null) {
                 $colMap['semestre'] = $colSemestreIdx;
             }
             Log::info('→ Carga estándar aplicada para todas las sedes.');
 
-            Log::info('→ Mapa de columnas activo: '.json_encode($colMap));
+            Log::info("→ Mapa de columnas activo: " . json_encode($colMap));
 
-            Log::info('→ Iniciando procesamiento de '.(count($rows) - 1).' filas de datos...');
+            Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
 
             $colaboradoresAsignados = []; // [id_asignatura => [id_modulo => [id_espacio => true]]]
 
@@ -455,7 +435,7 @@ class DataLoadController extends Controller
 
                     // Validar coincidencia flexible de sede (por nombre_sede, id_sede ej. 'TH', prefijo, o subcadena)
                     $coincideSede = false;
-                    if (! $nombreSedeActual || empty($sedeRaw)) {
+                    if (!$nombreSedeActual || empty($sedeRaw)) {
                         // Sin configuración de sede → aceptar todas las filas
                         $coincideSede = true;
                     } else {
@@ -465,46 +445,45 @@ class DataLoadController extends Controller
                             $coincideSede = true;  // Coincidencia por nombre_sede
                         } elseif ($idSedeActual && (str_contains($sedeRaw, $idSedeActual) || str_contains($idSedeActual, $sedeRaw))) {
                             $coincideSede = true;  // Coincidencia por id_sede
-                        } elseif ($prefijoTenantFiltro && ! empty($horarioRaw) && str_contains($horarioRaw, $prefijoTenantFiltro.'-')) {
+                        } elseif ($prefijoTenantFiltro && !empty($horarioRaw) && str_contains($horarioRaw, $prefijoTenantFiltro . '-')) {
                             $coincideSede = true;  // Coincidencia por prefijo en el campo horario
                         }
                         // Si ninguna condición coincide → $coincideSede permanece false (fila rechazada)
                     }
 
-                    if (! $coincideSede) {
+                    if (!$coincideSede) {
                         $skippedBySede++;
-
                         continue;
                     }
 
                     $idCarrera = isset($row[$colMap['id_carrera']]) ? trim($row[$colMap['id_carrera']]) : '';
 
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
-                    $carrera = ! empty($idCarrera)
-                        ? Carrera::withoutGlobalScope(TenantScope::class)->find($idCarrera)
+                    $carrera = !empty($idCarrera)
+                        ? Carrera::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($idCarrera)
                         : null;
-                    if (! $carrera && ! empty($idCarrera)) {
+                    if (!$carrera && !empty($idCarrera)) {
                         // Intentar crear una carrera genérica para esta sede
-                        $nombreCarrera = (isset($colMap['nombre_carrera']) && isset($row[$colMap['nombre_carrera']]) && ! empty($row[$colMap['nombre_carrera']]))
+                        $nombreCarrera = (isset($colMap['nombre_carrera']) && isset($row[$colMap['nombre_carrera']]) && !empty($row[$colMap['nombre_carrera']]))
                             ? trim($row[$colMap['nombre_carrera']])
-                            : 'Carrera '.$idCarrera;
+                            : 'Carrera ' . $idCarrera;
 
                         // Necesitamos un área académica genérica para esta facultad
                         if ($facultadDeLaSede) {
-                            $areaAcademicaGenerica = AreaAcademica::where('id_facultad', $facultadDeLaSede->id_facultad)->first();
+                            $areaAcademicaGenerica = \App\Models\AreaAcademica::where('id_facultad', $facultadDeLaSede->id_facultad)->first();
 
-                            if (! $areaAcademicaGenerica) {
+                            if (!$areaAcademicaGenerica) {
                                 // Crear un área académica genérica para esta facultad
                                 try {
-                                    $areaAcademicaGenerica = AreaAcademica::create([
-                                        'id_area_academica' => $facultadDeLaSede->id_facultad.'_AA',
-                                        'nombre_area_academica' => 'Área Académica de '.$facultadDeLaSede->nombre_facultad,
+                                    $areaAcademicaGenerica = \App\Models\AreaAcademica::create([
+                                        'id_area_academica' => $facultadDeLaSede->id_facultad . '_AA',
+                                        'nombre_area_academica' => 'Área Académica de ' . $facultadDeLaSede->nombre_facultad,
                                         'tipo_area_academica' => 'escuela',
                                         'id_facultad' => $facultadDeLaSede->id_facultad,
                                     ]);
-                                    Log::info('Área académica genérica creada: '.$areaAcademicaGenerica->id_area_academica);
+                                    Log::info('Área académica genérica creada: ' . $areaAcademicaGenerica->id_area_academica);
                                 } catch (\Exception $e) {
-                                    Log::warning('Error al crear área académica: '.$e->getMessage());
+                                    Log::warning('Error al crear área académica: ' . $e->getMessage());
                                 }
                             }
                         }
@@ -515,11 +494,10 @@ class DataLoadController extends Controller
                                 'nombre' => $nombreCarrera,
                                 'id_area_academica' => isset($areaAcademicaGenerica) ? $areaAcademicaGenerica->id_area_academica : null,
                             ]);
-                            Log::info('Carrera creada automáticamente: '.$idCarrera.' - '.$nombreCarrera);
+                            Log::info('Carrera creada automáticamente: ' . $idCarrera . ' - ' . $nombreCarrera);
                         } catch (\Exception $e) {
-                            $errors[] = 'Fila '.($index + 1).': No se pudo crear la carrera '.$idCarrera;
-                            Log::warning('Error al crear carrera '.$idCarrera.': '.$e->getMessage());
-
+                            $errors[] = 'Fila ' . ($index + 1) . ': No se pudo crear la carrera ' . $idCarrera;
+                            Log::warning('Error al crear carrera ' . $idCarrera . ': ' . $e->getMessage());
                             continue;
                         }
                     }
@@ -536,9 +514,9 @@ class DataLoadController extends Controller
 
                     // Email del docente: si no viene en el Excel, construir un correo válido a partir del nombre o RUN
                     $email = (isset($colMap['email_profesor']) && isset($row[$colMap['email_profesor']])) ? trim($row[$colMap['email_profesor']]) : '';
-                    if (empty($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                         $nameClean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower(explode(',', $name)[0] ?? $run));
-                        $email = ! empty($nameClean) ? $nameClean.'@ucsc.cl' : $run.'@ucsc.cl';
+                        $email = !empty($nameClean) ? $nameClean . '@ucsc.cl' : $run . '@ucsc.cl';
                     }
 
                     $tipoProfesor = (isset($colMap['tipo_profesor']) && isset($row[$colMap['tipo_profesor']])) ? trim($row[$colMap['tipo_profesor']]) : 'Profesor Responsable';
@@ -549,24 +527,24 @@ class DataLoadController extends Controller
                     if ($existingProfesor) {
                         // ACTUALIZACIÓN COMPLETA del profesor
                         $existingProfesor->update([
-                            'name' => ! empty($name) ? $name : $existingProfesor->name,
-                            'email' => ! empty($email) ? $email : $existingProfesor->email,
-                            'id_carrera' => ! empty($idCarrera) ? $idCarrera : $existingProfesor->id_carrera,
-                            'tipo_profesor' => ! empty($tipoProfesor) ? $tipoProfesor : $existingProfesor->tipo_profesor,
+                            'name' => !empty($name) ? $name : $existingProfesor->name,
+                            'email' => !empty($email) ? $email : $existingProfesor->email,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingProfesor->id_carrera,
+                            'tipo_profesor' => !empty($tipoProfesor) ? $tipoProfesor : $existingProfesor->tipo_profesor,
                             'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
-                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null,
+                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
                         $processedUsersCount++;
                     } else {
                         // Crear nuevo profesor
                         $profesor = Profesor::create([
                             'run_profesor' => $run,
-                            'name' => ! empty($name) ? $name : 'Profesor '.$run,
+                            'name' => !empty($name) ? $name : 'Profesor ' . $run,
                             'email' => $email,
-                            'id_carrera' => ! empty($idCarrera) ? $idCarrera : null,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : null,
                             'tipo_profesor' => $tipoProfesor,
                             'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
-                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null,
+                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
                         $processedUsersCount++;
                     }
@@ -583,11 +561,11 @@ class DataLoadController extends Controller
                         $numeroSeccionColab = isset($row[$colMap['seccion']]) ? trim($row[$colMap['seccion']]) : '1';
 
                         // 1. Asegurar que la asignatura exista con su carrera vinculada
-                        if (! empty($idAsignaturaColaborador)) {
+                        if (!empty($idAsignaturaColaborador)) {
                             $asigExistente = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsignaturaColaborador)->first();
-                            if (! $asigExistente) {
+                            if (!$asigExistente) {
                                 Asignatura::create([
-                                    'id_asignatura' => $idAsignaturaColaborador,
+                                    'id_asignatura'     => $idAsignaturaColaborador,
                                     'codigo_asignatura' => $codigoAsignaturaColab,
                                     'nombre_asignatura' => $nombreAsignaturaColaborador,
                                     'seccion'           => $numeroSeccionColab,
@@ -605,7 +583,7 @@ class DataLoadController extends Controller
                         }
 
                         // 2. Asegurar que el profesor tenga su carrera asignada si no la tenía
-                        if ($existingProfesor && empty($existingProfesor->id_carrera) && ! empty($idCarrera)) {
+                        if ($existingProfesor && empty($existingProfesor->id_carrera) && !empty($idCarrera)) {
                             $existingProfesor->update(['id_carrera' => $idCarrera]);
                         }
 
@@ -627,10 +605,10 @@ class DataLoadController extends Controller
 
                             // 3. Registrar la planificación del colaborador en el espacio correspondiente
                             $horarioProfesorColab = trim($row[$colMap['horario_profesor']] ?? '');
-                            if (! $tieneColumnaHorarioProfesor && empty($horarioProfesorColab)) {
+                            if (!$tieneColumnaHorarioProfesor && empty($horarioProfesorColab)) {
                                 $horarioProfesorColab = trim($row[$colMap['horario']] ?? '');
                             }
-                            if (! empty($horarioProfesorColab)) {
+                            if (!empty($horarioProfesorColab)) {
                                 $horarioProfesorColab = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesorColab);
                                 $horarioNormalizadoColab = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesorColab);
 
@@ -657,13 +635,13 @@ class DataLoadController extends Controller
                                         ->where('id_espacio', $espacioNombreExcelC)
                                         ->first();
 
-                                    if (! $espacioModelC && $prefijoTenantFiltro) {
+                                    if (!$espacioModelC && $prefijoTenantFiltro) {
                                         $espacioModelC = Espacio::withoutGlobalScope('tenant')
-                                            ->where('id_espacio', $prefijoTenantFiltro.'-'.$espacioNombreExcelC)
+                                            ->where('id_espacio', $prefijoTenantFiltro . '-' . $espacioNombreExcelC)
                                             ->first();
                                     }
 
-                                    if (! $espacioModelC) {
+                                    if (!$espacioModelC) {
                                         $espacioModelC = Espacio::withoutGlobalScope('tenant')
                                             ->where('nombre_espacio', $espacioNombreExcelC)
                                             ->first();
@@ -679,16 +657,16 @@ class DataLoadController extends Controller
                                         }
 
                                         $slotsColabCandidatos[] = [
-                                            'id_modulo' => $diaC.'.'.$moduloC,
+                                            'id_modulo' => $diaC . '.' . $moduloC,
                                             'id_espacio' => $espacioModelC->id_espacio,
-                                            'es_practico' => $esPractico,
+                                            'es_practico' => $esPractico
                                         ];
                                     }
                                 }
 
                                 // Si el horario trae espacios prácticos (talleres/labs), el colaborador solo toma los prácticos
                                 foreach ($slotsColabCandidatos as $slotC) {
-                                    if ($tieneEspaciosPracticos && ! $slotC['es_practico']) {
+                                    if ($tieneEspaciosPracticos && !$slotC['es_practico']) {
                                         continue; // Omitir salas de teoría para el docente de taller
                                     }
 
@@ -715,7 +693,7 @@ class DataLoadController extends Controller
                                     }
 
                                     // Separar al titular solo en bloques prácticos asignados al colaborador.
-                                    if (! empty($idAsignaturaColaborador) && $slotC['es_practico']) {
+                                    if (!empty($idAsignaturaColaborador) && $slotC['es_practico']) {
                                         $colaboradoresAsignados[$idAsignaturaColaborador][$slotC['id_modulo']][$slotC['id_espacio']] = true;
 
                                         // Si el titular se procesó antes y tomó este módulo/espacio de la misma asignatura en este mismo período, eliminar el duplicado activo
@@ -730,11 +708,10 @@ class DataLoadController extends Controller
                                 }
                             }
                         } catch (\Exception $e) {
-                            Log::warning("Fila {$index}: no se pudo registrar colaborador RUN={$run}: ".$e->getMessage());
+                            Log::warning("Fila {$index}: no se pudo registrar colaborador RUN={$run}: " . $e->getMessage());
                         }
 
                         $skippedByColaborador++;
-
                         continue;
                     }
 
@@ -746,11 +723,10 @@ class DataLoadController extends Controller
                     $inscritos = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : null;
 
                     // Validar que la sección sea un número de hasta 4 dígitos
-                    if (! empty($numeroSeccion) && ! preg_match('/^\d{1,4}$/', $numeroSeccion)) {
-                        $errorMsg = 'Fila '.($index + 1).': Sección inválida - debe ser un número de 1 a 4 dígitos (valor: '.$numeroSeccion.')';
+                    if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
+                        $errorMsg = 'Fila ' . ($index + 1) . ': Sección inválida - debe ser un número de 1 a 4 dígitos (valor: ' . $numeroSeccion . ')';
                         Log::warning($errorMsg);
                         $errors[] = $errorMsg;
-
                         continue;
                     }
 
@@ -760,7 +736,7 @@ class DataLoadController extends Controller
                     }
 
                     $existingAsignatura = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsignatura)->first();
-                    if (! $existingAsignatura) {
+                    if (!$existingAsignatura) {
                         $asignatura = Asignatura::create([
                             'id_asignatura' => $idAsignatura,
                             'codigo_asignatura' => $codigoAsignatura,
@@ -768,17 +744,17 @@ class DataLoadController extends Controller
                             'seccion' => $numeroSeccion,
                             'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
-                            'id_carrera' => ! empty($idCarrera) ? $idCarrera : null,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : null
                         ]);
                     } else {
                         // ACTUALIZACIÓN COMPLETA de la asignatura
                         $existingAsignatura->update([
-                            'codigo_asignatura' => ! empty($codigoAsignatura) ? $codigoAsignatura : $existingAsignatura->codigo_asignatura,
-                            'nombre_asignatura' => ! empty($nombreAsignatura) ? $nombreAsignatura : $existingAsignatura->nombre_asignatura,
+                            'codigo_asignatura' => !empty($codigoAsignatura) ? $codigoAsignatura : $existingAsignatura->codigo_asignatura,
+                            'nombre_asignatura' => !empty($nombreAsignatura) ? $nombreAsignatura : $existingAsignatura->nombre_asignatura,
                             'seccion' => $numeroSeccion,
                             'periodo' => $periodoSeleccionado,
                             'run_profesor' => $run,
-                            'id_carrera' => ! empty($idCarrera) ? $idCarrera : $existingAsignatura->id_carrera,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingAsignatura->id_carrera
                         ]);
                         $asignatura = $existingAsignatura;
                     }
@@ -786,14 +762,14 @@ class DataLoadController extends Controller
                     $processedAsignaturasCount++;
 
                     $horarioProfesor = trim($row[$colMap['horario_profesor']] ?? '');
-                    if (! $tieneColumnaHorarioProfesor && empty($horarioProfesor)) {
+                    if (!$tieneColumnaHorarioProfesor && empty($horarioProfesor)) {
                         $horarioProfesor = trim($row[$colMap['horario']] ?? '');
                     }
 
                     $periodo = $periodoSeleccionado;
 
                     try {
-                        $idHorario = 'HOR_'.$run.'_'.$periodo;
+                        $idHorario = 'HOR_' . $run . '_' . $periodo;
 
                         $existingHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $idHorario)->first();
 
@@ -814,22 +790,22 @@ class DataLoadController extends Controller
                             $horario = $existingHorario;
                             // ACTUALIZACIÓN COMPLETA del horario
                             $horario->update([
-                                'nombre' => 'Horario de '.$name,
+                                'nombre' => 'Horario de ' . $name,
                                 'periodo' => $periodo,
-                                'run_profesor' => $run,
+                                'run_profesor' => $run
                             ]);
                         } else {
-                            $horario = new Horario;
+                            $horario = new Horario();
                             $horario->id_horario = $idHorario;
-                            $horario->nombre = 'Horario de '.$name;
+                            $horario->nombre = 'Horario de ' . $name;
                             $horario->periodo = $periodo;
                             $horario->run_profesor = $run;
 
-                            if (! $horario->save()) {
+                            if (!$horario->save()) {
                                 throw new \Exception('Error al guardar el horario');
                             }
 
-                            if (! $horario->id_horario) {
+                            if (!$horario->id_horario) {
                                 throw new \Exception('El horario no se creó correctamente');
                             }
                         }
@@ -840,15 +816,15 @@ class DataLoadController extends Controller
                             $prefijoTenantFiltro = strtoupper(trim($tenant->prefijo_espacios));
                         }
 
-                        if ($horario && $horario->id_horario && ! empty($horarioProfesor)) {
+                        if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
                             // Limpieza de caracteres invisibles o raros
                             $horarioProfesor = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesor);
                             $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
 
                             // LOG DIAGNÓSTICO: primeras 3 filas para verificar qué se está leyendo de col U
                             if ($index <= 3) {
-                                Log::info("[DIAG] Fila $index - Col U raw: '".substr($horarioProfesor, 0, 200)."'");
-                                Log::info("[DIAG] Fila $index - Prefijo tenant: '".$prefijoTenantFiltro."'");
+                                Log::info("[DIAG] Fila $index - Col U raw: '" . substr($horarioProfesor, 0, 200) . "'");
+                                Log::info("[DIAG] Fila $index - Prefijo tenant: '" . $prefijoTenantFiltro . "'");
                             }
 
                             // Busca TODAS las coincidencias del patrón en todo el texto, sin importar cómo estén separadas.
@@ -856,10 +832,10 @@ class DataLoadController extends Controller
                             // El /G:GRUPO es opcional.
                             preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioProfesorNormalizado, $matchesList, PREG_SET_ORDER);
 
-                            if ($index <= 3 && ! empty($matchesList)) {
-                                Log::info("[DIAG] Fila $index - Matches encontrados: ".count($matchesList));
+                            if ($index <= 3 && !empty($matchesList)) {
+                                Log::info("[DIAG] Fila $index - Matches encontrados: " . count($matchesList));
                                 foreach ($matchesList as $mi => $mm) {
-                                    Log::info("[DIAG]   Match $mi: DIA={$mm[1]}, MOD={$mm[2]}, ESP=".(isset($mm[4]) ? $mm[4] : 'N/A'));
+                                    Log::info("[DIAG]   Match $mi: DIA={$mm[1]}, MOD={$mm[2]}, ESP=" . (isset($mm[4]) ? $mm[4] : 'N/A'));
                                 }
                             }
 
@@ -868,7 +844,7 @@ class DataLoadController extends Controller
                             foreach ($matchesList as $matches) {
                                 $dia = strtoupper($matches[1]);
                                 $modulo = $matches[2];
-                                $grupo = ! empty($matches[3]) ? $matches[3] : '1';
+                                $grupo = !empty($matches[3]) ? $matches[3] : '1';
                                 $espacioNombreExcel = trim($matches[4]);
                                 $espacioNombreExcel = EspacioAliasHelper::normalizar(
                                     $espacioNombreExcel,
@@ -889,30 +865,29 @@ class DataLoadController extends Controller
                                     ->where('id_espacio', $espacioNombreExcel)
                                     ->first();
 
-                                if (! $espacioModel && $prefijoTenantFiltro) {
+                                if (!$espacioModel && $prefijoTenantFiltro) {
                                     $espacioModel = Espacio::withoutGlobalScope('tenant')
-                                        ->where('id_espacio', $prefijoTenantFiltro.'-'.$espacioNombreExcel)
+                                        ->where('id_espacio', $prefijoTenantFiltro . '-' . $espacioNombreExcel)
                                         ->first();
                                 }
 
-                                if (! $espacioModel) {
+                                if (!$espacioModel) {
                                     $espacioModel = Espacio::withoutGlobalScope('tenant')
                                         ->where('nombre_espacio', $espacioNombreExcel)
                                         ->first();
                                 }
 
-                                if (! $espacioModel) {
+                                if (!$espacioModel) {
                                     // Si el espacio trae prefijo explícito de OTRA sede (ej: LA-01 en tenant TH), saltar
-                                    if ($prefijoTenantFiltro && str_contains($espacioNombreUpper, '-') && ! str_starts_with($espacioNombreUpper, $prefijoTenantFiltro.'-')) {
+                                    if ($prefijoTenantFiltro && str_contains($espacioNombreUpper, '-') && !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
                                         $espaciosOtrosTenants++;
-
                                         continue;
                                     }
 
                                     Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' NO EXISTE en BD");
                                     $espaciosNoEncontrados++;
 
-                                    if (! in_array($espacioNombreExcel, $espaciosFaltantes)) {
+                                    if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
                                         $espaciosFaltantes[] = $espacioNombreExcel;
                                     }
 
@@ -921,12 +896,11 @@ class DataLoadController extends Controller
 
                                 $espacioIdFinal = $espacioModel->id_espacio;
 
-                                $idModulo = $dia.'.'.$modulo;
+                                $idModulo = $dia . '.' . $modulo;
 
                                 // Si este módulo y espacio ya fue asignado a un profesor colaborador de esta asignatura, omitir para el titular
                                 if (isset($colaboradoresAsignados[$idAsignatura][$idModulo][$espacioIdFinal])) {
                                     Log::info("ℹ Fila $index: Omitiendo asignación de espacio {$espacioIdFinal} ({$idModulo}) para el titular RUN={$run} porque pertenece a un docente colaborador de la asignatura {$idAsignatura}.");
-
                                     continue;
                                 }
 
@@ -971,25 +945,24 @@ class DataLoadController extends Controller
                                         Log::info("✓ Planificación #{$planificacionesGuardadas}: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
                                     }
                                 } catch (\Exception $planEx) {
-                                    Log::error("✗ Fila $index - Error al crear planificación: ".$planEx->getMessage());
+                                    Log::error("✗ Fila $index - Error al crear planificación: " . $planEx->getMessage());
                                     Log::error("  → Datos: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
                                     // NO lanzar excepción, continuar con las demás
                                 }
                             }
 
-                            if ($planificacionesGuardadas == 0 && ! empty($horarioProfesor)) {
+                            if ($planificacionesGuardadas == 0 && !empty($horarioProfesor)) {
                                 Log::warning("⚠ Fila $index - Horario presente pero 0 planificaciones creadas. Raw: '$horarioProfesor'");
                             }
                         }
                     } catch (\Exception $e) {
-                        $errorMsg = 'Fila '.($index + 1).': '.$e->getMessage();
+                        $errorMsg = 'Fila ' . ($index + 1) . ': ' . $e->getMessage();
                         Log::error($errorMsg);
                         $errors[] = $errorMsg;
-
                         continue;
                     }
                 } catch (\Exception $e) {
-                    $errorMsg = 'Fila '.($index + 1).': '.$e->getMessage();
+                    $errorMsg = 'Fila ' . ($index + 1) . ': ' . $e->getMessage();
                     Log::error($errorMsg);
                     $errors[] = $errorMsg;
                 }
@@ -999,7 +972,7 @@ class DataLoadController extends Controller
 
             $dataLoad->update([
                 'estado' => 'completado',
-                'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount,
+                'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
             ]);
 
             // RESUMEN FINAL
@@ -1011,32 +984,32 @@ class DataLoadController extends Controller
             })->distinct('id_espacio')->count('id_espacio');
 
             Log::info('═══════════════════════════════════════════════════════════');
-            Log::info('✓ IMPORTACIÓN COMPLETADA - PERÍODO: '.$periodoSeleccionado);
-            Log::info('  → Filas rechazadas por sede incorrecta: '.$skippedBySede);
-            Log::info('  → Filas procesadas como profesor colaborador: '.$skippedByColaborador);
-            Log::info('  → Profesores procesados: '.$processedUsersCount);
-            Log::info('  → Asignaturas procesadas: '.$processedAsignaturasCount);
-            Log::info('  → Planificaciones creadas: '.$processedHorariosCount);
-            Log::info('  → Planificaciones en BD (período): '.$totalPlanificaciones);
-            Log::info('  → Espacios con clases: '.$totalEspaciosConClases);
-            Log::info('  → Espacios otros tenants (saltados): '.$espaciosOtrosTenants);
-            Log::info('  → Espacios no encontrados en BD: '.$espaciosNoEncontrados);
+            Log::info('✓ IMPORTACIÓN COMPLETADA - PERÍODO: ' . $periodoSeleccionado);
+            Log::info('  → Filas rechazadas por sede incorrecta: ' . $skippedBySede);
+            Log::info('  → Filas procesadas como profesor colaborador: ' . $skippedByColaborador);
+            Log::info('  → Profesores procesados: ' . $processedUsersCount);
+            Log::info('  → Asignaturas procesadas: ' . $processedAsignaturasCount);
+            Log::info('  → Planificaciones creadas: ' . $processedHorariosCount);
+            Log::info('  → Planificaciones en BD (período): ' . $totalPlanificaciones);
+            Log::info('  → Espacios con clases: ' . $totalEspaciosConClases);
+            Log::info('  → Espacios otros tenants (saltados): ' . $espaciosOtrosTenants);
+            Log::info('  → Espacios no encontrados en BD: ' . $espaciosNoEncontrados);
 
-            if (! empty($espaciosFaltantes)) {
+            if (!empty($espaciosFaltantes)) {
                 Log::warning('⚠ ESPACIOS FALTANTES QUE DEBES CREAR MANUALMENTE:');
                 foreach ($espaciosFaltantes as $espFaltante) {
-                    Log::warning('  - '.$espFaltante);
+                    Log::warning('  - ' . $espFaltante);
                 }
             }
 
-            Log::info('  → Errores encontrados: '.count($errors));
+            Log::info('  → Errores encontrados: ' . count($errors));
             Log::info('═══════════════════════════════════════════════════════════');
 
-            $message = 'Archivo procesado exitosamente. Se procesaron '.$processedUsersCount.' profesores, '
-                .$processedAsignaturasCount.' asignaturas y '.$processedHorariosCount.' planificaciones. '
-                .'Total en BD: '.$totalPlanificaciones.' planificaciones en '.$totalEspaciosConClases.' espacios.';
-            if (! empty($errors)) {
-                $message .= ' Se encontraron '.count($errors).' errores.';
+            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' profesores, '
+                . $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' planificaciones. '
+                . 'Total en BD: ' . $totalPlanificaciones . ' planificaciones en ' . $totalEspaciosConClases . ' espacios.';
+            if (!empty($errors)) {
+                $message .= ' Se encontraron ' . count($errors) . ' errores.';
             }
 
             return response()->json([
@@ -1047,8 +1020,8 @@ class DataLoadController extends Controller
                     'asignaturas_procesadas' => $processedAsignaturasCount,
                     'horarios_procesados' => $processedHorariosCount,
                     'filas_omitidas' => $skippedRows,
-                    'errores' => $errors,
-                ],
+                    'errores' => $errors
+                ]
             ]);
         } catch (\Throwable $e) {
             Log::error('Error en carga masiva: ' . $e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
@@ -1056,7 +1029,7 @@ class DataLoadController extends Controller
                 try { $dataLoad->update(['estado' => 'error']); } catch (\Throwable $inner) {}
             }
             return response()->json([
-                'message' => 'Error al procesar el archivo: '.$e->getMessage(),
+                'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1085,7 +1058,7 @@ class DataLoadController extends Controller
         // Calcula el tamaño del archivo en MB
         $tamano = null;
         if ($dataLoad->ruta_archivo && \Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
-            $tamano = round(\Storage::disk('public')->size($dataLoad->ruta_archivo) / 1024 / 1024, 1).' MB';
+            $tamano = round(\Storage::disk('public')->size($dataLoad->ruta_archivo) / 1024 / 1024, 1) . ' MB';
         }
 
         return response()->json([
@@ -1108,7 +1081,7 @@ class DataLoadController extends Controller
     {
         $dataLoad = DataLoad::findOrFail($id);
 
-        if (! $dataLoad->ruta_archivo || ! Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+        if (!$dataLoad->ruta_archivo || !Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
             return back()->withErrors(['error' => 'El archivo no existe o ha sido eliminado.']);
         }
 
@@ -1123,12 +1096,12 @@ class DataLoadController extends Controller
             return response()->json([
                 'estado' => $dataLoad->estado,
                 'registros_cargados' => $dataLoad->registros_cargados,
-                'mensaje' => $this->getEstadoMensaje($dataLoad->estado),
+                'mensaje' => $this->getEstadoMensaje($dataLoad->estado)
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'estado' => 'error',
-                'mensaje' => 'Error al obtener el progreso',
+                'mensaje' => 'Error al obtener el progreso'
             ], 500);
         }
     }
@@ -1152,12 +1125,12 @@ class DataLoadController extends Controller
     public function limpiarPeriodo(Request $request)
     {
         $request->validate([
-            'semestre_selector' => 'required|in:1,2',
+            'semestre_selector' => 'required|in:1,2'
         ]);
 
         $semestreSeleccionado = $request->input('semestre_selector');
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $periodoSeleccionado = $anioActual.'-'.$semestreSeleccionado;
+        $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
+        $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
 
         try {
             // Eliminar planificaciones del periodo
@@ -1171,14 +1144,13 @@ class DataLoadController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Se han eliminado {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios del periodo {$periodoSeleccionado} exitosamente.",
+                'message' => "Se han eliminado {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios del periodo {$periodoSeleccionado} exitosamente."
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al limpiar periodo: '.$e->getMessage());
-
+            Log::error('Error al limpiar periodo: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al limpiar los datos del periodo: '.$e->getMessage(),
+                'message' => 'Error al limpiar los datos del periodo: ' . $e->getMessage()
             ], 500);
         }
     }

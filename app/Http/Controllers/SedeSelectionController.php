@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Sede;
 use App\Models\Tenant;
+use App\Models\Mapa;
 use App\Traits\RedirectByRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SedeSelectionController extends Controller
 {
+    use RedirectByRole;
 
     /**
      * Mostrar la página de selección de sedes
@@ -18,12 +20,12 @@ class SedeSelectionController extends Controller
     public function index()
     {
         $user = Auth::user();
-
+        
         $query = Sede::whereHas('tenant', function ($query) {
             $query->where('is_active', true);
         })
-            ->with(['tenant', 'universidad', 'comuna']);
-
+        ->with(['tenant', 'universidad', 'comuna']);
+        
         // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
         if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
             // No aplicar filtros - ver todas las sedes activas
@@ -31,12 +33,12 @@ class SedeSelectionController extends Controller
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
         elseif ($user->id_sede) {
             $query->where('id_sede', $user->id_sede);
-        }
+        } 
         // Si el usuario tiene universidad asignada pero no sede, mostrar todas las de esa U
         elseif ($user->id_universidad) {
             $query->where('id_universidad', $user->id_universidad);
         }
-
+        
         $sedes = $query->get();
 
         // Si solo hay una sede disponible y el usuario es Director, auto-seleccionar y redirigir

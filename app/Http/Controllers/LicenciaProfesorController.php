@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LicenciaProfesor;
+use Illuminate\Http\Request;
+
 class LicenciaProfesorController extends Controller
 {
     /**

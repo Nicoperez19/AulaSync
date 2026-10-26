@@ -2,29 +2,23 @@
 
 namespace App\Livewire;
 
-use App\Models\Espacio;
-use App\Models\Facultad;
 use App\Models\Mapa;
-use App\Models\Piso;
-use App\Models\Universidad;
 use Livewire\Component;
+use App\Models\Universidad;
+use App\Models\Facultad;
+use App\Models\Piso;
+use App\Models\Espacio;
+
 
 class MapEditor extends Component
 {
     public $universidades;
-
     public $facultades = [];
-
     public $pisos = [];
-
     public $espacios = [];
-
     public $selectedUniversidad;
-
     public $selectedFacultad;
-
     public $selectedPiso;
-
     public $mapName;
 
     protected $listeners = ['saveCanvasData' => 'saveMap'];

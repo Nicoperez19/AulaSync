@@ -7,13 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Sede extends Model
 {
-
+    use HasFactory;
+    
     protected $connection = 'mysql';
-
     protected $primaryKey = 'id_sede';
-
     public $incrementing = false;
-
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -29,22 +27,22 @@ class Sede extends Model
         'email',
     ];
 
-    public function universidad(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function universidad()
     {
         return $this->belongsTo(Universidad::class, 'id_universidad', 'id_universidad');
     }
 
-    public function comuna(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function comuna()
     {
         return $this->belongsTo(Comuna::class, 'comunas_id');
     }
 
-    public function facultades(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function facultades()
     {
         return $this->hasMany(Facultad::class, 'id_sede', 'id_sede');
     }
 
-    public function campuses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function campuses()
     {
         return $this->hasMany(Campus::class, 'id_sede', 'id_sede');
     }
@@ -52,7 +50,7 @@ class Sede extends Model
     /**
      * Obtener el tenant asociado a esta sede
      */
-    public function tenant(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function tenant()
     {
         return $this->hasOne(Tenant::class, 'sede_id', 'id_sede');
     }
@@ -63,9 +61,8 @@ class Sede extends Model
     public function getLogoUrl()
     {
         if ($this->logo) {
-            return asset('storage/sedes/logos/'.$this->logo);
+            return asset('storage/sedes/logos/' . $this->logo);
         }
-
         return asset('images/logo_default.png');
     }
 }

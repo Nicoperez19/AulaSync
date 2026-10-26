@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ModulosHelper;
 use App\Mail\ConfirmacionReserva;
-use App\Models\Espacio;
-use App\Models\Profesor;
 use App\Models\Reserva;
-use App\Models\Solicitante;
+use App\Models\Espacio;
 use App\Models\Usuario;
-use Carbon\Carbon;
+use App\Models\Profesor;
+use App\Models\Solicitante;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Helpers\ModulosHelper;
+use Carbon\Carbon;
 
 class AdminPanelController extends Controller
 {
@@ -33,7 +33,7 @@ class AdminPanelController extends Controller
                     'run' => $profesor->run,
                     'correo' => $profesor->correo,
                     'telefono' => $profesor->telefono ?? '',
-                    'tipo_usuario' => 'profesor',
+                    'tipo_usuario' => 'profesor'
                 ];
             } else {
                 // Buscar en solicitantes
@@ -44,7 +44,7 @@ class AdminPanelController extends Controller
                         'run' => $solicitante->run,
                         'correo' => $solicitante->correo,
                         'telefono' => $solicitante->telefono ?? '',
-                        'tipo_usuario' => 'solicitante',
+                        'tipo_usuario' => 'solicitante'
                     ];
                 }
             }
@@ -52,20 +52,19 @@ class AdminPanelController extends Controller
             if ($usuario) {
                 return response()->json([
                     'success' => true,
-                    'usuario' => $usuario,
+                    'usuario' => $usuario
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Usuario no encontrado',
+                    'mensaje' => 'Usuario no encontrado'
                 ]);
             }
         } catch (\Exception $e) {
-            Log::error('Error al buscar usuario: '.$e->getMessage());
-
+            Log::error('Error al buscar usuario: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error en la búsqueda',
+                'mensaje' => 'Error en la búsqueda'
             ]);
         }
     }
@@ -82,14 +81,13 @@ class AdminPanelController extends Controller
 
             return response()->json([
                 'success' => true,
-                'espacios' => $espacios,
+                'espacios' => $espacios
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al obtener espacios: '.$e->getMessage());
-
+            Log::error('Error al obtener espacios: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al cargar espacios',
+                'mensaje' => 'Error al cargar espacios'
             ]);
         }
     }
@@ -120,7 +118,7 @@ class AdminPanelController extends Controller
             if ($data['modulo_inicial'] > $data['modulo_final']) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El módulo inicial no puede ser mayor al módulo final',
+                    'mensaje' => 'El módulo inicial no puede ser mayor al módulo final'
                 ]);
             }
 
@@ -128,20 +126,20 @@ class AdminPanelController extends Controller
             $espacioOcupado = Reserva::where('codigo_espacio', $data['espacio'])
                 ->where('fecha', $data['fecha'])
                 ->where('estado', 'activa')
-                ->where(function ($query) use ($data) {
+                ->where(function($query) use ($data) {
                     $query->whereBetween('modulo_inicial', [$data['modulo_inicial'], $data['modulo_final']])
-                        ->orWhereBetween('modulo_final', [$data['modulo_inicial'], $data['modulo_final']])
-                        ->orWhere(function ($q) use ($data) {
-                            $q->where('modulo_inicial', '<=', $data['modulo_inicial'])
+                          ->orWhereBetween('modulo_final', [$data['modulo_inicial'], $data['modulo_final']])
+                          ->orWhere(function($q) use ($data) {
+                              $q->where('modulo_inicial', '<=', $data['modulo_inicial'])
                                 ->where('modulo_final', '>=', $data['modulo_final']);
-                        });
+                          });
                 })
                 ->exists();
 
             if ($espacioOcupado) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'El espacio ya está ocupado en ese horario',
+                    'mensaje' => 'El espacio ya está ocupado en ese horario'
                 ]);
             }
 
@@ -149,7 +147,7 @@ class AdminPanelController extends Controller
             $usuarioId = null;
             if ($data['tipo'] === 'profesor') {
                 $profesor = Profesor::where('run', $data['run'])->first();
-                if (! $profesor) {
+                if (!$profesor) {
                     $profesor = Profesor::create([
                         'nombre' => $data['nombre'],
                         'run' => $data['run'],
@@ -160,7 +158,7 @@ class AdminPanelController extends Controller
                 $usuarioId = $profesor->id;
             } else {
                 $solicitante = Solicitante::on('tenant')->where('run_solicitante', $data['run'])->first();
-                if (! $solicitante) {
+                if (!$solicitante) {
                     $solicitante = Solicitante::on('tenant')->create([
                         'nombre' => $data['nombre'],
                         'run_solicitante' => $data['run'],
@@ -176,7 +174,7 @@ class AdminPanelController extends Controller
             $reserva = Reserva::create([
                 'run_profesor' => $data['tipo'] === 'profesor' ? $data['run'] : null,
                 'run_solicitante' => $data['tipo'] === 'solicitante' ? $data['run'] : null,
-                'creado_por' => auth()->user() ? auth()->user()->name.' ('.(auth()->user()->run ?? 'Admin').')' : 'Sistema',
+                'creado_por' => auth()->user() ? auth()->user()->name . ' (' . (auth()->user()->run ?? 'Admin') . ')' : 'Sistema',
                 'codigo_espacio' => $data['espacio'],
                 'fecha' => $data['fecha'],
                 'modulo_inicial' => $data['modulo_inicial'],
@@ -195,18 +193,18 @@ class AdminPanelController extends Controller
                     Log::info("📧 Correo de confirmación enviado en AdminPanel a: {$emailDestinatario}");
                 }
             } catch (\Exception $eMail) {
-                Log::error('Error al enviar correo en AdminPanel: '.$eMail->getMessage());
+                Log::error('Error al enviar correo en AdminPanel: ' . $eMail->getMessage());
             }
 
             // Si la reserva es para hoy y estamos en el horario, ocupar el espacio
             $fechaReserva = Carbon::parse($data['fecha']);
             $hoy = Carbon::today();
-
+            
             if ($fechaReserva->isSameDay($hoy)) {
                 // Verificar si estamos en el horario de la reserva
                 $horaActual = Carbon::now()->hour;
                 $moduloActual = $this->obtenerModuloActual();
-
+                
                 if ($moduloActual >= $data['modulo_inicial'] && $moduloActual <= $data['modulo_final']) {
                     // Ocupar el espacio
                     Espacio::where('codigo', $data['espacio'])
@@ -219,16 +217,16 @@ class AdminPanelController extends Controller
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva creada exitosamente',
-                'reserva_id' => $reserva->id,
+                'reserva_id' => $reserva->id
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al crear reserva: '.$e->getMessage());
-
+            Log::error('Error al crear reserva: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al crear la reserva: '.$e->getMessage(),
+                'mensaje' => 'Error al crear la reserva: ' . $e->getMessage()
             ]);
         }
     }
@@ -270,14 +268,13 @@ class AdminPanelController extends Controller
 
             return response()->json([
                 'success' => true,
-                'reservas' => $reservas,
+                'reservas' => $reservas
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al obtener reservas: '.$e->getMessage());
-
+            Log::error('Error al obtener reservas: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al cargar reservas',
+                'mensaje' => 'Error al cargar reservas'
             ]);
         }
     }
@@ -289,12 +286,12 @@ class AdminPanelController extends Controller
     {
         try {
             $request->validate([
-                'estado' => 'required|in:activa,finalizada',
+                'estado' => 'required|in:activa,finalizada'
             ]);
 
             $reserva = Reserva::findOrFail($reservaId);
             $estadoAnterior = $reserva->estado;
-
+            
             $reserva->estado = $request->estado;
             $reserva->save();
 
@@ -302,7 +299,7 @@ class AdminPanelController extends Controller
             if ($request->estado === 'finalizada' && $estadoAnterior === 'activa') {
                 $fechaReserva = Carbon::parse($reserva->fecha);
                 $hoy = Carbon::today();
-
+                
                 if ($fechaReserva->isSameDay($hoy)) {
                     // Verificar si no hay otras reservas activas para este espacio hoy
                     $otrasReservasActivas = Reserva::where('codigo_espacio', $reserva->codigo_espacio)
@@ -321,10 +318,10 @@ class AdminPanelController extends Controller
             elseif ($request->estado === 'activa' && $estadoAnterior === 'finalizada') {
                 $fechaReserva = Carbon::parse($reserva->fecha);
                 $hoy = Carbon::today();
-
+                
                 if ($fechaReserva->isSameDay($hoy)) {
                     $moduloActual = $this->obtenerModuloActual();
-
+                    
                     if ($moduloActual >= $reserva->modulo_inicial && $moduloActual <= $reserva->modulo_final) {
                         Espacio::where('codigo', $reserva->codigo_espacio)
                             ->update(['estado' => 'Ocupado']);
@@ -334,15 +331,14 @@ class AdminPanelController extends Controller
 
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Estado de reserva actualizado correctamente',
+                'mensaje' => 'Estado de reserva actualizado correctamente'
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error al cambiar estado de reserva: '.$e->getMessage());
-
+            Log::error('Error al cambiar estado de reserva: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al cambiar estado de reserva',
+                'mensaje' => 'Error al cambiar estado de reserva'
             ]);
         }
     }
@@ -369,14 +365,13 @@ class AdminPanelController extends Controller
 
             return response()->json([
                 'success' => true,
-                'espacios' => $espacios,
+                'espacios' => $espacios
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al obtener espacios: '.$e->getMessage());
-
+            Log::error('Error al obtener espacios: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al cargar espacios',
+                'mensaje' => 'Error al cargar espacios'
             ]);
         }
     }
@@ -388,7 +383,7 @@ class AdminPanelController extends Controller
     {
         try {
             $request->validate([
-                'estado' => 'required|in:Disponible,Ocupado,Mantenimiento',
+                'estado' => 'required|in:Disponible,Ocupado,Mantenimiento'
             ]);
 
             $espacio = Espacio::where('codigo', $codigoEspacio)->firstOrFail();
@@ -398,7 +393,7 @@ class AdminPanelController extends Controller
             // Si se libera un espacio ocupado, finalizar las reservas activas de hoy
             if ($request->estado === 'Disponible') {
                 $hoy = Carbon::today()->toDateString();
-
+                
                 Reserva::where('codigo_espacio', $codigoEspacio)
                     ->where('fecha', $hoy)
                     ->where('estado', 'activa')
@@ -407,15 +402,14 @@ class AdminPanelController extends Controller
 
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Estado del espacio actualizado correctamente',
+                'mensaje' => 'Estado del espacio actualizado correctamente'
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error al cambiar estado de espacio: '.$e->getMessage());
-
+            Log::error('Error al cambiar estado de espacio: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al cambiar estado del espacio',
+                'mensaje' => 'Error al cambiar estado del espacio'
             ]);
         }
     }
@@ -430,7 +424,7 @@ class AdminPanelController extends Controller
 
             // Obtener reservas activas de hoy
             $hoy = Carbon::today()->toDateString();
-
+            
             $reservasActivas = Reserva::where('estado', 'activa')
                 ->where('fecha', $hoy)
                 ->get();
@@ -444,7 +438,7 @@ class AdminPanelController extends Controller
                 $reservasFinalizadas++;
 
                 // Agregar espacio a la lista de espacios a liberar
-                if (! in_array($reserva->codigo_espacio, $espaciosLiberados)) {
+                if (!in_array($reserva->codigo_espacio, $espaciosLiberados)) {
                     $espaciosLiberados[] = $reserva->codigo_espacio;
                 }
             }
@@ -461,16 +455,16 @@ class AdminPanelController extends Controller
                 'success' => true,
                 'mensaje' => 'Operación completada exitosamente',
                 'reservas_finalizadas' => $reservasFinalizadas,
-                'espacios_liberados' => count($espaciosLiberados),
+                'espacios_liberados' => count($espaciosLiberados)
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error al vaciar reservas: '.$e->getMessage());
-
+            Log::error('Error al vaciar reservas: ' . $e->getMessage());
+            
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al vaciar las reservas',
+                'mensaje' => 'Error al vaciar las reservas'
             ]);
         }
     }
@@ -484,7 +478,6 @@ class AdminPanelController extends Controller
         $diaNormalizado = ModulosHelper::normalizarDia(
             strtolower($now->locale('es')->isoFormat('dddd'))
         );
-
         return ModulosHelper::obtenerModuloActual($now->format('H:i:s'), $diaNormalizado);
     }
 }

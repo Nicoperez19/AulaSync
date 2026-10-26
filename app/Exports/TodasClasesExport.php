@@ -2,33 +2,29 @@
 
 namespace App\Exports;
 
-use App\Services\TodasClasesService;
-use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use Illuminate\Support\Collection;
+use Carbon\Carbon;
+use App\Services\TodasClasesService;
 use App\Helpers\SemesterHelper;
 
 class TodasClasesExport implements WithMultipleSheets
 {
     protected $fechaInicio;
-
     protected $fechaFin;
-
     protected $periodo;
-
     protected $search;
-
     protected $estado;
-
     protected $ua;
 
     public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null)
@@ -43,7 +39,7 @@ class TodasClasesExport implements WithMultipleSheets
 
     public function sheets(): array
     {
-        $servicio = new TodasClasesService;
+        $servicio = new TodasClasesService();
         $clases = $servicio->obtenerTodasLasClases(
             $this->fechaInicio,
             $this->fechaFin,
@@ -140,12 +136,12 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
     {
         // Optimizar formato de fecha (evitar parsear si ya es string)
         $fecha = 'N/A';
-        if (! empty($clase['fecha'])) {
-            $fecha = is_string($clase['fecha'])
+        if (!empty($clase['fecha'])) {
+            $fecha = is_string($clase['fecha']) 
                 ? Carbon::parse($clase['fecha'])->format('d/m/Y')
                 : $clase['fecha']->format('d/m/Y');
         }
-
+            
         return [
             $fecha,
             $clase['dia'],
@@ -170,21 +166,21 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
     public function styles(Worksheet $sheet)
     {
         $lastRow = $sheet->getHighestRow();
-
+        
         // Aplicar colores según el estado
         for ($row = 2; $row <= $lastRow; $row++) {
-            $estado = $sheet->getCell('M'.$row)->getValue(); // Columna Estado (M tras añadir UA)
-
-            $fillColor = match ($estado) {
-                'Realizada' => 'D1FAE5', // Verde claro
-                'No Registrada' => 'FEE2E2', // Rojo claro
-                'Justificada' => 'FEF3C7', // Amarillo claro
-                'Recuperada' => 'DBEAFE', // Azul claro
+            $estado = $sheet->getCell('M' . $row)->getValue(); // Columna Estado (M tras añadir UA)
+            
+            $fillColor = match($estado) {
+                'Realizada'           => 'D1FAE5', // Verde claro
+                'No Registrada'       => 'FEE2E2', // Rojo claro
+                'Justificada'         => 'FEF3C7', // Amarillo claro
+                'Recuperada'          => 'DBEAFE', // Azul claro
                 'Feriado/Justificado' => 'EDE9FE', // Violeta claro
-                default => 'FFFFFF', // Blanco
+                default               => 'FFFFFF', // Blanco
             };
-
-            $sheet->getStyle('M'.$row)->applyFromArray([
+            
+            $sheet->getStyle('M' . $row)->applyFromArray([
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],

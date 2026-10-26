@@ -2,17 +2,16 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+use App\Traits\BelongsToTenant;
 
 class ProfesorColaborador extends Model
 {
-    use BelongsToTenant, HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
     protected $connection = 'tenant';
-
     protected $table = 'profesores_colaboradores';
 
     protected $fillable = [
@@ -35,7 +34,7 @@ class ProfesorColaborador extends Model
     /**
      * Relación con Profesor
      */
-    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function profesor()
     {
         return $this->belongsTo(Profesor::class, 'run_profesor_colaborador', 'run_profesor');
     }
@@ -43,7 +42,7 @@ class ProfesorColaborador extends Model
     /**
      * Relación con Asignatura (opcional)
      */
-    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
@@ -51,7 +50,7 @@ class ProfesorColaborador extends Model
     /**
      * Relación con planificaciones
      */
-    public function planificaciones(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function planificaciones()
     {
         return $this->hasMany(PlanificacionProfesorColaborador::class, 'id_profesor_colaborador');
     }
@@ -70,9 +69,9 @@ class ProfesorColaborador extends Model
     public function scopeVigentes($query, $fecha = null)
     {
         $fecha = $fecha ?? Carbon::today();
-
+        
         return $query->where('fecha_inicio', '<=', $fecha)
-            ->where('fecha_termino', '>=', $fecha);
+                     ->where('fecha_termino', '>=', $fecha);
     }
 
     /**
@@ -89,7 +88,7 @@ class ProfesorColaborador extends Model
     public function scopeVencidos($query, $fecha = null)
     {
         $fecha = $fecha ?? Carbon::today();
-
+        
         return $query->where('fecha_termino', '<', $fecha);
     }
 
@@ -99,7 +98,7 @@ class ProfesorColaborador extends Model
     public function estaVigente($fecha = null)
     {
         $fecha = $fecha ?? Carbon::today();
-
+        
         return $this->fecha_inicio <= $fecha && $this->fecha_termino >= $fecha;
     }
 

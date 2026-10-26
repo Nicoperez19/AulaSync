@@ -2,28 +2,23 @@
 
 namespace App\Livewire;
 
-use App\Helpers\SemesterHelper;
-use App\Models\PeriodoAcademico;
-use App\Models\ProfesorAtraso;
-use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\PeriodoAcademico;
+use App\Models\ProfesorAtraso;
+use App\Helpers\SemesterHelper;
+use Carbon\Carbon;
 
 class ProfesorAtrasosTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
-
     public $fecha_inicio = '';
-
     public $fecha_fin = '';
-
     public $periodo = '';
-
     public $perPage = 15;
-
     public $sortField = 'fecha';
-
     public $sortDirection = 'desc';
 
     protected $queryString = [
@@ -36,7 +31,7 @@ class ProfesorAtrasosTable extends Component
     public function mount()
     {
         $user = auth()->user();
-        if (! $user || ! $user->isSuperAdmin()) {
+        if (!$user || !$user->isSuperAdmin()) {
             abort(403, 'Acceso denegado. Función disponible solo para superadministradores.');
         }
 
@@ -90,33 +85,33 @@ class ProfesorAtrasosTable extends Component
     {
         $query = ProfesorAtraso::query()
             ->with(['asignatura', 'profesor', 'espacio'])
-            ->when($this->periodo, function ($q) {
+            ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
             })
-            ->when($this->fecha_inicio && $this->fecha_fin, function ($q) {
+            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
                 $q->whereBetween('fecha', [$this->fecha_inicio, $this->fecha_fin]);
             })
-            ->when($this->search, function ($q) {
+            ->when($this->search, function($q) {
                 $rawSearch = trim($this->search);
                 $cleanRun = preg_replace('/[^0-9kK]/', '', $rawSearch);
-                $words = array_values(array_filter(explode(' ', $rawSearch), fn ($w) => mb_strlen(trim($w)) > 0));
+                $words = array_values(array_filter(explode(' ', $rawSearch), fn($w) => mb_strlen(trim($w)) > 0));
 
-                $q->where(function ($subQ) use ($rawSearch, $words, $cleanRun) {
-                    if (! empty($words)) {
-                        $subQ->whereHas('profesor', function ($pq) use ($words) {
+                $q->where(function($subQ) use ($rawSearch, $words, $cleanRun) {
+                    if (!empty($words)) {
+                        $subQ->whereHas('profesor', function($pq) use ($words) {
                             foreach ($words as $word) {
-                                $pq->where('name', 'like', '%'.$word.'%');
+                                $pq->where('name', 'like', '%' . $word . '%');
                             }
                         });
                     }
-                    $subQ->orWhereHas('asignatura', function ($aq) use ($rawSearch) {
-                        $aq->where('nombre_asignatura', 'like', '%'.$rawSearch.'%');
+                    $subQ->orWhereHas('asignatura', function($aq) use ($rawSearch) {
+                        $aq->where('nombre_asignatura', 'like', '%' . $rawSearch . '%');
                     })
-                        ->orWhere('id_espacio', 'like', '%'.$rawSearch.'%');
+                    ->orWhere('id_espacio', 'like', '%' . $rawSearch . '%');
 
-                    if (! empty($cleanRun)) {
-                        $subQ->orWhereHas('profesor', function ($pq) use ($cleanRun) {
-                            $pq->where('run_profesor', 'like', '%'.$cleanRun.'%');
+                    if (!empty($cleanRun)) {
+                        $subQ->orWhereHas('profesor', function($pq) use ($cleanRun) {
+                            $pq->where('run_profesor', 'like', '%' . $cleanRun . '%');
                         });
                     }
                 });
@@ -127,10 +122,10 @@ class ProfesorAtrasosTable extends Component
 
         // Estadísticas rápidas según período seleccionado
         $statsQuery = ProfesorAtraso::query()
-            ->when($this->periodo, function ($q) {
+            ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
             })
-            ->when($this->fecha_inicio && $this->fecha_fin, function ($q) {
+            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
                 $q->whereBetween('fecha', [$this->fecha_inicio, $this->fecha_fin]);
             });
 

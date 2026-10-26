@@ -60,7 +60,7 @@ class VisitanteController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Error al crear el visitante: '.$e->getMessage())
+                ->with('error', 'Error al crear el visitante: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -73,7 +73,7 @@ class VisitanteController extends Controller
         $visitante = Visitante::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'run_solicitante' => 'required|string|max:255|unique:visitantes,run_solicitante,'.$id,
+            'run_solicitante' => 'required|string|max:255|unique:visitantes,run_solicitante,' . $id,
             'nombre' => 'required|string|max:255',
             'correo' => 'required|email|max:255',
             'telefono' => 'nullable|string|max:255',
@@ -110,7 +110,7 @@ class VisitanteController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Error al actualizar el visitante: '.$e->getMessage())
+                ->with('error', 'Error al actualizar el visitante: ' . $e->getMessage())
                 ->withInput();
         }
     }
@@ -129,7 +129,7 @@ class VisitanteController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Error al eliminar el visitante: '.$e->getMessage());
+                ->with('error', 'Error al eliminar el visitante: ' . $e->getMessage());
         }
     }
 }

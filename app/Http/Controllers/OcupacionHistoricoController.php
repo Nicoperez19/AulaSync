@@ -132,7 +132,7 @@ class OcupacionHistoricoController extends Controller
             'resumen' => $snapshot->resumen,
         ];
 
-        $semanaStr = $datos['semana_inicio'].'_al_'.$datos['semana_fin'];
+        $semanaStr = $datos['semana_inicio'] . '_al_' . $datos['semana_fin'];
         $tipoStr = str_replace('_', '-', $snapshot->tipo_filtro);
         $fileName = "historico_ocupacion_{$tipoStr}_{$semanaStr}";
 
@@ -146,7 +146,6 @@ class OcupacionHistoricoController extends Controller
         if (strtolower($format) === 'pdf') {
             $pdf = Pdf::loadView('pdf.ocupacion-semanal', ['datos' => $datos]);
             $pdf->setPaper('a4', 'landscape');
-
             return $pdf->download("{$fileName}.pdf");
         }
 

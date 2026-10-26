@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Models\ClaseNoRealizada;
-use App\Models\DiaFeriado;
 use App\Models\Planificacion_Asignatura;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 
 class ClasesNoRealizadasReportService
 {
@@ -15,13 +15,13 @@ class ClasesNoRealizadasReportService
      */
     public function generarReporteSemanal($fechaInicio = null, $fechaFin = null)
     {
-        if (! $fechaInicio) {
+        if (!$fechaInicio) {
             $fechaInicio = Carbon::now()->startOfWeek();
         } else {
             $fechaInicio = Carbon::parse($fechaInicio);
         }
 
-        if (! $fechaFin) {
+        if (!$fechaFin) {
             $fechaFin = Carbon::now()->endOfWeek();
         } else {
             $fechaFin = Carbon::parse($fechaFin);
@@ -36,7 +36,7 @@ class ClasesNoRealizadasReportService
 
         // Filtrar clases que son feriados o días sin actividad (estos no deben contar en reportes)
         $clasesNoRealizadas = $clasesNoRealizadas->reject(function ($clase) {
-            return DiaFeriado::esFeriado($clase->fecha_clase);
+            return \App\Models\DiaFeriado::esFeriado($clase->fecha_clase);
         });
 
         // Agrupar por profesor
@@ -54,7 +54,7 @@ class ClasesNoRealizadasReportService
         $datosReporte = [];
         foreach ($clasesPorProfesor as $runProfesor => $clases) {
             $profesor = $clases->first()->profesor;
-
+            
             $clasesDelProfesor = $clases->map(function ($clase) {
                 return [
                     'fecha' => $clase->fecha_clase->format('d/m/Y'),
@@ -62,7 +62,7 @@ class ClasesNoRealizadasReportService
                     'asignatura' => $clase->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $clase->asignatura->codigo_asignatura ?? 'N/A',
                     'espacio' => $clase->id_espacio,
-                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string) $clase->id_modulo),
+                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string)$clase->id_modulo),
                     'estado' => $clase->estado,
                     'motivo' => $clase->motivo ?? 'No especificado',
                     'observaciones' => $clase->observaciones ?? '',
@@ -97,10 +97,10 @@ class ClasesNoRealizadasReportService
      */
     public function generarReporteMensual($mes = null, $anio = null)
     {
-        if (! $mes) {
+        if (!$mes) {
             $mes = Carbon::now()->month;
         }
-        if (! $anio) {
+        if (!$anio) {
             $anio = Carbon::now()->year;
         }
 
@@ -116,12 +116,12 @@ class ClasesNoRealizadasReportService
 
         // Filtrar clases que son feriados o días sin actividad (estos no deben contar en reportes)
         $clasesNoRealizadas = $clasesNoRealizadas->reject(function ($clase) {
-            return DiaFeriado::esFeriado($clase->fecha_clase);
+            return \App\Models\DiaFeriado::esFeriado($clase->fecha_clase);
         });
 
         // Calcular total de clases programadas en el mes
         $totalClasesProgramadas = Planificacion_Asignatura::whereHas('horario', function ($query) use ($fechaInicio) {
-            $query->where('periodo', $fechaInicio->year.'-'.ceil($fechaInicio->month / 6));
+            $query->where('periodo', $fechaInicio->year . '-' . ceil($fechaInicio->month / 6));
         })->count() * 4; // Aproximadamente 4 semanas
 
         // Agrupar por profesor
@@ -137,8 +137,8 @@ class ClasesNoRealizadasReportService
             })->count(),
             'profesores_afectados' => $clasesPorProfesor->count(),
             'total_clases_programadas' => $totalClasesProgramadas,
-            'porcentaje_no_realizadas' => $totalClasesProgramadas > 0
-                ? round(($clasesNoRealizadas->count() / $totalClasesProgramadas) * 100, 2)
+            'porcentaje_no_realizadas' => $totalClasesProgramadas > 0 
+                ? round(($clasesNoRealizadas->count() / $totalClasesProgramadas) * 100, 2) 
                 : 0,
         ];
 
@@ -146,18 +146,18 @@ class ClasesNoRealizadasReportService
         $datosReporte = [];
         foreach ($clasesPorProfesor as $runProfesor => $clases) {
             $profesor = $clases->first()->profesor;
-
+            
             $clasesDelProfesor = $clases->map(function ($clase) {
                 $esRecuperada = stripos($clase->observaciones ?? '', 'reagendad') !== false;
                 $esJustificada = $clase->estado === 'justificado';
-
+                
                 return [
                     'fecha' => $clase->fecha_clase->format('d/m/Y'),
                     'dia_semana' => $clase->fecha_clase->locale('es')->isoFormat('dddd'),
                     'asignatura' => $clase->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $clase->asignatura->codigo_asignatura ?? 'N/A',
                     'espacio' => $clase->id_espacio,
-                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string) $clase->id_modulo),
+                    'modulo' => preg_replace('/^[A-Z]{2}\./', '', (string)$clase->id_modulo),
                     'estado' => $clase->estado,
                     'recuperada' => $esRecuperada ? 'Sí' : 'No',
                     'justificada' => $esJustificada ? 'Sí' : 'No',
@@ -204,10 +204,10 @@ class ClasesNoRealizadasReportService
     public function generarPDFSemanal($fechaInicio = null, $fechaFin = null)
     {
         $datos = $this->generarReporteSemanal($fechaInicio, $fechaFin);
-
+        
         $pdf = Pdf::loadView('pdf.clases-no-realizadas-semanal', $datos);
         $pdf->setPaper('a4', 'portrait');
-
+        
         return $pdf;
     }
 
@@ -217,10 +217,10 @@ class ClasesNoRealizadasReportService
     public function generarPDFMensual($mes = null, $anio = null)
     {
         $datos = $this->generarReporteMensual($mes, $anio);
-
+        
         $pdf = Pdf::loadView('pdf.clases-no-realizadas-mensual', $datos);
         $pdf->setPaper('a4', 'landscape');
-
+        
         return $pdf;
     }
 }

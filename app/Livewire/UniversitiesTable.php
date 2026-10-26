@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 class UniversitiesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
     public $sortField = 'id_universidad';

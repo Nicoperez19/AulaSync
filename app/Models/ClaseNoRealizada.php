@@ -2,17 +2,15 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Traits\BelongsToTenant;
 
 class ClaseNoRealizada extends Model
 {
-    use BelongsToTenant, HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
     protected $connection = 'tenant';
 
     protected $table = 'clases_no_realizadas';
@@ -36,22 +34,22 @@ class ClaseNoRealizada extends Model
     ];
 
     // Relaciones
-    public function asignatura(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
 
-    public function espacio(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function profesor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function profesor()
     {
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
-    public function modulo(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function modulo()
     {
         return $this->belongsTo(Modulo::class, 'id_modulo', 'id_modulo');
     }
@@ -85,7 +83,7 @@ class ClaseNoRealizada extends Model
     public static function registrarClaseNoRealizada($datosClase)
     {
         // Verificar si la fecha es un día feriado o sin actividades
-        if (DiaFeriado::esFeriado($datosClase['fecha_clase'])) {
+        if (\App\Models\DiaFeriado::esFeriado($datosClase['fecha_clase'])) {
             // Si es feriado, registrar como justificado automáticamente
             $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
                 ->where('id_espacio', $datosClase['id_espacio'])
@@ -95,7 +93,7 @@ class ClaseNoRealizada extends Model
                 ->first();
 
             if (! $registroExistente) {
-                $feriado = DiaFeriado::obtenerFeriadoEnFecha($datosClase['fecha_clase']);
+                $feriado = \App\Models\DiaFeriado::obtenerFeriadoEnFecha($datosClase['fecha_clase']);
 
                 return static::create([
                     'id_asignatura' => $datosClase['id_asignatura'],
@@ -234,7 +232,7 @@ class ClaseNoRealizada extends Model
      * Limpiar registros incorrectos cuando un profesor registra entrada tarde
      * Se llama cuando se crea una reserva de profesor
      * Ahora mueve los registros a profesor_atrasos en lugar de marcar como justificado
-     *
+     * 
      * Elimina TODOS los registros de clases_no_realizadas para esa clase/fecha/espacio
      * porque si el profesor llegó (aunque tarde), la clase SÍ se realizó.
      */
@@ -245,9 +243,9 @@ class ClaseNoRealizada extends Model
 
         if ($runProfesor) {
             $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
-            $query->where(function ($q) use ($runProfesor, $runLimpio) {
+            $query->where(function($q) use ($runProfesor, $runLimpio) {
                 $q->where('run_profesor', $runProfesor)
-                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             });
         } else {
             $query->where('id_espacio', $idEspacio);
@@ -259,12 +257,12 @@ class ClaseNoRealizada extends Model
 
         foreach ($registros as $registro) {
             // Solo mover a atrasos si era un registro de "no_realizada" o "justificado" con autocorregido
-            $debeRegistrarAtraso = $registro->estado === 'no_realizada' ||
+            $debeRegistrarAtraso = $registro->estado === 'no_realizada' || 
                 ($registro->estado === 'justificado' && str_contains($registro->observaciones ?? '', 'Auto-corregido'));
 
             if ($debeRegistrarAtraso) {
                 // Intentar obtener la planificación correspondiente
-                $planificacion = Planificacion_Asignatura::where('id_asignatura', $registro->id_asignatura)
+                $planificacion = \App\Models\Planificacion_Asignatura::where('id_asignatura', $registro->id_asignatura)
                     ->where('id_espacio', $registro->id_espacio)
                     ->where('id_modulo', $registro->id_modulo)
                     ->first();
@@ -273,13 +271,13 @@ class ClaseNoRealizada extends Model
                 $minutosAtraso = 0;
                 $horaProgramada = null;
                 $esRealmenteAtraso = false;
-
+                
                 if ($horaEntrada && $registro->modulo) {
                     $horaProgramada = $registro->modulo->hora_inicio;
                     if ($horaProgramada) {
                         $horaLlegadaCarbon = Carbon::parse($horaEntrada);
                         $horaProgramadaCarbon = Carbon::parse($horaProgramada);
-
+                        
                         // Solo es atraso si llegó DESPUÉS de la hora programada
                         if ($horaLlegadaCarbon->gt($horaProgramadaCarbon)) {
                             $minutosAtraso = $horaProgramadaCarbon->diffInMinutes($horaLlegadaCarbon);
@@ -292,16 +290,16 @@ class ClaseNoRealizada extends Model
                 // Solo registrar en profesor_atrasos si realmente llegó tarde
                 if ($esRealmenteAtraso) {
                     // Verificar que no exista ya un registro de atraso para esta combinación
-                    $existeAtraso = DB::connection('tenant')->table('profesor_atrasos')
+                    $existeAtraso = \Illuminate\Support\Facades\DB::connection('tenant')->table('profesor_atrasos')
                         ->where('id_asignatura', $registro->id_asignatura)
                         ->where('id_espacio', $registro->id_espacio)
                         ->where('id_modulo', $registro->id_modulo)
                         ->where('fecha', $registro->fecha_clase)
                         ->exists();
 
-                    if (! $existeAtraso) {
+                    if (!$existeAtraso) {
                         try {
-                            DB::connection('tenant')->table('profesor_atrasos')->insert([
+                            \Illuminate\Support\Facades\DB::connection('tenant')->table('profesor_atrasos')->insert([
                                 'id_planificacion' => $planificacion ? $planificacion->id : 0,
                                 'id_asignatura' => $registro->id_asignatura,
                                 'id_espacio' => $registro->id_espacio,
@@ -319,7 +317,7 @@ class ClaseNoRealizada extends Model
                             ]);
                             $contadorMovidos++;
                         } catch (\Exception $e) {
-                            Log::warning('No se pudo crear registro de atraso: '.$e->getMessage());
+                            \Illuminate\Support\Facades\Log::warning("No se pudo crear registro de atraso: " . $e->getMessage());
                         }
                     }
                 }
@@ -329,11 +327,11 @@ class ClaseNoRealizada extends Model
             try {
                 $registro->update([
                     'estado' => 'realizada',
-                    'motivo' => ($minutosAtraso ?? 0) > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : 'Clase realizada',
-                    'observaciones' => 'Profesor registró ingreso a las '.($horaEntrada ?? now()->format('H:i:s')),
+                    'motivo' => ($minutosAtraso ?? 0) > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada",
+                    'observaciones' => "Profesor registró ingreso a las " . ($horaEntrada ?? now()->format('H:i:s')),
                 ]);
             } catch (\Exception $e) {
-                Log::warning('No se pudo actualizar registro a realizada: '.$e->getMessage());
+                \Illuminate\Support\Facades\Log::warning("No se pudo actualizar registro a realizada: " . $e->getMessage());
             }
         }
 

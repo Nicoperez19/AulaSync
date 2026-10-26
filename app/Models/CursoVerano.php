@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CursoVerano extends Model
 {
+    use HasFactory;
 
     protected $table = 'cursos_verano';
 
@@ -87,7 +88,6 @@ class CursoVerano extends Model
     public function estaEnCurso()
     {
         $hoy = Carbon::now();
-
         return $hoy->gte($this->fecha_inicio) && $hoy->lte($this->fecha_fin);
     }
 
@@ -96,18 +96,18 @@ class CursoVerano extends Model
      */
     public function getEstadoTextoAttribute()
     {
-        if (! $this->activo) {
+        if (!$this->activo) {
             return 'Inactivo';
         }
-
+        
         if ($this->noHaIniciado()) {
             return 'Por iniciar';
         }
-
+        
         if ($this->haFinalizado()) {
             return 'Finalizado';
         }
-
+        
         return 'En curso';
     }
 
@@ -116,18 +116,18 @@ class CursoVerano extends Model
      */
     public function getEstadoColorAttribute()
     {
-        if (! $this->activo) {
+        if (!$this->activo) {
             return 'gray';
         }
-
+        
         if ($this->noHaIniciado()) {
             return 'yellow';
         }
-
+        
         if ($this->haFinalizado()) {
             return 'red';
         }
-
+        
         return 'orange';
     }
 
@@ -145,7 +145,6 @@ class CursoVerano extends Model
     public function scopeEnCurso($query)
     {
         $hoy = Carbon::now();
-
         return $query->where('activo', true)
             ->where('fecha_inicio', '<=', $hoy)
             ->where('fecha_fin', '>=', $hoy);

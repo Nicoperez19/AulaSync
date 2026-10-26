@@ -5,8 +5,9 @@ namespace App\Http\Middleware;
 use App\Models\Tenant;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpFoundation\Response; // ADD THIS IMPORT
+use Symfony\Component\HttpFoundation\Response;
+
+use Illuminate\Support\Facades\Auth; // ADD THIS IMPORT
 
 class TenantMiddleware
 {
@@ -46,14 +47,14 @@ class TenantMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  Closure(Request): (Response)  $next
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         // ---------------------------------------------------------
         // PASO 1: Intentar establecer el contexto del tenant (Set Up)
         // ---------------------------------------------------------
-
+        
         $tenantSet = false;
 
         // Opción A: Obtener de sesión (Prioridad alta)
@@ -69,7 +70,7 @@ class TenantMiddleware
         }
 
         // Opción B: Obtener por subdominio (Si no hay sesión)
-        if (! $tenantSet) {
+        if (!$tenantSet) {
             $host = $request->getHost();
             $subdomain = $this->getSubdomain($host);
 
@@ -89,7 +90,7 @@ class TenantMiddleware
 
         // Verificar por Path
         foreach ($this->excludedPaths as $path) {
-            if ($request->is($path) || $request->is($path.'/*')) {
+            if ($request->is($path) || $request->is($path . '/*')) {
                 return $next($request);
             }
         }
@@ -132,13 +133,13 @@ class TenantMiddleware
         // ---------------------------------------------------------
 
         // Si el usuario NO está autenticado, dejar pasar (Laravel manejará auth)
-        if (! Auth::check()) {
+        if (!Auth::check()) {
             return $next($request);
         }
 
         // Si el usuario SÍ está autenticado pero no tiene tenant, redirigir a selección
         // excepto si ya estamos intentando ir a selección
-        if (! $request->routeIs('sedes.selection') && ! $request->is('sedes/selection')) {
+        if (!$request->routeIs('sedes.selection') && !$request->is('sedes/selection')) {
             return redirect()->route('sedes.selection');
         }
 
@@ -160,13 +161,12 @@ class TenantMiddleware
             if (count($parts) > 1) {
                 return $parts[0];
             }
-
             return null;
         }
 
         // Para dominios reales
         if ($appDomain && str_contains($host, $appDomain)) {
-            $subdomain = str_replace('.'.$appDomain, '', $host);
+            $subdomain = str_replace('.' . $appDomain, '', $host);
             if ($subdomain !== $appDomain) {
                 return $subdomain;
             }

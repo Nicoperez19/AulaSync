@@ -2,23 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\ReservasExport;
-use App\Helpers\SemesterHelper;
-use App\Mail\ConfirmacionDevolucion;
-use App\Mail\ConfirmacionReserva;
+use App\Models\Reserva;
+use App\Models\Profesor;
+use Illuminate\Http\Request;
+use App\Models\Universidad;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
-use App\Models\Profesor;
-use App\Models\Reserva;
-use App\Models\Solicitante;
-use App\Models\Universidad;
-use App\Models\User;
+use App\Helpers\SemesterHelper;
+use App\Mail\ConfirmacionReserva;
+use App\Mail\ConfirmacionDevolucion;
 use App\Services\ComprobanteReservaService;
+use App\Exports\ReservasExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Maatwebsite\Excel\Facades\Excel;
 
 class ReservasController extends Controller
 {
@@ -45,6 +43,7 @@ class ReservasController extends Controller
         return view('reservas.index', compact('universidades', 'espaciosDisponibles'));
     }
 
+
     public function store(Request $request)
     {
         $request->validate([
@@ -54,17 +53,17 @@ class ReservasController extends Controller
             // ahora esperamos run del usuario en id_usuario
             'id_usuario' => 'required',
             'id_asignatura' => 'nullable|string|exists:tenant.asignaturas,id_asignatura',
-            'modulos' => 'nullable|integer|min:1|max:10',
+            'modulos' => 'nullable|integer|min:1|max:10'
         ]);
 
         // validar que exista el usuario/profesor/solicitante por run
         $run = $request->input('id_usuario');
 
-        $user = User::where('run', $run)->first();
+        $user = \App\Models\User::where('run', $run)->first();
         $profesor = class_exists('\App\\Models\\Profesor') ? Profesor::where('run_profesor', $run)->first() : null;
-        $solicitante = class_exists('\App\\Models\\Solicitante') ? Solicitante::on('tenant')->where('run_solicitante', $run)->first() : null;
+        $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::on('tenant')->where('run_solicitante', $run)->first() : null;
 
-        if (! $user && ! $profesor && ! $solicitante) {
+        if (!$user && !$profesor && !$solicitante) {
             return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);
         }
 
@@ -84,7 +83,7 @@ class ReservasController extends Controller
             'modulos' => $modulos,
             'estado' => 'activa',
             'tipo_reserva' => 'directa',
-            'creado_por' => auth()->user() ? auth()->user()->name.' ('.(auth()->user()->run ?? 'Admin').')' : 'Sistema', // Marcar como directa para diferenciarla de espontanea/clase
+            'creado_por' => auth()->user() ? auth()->user()->name . ' (' . (auth()->user()->run ?? 'Admin') . ')' : 'Sistema', // Marcar como directa para diferenciarla de espontanea/clase
         ];
 
         // Mapear run a la columna adecuada
@@ -142,10 +141,10 @@ class ReservasController extends Controller
         return redirect()->route('reservas.index')->with('success', 'Reserva creada exitosamente.');
     }
 
+
     public function edit($id_reserva)
     {
         $reserva = Reserva::findOrFail($id_reserva);
-
         return view('reservas.edit', compact('reserva'));
     }
 
@@ -185,12 +184,11 @@ class ReservasController extends Controller
 
         return redirect()->route('reservas.index')->with('success', 'Reserva eliminada exitosamente.');
     }
-
     public function getEspaciosDisponibles(Request $request)
     {
         $request->validate([
             'universidad' => 'required|exists:universidades,id_universidad',
-            'facultad' => 'required|exists:facultades,id_facultad',
+            'facultad' => 'required|exists:facultades,id_facultad'
         ]);
 
         $espacios = Espacio::with('piso')
@@ -205,7 +203,7 @@ class ReservasController extends Controller
                     'id_espacio' => $espacio->id_espacio,
                     'tipo_espacio' => $espacio->tipo_espacio,
                     'puestos_disponibles' => $espacio->puestos_disponibles,
-                    'piso_numero' => $espacio->piso->numero_piso,
+                    'piso_numero' => $espacio->piso->numero_piso
                 ];
             });
 
@@ -224,7 +222,7 @@ class ReservasController extends Controller
                 Mail::to($email)->send(new ConfirmacionReserva($reserva));
             }
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de reserva: '.$e->getMessage(), [
+            Log::error('Error al enviar correo de confirmación de reserva: ' . $e->getMessage(), [
                 'id_reserva' => $reserva->id_reserva,
             ]);
         }
@@ -241,7 +239,7 @@ class ReservasController extends Controller
                 Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
             }
         } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de devolución: '.$e->getMessage(), [
+            Log::error('Error al enviar correo de confirmación de devolución: ' . $e->getMessage(), [
                 'id_reserva' => $reserva->id_reserva,
             ]);
         }
@@ -258,7 +256,6 @@ class ReservasController extends Controller
         if ($reserva->run_solicitante && $reserva->solicitante) {
             return $reserva->solicitante->correo ?: null;
         }
-
         return null;
     }
 
@@ -296,8 +293,7 @@ class ReservasController extends Controller
 
             return true;
         } catch (\Exception $e) {
-            \Log::error('Error al verificar estados de espacios: '.$e->getMessage());
-
+            \Log::error('Error al verificar estados de espacios: ' . $e->getMessage());
             return false;
         }
     }
@@ -329,14 +325,14 @@ class ReservasController extends Controller
         $query = Reserva::query()
             ->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
 
-        if (! empty($fechaInicio)) {
+        if (!empty($fechaInicio)) {
             $query->whereDate('fecha_reserva', '>=', $fechaInicio);
         }
-        if (! empty($fechaFin)) {
+        if (!empty($fechaFin)) {
             $query->whereDate('fecha_reserva', '<=', $fechaFin);
         }
 
-        if (! empty($tipoEspacio)) {
+        if (!empty($tipoEspacio)) {
             if ($tipoEspacio === 'Laboratorios') {
                 $query->whereHas('espacio', function ($q) {
                     $q->where('tipo_espacio', 'like', 'Laboratorio%');
@@ -349,11 +345,11 @@ class ReservasController extends Controller
         } else {
             $query->whereHas('espacio', function ($q) {
                 $q->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
-                    ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
+                  ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
             });
         }
 
-        if (! empty($estado)) {
+        if (!empty($estado)) {
             $query->where('estado', $estado);
         }
 
@@ -367,39 +363,39 @@ class ReservasController extends Controller
             $terms = array_unique(array_filter([$search, $termSinTilde, mb_strtoupper($search), mb_strtolower($search)]));
 
             $query->where(function ($q) use ($terms, $search, $cleanRun) {
-                $q->where('id_reserva', 'like', '%'.$search.'%')
-                    ->orWhere('id_espacio', 'like', '%'.$search.'%')
-                    ->orWhere('fecha_reserva', 'like', '%'.$search.'%');
+                $q->where('id_reserva', 'like', '%' . $search . '%')
+                  ->orWhere('id_espacio', 'like', '%' . $search . '%')
+                  ->orWhere('fecha_reserva', 'like', '%' . $search . '%');
 
-                if (! empty($cleanRun)) {
-                    $q->orWhere('run_profesor', 'like', '%'.$cleanRun.'%')
-                        ->orWhere('run_solicitante', 'like', '%'.$cleanRun.'%');
+                if (!empty($cleanRun)) {
+                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
+                      ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
                 }
 
                 foreach ($terms as $t) {
-                    $q->orWhere('estado', 'like', '%'.$t.'%')
-                        ->orWhereHas('profesor', function ($pq) use ($t) {
-                            $pq->where('name', 'like', '%'.$t.'%');
-                        })
-                        ->orWhereHas('solicitante', function ($sq) use ($t) {
-                            $sq->where('nombre', 'like', '%'.$t.'%');
-                        })
-                        ->orWhereHas('espacio', function ($eq) use ($t) {
-                            $eq->where('nombre_espacio', 'like', '%'.$t.'%');
-                        })
-                        ->orWhereHas('asignatura', function ($aq) use ($t) {
-                            $aq->where('nombre_asignatura', 'like', '%'.$t.'%');
-                        });
+                    $q->orWhere('estado', 'like', '%' . $t . '%')
+                      ->orWhereHas('profesor', function ($pq) use ($t) {
+                          $pq->where('name', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('solicitante', function ($sq) use ($t) {
+                          $sq->where('nombre', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('espacio', function ($eq) use ($t) {
+                          $eq->where('nombre_espacio', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('asignatura', function ($aq) use ($t) {
+                          $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
+                      });
                 }
             });
         }
 
         $reservas = $query->orderBy('fecha_reserva', 'desc')
-            ->orderBy('hora', 'asc')
-            ->get();
+                          ->orderBy('hora', 'asc')
+                          ->get();
 
-        $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)).'_' : '';
-        $nombreArchivo = 'reporte_reservas_'.$tipoEtiqueta.now()->format('Ymd_His').'.xlsx';
+        $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)) . '_' : '';
+        $nombreArchivo = 'reporte_reservas_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(
             new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin),

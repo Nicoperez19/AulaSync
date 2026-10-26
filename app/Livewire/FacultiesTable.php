@@ -11,6 +11,7 @@ use App\Models\Campus;
 
 class FacultiesTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
     public $perPage = 10;

@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Configuracion extends Model
 {
+    use HasFactory;
 
     protected $connection = 'tenant';
-
     protected $table = 'configuracion';
 
     protected $fillable = [
@@ -21,7 +21,6 @@ class Configuracion extends Model
     public static function get($clave, $default = null)
     {
         $config = self::where('clave', $clave)->first();
-
         return $config ? $config->valor : $default;
     }
 

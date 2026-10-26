@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DataLoad extends Model
 {
+    use HasFactory;
 
     protected $connection = 'tenant';
 
@@ -22,11 +23,12 @@ class DataLoad extends Model
     protected $casts = [
         'registros_cargados' => 'integer',
         'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
-    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function user()
     {
         return $this->belongsTo(User::class, 'user_run', 'run');
     }
+    
 }

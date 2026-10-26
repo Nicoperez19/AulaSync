@@ -8,10 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class AsistenteAcademico extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
-
     protected $table = 'asistentes_academicos';
 
     protected $fillable = [
@@ -22,7 +21,7 @@ class AsistenteAcademico extends Model
         'id_area_academica',
     ];
 
-    public function areaAcademica(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function areaAcademica()
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica', 'id_area_academica');
     }

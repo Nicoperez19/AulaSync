@@ -17,7 +17,7 @@ class HistoricoOcupacionExport implements FromCollection, WithHeadings
     public function collection()
     {
         // Mapear los datos para solo las columnas requeridas
-        return collect($this->datos)->map(function ($row) {
+        return collect($this->datos)->map(function($row) {
             return [
                 'fecha' => $row->fecha,
                 'carrera' => $row->carrera,

@@ -2,94 +2,66 @@
 
 namespace App\Livewire;
 
-use App\Models\CursoVerano;
 use App\Models\DiaFeriado;
 use App\Models\PeriodoAcademico;
+use App\Models\CursoVerano;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class CalendarioAcademicoTable extends Component
 {
+    use WithPagination;
 
     // Vista activa: 'tabla' o 'calendario'
     public $vistaActiva = 'tabla';
-
+    
     // Tab activo: 'feriados' o 'periodos'
     public $tabActivo = 'feriados';
 
     // Mes y año para vista calendario
     public $mesCalendario;
-
     public $anioCalendario;
 
     // Búsqueda y filtros para feriados
     public $search = '';
-
     public $tipo = '';
-
     public $sortField = 'fecha_inicio';
-
     public $sortDirection = 'desc';
 
     // Modal feriados
     public $showModal = false;
-
     public $editMode = false;
-
     public $feriadoId;
-
     public $fecha_inicio = '';
-
     public $fecha_fin = '';
-
     public $nombre = '';
-
     public $descripcion = '';
-
     public $tipo_feriado = 'feriado';
-
     public $activo = true;
 
     // Modal períodos académicos
     public $showModalPeriodo = false;
-
     public $editModePeriodo = false;
-
     public $periodoId;
-
     public $periodo_anio;
-
     // Semestre 1
     public $periodo_1_fecha_inicio = '';
-
     public $periodo_1_fecha_fin = '';
-
     // Semestre 2
     public $periodo_2_fecha_inicio = '';
-
     public $periodo_2_fecha_fin = '';
-
     public $periodo_activo = true;
 
     // Modal cursos de verano
     public $showModalVerano = false;
-
     public $showModalSeleccionarVerano = false;
-
     public $editModeVerano = false;
-
     public $cursoVeranoId;
-
     public $verano_anio;
-
     public $verano_inicio = '';
-
     public $verano_fin = '';
-
     public $verano_activo = true;
 
     protected $queryString = ['search', 'tipo', 'vistaActiva', 'tabActivo'];
@@ -246,28 +218,26 @@ class CalendarioAcademicoTable extends Component
         try {
             $year = $this->anioCalendario ?? Carbon::now()->year;
             $url = "https://api.boostr.cl/holidays/{$year}.json";
-
-            $response = Http::get($url);
-
-            if (! $response->successful()) {
+            
+            $response = \Illuminate\Support\Facades\Http::get($url);
+            
+            if (!$response->successful()) {
                 session()->flash('error', "No se pudo conectar a la API de feriados para el año {$year}.");
-
                 return;
             }
-
+            
             $data = $response->json();
-
-            if (! isset($data['status']) || $data['status'] !== 'success' || ! isset($data['data'])) {
+            
+            if (!isset($data['status']) || $data['status'] !== 'success' || !isset($data['data'])) {
                 session()->flash('error', 'La API de feriados retornó una respuesta con formato inválido.');
-
                 return;
             }
-
+            
             $importados = 0;
             foreach ($data['data'] as $feriadoAPI) {
                 $fecha = $feriadoAPI['date'];
                 $nombre = $feriadoAPI['title'];
-
+                
                 DiaFeriado::withoutGlobalScopes()->updateOrCreate(
                     [
                         'fecha_inicio' => $fecha,
@@ -283,14 +253,14 @@ class CalendarioAcademicoTable extends Component
                 );
                 $importados++;
             }
-
+            
             session()->flash('message', "Se importaron exitosamente {$importados} feriados de Chile para el año {$year}.");
             $this->resetPage();
         } catch (\Exception $e) {
-            Log::error('Error al importar feriados desde API:', [
-                'error' => $e->getMessage(),
+            \Illuminate\Support\Facades\Log::error('Error al importar feriados desde API:', [
+                'error' => $e->getMessage()
             ]);
-            session()->flash('error', 'Error al importar feriados: '.$e->getMessage());
+            session()->flash('error', 'Error al importar feriados: ' . $e->getMessage());
         }
     }
 
@@ -304,7 +274,7 @@ class CalendarioAcademicoTable extends Component
     public function toggleActivo($id)
     {
         $feriado = DiaFeriado::findOrFail($id);
-        $feriado->update(['activo' => ! $feriado->activo]);
+        $feriado->update(['activo' => !$feriado->activo]);
         session()->flash('message', 'Estado actualizado exitosamente.');
     }
 
@@ -315,7 +285,7 @@ class CalendarioAcademicoTable extends Component
         $this->reset([
             'periodo_anio', 'periodo_1_fecha_inicio', 'periodo_1_fecha_fin',
             'periodo_2_fecha_inicio', 'periodo_2_fecha_fin',
-            'periodo_activo', 'editModePeriodo', 'periodoId',
+            'periodo_activo', 'editModePeriodo', 'periodoId'
         ]);
         $this->periodo_anio = Carbon::now()->year;
         $this->periodo_activo = true;
@@ -327,7 +297,7 @@ class CalendarioAcademicoTable extends Component
         $periodo = PeriodoAcademico::findOrFail($id);
         $this->periodoId = $id;
         $this->periodo_anio = $periodo->anio;
-
+        
         if ($periodo->semestre === 1) {
             $this->periodo_1_fecha_inicio = $periodo->fecha_inicio->format('Y-m-d');
             $this->periodo_1_fecha_fin = $periodo->fecha_fin->format('Y-m-d');
@@ -351,7 +321,7 @@ class CalendarioAcademicoTable extends Component
                 $this->periodo_1_fecha_fin = $periodo1->fecha_fin->format('Y-m-d');
             }
         }
-
+        
         $this->periodo_activo = $periodo->activo;
         $this->editModePeriodo = true;
         $this->showModalPeriodo = true;
@@ -363,7 +333,7 @@ class CalendarioAcademicoTable extends Component
         $this->reset([
             'periodo_anio', 'periodo_1_fecha_inicio', 'periodo_1_fecha_fin',
             'periodo_2_fecha_inicio', 'periodo_2_fecha_fin',
-            'periodo_activo', 'editModePeriodo', 'periodoId',
+            'periodo_activo', 'editModePeriodo', 'periodoId'
         ]);
     }
 
@@ -375,7 +345,7 @@ class CalendarioAcademicoTable extends Component
             // Editar: actualizar ambos semestres existentes
             $periodo = PeriodoAcademico::findOrFail($this->periodoId);
             $semestre = $periodo->semestre;
-
+            
             // Actualizar el período actual
             if ($semestre === 1) {
                 $periodo->update([
@@ -422,10 +392,9 @@ class CalendarioAcademicoTable extends Component
             $existe2 = PeriodoAcademico::where('anio', $this->periodo_anio)
                 ->where('semestre', 2)
                 ->exists();
-
+            
             if ($existe1 || $existe2) {
                 session()->flash('error', 'Ya existen períodos académicos para ese año. Edite los existentes.');
-
                 return;
             }
 
@@ -506,7 +475,7 @@ class CalendarioAcademicoTable extends Component
     public function saveVerano()
     {
         $this->validate([
-            'verano_anio' => 'required|integer|min:2000|max:'.(now()->year + 10),
+            'verano_anio' => 'required|integer|min:2000|max:' . (now()->year + 10),
             'verano_inicio' => 'required|date|date_format:Y-m-d',
             'verano_fin' => 'required|date|date_format:Y-m-d|after_or_equal:verano_inicio',
         ]);
@@ -534,7 +503,7 @@ class CalendarioAcademicoTable extends Component
             $this->resetModalVerano();
             $this->closeModalVerano();
         } catch (\Exception $e) {
-            session()->flash('error', 'Error al guardar: '.$e->getMessage());
+            session()->flash('error', 'Error al guardar: ' . $e->getMessage());
         }
     }
 
@@ -544,7 +513,7 @@ class CalendarioAcademicoTable extends Component
             CursoVerano::destroy($id);
             session()->flash('success', 'Período de verano eliminado correctamente');
         } catch (\Exception $e) {
-            session()->flash('error', 'Error al eliminar: '.$e->getMessage());
+            session()->flash('error', 'Error al eliminar: ' . $e->getMessage());
         }
     }
 
@@ -552,10 +521,10 @@ class CalendarioAcademicoTable extends Component
     {
         try {
             $curso = CursoVerano::findOrFail($id);
-            $curso->update(['activo' => ! $curso->activo]);
+            $curso->update(['activo' => !$curso->activo]);
             session()->flash('success', 'Estado actualizado correctamente');
         } catch (\Exception $e) {
-            session()->flash('error', 'Error al actualizar: '.$e->getMessage());
+            session()->flash('error', 'Error al actualizar: ' . $e->getMessage());
         }
     }
 
@@ -580,15 +549,15 @@ class CalendarioAcademicoTable extends Component
     {
         $primerDia = Carbon::create($this->anioCalendario, $this->mesCalendario, 1);
         $ultimoDia = $primerDia->copy()->endOfMonth();
-
+        
         // Obtener el día de la semana del primer día (0 = Domingo, 1 = Lunes, etc.)
         $primerDiaSemana = $primerDia->dayOfWeek;
-
+        
         // Ajustar para que la semana empiece en lunes
         $primerDiaSemana = $primerDiaSemana === 0 ? 6 : $primerDiaSemana - 1;
-
+        
         $dias = [];
-
+        
         // Días del mes anterior para completar la primera semana
         $diaAnterior = $primerDia->copy()->subDays($primerDiaSemana);
         for ($i = 0; $i < $primerDiaSemana; $i++) {
@@ -599,7 +568,7 @@ class CalendarioAcademicoTable extends Component
             ];
             $diaAnterior->addDay();
         }
-
+        
         // Días del mes actual
         $diaActual = $primerDia->copy();
         while ($diaActual->lte($ultimoDia)) {
@@ -610,7 +579,7 @@ class CalendarioAcademicoTable extends Component
             ];
             $diaActual->addDay();
         }
-
+        
         // Días del mes siguiente para completar la última semana
         $diasRestantes = 42 - count($dias); // 6 semanas * 7 días = 42
         for ($i = 0; $i < $diasRestantes; $i++) {
@@ -621,20 +590,20 @@ class CalendarioAcademicoTable extends Component
             ];
             $diaActual->addDay();
         }
-
+        
         return $dias;
     }
 
     private function obtenerEventosDia($fecha)
     {
         $eventos = [];
-
+        
         // Buscar feriados
         $feriados = DiaFeriado::where('activo', true)
             ->where('fecha_inicio', '<=', $fecha)
             ->where('fecha_fin', '>=', $fecha)
             ->get();
-
+        
         foreach ($feriados as $feriado) {
             $eventos[] = [
                 'tipo' => $feriado->tipo,
@@ -642,7 +611,7 @@ class CalendarioAcademicoTable extends Component
                 'color' => $this->getColorEvento($feriado->tipo),
             ];
         }
-
+        
         // Buscar si es inicio/fin de período académico
         $periodos = PeriodoAcademico::where('activo', true)->get();
         foreach ($periodos as $periodo) {
@@ -675,7 +644,7 @@ class CalendarioAcademicoTable extends Component
                 ];
             }
         }
-
+        
         return $eventos;
     }
 
@@ -694,9 +663,8 @@ class CalendarioAcademicoTable extends Component
         $meses = [
             1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
             5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
-            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+            9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
         ];
-
         return $meses[$this->mesCalendario];
     }
 
@@ -709,8 +677,8 @@ class CalendarioAcademicoTable extends Component
             $searchTerm = trim($this->search);
             if (strlen($searchTerm) > 0) {
                 $query->where(function ($q) use ($searchTerm) {
-                    $q->whereRaw('LOWER(nombre) LIKE ?', ['%'.strtolower($searchTerm).'%'])
-                        ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%'.strtolower($searchTerm).'%']);
+                    $q->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                      ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
                 });
             }
         }

@@ -3,26 +3,23 @@
 namespace App\Exports;
 
 use App\Models\ClaseNoRealizada;
-use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use Carbon\Carbon;
 
-class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
+class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
 {
     protected $fechaInicio;
-
     protected $fechaFin;
-
     protected $periodo;
-
     protected $estado;
 
     public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $estado = null)
@@ -36,13 +33,13 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
     public function collection()
     {
         $query = ClaseNoRealizada::with([
-            'profesor.carrera',
-            'profesor.areaAcademica',
-            'asignatura.carrera',
-            'asignatura.carrera.areaAcademica',
-            'espacio',
-            'modulo',
-        ])
+                'profesor.carrera', 
+                'profesor.areaAcademica', 
+                'asignatura.carrera', 
+                'asignatura.carrera.areaAcademica', 
+                'espacio', 
+                'modulo'
+            ])
             ->orderBy('fecha_clase', 'desc')
             ->orderBy('id_modulo', 'asc');
 
@@ -68,11 +65,11 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
         $results = $query->get();
 
         // Eliminar duplicados exactos (misma fecha, módulo, espacio, asignatura)
-        return $results->unique(function ($clase) {
-            return ($clase->fecha_clase ? $clase->fecha_clase->format('Y-m-d') : '').'_'.
-                   $clase->id_modulo.'_'.
-                   $clase->id_espacio.'_'.
-                   $clase->run_profesor.'_'.
+        return $results->unique(function($clase) {
+            return ($clase->fecha_clase ? $clase->fecha_clase->format('Y-m-d') : '') . '_' . 
+                   $clase->id_modulo . '_' . 
+                   $clase->id_espacio . '_' . 
+                   $clase->run_profesor . '_' . 
                    $clase->id_asignatura;
         });
     }
@@ -102,7 +99,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
 
     public function map($clase): array
     {
-        $estadoTexto = match ($clase->estado) {
+        $estadoTexto = match($clase->estado) {
             'no_realizada' => 'No Realizada',
             'justificado' => 'Justificada',
             'realizada', 'registrada' => 'Registrada',
@@ -112,13 +109,13 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
         };
 
         $ua = 'N/A';
-        if ($clase->asignatura && ! empty($clase->asignatura->id_carrera)) {
+        if ($clase->asignatura && !empty($clase->asignatura->id_carrera)) {
             $ua = (string) $clase->asignatura->id_carrera;
-        } elseif ($clase->profesor && ! empty($clase->profesor->id_carrera)) {
+        } elseif ($clase->profesor && !empty($clase->profesor->id_carrera)) {
             $ua = (string) $clase->profesor->id_carrera;
-        } elseif ($clase->asignatura && $clase->asignatura->carrera && ! empty($clase->asignatura->carrera->id_carrera)) {
+        } elseif ($clase->asignatura && $clase->asignatura->carrera && !empty($clase->asignatura->carrera->id_carrera)) {
             $ua = (string) $clase->asignatura->carrera->id_carrera;
-        } elseif ($clase->profesor && $clase->profesor->carrera && ! empty($clase->profesor->carrera->id_carrera)) {
+        } elseif ($clase->profesor && $clase->profesor->carrera && !empty($clase->profesor->carrera->id_carrera)) {
             $ua = (string) $clase->profesor->carrera->id_carrera;
         }
 
@@ -146,7 +143,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
     public function styles(Worksheet $sheet)
     {
         $lastRow = $sheet->getHighestRow();
-
+        
         return [
             // Estilo para el encabezado
             1 => [
@@ -172,7 +169,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:Q'.$lastRow => [
+            'A2:Q' . $lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -213,15 +210,15 @@ class ClasesNoRealizadasExport implements FromCollection, WithColumnWidths, With
     public function title(): string
     {
         $titulo = 'Clases No Realizadas';
-
+        
         if ($this->fechaInicio && $this->fechaFin) {
             $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
             $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
-            $titulo .= ' '.$inicio->format('d-m-Y').' a '.$fin->format('d-m-Y');
+            $titulo .= ' ' . $inicio->format('d-m-Y') . ' a ' . $fin->format('d-m-Y');
         } elseif ($this->periodo) {
-            $titulo .= ' Periodo '.$this->periodo;
+            $titulo .= ' Periodo ' . $this->periodo;
         }
-
+        
         return substr($titulo, 0, 31); // Excel limita a 31 caracteres
     }
 }

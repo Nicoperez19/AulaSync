@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PeriodoAcademico extends Model
 {
+    use HasFactory;
 
     protected $connection = 'mysql';
 
@@ -120,7 +121,7 @@ class PeriodoAcademico extends Model
      * - El período en curso (fecha_inicio <= hoy <= fecha_fin) pasa a activo = true.
      * - TODOS los demás períodos pasan a activo = false (garantizando un único semestre activo).
      *
-     * @param  string|Carbon|null  $fecha
+     * @param string|Carbon|null $fecha
      * @return PeriodoAcademico|null El período que quedó activo
      */
     public static function sincronizarEstadosSegunFechas($fecha = null)
@@ -194,7 +195,6 @@ class PeriodoAcademico extends Model
     public function getNombreCompletoAttribute()
     {
         $ordinal = $this->semestre == 1 ? 'Primer' : 'Segundo';
-
         return "{$ordinal} Semestre {$this->anio}";
     }
 
@@ -228,7 +228,6 @@ class PeriodoAcademico extends Model
     public function estaEnCurso()
     {
         $hoy = Carbon::now();
-
         return $hoy->gte($this->fecha_inicio) && $hoy->lte($this->fecha_fin);
     }
 
@@ -247,7 +246,7 @@ class PeriodoAcademico extends Model
      */
     public function tieneCursosVerano()
     {
-        return ! is_null($this->inicio_verano) && ! is_null($this->fin_verano);
+        return !is_null($this->inicio_verano) && !is_null($this->fin_verano);
     }
 
     /**
@@ -255,18 +254,18 @@ class PeriodoAcademico extends Model
      */
     public function getEstadoTextoAttribute()
     {
-        if (! $this->activo) {
+        if (!$this->activo) {
             return 'Inactivo';
         }
-
+        
         if ($this->noHaIniciado()) {
             return 'Por iniciar';
         }
-
+        
         if ($this->haFinalizado()) {
             return 'Finalizado';
         }
-
+        
         return 'En curso';
     }
 
@@ -275,18 +274,18 @@ class PeriodoAcademico extends Model
      */
     public function getEstadoColorAttribute()
     {
-        if (! $this->activo) {
+        if (!$this->activo) {
             return 'gray';
         }
-
+        
         if ($this->noHaIniciado()) {
             return 'yellow';
         }
-
+        
         if ($this->haFinalizado()) {
             return 'red';
         }
-
+        
         return 'green';
     }
 
@@ -304,7 +303,6 @@ class PeriodoAcademico extends Model
     public function scopeEnCurso($query)
     {
         $hoy = Carbon::now();
-
         return $query->where('activo', true)
             ->where('fecha_inicio', '<=', $hoy)
             ->where('fecha_fin', '>=', $hoy);

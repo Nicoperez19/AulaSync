@@ -2,21 +2,18 @@
 
 namespace App\Models;
 
-use App\Services\QRService;
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\QRService;
+use App\Traits\BelongsToTenant;
 
 class Espacio extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $connection = 'tenant';
-
     protected $primaryKey = 'id_espacio';
-
     public $incrementing = false;
-
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -28,7 +25,7 @@ class Espacio extends Model
         'es_externo',
         'qr_espacio',
         'puestos_disponibles',
-        'capacidad_maxima',
+        'capacidad_maxima'
     ];
 
     protected $casts = [
@@ -58,7 +55,6 @@ class Espacio extends Model
         if (is_null($this->capacidad_maxima) || is_null($this->puestos_disponibles)) {
             return 0;
         }
-
         return max(0, $this->capacidad_maxima - $this->puestos_disponibles);
     }
 
@@ -70,32 +66,30 @@ class Espacio extends Model
         if (is_null($this->capacidad_maxima) || $this->capacidad_maxima == 0) {
             return 0;
         }
-
         return round(($this->capacidad_utilizada / $this->capacidad_maxima) * 100, 1);
     }
 
-    public function reservas(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reservas()
     {
         return $this->hasMany(Reserva::class, 'id_espacio', 'id_espacio');
     }
 
-    public function piso(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function piso()
     {
         return $this->belongsTo(Piso::class, 'piso_id');
     }
 
-    public function planificaciones(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function planificaciones()
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
     }
 
     public function generateQR()
     {
-        $qrService = new QRService;
+        $qrService = new QRService();
         $qrFileName = $qrService->generateQRForEspacio($this->id_espacio); // o cualquier valor que desees codificar
         $this->qr_espacio = $qrFileName;
         $this->save();
-
         return $this;
     }
 }

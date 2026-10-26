@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\RecuperacionClase;
+use Illuminate\Http\Request;
+
 class RecuperacionClaseController extends Controller
 {
     /**

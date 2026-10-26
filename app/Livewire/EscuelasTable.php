@@ -8,6 +8,7 @@ use Livewire\WithPagination;
 
 class EscuelasTable extends Component
 {
+    use WithPagination;
 
     public $search = '';
     public $sortField = 'nombre_area_academica';

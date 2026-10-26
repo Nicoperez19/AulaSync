@@ -31,7 +31,7 @@ class ProfileController extends Controller
 
         // Solo actualiza los campos que vienen y son diferentes
         foreach (['name', 'email', 'celular', 'direccion', 'fecha_nacimiento', 'anio_ingreso'] as $field) {
-            if (array_key_exists($field, $data) && $data[$field] !== null && $data[$field] !== $user->$field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null && $user->$field !== $data[$field]) {
                 $user->$field = $data[$field];
                 // Si el email cambia, desverifica
                 if ($field === 'email') {

@@ -13,14 +13,11 @@ use App\Services\SalaEstudioService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class QuickActionsController extends Controller
 {
     protected ReservaService $reservaService;
-
     protected EspacioService $espacioService;
-
     protected SalaEstudioService $salaEstudioService;
 
     public function __construct(
@@ -84,7 +81,7 @@ class QuickActionsController extends Controller
                 ->with(['espacio', 'profesor', 'solicitante'])
                 ->first();
 
-            if (! $reserva) {
+            if (!$reserva) {
                 return redirect()
                     ->route('quick-actions.gestionar-reservas')
                     ->with('error', 'Reserva no encontrada');
@@ -102,11 +99,11 @@ class QuickActionsController extends Controller
 
             return view('acciones-rapidas.editar-reserva', compact('reserva', 'espacios'));
         } catch (\Exception $e) {
-            Log::error('Error al cargar formulario de edición de reserva: '.$e->getMessage());
+            Log::error('Error al cargar formulario de edición de reserva: ' . $e->getMessage());
 
             return redirect()
                 ->route('quick-actions.gestionar-reservas')
-                ->with('error', 'Error al cargar la reserva: '.$e->getMessage());
+                ->with('error', 'Error al cargar la reserva: ' . $e->getMessage());
         }
     }
 
@@ -144,7 +141,7 @@ class QuickActionsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener datos del dashboard: '.$e->getMessage(),
+                'message' => 'Error al obtener datos del dashboard: ' . $e->getMessage(),
                 'reservas_hoy' => 0,
                 'espacios_libres' => 0,
                 'espacios_ocupados' => 0,
@@ -168,11 +165,11 @@ class QuickActionsController extends Controller
                 'count' => count($espacios),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al obtener espacios en QuickActions: '.$e->getMessage());
+            Log::error('Error al obtener espacios en QuickActions: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cargar espacios: '.$e->getMessage(),
+                'message' => 'Error al cargar espacios: ' . $e->getMessage(),
                 'espacios' => [],
                 'error_details' => $e->getMessage(),
             ], 500);
@@ -189,11 +186,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
-            Log::error('❌ Error al cambiar estado de espacio: '.$e->getMessage());
+            Log::error('❌ Error al cambiar estado de espacio: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error interno del servidor: '.$e->getMessage(),
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -208,11 +205,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado);
         } catch (\Exception $e) {
-            Log::error('❌ Error en liberación masiva: '.$e->getMessage());
+            Log::error('❌ Error en liberación masiva: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al realizar la liberación masiva: '.$e->getMessage(),
+                'mensaje' => 'Error al realizar la liberación masiva: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -224,17 +221,17 @@ class QuickActionsController extends Controller
     {
         try {
             $resultado = $this->reservaService->getReservas($request->all());
-            if (isset($resultado['reservas']) && ! isset($resultado['data'])) {
+            if (isset($resultado['reservas']) && !isset($resultado['data'])) {
                 $resultado['data'] = $resultado['reservas'];
             }
 
             return response()->json($resultado);
         } catch (\Exception $e) {
-            Log::error('Error al obtener reservas: '.$e->getMessage());
+            Log::error('Error al obtener reservas: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener reservas: '.$e->getMessage(),
+                'message' => 'Error al obtener reservas: ' . $e->getMessage(),
                 'reservas' => [],
                 'data' => [],
                 'total' => 0,
@@ -258,11 +255,11 @@ class QuickActionsController extends Controller
                 'termino_buscado' => $termino,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al buscar personas: '.$e->getMessage());
+            Log::error('Error al buscar personas: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al buscar personas: '.$e->getMessage(),
+                'message' => 'Error al buscar personas: ' . $e->getMessage(),
                 'personas' => [],
                 'error_details' => $e->getMessage(),
             ], 500);
@@ -293,11 +290,11 @@ class QuickActionsController extends Controller
                 'termino_buscado' => $termino,
             ]);
         } catch (\Exception $e) {
-            Log::error('Error al buscar asignaturas: '.$e->getMessage());
+            Log::error('Error al buscar asignaturas: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al buscar asignaturas: '.$e->getMessage(),
+                'message' => 'Error al buscar asignaturas: ' . $e->getMessage(),
                 'asignaturas' => [],
                 'error_details' => $e->getMessage(),
             ], 500);
@@ -321,11 +318,11 @@ class QuickActionsController extends Controller
 
             return response()->json(array_merge(['success' => true], $resultado));
         } catch (\Exception $e) {
-            Log::error('Error al verificar conflictos: '.$e->getMessage());
+            Log::error('Error al verificar conflictos: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al verificar conflictos: '.$e->getMessage(),
+                'mensaje' => 'Error al verificar conflictos: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -340,11 +337,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
-            Log::error('❌ Error general al crear reserva: '.$e->getMessage());
+            Log::error('❌ Error general al crear reserva: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error interno del servidor: '.$e->getMessage(),
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -363,11 +360,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
-            Log::error('❌ Error al cambiar estado de reserva: '.$e->getMessage());
+            Log::error('❌ Error al cambiar estado de reserva: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error interno del servidor: '.$e->getMessage(),
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -382,11 +379,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
-            Log::error('❌ Error al eliminar reserva: '.$e->getMessage());
+            Log::error('❌ Error al eliminar reserva: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error interno del servidor: '.$e->getMessage(),
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -411,17 +408,17 @@ class QuickActionsController extends Controller
             $resultado = $this->reservaService->actualizarReserva((string) $id, $request->all(), $request->user());
 
             return response()->json($resultado, $resultado['status'] ?? 200);
-        } catch (ValidationException $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Datos inválidos: '.collect($e->errors())->flatten()->implode(', '),
+                'mensaje' => 'Datos inválidos: ' . collect($e->errors())->flatten()->implode(', '),
             ], 422);
         } catch (\Exception $e) {
-            Log::error('❌ Error al actualizar reserva: '.$e->getMessage());
+            Log::error('❌ Error al actualizar reserva: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error interno del servidor: '.$e->getMessage(),
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -436,7 +433,7 @@ class QuickActionsController extends Controller
 
             return response()->json(array_merge(['success' => true], $resultado));
         } catch (\Exception $e) {
-            Log::error('Error en getReservasSalasEstudio: '.$e->getMessage());
+            Log::error('Error en getReservasSalasEstudio: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -456,11 +453,11 @@ class QuickActionsController extends Controller
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
-            Log::error('Error en procesarEscaneoSalaEstudio: '.$e->getMessage());
+            Log::error('Error en procesarEscaneoSalaEstudio: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al procesar escaneo: '.$e->getMessage(),
+                'message' => 'Error al procesar escaneo: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -475,7 +472,7 @@ class QuickActionsController extends Controller
 
             return response()->json(array_merge(['success' => true], $resultado));
         } catch (\Exception $e) {
-            Log::error('Error en verificarNotificacionesSalasEstudio: '.$e->getMessage());
+            Log::error('Error en verificarNotificacionesSalasEstudio: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,

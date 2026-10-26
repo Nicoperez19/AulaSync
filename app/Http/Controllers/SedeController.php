@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Comuna;
 use App\Models\Sede;
 use App\Models\Universidad;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\Comuna;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SedeController extends Controller
 {
@@ -18,7 +18,7 @@ class SedeController extends Controller
         try {
             $universidades = Universidad::all();
             $comunas = Comuna::all();
-
+            
             return view('sedes.index', compact('universidades', 'comunas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las sedes.'])->withInput();
@@ -72,12 +72,12 @@ class SedeController extends Controller
             $sede = Sede::findOrFail($id);
             $universidades = Universidad::all();
             $comunas = Comuna::all();
-
+            
             return view('sedes.edit', compact('sede', 'universidades', 'comunas'));
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('sedes.index')->withErrors(['error' => 'Sede no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al cargar la sede: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al cargar la sede: ' . $e->getMessage()]);
         }
     }
 
@@ -88,7 +88,7 @@ class SedeController extends Controller
     {
         try {
             $request->validate([
-                'id_sede' => 'required|string|max:20|unique:sedes,id_sede,'.$id.',id_sede',
+                'id_sede' => 'required|string|max:20|unique:sedes,id_sede,' . $id . ',id_sede',
                 'nombre_sede' => 'required|string|max:100',
                 'prefijo_sala' => 'nullable|string|max:10',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
@@ -105,10 +105,10 @@ class SedeController extends Controller
             ]);
 
             return redirect()->route('sedes.index')->with('success', 'Sede actualizada exitosamente.');
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('sedes.index')->withErrors(['error' => 'Sede no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la sede: '.$e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la sede: ' . $e->getMessage()]);
         }
     }
 
@@ -120,13 +120,12 @@ class SedeController extends Controller
         try {
             $sede = Sede::findOrFail($id);
             $sede->delete();
-
             return redirect()->route('sedes.index')->with('success', 'Sede eliminada exitosamente.');
 
-        } catch (ModelNotFoundException $e) {
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Sede no encontrada.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar la sede: '.$e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error al borrar la sede: ' . $e->getMessage()], 500);
         }
     }
-}
+} 

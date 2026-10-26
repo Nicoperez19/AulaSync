@@ -2,35 +2,34 @@
 
 namespace App\Models;
 
-use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class Carrera extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'carreras';
-
     protected $primaryKey = 'id_carrera';
 
     protected $fillable = [
         'id_carrera',
         'nombre',
-        'id_area_academica',
+        'id_area_academica'
     ];
 
-    public function areaAcademica(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function areaAcademica()
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
 
-    public function asignaturas(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function asignaturas()
     {
         return $this->hasMany(Asignatura::class, 'id_carrera', 'id_carrera');
     }
 
-    public function jefeCarrera(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function jefeCarrera()
     {
         return $this->hasOne(JefeCarrera::class, 'id_carrera', 'id_carrera');
     }
