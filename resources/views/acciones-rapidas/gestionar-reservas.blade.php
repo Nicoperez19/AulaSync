@@ -17,12 +17,12 @@
 
             <div class="flex items-center gap-2.5">
                 <a href="{{ route('quick-actions.crear-reserva') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
                     <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>Nueva Reserva</span>
                 </a>
                 <a href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
                     <svg class="w-4 h-4 shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -47,95 +47,104 @@
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Solicitante</label>
-                    <div class="relative">
-                        <input 
-                            type="text"
-                            id="filtro-solicitante-reserva"
-                            placeholder="Nombre o RUN..."
-                            oninput="filtrarReservas()"
-                            class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                        />
-                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                        </div>
-                    </div>
-                </div>
+    <!-- Sección FILTROS -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
+            </h3>
+        </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                    <select 
-                        id="filtro-estado-reserva"
-                        onchange="filtrarReservas()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="">Todos los estados</option>
-                        <option value="activa">Activas</option>
-                        <option value="programada">Programadas</option>
-                        <option value="finalizada">Finalizadas</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio</label>
-                    <select 
-                        id="filtro-espacio-reserva"
-                        onchange="filtrarReservas()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="">Todos los espacios</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
-                    <select 
-                        id="filtro-modulo-reserva"
-                        onchange="filtrarReservas()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="">Todos los módulos</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Solicitante</label>
+                <div class="relative">
                     <input 
-                        type="date"
-                        id="filtro-fecha-reserva"
-                        onchange="filtrarReservas()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        type="text"
+                        id="filtro-solicitante-reserva"
+                        placeholder="Nombre o RUN..."
+                        oninput="filtrarReservas()"
+                        class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
-                    <select 
-                        id="ordenar-reservas"
-                        onchange="aplicarOrdenamiento()"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="fecha-desc">Fecha (más reciente)</option>
-                        <option value="fecha-asc">Fecha (más antigua)</option>
-                        <option value="responsable-asc">Responsable (A-Z)</option>
-                        <option value="responsable-desc">Responsable (Z-A)</option>
-                        <option value="espacio-asc">Espacio (A-Z)</option>
-                        <option value="espacio-desc">Espacio (Z-A)</option>
-                        <option value="hora-asc">Hora (temprano-tarde)</option>
-                        <option value="hora-desc">Hora (tarde-temprano)</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button 
-                        onclick="cargarReservas()"
-                        class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm">
-                        <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
-                        Actualizar
-                    </button>
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
             </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
+                <select 
+                    id="filtro-estado-reserva"
+                    onchange="filtrarReservas()"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los estados</option>
+                    <option value="activa">Activas</option>
+                    <option value="programada">Programadas</option>
+                    <option value="finalizada">Finalizadas</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Espacio</label>
+                <select 
+                    id="filtro-espacio-reserva"
+                    onchange="filtrarReservas()"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los espacios</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Módulo</label>
+                <select 
+                    id="filtro-modulo-reserva"
+                    onchange="filtrarReservas()"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="">Todos los módulos</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Fecha</label>
+                <input 
+                    type="date"
+                    id="filtro-fecha-reserva"
+                    onchange="filtrarReservas()"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Ordenar por</label>
+                <select 
+                    id="ordenar-reservas"
+                    onchange="aplicarOrdenamiento()"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="fecha-desc">Fecha (más reciente)</option>
+                    <option value="fecha-asc">Fecha (más antigua)</option>
+                    <option value="responsable-asc">Responsable (A-Z)</option>
+                    <option value="responsable-desc">Responsable (Z-A)</option>
+                    <option value="espacio-asc">Espacio (A-Z)</option>
+                    <option value="espacio-desc">Espacio (Z-A)</option>
+                    <option value="hora-asc">Hora (temprano-tarde)</option>
+                    <option value="hora-desc">Hora (tarde-temprano)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Botones de Acción separados por línea -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button 
+                type="button"
+                onclick="limpiarFiltrosReservas()"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+            <button 
+                type="button"
+                onclick="cargarReservas()"
+                class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
+            </button>
         </div>
     </div>
 
@@ -144,30 +153,30 @@
         <!-- Versión Desktop -->
         <div class="hidden lg:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 table-fixed">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                     <tr>
                         <th scope="col" class="w-12 px-3 py-3.5 text-center">
-                            <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                            <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded border-gray-300 text-blue-600 focus:ring-[#950101] focus:border-[#950101] cursor-pointer">
                         </th>
-                        <th scope="col" class="w-28 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none" onclick="ordenarPor('fecha')">
-                            <span class="inline-flex items-center gap-1 justify-center">Fecha <i id="sort-icon-fecha" class="fa-solid fa-sort text-xs text-gray-400"></i></span>
+                        <th scope="col" class="w-28 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-red-100 select-none" onclick="ordenarPor('fecha')">
+                            <span class="inline-flex items-center gap-1 justify-center">Fecha <i id="sort-icon-fecha" class="fa-solid fa-sort text-xs text-white/50"></i></span>
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none" onclick="ordenarPor('modulo')">
-                            <span class="inline-flex items-center gap-1 justify-center">Módulos <i id="sort-icon-modulo" class="fa-solid fa-sort text-xs text-gray-400"></i></span>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-red-100 select-none" onclick="ordenarPor('modulo')">
+                            <span class="inline-flex items-center gap-1 justify-center">Módulos <i id="sort-icon-modulo" class="fa-solid fa-sort text-xs text-white/50"></i></span>
                         </th>
-                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none" onclick="ordenarPor('espacio')">
-                            <span class="inline-flex items-center gap-1 justify-center">Espacio <i id="sort-icon-espacio" class="fa-solid fa-sort text-xs text-gray-400"></i></span>
+                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-red-100 select-none" onclick="ordenarPor('espacio')">
+                            <span class="inline-flex items-center gap-1 justify-center">Espacio <i id="sort-icon-espacio" class="fa-solid fa-sort text-xs text-white/50"></i></span>
                         </th>
-                        <th scope="col" class="w-48 px-3 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none" onclick="ordenarPor('responsable')">
-                            <span class="inline-flex items-center gap-1">Responsable <i id="sort-icon-responsable" class="fa-solid fa-sort text-xs text-gray-400"></i></span>
+                        <th scope="col" class="w-48 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-red-100 select-none" onclick="ordenarPor('responsable')">
+                            <span class="inline-flex items-center gap-1 justify-center">Responsable <i id="sort-icon-responsable" class="fa-solid fa-sort text-xs text-white/50"></i></span>
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Asignatura / Actividad
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none" onclick="ordenarPor('estado')">
-                            <span class="inline-flex items-center gap-1 justify-center">Estado <i id="sort-icon-estado" class="fa-solid fa-sort text-xs text-gray-400"></i></span>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer hover:text-red-100 select-none" onclick="ordenarPor('estado')">
+                            <span class="inline-flex items-center gap-1 justify-center">Estado <i id="sort-icon-estado" class="fa-solid fa-sort text-xs text-white/50"></i></span>
                         </th>
-                        <th scope="col" class="w-44 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                        <th scope="col" class="w-44 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -215,7 +224,7 @@
                         id="btn-finalizar-lote"
                         onclick="finalizarReservasEnLote()"
                         title="Finalizar reservas seleccionadas"
-                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all shadow-sm disabled:opacity-50">
+                        class="btn btn-danger gap-1.5 px-4 py-2 text-sm font-medium">
                         <i class="fa-solid fa-xmark w-4 h-4 mr-1.5"></i>
                         Finalizar Seleccionadas
                     </button>
@@ -224,14 +233,14 @@
                         id="btn-cancelar-lote"
                         onclick="cancelarReservasEnLote()"
                         title="Cancelar reserva"
-                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-rose-700 hover:bg-rose-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-all shadow-sm disabled:opacity-50">
+                        class="btn btn-danger gap-1.5 px-4 py-2 text-sm font-medium">
                         <x-icons.delete class="w-4 h-4 mr-1.5" aria-hidden="true" />
                         Cancelar Seleccionadas
                     </button>
                     <button 
                         type="button"
                         onclick="limpiarSeleccion()"
-                        class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all shadow-sm">
+                        class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all shadow-sm">
                         <i class="fa-solid fa-xmark w-4 h-4 mr-1.5"></i>
                         Limpiar Selección
                     </button>
@@ -245,13 +254,13 @@
 
 <!-- Modal para editar reserva -->
 <div id="modal-editar-reserva" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
         <div class="flex justify-between items-center mb-4 pb-3 border-b">
             <h3 class="text-xl font-bold text-gray-900">
                 <i class="fa-solid fa-edit text-blue-600 mr-2"></i>
                 Editar Reserva
             </h3>
-            <button onclick="cerrarModalEditar()" class="text-gray-400 hover:text-gray-600">
+            <button onclick="cerrarModalEditar()" class="text-white/50 hover:text-gray-600">
                 <i class="fa-solid fa-times text-2xl"></i>
             </button>
         </div>
@@ -288,13 +297,13 @@
                                type="search"
                                autocomplete="off"
                                placeholder="Escribe nombre, correo o RUN del nuevo docente..."
-                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101] bg-white" />
                         <input type="hidden" id="edit-nuevo-docente-run" name="edit_nuevo_run_profesor" />
                         <div id="edit-nuevo-docente-sugerencias"
-                             class="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto hidden">
+                             class="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto hidden">
                         </div>
                     </div>
-                    <div id="edit-nuevo-docente-confirmado" class="hidden mt-2 flex items-center justify-between gap-2 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-md p-2">
+                    <div id="edit-nuevo-docente-confirmado" class="hidden mt-2 flex items-center justify-between gap-2 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2">
                         <span class="flex items-center gap-1.5 truncate">
                             <i class="fa-solid fa-circle-check text-emerald-600"></i>
                             <span id="edit-nuevo-docente-confirmado-texto"></span>
@@ -312,7 +321,7 @@
                         <select 
                             id="edit-codigo-espacio"
                             required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101]">
                             <option value="">Cargando espacios...</option>
                         </select>
                     </div>
@@ -325,7 +334,7 @@
                             required
                             min="{{ date('Y-m-d') }}"
                             onchange="actualizarModulosPorFechaModal()"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101]"
                         />
                     </div>
                 </div>
@@ -337,7 +346,7 @@
                             id="edit-modulo-inicial"
                             required
                             onchange="actualizarModulosFinalesModal()"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101]">
                             <option value="">Seleccione módulo inicial</option>
                         </select>
                     </div>
@@ -348,7 +357,7 @@
                             id="edit-modulo-final"
                             required
                             onchange="actualizarPreviewHorario()"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101]">
                             <option value="">Seleccione módulo final</option>
                         </select>
                     </div>
@@ -383,7 +392,7 @@
                         id="edit-observaciones-originales"
                         rows="2"
                         disabled
-                        class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 text-sm"></textarea>
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 text-sm"></textarea>
                 </div>
                 
                 <div>
@@ -395,7 +404,7 @@
                         id="edit-observaciones-nuevas"
                         rows="2"
                         placeholder="Escriba observaciones adicionales..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#950101] focus:border-[#950101]"></textarea>
                 </div>
             </div>
 
@@ -404,13 +413,13 @@
                 <button 
                     type="button"
                     onclick="cerrarModalEditar()"
-                    class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all shadow-sm">
+                    class="px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-all shadow-sm">
                     Cancelar
                 </button>
                 <button 
                     type="submit"
                     id="btn-guardar-edicion"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#950101] focus:border-[#950101] transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fa-solid fa-save mr-2"></i>
                     Guardar cambios
                 </button>
@@ -855,13 +864,13 @@ function actualizarIconosOrden() {
         if (!icon) return;
         
         // Reset a estado neutral
-        icon.className = 'fa-solid fa-sort ml-1 text-xs';
+        icon.className = 'fa-solid fa-sort ml-1 text-xs text-white/50';
         
         if (ordenActual.campo === campo) {
             if (ordenActual.direccion === 'asc') {
-                icon.className = 'fa-solid fa-sort-up ml-1 text-xs text-blue-600';
+                icon.className = 'fa-solid fa-sort-up ml-1 text-xs text-white';
             } else {
-                icon.className = 'fa-solid fa-sort-down ml-1 text-xs text-blue-600';
+                icon.className = 'fa-solid fa-sort-down ml-1 text-xs text-white';
             }
         }
     });
@@ -1053,7 +1062,7 @@ function actualizarControlesPaginacion(total, totalPaginas, desde, hasta) {
     if (inicioRango > 1) {
         html += `<button type="button" onclick="irAPagina(1)" class="w-8 h-8 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">1</button>`;
         if (inicioRango > 2) {
-            html += `<span class="px-1 text-gray-400">...</span>`;
+            html += `<span class="px-1 text-white/50">...</span>`;
         }
     }
 
@@ -1069,7 +1078,7 @@ function actualizarControlesPaginacion(total, totalPaginas, desde, hasta) {
 
     if (finRango < totalPaginas) {
         if (finRango < totalPaginas - 1) {
-            html += `<span class="px-1 text-gray-400">...</span>`;
+            html += `<span class="px-1 text-white/50">...</span>`;
         }
         html += `<button type="button" onclick="irAPagina(${totalPaginas})" class="w-8 h-8 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">${totalPaginas}</button>`;
     }
@@ -1186,8 +1195,8 @@ async function finalizarReservasEnLote() {
         text: `¿Está seguro de finalizar ${reservasIds.length} reserva(s) seleccionada(s)?`,
         icon: 'question',
         showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: '#D12420',
+        cancelButtonColor: '#8D8D8D',
         confirmButtonText: 'Sí, finalizar',
         cancelButtonText: 'Cancelar'
     });
@@ -1297,8 +1306,8 @@ async function cancelarReservasEnLote() {
         text: `¿Está seguro de cancelar y eliminar definitivamente ${reservasIds.length} reserva(s) seleccionada(s)? Esta acción eliminará los registros del sistema.`,
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
+        confirmButtonColor: '#D12420',
+        cancelButtonColor: '#8D8D8D',
         confirmButtonText: 'Sí, cancelar reservas',
         cancelButtonText: 'No, mantener'
     });
@@ -1408,7 +1417,7 @@ function verDetalleReserva(reservaId) {
                 <div><strong>Módulos y Horario:</strong> ${infoModulos}</div>
                 <div><strong>Observaciones:</strong> ${reserva.observaciones || 'Sin observaciones'}</div>
                 <div class="mt-4 pt-3 border-t flex justify-end">
-                    <a href="/reservas/${reserva.id}/comprobante" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition">
+                    <a href="/reservas/${reserva.id}/comprobante" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition">
                         <i class="fa-solid fa-file-pdf mr-2"></i> Descargar Comprobante PDF
                     </a>
                 </div>
@@ -1583,7 +1592,7 @@ function mostrarReservasEnTabla(reservas) {
                     <div class="flex flex-col items-center">
                         <i class="fa-solid fa-calendar-xmark text-5xl text-gray-300 mb-3"></i>
                         <p class="text-base font-medium text-gray-700">No se encontraron reservas</p>
-                        <p class="text-xs text-gray-400 mt-1">Prueba cambiando los filtros seleccionados</p>
+                        <p class="text-xs text-white/50 mt-1">Prueba cambiando los filtros seleccionados</p>
                     </div>
                 </td>
             </tr>
@@ -1603,7 +1612,7 @@ function mostrarReservasEnTabla(reservas) {
     tbody.innerHTML = reservas.map(reserva => `
         <tr class="hover:bg-slate-50/80 transition-colors">
             <td class="w-12 px-3 py-3 text-center align-middle">
-                <input type="checkbox" class="reserva-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
+                <input type="checkbox" class="reserva-checkbox rounded border-gray-300 text-blue-600 focus:ring-[#950101] focus:border-[#950101] cursor-pointer" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
             </td>
             <td class="w-28 px-3 py-3 text-center align-middle">
                 ${formatearFecha(reserva.fecha)}
@@ -1615,11 +1624,11 @@ function mostrarReservasEnTabla(reservas) {
                 <div class="font-semibold text-gray-800">${reserva.id_espacio}</div>
                 ${reserva.espacio && reserva.espacio !== reserva.id_espacio ? `<div class="text-[11px] text-gray-500 truncate" title="${reserva.espacio}">${reserva.espacio}</div>` : ''}
             </td>
-            <td class="w-48 px-3 py-3 text-left align-middle">
+            <td class="w-48 px-3 py-3 text-center align-middle">
                 <div class="font-medium text-gray-800 text-sm truncate" title="${reserva.nombre_responsable || ''}">${reserva.nombre_responsable || 'Sin nombre'}</div>
                 <div class="text-xs text-gray-500 truncate capitalize">${reserva.tipo_responsable || 'N/A'}${reserva.run_responsable && reserva.run_responsable !== 'N/A' ? ' · ' + reserva.run_responsable : ''}</div>
             </td>
-            <td class="px-3 py-3 text-left align-middle">
+            <td class="px-3 py-3 text-center align-middle">
                 <div class="text-sm font-medium text-gray-800 line-clamp-1" title="${reserva.asignatura || 'Sin asignatura'}">${reserva.asignatura || 'Sin asignatura'}</div>
             </td>
             <td class="w-32 px-3 py-3 text-center align-middle">
@@ -1649,14 +1658,14 @@ function mostrarReservasEnTabla(reservas) {
                         ? `<button 
                             type="button"
                             onclick="editarReserva('${reserva.id}')"
-                            class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs"
+                            class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs"
                             title="Editar reserva">
                             <i class="fa-solid fa-edit w-3.5 h-3.5"></i>
                         </button>
                         <button 
                             type="button"
                             onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
-                            class="inline-flex items-center justify-center p-1.5 border border-amber-300 text-xs font-medium rounded-md text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors shadow-xs"
+                            class="inline-flex items-center justify-center p-1.5 border border-amber-300 text-xs font-medium rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 transition-colors shadow-xs"
                             title="Finalizar reserva">
                             <i class="fa-solid fa-xmark w-3.5 h-3.5"></i>
                         </button>`
@@ -1665,20 +1674,20 @@ function mostrarReservasEnTabla(reservas) {
                     <button 
                         type="button"
                         onclick="cancelarReserva('${reserva.id}')"
-                        class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors shadow-xs"
+                        class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded-lg text-red-700 bg-red-50 hover:bg-red-100 transition-colors shadow-xs"
                         title="Cancelar reserva">
                         ${ICONO_CANCELAR_RESERVA}
                     </button>
                     <button 
                         type="button"
                         onclick="verDetalleReserva('${reserva.id}')"
-                        class="inline-flex items-center justify-center p-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-xs"
+                        class="inline-flex items-center justify-center p-1.5 border border-gray-300 text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-xs"
                         title="Ver detalle">
                         <i class="fa-solid fa-eye w-3.5 h-3.5"></i>
                     </button>
                     <a href="/reservas/${reserva.id}/comprobante"
                        target="_blank"
-                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs"
+                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-lg text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs"
                        title="Descargar Comprobante PDF">
                         <i class="fa-solid fa-file-pdf w-3.5 h-3.5"></i>
                     </a>
@@ -1720,7 +1729,7 @@ function mostrarReservasEnTabla(reservas) {
             
             <div class="space-y-2 text-sm">
                 <div class="flex items-start">
-                    <i class="fa-solid fa-user text-gray-400 w-5 mt-0.5"></i>
+                    <i class="fa-solid fa-user text-white/50 w-5 mt-0.5"></i>
                     <div class="ml-2">
                         <p class="font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</p>
                         <p class="text-gray-500 text-xs">${reserva.tipo_responsable || 'N/A'}</p>
@@ -1728,17 +1737,17 @@ function mostrarReservasEnTabla(reservas) {
                 </div>
                 
                 <div class="flex items-center">
-                    <i class="fa-solid fa-book text-gray-400 w-5"></i>
+                    <i class="fa-solid fa-book text-white/50 w-5"></i>
                     <span class="ml-2 text-gray-700">${reserva.asignatura || 'Sin asignatura'}</span>
                 </div>
                 
                 <div class="flex items-center">
-                    <i class="fa-solid fa-calendar text-gray-400 w-5"></i>
+                    <i class="fa-solid fa-calendar text-white/50 w-5"></i>
                     <span class="ml-2 text-gray-700">${formatearFecha(reserva.fecha)}</span>
                 </div>
                 
                 <div class="flex items-start">
-                    <i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i>
+                    <i class="fa-solid fa-clock text-white/50 w-5 mt-0.5"></i>
                     <div class="ml-2 text-gray-700">
                         ${formatearModulosInfo(reserva.modulos_info)}
                     </div>
@@ -1746,7 +1755,7 @@ function mostrarReservasEnTabla(reservas) {
                 
                 ${reserva.observaciones ? `
                 <div class="flex items-start">
-                    <i class="fa-solid fa-note-sticky text-gray-400 w-5 mt-0.5"></i>
+                    <i class="fa-solid fa-note-sticky text-white/50 w-5 mt-0.5"></i>
                     <p class="ml-2 text-gray-600 line-clamp-2">${reserva.observaciones}</p>
                 </div>
                 ` : ''}
@@ -1758,14 +1767,14 @@ function mostrarReservasEnTabla(reservas) {
                         <button 
                             type="button"
                             onclick="editarReserva('${reserva.id}')"
-                            class="inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-all shadow-xs">
+                            class="btn btn-edit gap-1.5 px-3 py-2 text-xs font-medium">
                             <i class="fa-solid fa-edit w-3.5 h-3.5 mr-1.5 shrink-0"></i>
                             <span>Editar</span>
                         </button>
                         <button 
                             type="button"
                             onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
-                            class="inline-flex items-center justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition-all shadow-xs">
+                            class="btn btn-danger gap-1.5 px-3 py-2 text-xs font-medium">
                             <i class="fa-solid fa-xmark w-3.5 h-3.5 mr-1.5 shrink-0"></i>
                             <span>Finalizar</span>
                         </button>
@@ -1776,13 +1785,13 @@ function mostrarReservasEnTabla(reservas) {
                     <button 
                         type="button"
                         onclick="verDetalleReserva('${reserva.id}')"
-                        class="inline-flex items-center justify-center px-2.5 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 transition-all shadow-xs truncate">
+                        class="inline-flex items-center justify-center px-2.5 py-2 border border-gray-300 text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 transition-all shadow-xs truncate">
                         <i class="fa-solid fa-eye w-3.5 h-3.5 mr-1.5 shrink-0"></i>
                         <span>Detalle</span>
                     </button>
                     <a href="/reservas/${reserva.id}/comprobante"
                        target="_blank"
-                       class="inline-flex items-center justify-center px-2.5 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 transition-all shadow-xs truncate"
+                       class="inline-flex items-center justify-center px-2.5 py-2 border border-gray-300 text-xs font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 transition-all shadow-xs truncate"
                        title="Descargar Comprobante PDF">
                         <i class="fa-solid fa-file-pdf w-3.5 h-3.5 mr-1.5 text-red-600 shrink-0"></i>
                         <span>PDF</span>
@@ -1790,7 +1799,7 @@ function mostrarReservasEnTabla(reservas) {
                     <button 
                         type="button"
                         onclick="cancelarReserva('${reserva.id}')"
-                        class="inline-flex items-center justify-center px-2.5 py-2 border border-rose-300 text-xs font-medium rounded-md text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 transition-all shadow-xs truncate"
+                        class="inline-flex items-center justify-center px-2.5 py-2 border border-rose-300 text-xs font-medium rounded-lg text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 transition-all shadow-xs truncate"
                         title="Cancelar reserva permanentemente">
                         ${ICONO_CANCELAR_RESERVA_MOBILE}
                         <span class="ml-1.5">Cancelar</span>
@@ -1809,7 +1818,7 @@ function mostrarReservasEnTabla(reservas) {
 // Formatear información de módulos de forma compacta (ej: M. 11 con horario 18:10 - 19:00)
 function formatearModulosInfoCompacto(modulosInfo) {
     if (!modulosInfo) {
-        return '<span class="text-gray-400 text-xs">-</span>';
+        return '<span class="text-white/50 text-xs">-</span>';
     }
 
     try {
@@ -1832,7 +1841,7 @@ function formatearModulosInfoCompacto(modulosInfo) {
             }
 
             const hora = horarioTexto ? `<span class="block text-[11px] text-gray-500 font-normal mt-0.5 whitespace-nowrap">${horarioTexto}</span>` : '';
-            return `<span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">M. ${rango}</span>${hora}`;
+            return `<span class="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">M. ${rango}</span>${hora}`;
         }
         
         if (info && info.hora_inicio) {
@@ -1842,7 +1851,7 @@ function formatearModulosInfoCompacto(modulosInfo) {
             return `<span class="text-xs text-gray-700 font-medium whitespace-nowrap">${texto}</span>`;
         }
         
-        return '<span class="text-gray-400 text-xs">-</span>';
+        return '<span class="text-white/50 text-xs">-</span>';
     } catch (e) {
         const raw = String(modulosInfo).replace(/(\d{1,2}:\d{2}):\d{2}/g, '$1');
         return `<span class="text-gray-700 text-xs font-medium">${raw}</span>`;
@@ -1945,6 +1954,25 @@ function filtrarReservas() {
     procesarReservas();
 }
 
+// Limpiar filtros de reservas
+function limpiarFiltrosReservas() {
+    const elSolicitante = document.getElementById('filtro-solicitante-reserva');
+    if (elSolicitante) elSolicitante.value = '';
+    const elEstado = document.getElementById('filtro-estado-reserva');
+    if (elEstado) elEstado.value = '';
+    const elEspacio = document.getElementById('filtro-espacio-reserva');
+    if (elEspacio) elEspacio.value = '';
+    const elModulo = document.getElementById('filtro-modulo-reserva');
+    if (elModulo) elModulo.value = '';
+    const elFecha = document.getElementById('filtro-fecha-reserva');
+    if (elFecha) elFecha.value = '';
+    const elOrdenar = document.getElementById('ordenar-reservas');
+    if (elOrdenar) elOrdenar.value = 'fecha-desc';
+
+    procesarReservas();
+}
+window.limpiarFiltrosReservas = limpiarFiltrosReservas;
+
 // Cambiar estado de reserva - Función global
 window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
     // Verificar que SweetAlert esté disponible
@@ -1963,8 +1991,8 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
             text: `¿Deseas ${estadoTexto.toLowerCase()} la reserva ${idReserva}?`,
             icon: 'question',
             showCancelButton: true,
-            confirmButtonColor: nuevoEstado === 'activa' ? '#10B981' : '#EF4444',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: nuevoEstado === 'activa' ? '#10B981' : '#D12420',
+            cancelButtonColor: '#8D8D8D',
             confirmButtonText: `Sí, ${estadoTexto.toLowerCase()}`,
             cancelButtonText: 'Cancelar'
         });
@@ -2047,8 +2075,8 @@ window.cancelarReserva = async function(idReserva) {
             text: `¿Estás seguro de cancelar la reserva ${idReserva}? Esta acción la eliminará definitivamente del sistema y liberará el espacio si estaba ocupado.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
             confirmButtonText: 'Sí, cancelar reserva',
             cancelButtonText: 'No, mantener'
         });
@@ -2118,7 +2146,7 @@ window.cancelarReserva = async function(idReserva) {
 
 // Función para formatear fecha
 function formatearFecha(fecha) {
-    if (!fecha) return '<span class="text-gray-400 text-xs">-</span>';
+    if (!fecha) return '<span class="text-white/50 text-xs">-</span>';
     try {
         const date = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00');
         if (isNaN(date.getTime())) return fecha;
@@ -2168,7 +2196,7 @@ function formatearFecha(fecha) {
                 sugerenciasBox.innerHTML = '';
 
                 if (!Array.isArray(data) || data.length === 0) {
-                    sugerenciasBox.innerHTML = '<div class="p-3 text-xs text-gray-400">No se encontraron docentes o usuarios</div>';
+                    sugerenciasBox.innerHTML = '<div class="p-3 text-xs text-white/50">No se encontraron docentes o usuarios</div>';
                     sugerenciasBox.classList.remove('hidden');
                     return;
                 }
@@ -2179,7 +2207,7 @@ function formatearFecha(fecha) {
                     div.innerHTML = `
                         <div class="flex items-center justify-between">
                             <span class="text-xs font-bold text-gray-800">${u.nombre}</span>
-                            <span class="text-[11px] text-gray-400 font-mono">${u.id}</span>
+                            <span class="text-[11px] text-white/50 font-mono">${u.id}</span>
                         </div>
                         <span class="text-[11px] text-gray-500">${u.email}</span>
                     `;

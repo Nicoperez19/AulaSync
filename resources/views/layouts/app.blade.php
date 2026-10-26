@@ -52,7 +52,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido Principal -->
-            <div class="flex flex-col min-h-screen pt-16 bg-gray-100 dark:bg-dark-eval-2">
+            <div class="flex flex-col min-h-screen pt-16 bg-[#F1EFF2] dark:bg-[#191919]">
                 @if (isset($header))
                     <header>
                         <div class="p-4 mt-4 sm:p-6">

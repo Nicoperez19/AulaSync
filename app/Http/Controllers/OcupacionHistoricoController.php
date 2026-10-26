@@ -24,6 +24,8 @@ class OcupacionHistoricoController extends Controller
      */
     public function index(Request $request)
     {
+        $this->asegurarSnapshotsSemanasCerradas();
+
         $tipoFilter = strtolower($request->query('tipo', 'todos'));
         $anio = $request->query('anio', now()->year);
         $periodo = $request->query('periodo');
@@ -55,6 +57,60 @@ class OcupacionHistoricoController extends Controller
             'periodo' => $periodo,
             'aniosDisponibles' => $aniosDisponibles,
         ]);
+    }
+
+    /**
+     * Registra automáticamente los snapshots de las semanas ya finalizadas (sábado concluido)
+     * del período académico actual si aún no estaban almacenadas.
+     */
+    protected function asegurarSnapshotsSemanasCerradas(): void
+    {
+        try {
+            $hoy = Carbon::today();
+            $lunesSemanaActual = $hoy->copy()->startOfWeek();
+
+            // Si hoy es domingo, la semana de lunes a sábado ya cerró ayer sábado;
+            // de lunes a sábado, la última semana cerrada es la anterior.
+            $ultimoLunesCerrado = $hoy->dayOfWeekIso === 7
+                ? $lunesSemanaActual->copy()
+                : $lunesSemanaActual->copy()->subWeek();
+
+            $periodoActivo = \App\Models\PeriodoAcademico::obtenerPeriodoActual($hoy);
+            $fechaInicioRevision = $periodoActivo && $periodoActivo->fecha_inicio
+                ? Carbon::parse($periodoActivo->fecha_inicio)->startOfWeek()
+                : $ultimoLunesCerrado->copy()->subWeeks(5);
+
+            // Limitar máximo a las últimas 12 semanas cerradas para mantener respuesta rápida
+            $limiteMinimo = $ultimoLunesCerrado->copy()->subWeeks(11);
+            if ($fechaInicioRevision->lt($limiteMinimo)) {
+                $fechaInicioRevision = $limiteMinimo;
+            }
+
+            if ($fechaInicioRevision->gt($ultimoLunesCerrado)) {
+                return;
+            }
+
+            $semanasRegistradas = OcupacionSemanalSnapshot::whereBetween('semana_inicio', [
+                $fechaInicioRevision->format('Y-m-d'),
+                $ultimoLunesCerrado->format('Y-m-d'),
+            ])
+                ->selectRaw('semana_inicio, count(distinct tipo_filtro) as total_tipos')
+                ->groupBy('semana_inicio')
+                ->get()
+                ->keyBy(fn($item) => Carbon::parse($item->semana_inicio)->format('Y-m-d'));
+
+            $cursor = $fechaInicioRevision->copy();
+            while ($cursor->lte($ultimoLunesCerrado)) {
+                $key = $cursor->format('Y-m-d');
+                $registro = $semanasRegistradas->get($key);
+                if (!$registro || (int) $registro->total_tipos < count(OcupacionSemanalService::TIPOS_FILTRO)) {
+                    $this->service->guardarTodosLosTipos($cursor->copy(), false, null, 'automatico');
+                }
+                $cursor->addWeek();
+            }
+        } catch (\Throwable $e) {
+            // Ignorar silenciosamente si falla auto-generación para no bloquear la vista
+        }
     }
 
     /**

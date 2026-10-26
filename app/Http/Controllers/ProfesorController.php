@@ -18,9 +18,8 @@ use App\Models\Tenant;
 use App\Models\Universidad;
 use App\Services\ReservaService;
 use App\Traits\RunNormalizer;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\Request;
+use App\Helpers\SemesterHelper;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -521,6 +520,9 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
+            // Enviar correo de confirmación de uso de sala
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
+
             // Limpiar registros incorrectos de clases no realizadas
             ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
@@ -751,6 +753,9 @@ class ProfesorController extends Controller
             // Cambiar estado del espacio
             $espacio->estado = 'Ocupado';
             $espacio->save();
+
+            // Enviar correo de confirmación de uso de sala
+            app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
 
             // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
             ClaseNoRealizada::limpiarRegistrosIncorrectos(

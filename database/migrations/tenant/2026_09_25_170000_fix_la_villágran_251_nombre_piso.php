@@ -48,20 +48,23 @@ return new class extends Migration
             }
         }
 
-        // Eliminar pisos duplicados de LA que no sean los 3 correctos (9, 11, 13 si aún existen)
-        DB::connection($connection)->table('pisos')
-            ->where('id_facultad', 'IT_LA')
-            ->whereNotIn('id', [8, 10, 12])
-            ->delete();
-
-        // Reasignar espacios que aún usen piso_id 9 → 8, 11 → 10, 13 → 12
+        // Reasignar espacios huérfanos o con IDs provisionales al piso correcto
         DB::connection($connection)->table('espacios')->where('piso_id', 9)->update(['piso_id' => 8]);
         DB::connection($connection)->table('espacios')->where('piso_id', 11)->update(['piso_id' => 10]);
         DB::connection($connection)->table('espacios')->where('piso_id', 13)->update(['piso_id' => 12]);
+        DB::connection($connection)->table('espacios')->where('id_espacio', 'LIKE', 'LA-4%')->update(['piso_id' => 12]);
+
+        // Reasignar mapas huérfanos a los edificios correspondientes
+        DB::connection($connection)->table('mapas')->where('piso_id', 9)->update(['piso_id' => 8]);
+        DB::connection($connection)->table('mapas')->where('piso_id', 11)->update(['piso_id' => 10]);
+        DB::connection($connection)->table('mapas')->where('piso_id', 13)->update(['piso_id' => 12]);
+        DB::connection($connection)->table('mapas')->where('nombre_mapa', 'LIKE', '%251%')->update(['piso_id' => 12]);
+
+        // IMPORTANTE: NUNCA ejecutar delete() destructivo sobre pisos de Los Ángeles
     }
 
     public function down(): void
     {
-        // No se revierte: es una corrección de datos
+        // No destructivo
     }
 };

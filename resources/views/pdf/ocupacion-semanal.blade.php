@@ -2,43 +2,52 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Ocupación Semanal - SIA</title>
+    <title>Reporte de Ocupación Semanal - AulaSync</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
         @page {
             size: A4 landscape;
-            margin: 8mm 12mm 8mm 12mm;
+            margin: 12mm 16mm 12mm 16mm;
         }
-        * {
+        body, div, table, thead, tbody, tr, th, td, h1, h2, p, span {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 9px;
             color: #1e293b;
             background-color: #ffffff;
+            padding: 14px 20px 10px 20px;
+        }
+        .page-wrapper {
+            width: 100%;
         }
         .header {
-            margin-bottom: 8px;
-            border-bottom: 3px solid #D2091E;
-            padding-bottom: 6px;
+            margin-bottom: 10px;
+            border-bottom: 2.5px solid #D2091E;
+            padding-bottom: 8px;
         }
         .header-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
         .header-logo {
-            width: 25%;
+            width: 26%;
             vertical-align: middle;
+            text-align: left;
+            padding-left: 2px;
         }
         .header-logo img {
-            max-height: 42px;
+            max-height: 40px;
             width: auto;
             display: block;
         }
         .header-title {
-            width: 50%;
+            width: 46%;
             text-align: center;
             vertical-align: middle;
         }
@@ -47,8 +56,8 @@
             color: #D2091E;
             text-transform: uppercase;
             font-weight: 800;
-            letter-spacing: 0.5px;
-            margin-bottom: 2px;
+            letter-spacing: 0.6px;
+            margin-bottom: 3px;
         }
         .header-title p {
             font-size: 9.5px;
@@ -56,16 +65,25 @@
             font-weight: 600;
         }
         .header-meta {
-            width: 25%;
+            width: 28%;
             text-align: right;
             vertical-align: middle;
+            padding-right: 2px;
+        }
+        .meta-box {
+            display: inline-block;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 5px 9px;
+            text-align: right;
             font-size: 8px;
             color: #334155;
-            line-height: 1.35;
+            line-height: 1.45;
         }
         .badge {
             display: inline-block;
-            padding: 2px 6px;
+            padding: 1.5px 6px;
             border-radius: 3px;
             font-weight: bold;
             font-size: 7.5px;
@@ -75,23 +93,36 @@
             color: #991b1b;
         }
 
+        .toolbar-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 7px;
+        }
+        .toolbar-left {
+            text-align: left;
+            vertical-align: middle;
+            font-size: 8.5px;
+            color: #475569;
+            font-weight: bold;
+        }
         .legend-bar {
-            margin-bottom: 6px;
-            font-size: 8px;
             text-align: right;
+            vertical-align: middle;
+            font-size: 8px;
         }
         .legend-item {
             display: inline-block;
-            padding: 2px 7px;
+            padding: 2.5px 8px;
             border-radius: 3px;
-            margin-left: 6px;
+            margin-left: 5px;
             font-weight: bold;
         }
 
         .grid-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 8px;
+            table-layout: fixed;
+            margin-bottom: 10px;
         }
         .grid-table th {
             background-color: #f1f5f9;
@@ -99,14 +130,14 @@
             font-weight: bold;
             font-size: 8.5px;
             text-align: center;
-            padding: 5px 3px;
+            padding: 5.5px 4px;
             border: 1px solid #cbd5e1;
             text-transform: uppercase;
         }
         .grid-table td {
             text-align: center;
-            padding: 4.5px 2px;
-            border: 1px solid #e2e8f0;
+            padding: 4.5px 4px;
+            border: 1px solid #cbd5e1;
             font-size: 9px;
         }
         .mod-col {
@@ -115,7 +146,7 @@
             color: #1e293b;
             width: 16%;
             text-align: left !important;
-            padding-left: 6px !important;
+            padding-left: 8px !important;
             font-size: 8.5px;
         }
         .val-low {
@@ -143,30 +174,42 @@
             font-weight: bold;
             color: #0f172a;
             border-top: 2px solid #94a3b8;
-            padding: 5px 2px;
+            padding: 5.5px 4px;
             font-size: 9px;
         }
 
         .cards-table {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 6px 0;
-            margin-bottom: 6px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 8px;
+        }
+        .card-cell {
+            width: 25%;
+            vertical-align: top;
+            padding: 0 4px;
+        }
+        .card-cell-first {
+            padding-left: 0;
+            padding-right: 4px;
+        }
+        .card-cell-last {
+            padding-left: 4px;
+            padding-right: 0;
         }
         .card {
             background-color: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            padding: 6px 8px;
+            border-radius: 5px;
+            padding: 7px 10px;
             text-align: center;
-            vertical-align: top;
         }
         .card-label {
             font-size: 7.5px;
             color: #64748b;
             text-transform: uppercase;
             font-weight: bold;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
         .card-value {
             font-size: 12px;
@@ -182,42 +225,52 @@
             font-size: 7.5px;
             color: #94a3b8;
             border-top: 1px solid #e2e8f0;
-            padding-top: 4px;
+            padding-top: 5px;
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <table class="header-table">
+    <div class="page-wrapper">
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td class="header-logo">
+                        @if(file_exists(public_path('images/Logo-UCSC-Color-Horizontal.png')))
+                            <img src="{{ public_path('images/Logo-UCSC-Color-Horizontal.png') }}" alt="Logo UCSC">
+                        @else
+                            <span style="font-weight: bold; color: #D2091E; font-size: 14px;">UCSC</span>
+                        @endif
+                    </td>
+                    <td class="header-title">
+                        <h1>AulaSync &bull; OCUPACIÓN SEMANAL</h1>
+                        <p>Reporte Oficial de Ocupación por Módulo y Día</p>
+                    </td>
+                    <td class="header-meta">
+                        <div class="meta-box">
+                            <div><strong>Período:</strong> {{ $datos['periodo'] ?? 'N/A' }} &nbsp;|&nbsp; <strong>Sem. {{ $datos['semana_iso'] ?? '' }}</strong></div>
+                            <div><strong>Rango:</strong> {{ $datos['semana_inicio'] ?? '' }} al {{ $datos['semana_fin'] ?? '' }}</div>
+                            <div><strong>Espacios:</strong> {{ $datos['total_espacios'] ?? 0 }}</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="toolbar-table">
             <tr>
-                <td class="header-logo">
-                    @if(file_exists(public_path('images/Logo-UCSC-Color-Horizontal.png')))
-                        <img src="{{ public_path('images/Logo-UCSC-Color-Horizontal.png') }}" alt="Logo UCSC">
-                    @else
-                        <span style="font-weight: bold; color: #D2091E; font-size: 14px;">UCSC</span>
-                    @endif
+                <td class="toolbar-left">
+                    Detalle porcentual de uso de espacios por bloque horario (Lunes a Sábado)
                 </td>
-                <td class="header-title">
-                    <h1>SIA &bull; OCUPACIÓN SEMANAL</h1>
-                    <p>Reporte Oficial de Ocupación por Módulo y Día</p>
-                </td>
-                <td class="header-meta">
-                    <div><strong>Período:</strong> {{ $datos['periodo'] ?? 'N/A' }}</div>
-                    <div><strong>Semana:</strong> {{ $datos['semana_inicio'] ?? '' }} al {{ $datos['semana_fin'] ?? '' }} (Sem. {{ $datos['semana_iso'] ?? '' }})</div>
-                    <div><strong>Filtro:</strong> <span class="badge badge-filtro">{{ strtoupper(str_replace('_', ' ', $datos['tipo_filtro'] ?? 'TODOS')) }}</span></div>
-                    <div><strong>Espacios Evaluados:</strong> {{ $datos['total_espacios'] ?? 0 }}</div>
+                <td class="legend-bar">
+                    <span style="font-weight: bold; color: #475569; margin-right: 4px;">Nivel de Demanda:</span>
+                    <span class="legend-item val-low" style="border: 1px solid #a7f3d0;">Baja: 0% - 35%</span>
+                    <span class="legend-item val-mid" style="border: 1px solid #fde68a;">Media: 36% - 75%</span>
+                    <span class="legend-item val-high" style="border: 1px solid #fecaca;">Alta: 76% - 100%</span>
+                    <span class="legend-item val-na" style="border: 1px solid #e2e8f0;">N/A: Sin Datos</span>
                 </td>
             </tr>
         </table>
-    </div>
-
-    <div class="legend-bar">
-        <span style="font-weight: bold; color: #475569; margin-right: 4px;">Nivel de Demanda:</span>
-        <span class="legend-item val-low" style="border: 1px solid #a7f3d0;">Baja: 0% - 35%</span>
-        <span class="legend-item val-mid" style="border: 1px solid #fde68a;">Media: 36% - 75%</span>
-        <span class="legend-item val-high" style="border: 1px solid #fecaca;">Alta: 76% - 100%</span>
-        <span class="legend-item val-na" style="border: 1px solid #e2e8f0;">N/A: Sin Datos</span>
-    </div>
 
     <table class="grid-table">
         <thead>
@@ -276,31 +329,40 @@
         </tbody>
     </table>
 
-    <table class="cards-table">
-        <tr>
-            <td class="card" style="width: 25%;">
-                <div class="card-label">Promedio General Semanal</div>
-                <div class="card-value highlight">{{ $datos['resumen']['promedio_general'] ?? 0 }}%</div>
-            </td>
-            <td class="card" style="width: 25%;">
-                <div class="card-label">Pico Máximo de Ocupación</div>
-                <div class="card-value" style="color: #b91c1c;">{{ $datos['resumen']['pico_maximo'] ?? 0 }}%</div>
-            </td>
-            <td class="card" style="width: 25%;">
-                <div class="card-label">Día y Módulo Pico</div>
-                <div class="card-value" style="font-size: 10px; padding-top: 2px;">{{ ucfirst($datos['resumen']['dia_pico'] ?? 'N/A') }} &bull; Mód. {{ $datos['resumen']['modulo_pico'] ?? 'N/A' }}</div>
-            </td>
-            <td class="card" style="width: 25%;">
-                <div class="card-label">Generado Por</div>
-                <div class="card-value" style="font-size: 9px; font-weight: 600; padding-top: 3px; color: #475569;">
-                    {{ auth()->user()->name ?? 'Sistema SIA' }} &bull; {{ now()->format('d/m/Y H:i') }}
-                </div>
-            </td>
-        </tr>
-    </table>
+        <table class="cards-table">
+            <tr>
+                <td class="card-cell card-cell-first">
+                    <div class="card">
+                        <div class="card-label">Promedio General Semanal</div>
+                        <div class="card-value highlight">{{ $datos['resumen']['promedio_general'] ?? 0 }}%</div>
+                    </div>
+                </td>
+                <td class="card-cell">
+                    <div class="card">
+                        <div class="card-label">Pico Máximo de Ocupación</div>
+                        <div class="card-value" style="color: #b91c1c;">{{ $datos['resumen']['pico_maximo'] ?? 0 }}%</div>
+                    </div>
+                </td>
+                <td class="card-cell">
+                    <div class="card">
+                        <div class="card-label">Día y Módulo Pico</div>
+                        <div class="card-value" style="font-size: 10px; padding-top: 2px;">{{ ucfirst($datos['resumen']['dia_pico'] ?? 'N/A') }} &bull; Mód. {{ $datos['resumen']['modulo_pico'] ?? 'N/A' }}</div>
+                    </div>
+                </td>
+                <td class="card-cell card-cell-last">
+                    <div class="card">
+                        <div class="card-label">Generado Por</div>
+                        <div class="card-value" style="font-size: 9px; font-weight: 600; padding-top: 3px; color: #475569;">
+                            {{ auth()->user()->name ?? 'Sistema AulaSync' }} &bull; {{ now()->format('d/m/Y H:i') }}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
 
-    <div class="footer">
-        SIA | Sistema de Información de Aulas &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
+        <div class="footer">
+            AulaSync &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
+        </div>
     </div>
 </body>
 </html>

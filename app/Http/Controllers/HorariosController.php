@@ -23,8 +23,8 @@ class HorariosController extends Controller
      */
     public function index(Request $request)
     {
-        // Obtener filtros de la request - usar año actual por defecto
-        $semestreFiltro = $request->input('semestre');
+        // Obtener filtros de la request - usar año y semestre actual por defecto
+        $semestreFiltro = $request->input('semestre', SemesterHelper::getCurrentSemester());
         $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
 
         // Obtener todos los períodos únicos de los horarios para los filtros
@@ -84,33 +84,25 @@ class HorariosController extends Controller
             $query->whereRaw("UPPER(REPLACE(SUBSTRING_INDEX(name, ',', 1), 'Á', 'A')) LIKE ?", [strtoupper($letra).'%']);
         }
 
-        // Filtro por período (siempre usar año actual)
-        if ($semestreFiltro) {
-            $periodoFiltro = $anioFiltro.'-'.$semestreFiltro;
-            $query->whereHas('horarios', function ($q) use ($periodoFiltro) {
-                $q->where('periodo', $periodoFiltro);
-            });
-        } else {
-            // Si no hay semestre seleccionado, filtrar por año actual
-            $query->whereHas('horarios', function ($q) use ($anioFiltro) {
-                $q->where('periodo', 'like', $anioFiltro.'-%');
-            });
-        }
+        // Determinar el período seleccionado (nunca mezclar 1° y 2° semestre)
+        $periodo = $anioFiltro . '-' . ($semestreFiltro ?: SemesterHelper::getCurrentSemester());
+
+        $query->whereHas('horarios', function ($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        });
 
         // Agregar distinct para evitar duplicados cuando un profesor tiene múltiples horarios
         $profesores = $query->distinct()
             ->orderBy('name')
             ->paginate(27);
 
-        // Determinar el período para los horarios (siempre usar año actual)
-        if ($semestreFiltro) {
-            $periodo = $anioFiltro.'-'.$semestreFiltro;
-        } else {
-            $semestre = SemesterHelper::getCurrentSemester();
-            $periodo = $anioFiltro.'-'.$semestre;
-        }
-
-        $horarios = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
+        $horarios = Horario::with([
+                'profesor',
+                'planificaciones' => function ($q) {
+                    $q->withoutGlobalScope('vigencia_activa')
+                        ->with(['asignatura', 'espacio', 'modulo']);
+                }
+            ])
             ->where('periodo', $periodo)
             ->get();
 
@@ -186,8 +178,7 @@ class HorariosController extends Controller
     public function getHorarioProfesor($run, Request $request)
     {
         try {
-
-            // Obtener el período de los filtros (usar año actual por defecto)
+            // Obtener el período de los filtros (usar semestre y año actual por defecto)
             $semestreFiltro = $request->input('semestre');
             $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
 
@@ -199,39 +190,40 @@ class HorariosController extends Controller
                 $periodo = $anioFiltro.'-'.$semestre;
             }
 
-            $horario = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
+            $horario = Horario::with([
+                    'profesor',
+                    'planificaciones' => function ($q) {
+                        $q->withoutGlobalScope('vigencia_activa')
+                            ->with(['asignatura', 'espacio', 'modulo']);
+                    }
+                ])
                 ->where('run_profesor', $run)
                 ->where('periodo', $periodo)
                 ->first();
 
-            // Si se encontró el horario, filtrar las planificaciones por período también
+            // Si se encontró el horario, eliminar posibles duplicados de bloques dentro del mismo período
             if ($horario) {
-                $totalAntes = $horario->planificaciones->count();
-
-                // Filtrar planificaciones por período de la asignatura y eliminar duplicados
                 $horario->planificaciones = $horario->planificaciones
                     ->filter(function ($planificacion) use ($periodo) {
-                        // Verificar que la asignatura tenga el período correcto
-                        if (! $planificacion->asignatura) {
+                        if (!$planificacion->asignatura) {
                             return false;
                         }
-
-                        $asignaturaPeriodo = $planificacion->asignatura->periodo;
-                        $coincide = $asignaturaPeriodo === $periodo;
-
-                        return $coincide;
+                        if (!empty($planificacion->asignatura->periodo) && $planificacion->asignatura->periodo !== $periodo) {
+                            return false;
+                        }
+                        if ($periodo === SemesterHelper::getCurrentPeriod() && !empty($planificacion->fecha_fin_vigencia)) {
+                            return false;
+                        }
+                        return true;
                     })
                     ->unique(function ($plan) {
                         // Evitar duplicados usando combinación de id_modulo y asignatura
                         return $plan->id_modulo.'_'.$plan->id_asignatura;
                     })
                     ->values();
-
-                $totalDespues = $horario->planificaciones->count();
-
             }
 
-            if (! $horario) {
+            if (!$horario) {
                 Log::warning('Horario no encontrado:', [
                     'run' => $run,
                     'periodo' => $periodo,
@@ -253,21 +245,26 @@ class HorariosController extends Controller
                 ]);
             }
 
-            // Obtener asignaturas filtradas por período
+            // Obtener asignaturas que pertenecen a este horario/período específico
             $asignaturas = Asignatura::where('run_profesor', $run)
-                ->where('periodo', $periodo)
-                ->with(['planificaciones.espacio', 'planificaciones.modulo'])
+                ->whereHas('planificaciones', function ($q) use ($periodo) {
+                    $q->withoutGlobalScope('vigencia_activa')
+                        ->whereHas('horario', function ($hq) use ($periodo) {
+                            $hq->where('periodo', $periodo);
+                        });
+                })
+                ->with([
+                    'planificaciones' => function ($q) use ($periodo) {
+                        $q->withoutGlobalScope('vigencia_activa')
+                            ->whereHas('horario', function ($hq) use ($periodo) {
+                                $hq->where('periodo', $periodo);
+                            })
+                            ->with(['espacio', 'modulo']);
+                    }
+                ])
                 ->get();
 
-            // Obtener todas las asignaturas del profesor para comparar
-            $todasAsignaturas = Asignatura::where('run_profesor', $run)->get();
-
             $modulos = Modulo::orderBy('hora_inicio')->get();
-
-            // Logging específico para debugging del modal
-            if ($run == '10424736' || $run == '17844444') {
-
-            }
 
             return response()->json([
                 'horario' => $horario,
@@ -289,8 +286,12 @@ class HorariosController extends Controller
     {
         try {
             $id_espacio = $request->input('id_espacio');
+            $periodo = SemesterHelper::getCurrentPeriod();
 
-            $query = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo', 'espacio']);
+            $query = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo', 'espacio'])
+                ->whereHas('horario', function ($q) use ($periodo) {
+                    $q->where('periodo', $periodo);
+                });
 
             if ($id_espacio) {
                 $query->where('id_espacio', $id_espacio);
@@ -381,7 +382,7 @@ class HorariosController extends Controller
             },
         ])->orderBy('numero_piso')->get();
 
-        // Cargar horarios por defecto para el primer semestre 2025 o para los filtros seleccionados
+        // Cargar horarios por defecto para el semestre activo o para los filtros seleccionados
         $horariosPorEspacio = collect([]);
 
         // Si no hay semestre seleccionado, usar el semestre actual
@@ -393,39 +394,28 @@ class HorariosController extends Controller
             $periodo = $anioFiltro.'-'.$semestreFiltro;
 
             // Cargar horarios para el período seleccionado (Titulares)
-            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
+            $planificaciones = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                ->with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
                 ->get();
 
             // Cargar horarios de Colaboradores (Laboratorios, Talleres y Clínicas)
-            $planificacionesColab = PlanificacionProfesorColaborador::with([
-                'modulo',
-                'espacio',
-                'profesorColaborador.profesor',
-                'profesorColaborador.asignatura',
-            ])
+            $planificacionesColab = PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                ->with([
+                    'modulo',
+                    'espacio',
+                    'profesorColaborador.profesor',
+                    'profesorColaborador.asignatura'
+                ])
                 ->whereHas('modulo')
                 ->whereHas('profesorColaborador')
                 ->get();
 
-            $partesPeriodo = explode('-', $periodo);
-            $anioP = $partesPeriodo[0] ?? null;
-
-            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo) {
                 $colab = $plan->profesorColaborador;
-                if (! $colab) {
-                    return false;
-                }
-                if ($colab->asignatura && ! empty($colab->asignatura->periodo)) {
-                    return $colab->asignatura->periodo === $periodo;
-                }
-                if ($anioP && $colab->fecha_inicio) {
-                    return Carbon::parse($colab->fecha_inicio)->year == $anioP;
-                }
-
-                return true;
+                return SemesterHelper::perteneceColaboradorAPeriodo($colab, $periodo, $plan);
             })->map(function ($plan) use ($periodo) {
                 $colab = $plan->profesorColaborador;
 
@@ -502,39 +492,28 @@ class HorariosController extends Controller
             $tenant = tenant();
 
             // Verificar datos en BD (Titulares)
-            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
+            $planificaciones = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                ->with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
                 ->get();
 
             // Cargar horarios de Colaboradores (Laboratorios, Talleres y Clínicas)
-            $planificacionesColab = PlanificacionProfesorColaborador::with([
-                'modulo',
-                'espacio',
-                'profesorColaborador.profesor',
-                'profesorColaborador.asignatura',
-            ])
+            $planificacionesColab = PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                ->with([
+                    'modulo',
+                    'espacio',
+                    'profesorColaborador.profesor',
+                    'profesorColaborador.asignatura'
+                ])
                 ->whereHas('modulo')
                 ->whereHas('profesorColaborador')
                 ->get();
 
-            $partesPeriodo = explode('-', $periodo);
-            $anioP = $partesPeriodo[0] ?? null;
-
-            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo) {
                 $colab = $plan->profesorColaborador;
-                if (! $colab) {
-                    return false;
-                }
-                if ($colab->asignatura && ! empty($colab->asignatura->periodo)) {
-                    return $colab->asignatura->periodo === $periodo;
-                }
-                if ($anioP && $colab->fecha_inicio) {
-                    return Carbon::parse($colab->fecha_inicio)->year == $anioP;
-                }
-
-                return true;
+                return SemesterHelper::perteneceColaboradorAPeriodo($colab, $periodo, $plan);
             })->map(function ($plan) use ($periodo) {
                 $colab = $plan->profesorColaborador;
 
@@ -618,7 +597,8 @@ class HorariosController extends Controller
             }
 
             // Obtener las planificaciones del espacio (Titulares)
-            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
+            $planificaciones = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
+                ->with(['asignatura', 'horario.profesor', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
@@ -626,28 +606,16 @@ class HorariosController extends Controller
                 ->get();
 
             // Obtener planificaciones del espacio (Colaboradores)
-            $planificacionesColab = PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
+            $planificacionesColab = PlanificacionProfesorColaborador::withoutGlobalScope('vigencia_activa')
+                ->with(['modulo', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('modulo')
                 ->whereHas('profesorColaborador')
                 ->get();
 
-            $partesPeriodo = explode('-', $periodo);
-            $anioP = $partesPeriodo[0] ?? null;
-
-            $horariosColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+            $horariosColab = $planificacionesColab->filter(function ($plan) use ($periodo) {
                 $colab = $plan->profesorColaborador;
-                if (! $colab) {
-                    return false;
-                }
-                if ($colab->asignatura && ! empty($colab->asignatura->periodo)) {
-                    return $colab->asignatura->periodo === $periodo;
-                }
-                if ($anioP && $colab->fecha_inicio) {
-                    return Carbon::parse($colab->fecha_inicio)->year == $anioP;
-                }
-
-                return true;
+                return SemesterHelper::perteneceColaboradorAPeriodo($colab, $periodo, $plan);
             })->map(function ($plan) {
                 $colab = $plan->profesorColaborador;
 

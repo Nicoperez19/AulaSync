@@ -373,8 +373,8 @@
                     text: 'Se restablecerá el logo por defecto una vez guardes los cambios.',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
+                    confirmButtonColor: '#D12420',
+                    cancelButtonColor: '#8D8D8D',
                     confirmButtonText: 'Sí, eliminar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {

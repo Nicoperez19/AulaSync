@@ -297,6 +297,7 @@ class ModulosActualesTable extends Component
             $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
 
             $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_horario', $planificacionActiva->id_horario)
                 ->where('id_espacio', $planificacionActiva->id_espacio)
                 ->where('id_modulo', 'LIKE', $prefijoDia.'.%')
                 ->pluck('id_modulo')

@@ -65,9 +65,9 @@ class PisoSeeder extends Seeder
                 ['numero_piso' => 3], // Gimnasio
             ],
             'IT_LA' => [
-                ['numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276'],
-                ['numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220'],
-                ['numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251'],
+            ['id' => 8, 'numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276'],
+            ['id' => 10, 'numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220'],
+            ['id' => 12, 'numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251'],
             ],
             'IT_CCP' => [
                 ['numero_piso' => 1, 'nombre_piso' => 'Piso 1'],
@@ -79,6 +79,18 @@ class PisoSeeder extends Seeder
 
         $creados = 0;
         foreach ($pisosACrear as $pisoData) {
+            if ($idFacultad === 'IT_LA' && isset($pisoData['id'])) {
+                DB::connection('tenant')->table('pisos')->updateOrInsert(
+                    ['id' => $pisoData['id']],
+                    array_merge($pisoData, [
+                        'id_facultad' => $idFacultad,
+                        'updated_at' => now(),
+                    ])
+                );
+                $creados++;
+                continue;
+            }
+
             // Verificar si ya existe un piso con los mismos datos
             $exists = DB::connection('tenant')->table('pisos')
                 ->where('numero_piso', $pisoData['numero_piso'])

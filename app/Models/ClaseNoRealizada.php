@@ -127,29 +127,91 @@ class ClaseNoRealizada extends Model
             return $registroExistente;
         }
 
-        // Antes de crear, verificar si el profesor SÍ registró entrada
-        // Se puede omitir si el motivo indica un retiro anticipado o si se pasa ignorar_entrada
+        // Antes de crear, verificar si es un espacio externo o si ya tiene lista de asistencia o reserva en sala paralela/co-docente
         $esRetiroAnticipado = str_contains(strtolower($datosClase['motivo'] ?? ''), 'retiro anticipado');
         $ignorarEntrada = $datosClase['ignorar_entrada'] ?? false;
 
-        if (! $esRetiroAnticipado && ! $ignorarEntrada) {
+        if (!empty($datosClase['id_espacio'])) {
+            $espacioModel = \App\Models\Espacio::where('id_espacio', $datosClase['id_espacio'])->first();
+            if ($espacioModel && method_exists($espacioModel, 'esEspacioExterno') && $espacioModel->esEspacioExterno()) {
+                return null;
+            }
+        }
+
+        if (!$esRetiroAnticipado && !$ignorarEntrada) {
             $runBuscado = $datosClase['run_profesor'] ?? null;
-            $tuvoEntrada = Reserva::where('id_espacio', $datosClase['id_espacio'])
-                ->where('fecha_reserva', $datosClase['fecha_clase'])
-                ->where(function ($q) use ($runBuscado) {
-                    if ($runBuscado) {
-                        $q->where('run_profesor', $runBuscado)
-                            ->orWhere('run_solicitante', $runBuscado);
-                    } else {
-                        $q->whereNotNull('run_profesor');
+            $idAsigBuscada = $datosClase['id_asignatura'] ?? null;
+
+            // Recopilar RUNs válidos (docente titular y colaboradores de la misma asignatura)
+            $runsValidos = $runBuscado ? [$runBuscado] : [];
+            if ($idAsigBuscada) {
+                $asigObj = \App\Models\Asignatura::where('id_asignatura', $idAsigBuscada)->first();
+                if ($asigObj && $asigObj->run_profesor) {
+                    $runsValidos[] = $asigObj->run_profesor;
+                }
+                if ($asigObj && $asigObj->run_profesor_reemplazo) {
+                    $runsValidos[] = $asigObj->run_profesor_reemplazo;
+                }
+                $colabsRuns = \App\Models\ProfesorColaborador::where('id_asignatura', $idAsigBuscada)
+                    ->pluck('run_profesor_colaborador')
+                    ->filter()
+                    ->all();
+                $runsValidos = array_values(array_unique(array_merge($runsValidos, $colabsRuns)));
+            }
+
+            // 1. Verificar entrada en el mismo espacio o en sala paralela/alternativa para la misma asignatura/docente
+            $tuvoEntrada = \App\Models\Reserva::where('fecha_reserva', $datosClase['fecha_clase'])
+                ->whereNotNull('hora')
+                ->where(function ($q) use ($datosClase, $runsValidos, $idAsigBuscada) {
+                    // En el mismo espacio por cualquiera de los docentes de la asignatura
+                    $q->where(function ($sub) use ($datosClase, $runsValidos) {
+                        $sub->where('id_espacio', $datosClase['id_espacio']);
+                        if (!empty($runsValidos)) {
+                            $sub->where(function ($rq) use ($runsValidos) {
+                                $rq->whereIn('run_profesor', $runsValidos)
+                                   ->orWhereIn('run_solicitante', $runsValidos);
+                            });
+                        } else {
+                            $sub->whereNotNull('run_profesor');
+                        }
+                    });
+
+                    // O en otro espacio (ej. sala paralela 215/212 o laboratorio alternativo) para la misma asignatura
+                    if ($idAsigBuscada && !empty($runsValidos)) {
+                        $q->orWhere(function ($alt) use ($idAsigBuscada, $runsValidos) {
+                            $alt->where('id_asignatura', $idAsigBuscada)
+                                ->where(function ($rq) use ($runsValidos) {
+                                    $rq->whereIn('run_profesor', $runsValidos)
+                                       ->orWhereIn('run_solicitante', $runsValidos);
+                                });
+                        });
                     }
                 })
-                ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
                 ->exists();
 
-            // Si el profesor SÍ entró, NO registrar como clase no realizada
             if ($tuvoEntrada) {
                 return null;
+            }
+
+            // 2. Verificar si existe respaldo de lista de asistencia en el Portal Docente
+            try {
+                if (\Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('sesiones_asistencia')) {
+                    $tieneSesionAsistencia = \App\Models\SesionAsistencia::whereDate('fecha', $datosClase['fecha_clase'])
+                        ->where(function ($sq) use ($idAsigBuscada, $runsValidos) {
+                            if ($idAsigBuscada) {
+                                $sq->where('id_asignatura', $idAsigBuscada);
+                            } elseif (!empty($runsValidos)) {
+                                $sq->whereIn('run_profesor', $runsValidos);
+                            }
+                        })
+                        ->exists();
+
+                    if ($tieneSesionAsistencia) {
+                        return null;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Ignorar si no está disponible la tabla
             }
         }
 
@@ -178,11 +240,8 @@ class ClaseNoRealizada extends Model
      */
     public static function limpiarRegistrosIncorrectos($idEspacio, $fechaReserva, $horaEntrada = null, $runProfesor = null)
     {
-        // Buscar registros de hoy para este espacio.
-        // Si se especifica el profesor, solo limpiar los registros de ESE profesor
-        // para no borrar las clases no realizadas de otros profesores en la misma sala.
-        $query = static::where('id_espacio', $idEspacio)
-            ->where('fecha_clase', $fechaReserva);
+        // Buscar registros de hoy para este espacio o salas paralelas del mismo docente en esa fecha.
+        $query = static::where('fecha_clase', $fechaReserva);
 
         if ($runProfesor) {
             $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
@@ -190,6 +249,8 @@ class ClaseNoRealizada extends Model
                 $q->where('run_profesor', $runProfesor)
                     ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             });
+        } else {
+            $query->where('id_espacio', $idEspacio);
         }
 
         $registros = $query->get();

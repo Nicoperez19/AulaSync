@@ -41,7 +41,10 @@ class GenerarSnapshotOcupacionSemanal extends Command
     public function handle(): int
     {
         $semanaOpt = $this->option('semana');
-        $lunesDate = $semanaOpt ? Carbon::parse($semanaOpt)->startOfWeek() : Carbon::now()->subWeek()->startOfWeek();
+        $ahora = Carbon::now();
+        $lunesDate = $semanaOpt
+            ? Carbon::parse($semanaOpt)->startOfWeek()
+            : ($ahora->dayOfWeekIso >= 6 ? $ahora->copy()->startOfWeek() : $ahora->copy()->subWeek()->startOfWeek());
         $tipoOpt = $this->option('tipo');
         $forzar = (bool) $this->option('forzar');
         $tenantDomain = $this->option('tenant');

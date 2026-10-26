@@ -26,8 +26,6 @@
             </div>
         @endif
 
-        <div class="overflow-hidden bg-white rounded-lg shadow-lg">
-            <livewire:licencias-profesores-table />
-        </div>
+        <livewire:licencias-profesores-table />
     </div>
 </x-app-layout>

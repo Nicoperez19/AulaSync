@@ -29,7 +29,8 @@ class Asignatura extends Model
         'horas_indirectas',
         'area_conocimiento',
         'periodo',
-        'run_profesor', // profesor
+        'run_profesor', //profesor
+        'run_profesor_reemplazo',
         'id_carrera',
     ];
 
@@ -56,5 +57,22 @@ class Asignatura extends Model
     public function colaboradores(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ProfesorColaborador::class, 'id_asignatura', 'id_asignatura');
+    }
+
+    public function profesorReemplazo()
+    {
+        return $this->belongsTo(Profesor::class, 'run_profesor_reemplazo', 'run_profesor');
+    }
+
+    public function estudiantes()
+    {
+        return $this->belongsToMany(Estudiante::class, 'inscripciones', 'id_asignatura', 'estudiante_id')
+            ->withPivot('periodo')
+            ->withTimestamps();
+    }
+
+    public function sesionesAsistencia()
+    {
+        return $this->hasMany(SesionAsistencia::class, 'id_asignatura', 'id_asignatura');
     }
 }

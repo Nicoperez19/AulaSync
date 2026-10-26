@@ -78,16 +78,18 @@ class ClasesNoRealizadasTable extends Component
 
     public function mount()
     {
-        $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
+        $this->periodo = request()->query('periodo', SemesterHelper::getCurrentPeriod());
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $defaultInicio = $limites['inicio']->format('Y-m-d');
+        $defaultFin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
 
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
-
+        $this->fecha_inicio = request()->query('fecha_inicio', $this->fecha_inicio ?: $defaultInicio);
+        $this->fecha_fin = request()->query('fecha_fin', $this->fecha_fin ?: $defaultFin);
+        $this->estado = request()->query('estado', $this->estado);
+        $this->search = request()->query('search', $this->search);
+        
         // Si viene un reagendar_id desde URL, abrir modal automáticamente
         if ($this->reagendar_id) {
             $this->dispatch('auto-open-reagendar', ['id' => $this->reagendar_id]);
@@ -129,17 +131,11 @@ class ClasesNoRealizadasTable extends Component
         $this->resetPage();
 
         if ($value) {
-            $partes = explode('-', $value);
-            if (count($partes) === 2) {
-                $periodoModel = PeriodoAcademico::where('anio', (int) $partes[0])
-                    ->where('semestre', (int) $partes[1])
-                    ->first();
-                if ($periodoModel) {
-                    $this->fecha_inicio = Carbon::parse($periodoModel->fecha_inicio)->format('Y-m-d');
-                    $fin = Carbon::parse($periodoModel->fecha_fin);
-                    $this->fecha_fin = $fin->gt(Carbon::today()) ? Carbon::today()->format('Y-m-d') : $fin->format('Y-m-d');
-                }
-            }
+            $limites = SemesterHelper::getLimitesPeriodo($value);
+            $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+            $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+                ? Carbon::today()->format('Y-m-d')
+                : $limites['fin']->format('Y-m-d');
         } else {
             $this->fecha_inicio = '';
             $this->fecha_fin = Carbon::today()->format('Y-m-d');
@@ -165,10 +161,10 @@ class ClasesNoRealizadasTable extends Component
         $this->cachedEstadisticas = null;
         $this->todasLasClasesFiltradasCache = null;
 
-        $tenantId = class_exists(Tenant::class) ? (Tenant::current()->id ?? 'default') : 'default';
-        $estados = ['', 'no_realizada', 'realizada', 'justificado', 'pendiente'];
+        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
+        $estados = ['', 'no_realizada', 'realizada', 'recuperada', 'impartidas', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
-            $key = "clases_no_realizadas_coll_{$tenantId}_".md5(json_encode([
+            $key = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
                 $this->fecha_inicio,
                 $this->fecha_fin,
                 $this->periodo,
@@ -184,6 +180,8 @@ class ClasesNoRealizadasTable extends Component
         return match ($this->estado) {
             'no_realizada' => 'No registradas',
             'realizada' => 'Registradas',
+            'recuperada' => 'Recuperadas',
+            'impartidas' => 'Impartidas / Efectivas',
             'justificado' => 'Justificadas',
             'pendiente' => 'Pendientes de recuperación',
             default => 'Todos los estados'
@@ -220,14 +218,11 @@ class ClasesNoRealizadasTable extends Component
         $this->estado = '';
         $this->ua = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
-
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
 
         $this->cachedEstadisticas = null; // Limpiar cache
         $this->todasLasClasesFiltradasCache = null;
@@ -567,43 +562,51 @@ class ClasesNoRealizadasTable extends Component
             return ClaseNoRealizada::findOrFail($id);
         }
 
-        // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
-        $diaStr = strtolower($claseData['dia'] ?? '');
-        $prefijoDia = match ($diaStr) {
-            'lunes' => 'LU',
-            'martes' => 'MA',
-            'miércoles', 'miercoles' => 'MI',
-            'jueves' => 'JU',
-            'viernes' => 'VI',
-            'sábado', 'sabado' => 'SA',
-            'domingo' => 'DO',
-            default => 'LU'
-        };
+        $fechaCarbon = is_string($claseData['fecha'])
+            ? Carbon::parse($claseData['fecha'])
+            : Carbon::instance($claseData['fecha']);
+        $fecha = $fechaCarbon->format('Y-m-d');
 
-        $modulo = (string) ($claseData['modulo'] ?? '');
-        if (! str_contains($modulo, '.')) {
-            $partesModulo = explode(',', $modulo);
-            $modulosConPrefijo = array_map(function ($m) use ($prefijoDia) {
-                $m = trim($m);
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $prefijoDia = $prefijosDias[$fechaCarbon->dayOfWeek] ?? 'LU';
 
-                return str_contains($m, '.') ? $m : $prefijoDia.'.'.$m;
-            }, $partesModulo);
-            $idModulo = implode(',', $modulosConPrefijo);
+        if (!empty($claseData['id_modulo_raw'])) {
+            $idModulo = (string) $claseData['id_modulo_raw'];
         } else {
-            $idModulo = $modulo;
+            $modulo = (string)($claseData['modulo'] ?? '');
+            if (!str_contains($modulo, '.')) {
+                $partesModulo = explode(',', $modulo);
+                $modulosConPrefijo = array_map(function($m) use ($prefijoDia) {
+                    $m = trim($m);
+                    return str_contains($m, '.') ? $m : $prefijoDia . '.' . $m;
+                }, $partesModulo);
+                $idModulo = implode(',', $modulosConPrefijo);
+            } else {
+                $idModulo = $modulo;
+            }
         }
 
-        $fecha = is_string($claseData['fecha'])
-            ? Carbon::parse($claseData['fecha'])->format('Y-m-d')
-            : $claseData['fecha']->format('Y-m-d');
-
-        $periodo = (! empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A')
-            ? $claseData['periodo']
+        $periodo = (!empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A') 
+            ? $claseData['periodo'] 
             : ($this->periodo ?: SemesterHelper::getCurrentPeriod());
+
+        $estadoInicial = match($claseData['estado'] ?? '') {
+            'No Registrada' => 'no_realizada',
+            'Justificada', 'Feriado/Justificado' => 'justificado',
+            'Pendiente de Recuperación' => 'pendiente',
+            'Recuperada' => 'recuperada',
+            default => 'realizada',
+        };
+
+        $idAsignatura = !empty($claseData['id_asignatura'])
+            ? (string) $claseData['id_asignatura']
+            : (!empty($claseData['codigo_asignatura']) && $claseData['codigo_asignatura'] !== 'N/A'
+                ? (string) $claseData['codigo_asignatura']
+                : 'RESERVA');
 
         return ClaseNoRealizada::firstOrCreate(
             [
-                'id_asignatura' => $claseData['id_asignatura'],
+                'id_asignatura' => $idAsignatura,
                 'id_espacio' => $claseData['espacio'],
                 'id_modulo' => $idModulo,
                 'fecha_clase' => $fecha,
@@ -611,8 +614,9 @@ class ClasesNoRealizadasTable extends Component
             ],
             [
                 'periodo' => $periodo,
-                'estado' => ($claseData['estado'] ?? '') === 'No Registrada' ? 'no_realizada' : 'realizada',
+                'estado' => $estadoInicial,
                 'motivo' => $claseData['motivo'] ?? 'Generado para acción manual',
+                'observaciones' => $claseData['observaciones'] ?? null,
                 'hora_deteccion' => Carbon::now(),
             ]
         );
@@ -624,8 +628,8 @@ class ClasesNoRealizadasTable extends Component
             return $this->todasLasClasesFiltradasCache;
         }
 
-        $tenantId = class_exists(Tenant::class) ? (Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_{$tenantId}_".md5(json_encode([
+        $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
+        $cacheKey = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
@@ -664,18 +668,23 @@ class ClasesNoRealizadasTable extends Component
 
             // Aplicar filtro de estado en memoria
             if ($this->estado) {
-                $estadoStr = match ($this->estado) {
-                    'no_realizada' => 'No Registrada',
-                    'realizada', 'registrada' => 'Realizada',
-                    'justificado' => 'Justificada',
-                    'pendiente' => 'Pendiente de Recuperación',
-                    default => null
-                };
-                if ($estadoStr) {
-                    if ($estadoStr === 'Realizada') {
-                        $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
-                    } else {
-                        $clases = $clases->where('estado', $estadoStr);
+                if ($this->estado === 'impartidas') {
+                    $clases = $clases->whereIn('estado', ['Realizada', 'Registrada', 'Recuperada', 'Justificada']);
+                } else {
+                    $estadoStr = match($this->estado) {
+                        'no_realizada' => 'No Registrada',
+                        'realizada', 'registrada' => 'Realizada',
+                        'recuperada' => 'Recuperada',
+                        'justificado' => 'Justificada',
+                        'pendiente' => 'Pendiente de Recuperación',
+                        default => null
+                    };
+                    if ($estadoStr) {
+                        if ($estadoStr === 'Realizada') {
+                            $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
+                        } else {
+                            $clases = $clases->where('estado', $estadoStr);
+                        }
                     }
                 }
             }
@@ -800,7 +809,13 @@ class ClasesNoRealizadasTable extends Component
     public function prepararAccion($accion, $claseData)
     {
         $id = $claseData['id'] ?? null;
-        if (! $id) {
+
+        if ($accion === 'historial') {
+            $this->verHistorialClase($id, $claseData);
+            return;
+        }
+
+        if (!$id) {
             $clase = $this->materializarClaseNoRealizada($claseData);
             $id = $clase->id;
         }
@@ -1010,11 +1025,10 @@ class ClasesNoRealizadasTable extends Component
     {
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
-
-            // Verificar que esté en estado pendiente
-            if ($clase->estado !== 'pendiente') {
-                $this->dispatch('show-error', ['message' => 'Solo se pueden marcar como recuperadas las clases en estado PENDIENTE']);
-
+            
+            // Verificar que no esté ya registrada o recuperada
+            if (in_array($clase->estado, ['recuperada', 'realizada', 'registrada'])) {
+                $this->dispatch('show-info', ['message' => 'Esta clase ya se encuentra registrada o recuperada.']);
                 return;
             }
 
@@ -1023,11 +1037,13 @@ class ClasesNoRealizadasTable extends Component
 
             // Actualizar observaciones agregando confirmación de recuperación
             $observacionAnterior = $clase->observaciones ?? '';
-            $nuevaObservacion = $observacionAnterior."\n\n✓ CLASE RECUPERADA - Confirmada el ".Carbon::now()->format('d/m/Y H:i');
-
-            // Cambiar estado a justificado
+            $nuevaObservacion = $observacionAnterior 
+                ? ($observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'))
+                : ("✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'));
+            
+            // Cambiar estado a recuperada
             $clase->update([
-                'estado' => 'justificado',
+                'estado' => 'recuperada',
                 'observaciones' => $nuevaObservacion,
             ]);
 
@@ -1039,7 +1055,7 @@ class ClasesNoRealizadasTable extends Component
                 'Clase recuperada confirmada',
                 $nuevaObservacion,
                 $estadoAnterior,
-                'justificado',
+                'recuperada',
                 'web'
             );
 
@@ -1097,20 +1113,30 @@ class ClasesNoRealizadasTable extends Component
         }
     }
 
-    public function verHistorialClase($id)
+    public function verHistorialClase($id = null, $claseData = null)
     {
-        $clase = ClaseNoRealizada::with(['profesor', 'asignatura'])->find($id);
+        $clase = $id ? ClaseNoRealizada::with(['profesor', 'asignatura'])->find($id) : null;
+
+        $runProfesor = $clase?->run_profesor ?? ($claseData['run_profesor'] ?? null);
+        $fechaYmd = $clase?->fecha_clase?->format('Y-m-d');
+        if (!$fechaYmd && !empty($claseData['fecha'])) {
+            $fechaYmd = Carbon::parse($claseData['fecha'])->format('Y-m-d');
+        }
+
         $historial = app(AuditoriaService::class)->obtenerHistorialClase(
             $id,
-            $clase?->run_profesor,
-            $clase?->fecha_clase?->format('Y-m-d')
+            $runProfesor,
+            $fechaYmd
         );
+
+        $fechaFormateada = $clase?->fecha_clase?->format('d/m/Y')
+            ?? (!empty($claseData['fecha']) ? Carbon::parse($claseData['fecha'])->format('d/m/Y') : 'N/A');
 
         $this->dispatch('abrir-modal-historial-auditoria', [
             'clase_id' => $id,
-            'profesor' => $clase?->profesor?->name ?? 'Docente',
-            'asignatura' => $clase?->asignatura?->nombre_asignatura ?? 'Asignatura',
-            'fecha' => $clase?->fecha_clase?->format('d/m/Y') ?? 'N/A',
+            'profesor' => $clase?->profesor?->name ?? ($claseData['profesor'] ?? 'Docente'),
+            'asignatura' => $clase?->asignatura?->nombre_asignatura ?? ($claseData['asignatura'] ?? 'Asignatura'),
+            'fecha' => $fechaFormateada,
             'historial' => $historial->map(function ($item) {
                 return [
                     'id' => $item->id,

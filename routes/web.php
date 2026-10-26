@@ -130,8 +130,8 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
     Route::post('/{ticket}/reabrir', [SupportTicketController::class, 'reopen'])->name('reopen');
 });
 
-// Dashboard - Solo Administrador y Supervisor
-Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execution:300'])->group(function () {
+// Dashboard - Administrador, Supervisor, Director o permiso dashboard
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
@@ -422,6 +422,11 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::get('/data/download/{id}', [DataLoadController::class, 'download'])->name('data.download');
     Route::get('/data/progress/{id}', [DataLoadController::class, 'progress'])->name('data.progress');
     Route::post('/data/limpiar', [DataLoadController::class, 'limpiarPeriodo'])->name('data.limpiar');
+
+    // Carga Masiva de Estudiantes (Superadmin / Administrador)
+    Route::get('/estudiantes/carga-masiva', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'index'])->name('estudiantes.carga-masiva.index');
+    Route::post('/estudiantes/carga-masiva', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'procesar'])->name('estudiantes.carga-masiva.procesar');
+    Route::get('/estudiantes/carga-masiva/plantilla', [\App\Http\Controllers\EstudianteCargaMasivaController::class, 'descargarPlantilla'])->name('estudiantes.carga-masiva.plantilla');
 });
 
 Route::middleware('auth')->group(function () {
@@ -429,8 +434,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-// Monitoreo de espacios - Todos los roles
-Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo de espacios']], function () {
+// Monitoreo de espacios - Todos los roles autorizados
+Route::group(['middleware' => ['auth', 'session.timeout', 'role_or_permission:Administrador|Supervisor|Director|monitoreo de espacios']], function () {
     Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
@@ -474,7 +479,8 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/docente.php';
 
 // Rutas para Acciones Rápidas (Mantenedores)
 Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-actions.')->group(function () {

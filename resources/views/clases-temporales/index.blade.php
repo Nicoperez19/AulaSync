@@ -11,18 +11,16 @@
                 </div>
             </div>
             <div>
-                <a href="{{ route('clases-temporales.create') }}" 
-                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors duration-150 border border-transparent rounded-lg bg-light-cloud-blue hover:bg-[#b10718] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                <x-button href="{{ route('clases-temporales.create') }}" variant="add">
                     <i class="mr-2 fa-solid fa-plus"></i>
-                    Nueva Asignatura Temporal
-                </a>
+                    <span>Nueva Asignatura Temporal</span>
+                </x-button>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <!-- Mensajes de éxito/error -->
+    <div class="w-full pb-6">
+        <!-- Mensajes de éxito/error -->
             @if(session('success'))
                 <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center gap-2">
                     <i class="fa-solid fa-check-circle"></i>
@@ -37,57 +35,76 @@
                 </div>
             @endif
 
-            <!-- Filtros -->
-            <div class="mb-6 p-6 bg-white rounded-lg shadow">
-                <form method="GET" action="{{ route('clases-temporales.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
-                        <input type="text" name="search" value="{{ request('search') }}" 
-                               placeholder="Nombre profesor o asignatura..."
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+            <!-- Sección FILTROS -->
+            <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                        <i class="fas fa-filter text-[#950101]"></i> FILTROS
+                    </h3>
+                </div>
+
+                <form method="GET" action="{{ route('clases-temporales.index') }}">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Buscar -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Buscar</label>
+                            <div class="relative">
+                                <input type="text" name="search" value="{{ request('search') }}" 
+                                       placeholder="Profesor, asignatura o RUN..."
+                                       class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
+                            <select name="estado" 
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Todos los estados</option>
+                                <option value="activo" {{ request('estado') === 'activo' ? 'selected' : '' }}>Activo</option>
+                                <option value="inactivo" {{ request('estado') === 'inactivo' ? 'selected' : '' }}>Inactivo</option>
+                            </select>
+                        </div>
+
+                        <!-- Vigencia -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Vigencia</label>
+                            <select name="vigencia" 
+                                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Todas las vigencias</option>
+                                <option value="vigentes" {{ request('vigencia') === 'vigentes' ? 'selected' : '' }}>Vigentes</option>
+                                <option value="vencidos" {{ request('vigencia') === 'vencidos' ? 'selected' : '' }}>Vencidos</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                        <select name="estado" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Todos</option>
-                            <option value="activo" {{ request('estado') === 'activo' ? 'selected' : '' }}>Activo</option>
-                            <option value="inactivo" {{ request('estado') === 'inactivo' ? 'selected' : '' }}>Inactivo</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Vigencia</label>
-                        <select name="vigencia" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Todos</option>
-                            <option value="vigentes" {{ request('vigencia') === 'vigentes' ? 'selected' : '' }}>Vigentes</option>
-                            <option value="vencidos" {{ request('vigencia') === 'vencidos' ? 'selected' : '' }}>Vencidos</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-end gap-2">
-                        <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                            <i class="fa-solid fa-filter mr-2"></i>Filtrar
-                        </button>
-                        <a href="{{ route('clases-temporales.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
-                            <i class="fa-solid fa-times"></i>
+                    <!-- Botones de Acción -->
+                    <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                        <a href="{{ route('clases-temporales.index') }}" 
+                           class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
+                            <i class="fas fa-undo text-xs"></i> Limpiar
                         </a>
+                        <button type="submit" 
+                                class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                            <i class="fas fa-filter text-xs"></i> Aplicar filtros
+                        </button>
                     </div>
                 </form>
             </div>
 
             <!-- Tabla -->
-            <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 shadow-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesor</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Período</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Horarios</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Profesor</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Asignatura</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Período</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Horarios</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[240px]">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -96,7 +113,7 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                                {{ substr($pc->profesor->name ?? 'N/A', 0, 2) }}
+                                                {{ mb_strtoupper(mb_substr($pc->profesor->name ?? 'NA', 0, 2, 'UTF-8'), 'UTF-8') }}
                                             </div>
                                             <div class="ml-3">
                                                 <div class="text-sm font-medium text-gray-900">{{ $pc->profesor->name ?? 'N/A' }}</div>
@@ -146,15 +163,17 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 text-right text-sm font-medium">
-                                        <div class="flex items-center justify-end gap-2">
+                                    <td class="px-6 py-4 text-center text-sm font-medium">
+                                        <div class="flex items-center justify-center gap-1.5">
                                             <a href="{{ route('clases-temporales.show', $pc) }}" 
-                                               class="text-indigo-600 hover:text-indigo-900" title="Ver detalles">
+                                               class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-lg border border-blue-200 transition-colors shadow-xs" title="Ver detalles">
                                                 <i class="fa-solid fa-eye"></i>
+                                                <span>Ver</span>
                                             </a>
                                             <a href="{{ route('clases-temporales.edit', $pc) }}" 
-                                               class="text-blue-600 hover:text-blue-900" title="Editar">
-                                                <i class="fa-solid fa-edit"></i>
+                                               class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs" title="Editar">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                <span>Editar</span>
                                             </a>
                                             <form action="{{ route('clases-temporales.destroy', $pc) }}" 
                                                   method="POST" 
@@ -162,8 +181,9 @@
                                                   class="inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900" title="Eliminar">
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs" title="Eliminar">
                                                     <i class="fa-solid fa-trash"></i>
+                                                    <span>Eliminar</span>
                                                 </button>
                                             </form>
                                         </div>
@@ -189,6 +209,5 @@
                     </div>
                 @endif
             </div>
-        </div>
     </div>
 </x-app-layout>

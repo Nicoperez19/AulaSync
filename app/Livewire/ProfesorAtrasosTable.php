@@ -42,14 +42,11 @@ class ProfesorAtrasosTable extends Component
         }
 
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
-
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
     }
 
     public function updatedPeriodo($value)
@@ -57,17 +54,11 @@ class ProfesorAtrasosTable extends Component
         $this->resetPage();
 
         if ($value) {
-            $partes = explode('-', $value);
-            if (count($partes) === 2) {
-                $periodoModel = PeriodoAcademico::where('anio', (int) $partes[0])
-                    ->where('semestre', (int) $partes[1])
-                    ->first();
-                if ($periodoModel) {
-                    $this->fecha_inicio = Carbon::parse($periodoModel->fecha_inicio)->format('Y-m-d');
-                    $fin = Carbon::parse($periodoModel->fecha_fin);
-                    $this->fecha_fin = $fin->gt(Carbon::today()) ? Carbon::today()->format('Y-m-d') : $fin->format('Y-m-d');
-                }
-            }
+            $limites = SemesterHelper::getLimitesPeriodo($value);
+            $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+            $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+                ? Carbon::today()->format('Y-m-d')
+                : $limites['fin']->format('Y-m-d');
         } else {
             $this->fecha_inicio = '';
             $this->fecha_fin = Carbon::today()->format('Y-m-d');
@@ -88,14 +79,11 @@ class ProfesorAtrasosTable extends Component
     {
         $this->search = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_fin = Carbon::today()->format('Y-m-d');
-
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        if ($periodoActual && $periodoActual->fecha_inicio) {
-            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
-        } else {
-            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        }
+        $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
+        $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
+        $this->fecha_fin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
         $this->resetPage();
     }
 

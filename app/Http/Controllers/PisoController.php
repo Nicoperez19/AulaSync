@@ -106,9 +106,21 @@ class PisoController extends Controller
         try {
             $facultad = Facultad::findOrFail($facultadId);
 
+            if ($facultadId === 'IT_LA') {
+                return redirect()->route('floors_index', [
+                    'universidad' => $request->input('universidad')
+                ])->with('error', 'Los edificios de la sede Los Ángeles están protegidos y no pueden eliminarse.');
+            }
+
             $ultimoPiso = Piso::where('id_facultad', $facultadId)->latest('numero_piso')->first();
 
             if ($ultimoPiso) {
+                if ($ultimoPiso->espacios()->exists() || $ultimoPiso->mapas()->exists()) {
+                    return redirect()->route('floors_index', [
+                        'universidad' => $request->input('universidad')
+                    ])->with('error', 'No se puede eliminar el piso porque contiene espacios o mapas asociados.');
+                }
+
                 $ultimoPiso->delete();
 
                 return redirect()->route('floors_index', [

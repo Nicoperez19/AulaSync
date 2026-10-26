@@ -19,13 +19,6 @@ return new class extends Migration
             return;
         }
 
-        // 1. Borrar todos los espacios existentes primero
-        DB::table('espacios')->delete();
-        echo "✓ Eliminados todos los espacios\n";
-
-        // 2. Borrar todos los pisos
-        DB::table('pisos')->delete();
-        echo "✓ Eliminados todos los pisos\n";
         $pisos = [
             ['id' => 8, 'numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 10, 'numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
@@ -33,9 +26,9 @@ return new class extends Migration
         ];
 
         foreach ($pisos as $piso) {
-            DB::table('pisos')->insert($piso);
+            \DB::table('pisos')->updateOrInsert(['id' => $piso['id']], $piso);
         }
-        echo "✓ Creados 3 pisos nuevos para Los Ángeles\n";
+        echo "✓ Sincronizados 3 pisos para Los Ángeles\n";
 
         // 3. Cargar espacios desde el archivo de configuración
         $sedeId = 'LA';
@@ -79,12 +72,12 @@ return new class extends Migration
             })
             ->all();
 
-        // 6. Insertar espacios
+        // 6. Insertar o actualizar espacios
         foreach ($espacios as $data) {
-            DB::table('espacios')->insert($data);
+            \DB::table('espacios')->updateOrInsert(['id_espacio' => $data['id_espacio']], $data);
         }
-
-        echo '✓ Creados '.count($espacios)." espacios para Los Ángeles\n";
+        
+        echo "✓ Sincronizados " . count($espacios) . " espacios para Los Ángeles\n";
         echo "✓ Migración completada exitosamente para aulasync_la\n";
     }
 
@@ -93,16 +86,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        $currentDb = DB::connection()->getDatabaseName();
-
-        if ($currentDb !== 'aulasync_la') {
-            return;
-        }
-
-        // Eliminar los espacios y pisos creados
-        DB::table('espacios')->whereIn('piso_id', [8, 10, 12])->delete();
-        DB::table('pisos')->whereIn('id', [8, 10, 12])->delete();
-
-        echo "✓ Migración revertida para aulasync_la\n";
+        // No destructivo para no perder datos en producción
     }
 };

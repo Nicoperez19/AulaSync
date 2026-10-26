@@ -168,14 +168,15 @@
                 <!-- Botones -->
                 <div class="flex gap-2 items-end min-w-[200px] mt-6">
                     <button type="submit"
-                        class="ml-2 px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">
-                        <i class="mr-2 fas fa-search"></i>Filtrar
+                        class="px-4 py-2 bg-[#191919] text-white rounded-lg font-semibold text-sm hover:bg-black transition shadow-xs">
+                        <i class="mr-2 fas fa-filter"></i>Filtrar
                     </button>
 
-
                     <a href="{{ route('reportes.accesos.limpiar') }}"
-                        class="px-4 py-2 ml-2 text-sm font-semibold text-white transition bg-gray-500 rounded hover:bg-gray-600">
-                        <i class="mr-2 fas fa-times"></i>Limpiar
+                        class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition shadow-xs">
+                        <i class="mr-2 fas fa-undo"></i>Limpiar
+                    </a>
+                </div>
                     </a>
                 </div>
             </form>
@@ -213,7 +214,7 @@
                         <input type="hidden" name="tipo_usuario" value="{{ $tipoUsuario }}">
                         <input type="hidden" name="espacio" value="{{ $espacio }}">
                         <button type="submit"
-                            class="px-3 py-1.5 text-xs text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                            class="px-3 py-1.5 text-xs text-white transition-colors bg-[#D12420] rounded-md hover:bg-[#950101] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                             <i class="mr-1 fas fa-file-pdf"></i>PDF
                         </button>
                     </form>
@@ -222,36 +223,36 @@
 
             <div class="overflow-x-auto">
                 <table class="w-full text-xs bg-white rounded-lg dark:bg-gray-800 table-auto">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                         <tr>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Usuario
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 UA
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Asignatura
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 ID Sala
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Fecha
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Entrada
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Salida
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Duración
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Tipo
                             </th>
-                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="px-2 py-2 text-xs font-medium tracking-wider text-center text-white uppercase dark:text-gray-300">
                                 Estado
                             </th>
                         </tr>

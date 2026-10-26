@@ -13,27 +13,28 @@ trait RedirectByRole
     protected function redirectByRole()
     {
         $user = Auth::user();
+        
+        // Administradores, supervisores y directores siempre redirigen al Dashboard (KPIs)
+        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director')) {
+            return redirect(RouteServiceProvider::HOME);
+        }
 
         // Control Docente redirige al Plano Digital
         if ($user->hasRole('Control Docente')) {
             return redirect()->route('plano.index');
         }
 
-        // Verificar si el usuario tiene el permiso dashboard
-        $hasDashboardPermission = false;
-        try {
-            $hasDashboardPermission = $user->hasPermissionTo('dashboard');
-        } catch (\Exception $e) {
-            // Si hay error con permisos, asumir que no tiene acceso
-            $hasDashboardPermission = false;
+        // Profesor redirige al Portal Docente
+        if ($user->hasRole('Profesor')) {
+            return \Illuminate\Support\Facades\Route::has('docente.dashboard')
+                ? redirect()->route('docente.dashboard')
+                : redirect('/docente');
+        }
+        
+        if ($user->hasAnyRole(['Usuario', 'Estudiante en Práctica'])) {
+            return redirect()->route('espacios.show');
         }
 
-        if ($user->is_superuser || (string) $user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor')) {
-            return redirect(RouteServiceProvider::HOME);
-        } elseif ($user->hasRole('Usuario')) {
-            return redirect()->route('espacios.show');
-        } else {
-            return redirect(RouteServiceProvider::HOME);
-        }
+        return redirect(RouteServiceProvider::HOME);
     }
 }

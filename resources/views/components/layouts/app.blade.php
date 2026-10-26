@@ -87,7 +87,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 
@@ -104,7 +104,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 
@@ -121,7 +121,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 

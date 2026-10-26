@@ -25,10 +25,29 @@ class Espacio extends Model
         'piso_id',
         'tipo_espacio',
         'estado',
+        'es_externo',
         'qr_espacio',
         'puestos_disponibles',
         'capacidad_maxima',
     ];
+
+    protected $casts = [
+        'es_externo' => 'boolean',
+    ];
+
+    public function esEspacioExterno(): bool
+    {
+        if ($this->es_externo) {
+            return true;
+        }
+        $texto = mb_strtolower(($this->id_espacio ?? '') . ' ' . ($this->nombre_espacio ?? '') . ' ' . ($this->tipo_espacio ?? ''), 'UTF-8');
+        foreach (['externo', 'terreno', 'udec', 'pista', 'gimnasio', 'cancha', 'complejo deportivo', 'estadio'] as $kw) {
+            if (str_contains($texto, $kw)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Obtener la capacidad utilizada del espacio

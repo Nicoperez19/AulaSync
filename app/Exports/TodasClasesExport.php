@@ -10,12 +10,16 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use Illuminate\Support\Collection;
+use Carbon\Carbon;
+use App\Services\TodasClasesService;
+use App\Helpers\SemesterHelper;
 
-class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
+class TodasClasesExport implements WithMultipleSheets
 {
     protected $fechaInicio;
 
@@ -39,7 +43,7 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
         $this->ua = $ua;
     }
 
-    public function collection()
+    public function sheets(): array
     {
         $servicio = new TodasClasesService;
         $clases = $servicio->obtenerTodasLasClases(
@@ -51,12 +55,64 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
             $this->ua
         );
 
-        // El Excel los ordena por fecha asc
-        return $clases->sortBy([
-            ['fecha', 'asc'],
-            ['espacio', 'asc'],
-            ['modulo', 'asc'],
-        ])->values();
+        // Si se solicitó un semestre específico, generar la hoja exclusiva de ese semestre
+        if (!empty($this->periodo)) {
+            $clasesSemestre = $clases->filter(function ($item) {
+                return ($item['periodo'] ?? $this->periodo) === $this->periodo;
+            })->sortBy([
+                ['fecha', 'asc'],
+                ['espacio', 'asc'],
+                ['modulo', 'asc'],
+            ])->values();
+
+            return [
+                new TodasClasesSemestreSheet($clasesSemestre, $this->periodo),
+            ];
+        }
+
+        // Si no se filtró por un único semestre, separar automáticamente en una hoja por cada semestre
+        $porPeriodo = $clases->groupBy(function ($item) {
+            return !empty($item['periodo']) && $item['periodo'] !== 'N/A'
+                ? $item['periodo']
+                : 'Sin Semestre';
+        })->sortKeys();
+
+        if ($porPeriodo->isEmpty()) {
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+            return [
+                new TodasClasesSemestreSheet(collect(), $periodoActual),
+            ];
+        }
+
+        $sheets = [];
+        foreach ($porPeriodo as $codigoPeriodo => $itemsPeriodo) {
+            $itemsOrdenados = $itemsPeriodo->sortBy([
+                ['fecha', 'asc'],
+                ['espacio', 'asc'],
+                ['modulo', 'asc'],
+            ])->values();
+
+            $sheets[] = new TodasClasesSemestreSheet($itemsOrdenados, (string) $codigoPeriodo);
+        }
+
+        return $sheets;
+    }
+}
+
+class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
+{
+    protected Collection $clases;
+    protected string $periodo;
+
+    public function __construct(Collection $clases, string $periodo)
+    {
+        $this->clases = $clases;
+        $this->periodo = $periodo;
+    }
+
+    public function collection()
+    {
+        return $this->clases;
     }
 
     public function headings(): array
@@ -95,7 +151,7 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
         return [
             $fecha,
             $clase['dia'],
-            $clase['periodo'],
+            $clase['periodo'] ?? $this->periodo,
             $clase['profesor'],
             $clase['run_profesor'],
             $clase['ua'] ?? 'N/A',
@@ -137,8 +193,8 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
                 ],
             ]);
         }
-
-        return [
+        
+        $styles = [
             // Estilo para el encabezado
             1 => [
                 'font' => [
@@ -162,8 +218,11 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
                     ],
                 ],
             ],
+        ];
+
+        if ($lastRow >= 2) {
             // Estilo para las filas de datos
-            'A2:Q'.$lastRow => [
+            $styles['A2:Q' . $lastRow] = [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -174,8 +233,10 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
                         'color' => ['rgb' => 'CCCCCC'],
                     ],
                 ],
-            ],
-        ];
+            ];
+        }
+
+        return $styles;
     }
 
     public function columnWidths(): array
@@ -203,14 +264,10 @@ class TodasClasesExport implements FromCollection, WithColumnWidths, WithHeading
 
     public function title(): string
     {
-        $titulo = 'Todas las Clases';
-
-        if ($this->fechaInicio && $this->fechaFin) {
-            $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
-            $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
-            $titulo .= ' '.$inicio->format('d-m-Y').' a '.$fin->format('d-m-Y');
-        } elseif ($this->periodo) {
-            $titulo .= ' '.$this->periodo;
+        if (preg_match('/^(\d{4})-([12])$/', $this->periodo, $m)) {
+            $titulo = "{$m[2]}° Semestre {$m[1]} ({$this->periodo})";
+        } else {
+            $titulo = 'Semestre ' . $this->periodo;
         }
 
         return substr($titulo, 0, 31); // Excel limita a 31 caracteres

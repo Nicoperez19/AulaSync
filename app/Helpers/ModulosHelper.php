@@ -215,8 +215,15 @@ class ModulosHelper
      */
     public static function obtenerModuloActual(string $hora, string $diaNormalizado): ?int
     {
-        $horarios = self::getHorariosModulos()[$diaNormalizado] ?? [];
+        if ($diaNormalizado === 'domingo') {
+            return null;
+        }
 
+        $horarios = self::getHorariosModulos()[$diaNormalizado] ?? [];
+        if (empty($horarios)) {
+            return null;
+        }
+        
         $moduloNumero = null;
 
         // 1. Verificar si estamos exactamente dentro de un módulo
@@ -235,11 +242,6 @@ class ModulosHelper
                     break;
                 }
             }
-        }
-
-        // 3. Si no hay módulo futuro hoy, asumir módulo 1 por defecto para fallback
-        if (! $moduloNumero) {
-            $moduloNumero = 1;
         }
 
         return $moduloNumero;

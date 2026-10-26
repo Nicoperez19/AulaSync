@@ -191,7 +191,7 @@ class PlanoDigitalController extends Controller
             $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'espacio', 'modulo'])
                 ->where('id_modulo', $idModuloActual)
                 ->whereHas('profesorColaborador', function ($query) {
-                    $query->where('estado', 'activo');
+                    $query->activosYVigentes();
                 })
                 ->get()
                 ->toBase()
@@ -478,9 +478,12 @@ class PlanoDigitalController extends Controller
             })
             ->get();
 
-        // Obtener planificaciones de profesores colaboradores
+        // Obtener planificaciones de profesores colaboradores (solo vigentes en el semestre activo)
         $planificacionesTemporales = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
+            ->whereHas('profesorColaborador', function ($query) {
+                $query->activosYVigentes();
+            })
             ->whereHas('modulo', function ($query) use ($horaActual) {
                 $query->where('hora_termino', '>=', $horaActual);  // Solo módulos que no han terminado
             })
@@ -540,8 +543,11 @@ class PlanoDigitalController extends Controller
             })
             ->get();
 
-        // Obtener planificaciones de profesores colaboradores próximas
+        // Obtener planificaciones de profesores colaboradores próximas (solo vigentes en el semestre activo)
         $planificacionesTemporalesProximas = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
+            ->whereHas('profesorColaborador', function ($query) {
+                $query->activosYVigentes();
+            })
             ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diasPosibles, $esRangoEspecial) {
                 $query->whereIn('dia', $diasPosibles);
 
@@ -615,6 +621,7 @@ class PlanoDigitalController extends Controller
                     'modulos' => $planificacion
                         ->asignatura
                         ->planificaciones()
+                        ->where('id_horario', $planificacion->id_horario)
                         ->where('id_espacio', $espacio->id_espacio)
                         ->with('modulo')
                         ->get()
@@ -2767,14 +2774,7 @@ class PlanoDigitalController extends Controller
      */
     private function enviarCorreoReserva(Reserva $reserva): void
     {
-        try {
-            $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = $this->resolverEmailReserva($reserva);
-            if ($email) {
-                Mail::to($email)->send(new ConfirmacionReserva($reserva));
-            }
-        } catch (\Exception $e) {
-        }
+        app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
     }
 
     /**
@@ -2784,11 +2784,12 @@ class PlanoDigitalController extends Controller
     {
         try {
             $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = $this->resolverEmailReserva($reserva);
+            $email = app(\App\Services\ReservaService::class)->resolverEmailReserva($reserva) ?: $this->resolverEmailReserva($reserva);
             if ($email) {
                 Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("⚠️ No se pudo enviar correo de devolución para reserva {$reserva->id_reserva}: " . $e->getMessage());
         }
     }
 
