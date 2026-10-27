@@ -657,12 +657,12 @@ function initClasesNoRealizadasScripts() {
                             <option value="no_realizada" ${clase.estado === 'no_realizada' ? 'selected' : ''}>No registrada</option>
                             <option value="realizada" ${clase.estado === 'realizada' || clase.estado === 'registrada' ? 'selected' : ''}>Registrada (Docente realizó la clase)</option>
                             <option value="pendiente" ${clase.estado === 'pendiente' ? 'selected' : ''}>Pendiente de recuperación</option>
-                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado (sin recuperación)</option>
+                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado</option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
                             <strong>Registrada:</strong> Docente dictó la clase (asistencia regularizada)<br>
                             <strong>Pendiente:</strong> Clase reagendada esperando recuperación<br>
-                            <strong>Justificado:</strong> Clase justificada sin necesidad de recuperación
+                            <strong>Justificado:</strong> Clase justificada
                         </p>
                     </div>
                     

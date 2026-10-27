@@ -102,30 +102,77 @@ class AuditoriaClaseController extends Controller
         $query = AuditoriaClase::query()->with(['profesor', 'asignatura', 'espacio']);
 
         if ($request->filled('accion')) {
-            $query->where('accion', $request->query('accion'));
+            $accion = $request->query('accion');
+            if ($accion === 'justificar') {
+                $query->where(function ($q) {
+                    $q->where('accion', 'justificar')
+                      ->orWhere('accion', 'justificar_masivo')
+                      ->orWhere('accion', 'like', '%justific%');
+                });
+            } elseif ($accion === 'registrar') {
+                $query->where(function ($q) {
+                    $q->where('accion', 'registrar')
+                      ->orWhere('accion', 'registrar_masivo')
+                      ->orWhere('accion', 'like', '%registra%');
+                });
+            } else {
+                $query->where('accion', $accion);
+            }
         }
 
-        if ($request->filled('fecha_inicio')) {
-            $query->whereDate('created_at', '>=', Carbon::parse($request->query('fecha_inicio'))->startOfDay());
-        }
+        $fechaInicio = $request->query('fecha_inicio');
+        $fechaFin = $request->query('fecha_fin');
 
-        if ($request->filled('fecha_fin')) {
-            $query->whereDate('created_at', '<=', Carbon::parse($request->query('fecha_fin'))->endOfDay());
+        if (!empty($fechaInicio) || !empty($fechaFin)) {
+            try {
+                $fInicio = !empty($fechaInicio) ? Carbon::parse($fechaInicio)->format('Y-m-d') : null;
+            } catch (\Throwable $e) {
+                $fInicio = null;
+            }
+            try {
+                $fFin = !empty($fechaFin) ? Carbon::parse($fechaFin)->format('Y-m-d') : null;
+            } catch (\Throwable $e) {
+                $fFin = null;
+            }
+
+            if ($fInicio || $fFin) {
+                $query->where(function ($dq) use ($fInicio, $fFin) {
+                    // 1. Coincide con la fecha de la clase (fecha_clase)
+                    $dq->where(function ($q1) use ($fInicio, $fFin) {
+                        if ($fInicio) $q1->whereDate('fecha_clase', '>=', $fInicio);
+                        if ($fFin) $q1->whereDate('fecha_clase', '<=', $fFin);
+                    })
+                    // 2. O coincide con la fecha en que se registró la acción (created_at)
+                    ->orWhere(function ($q2) use ($fInicio, $fFin) {
+                        if ($fInicio) $q2->whereDate('created_at', '>=', $fInicio);
+                        if ($fFin) $q2->whereDate('created_at', '<=', $fFin);
+                    });
+                });
+            }
         }
 
         if ($request->filled('search')) {
             $search = trim($request->query('search'));
-            $query->where(function ($q) use ($search) {
+            $cleanRun = preg_replace('/[^0-9kK]/', '', $search);
+
+            $query->where(function ($q) use ($search, $cleanRun) {
                 $q->where('run_profesor', 'like', "%{$search}%")
                   ->orWhere('user_nombre', 'like', "%{$search}%")
                   ->orWhere('motivo', 'like', "%{$search}%")
                   ->orWhere('observaciones', 'like', "%{$search}%")
+                  ->orWhere('id_asignatura', 'like', "%{$search}%")
+                  ->orWhere('id_espacio', 'like', "%{$search}%")
                   ->orWhereHas('profesor', function ($pq) use ($search) {
                       $pq->where('name', 'like', "%{$search}%");
                   })
                   ->orWhereHas('asignatura', function ($aq) use ($search) {
-                      $aq->where('nombre_asignatura', 'like', "%{$search}%");
+                      $aq->where('nombre_asignatura', 'like', "%{$search}%")
+                        ->orWhere('codigo_asignatura', 'like', "%{$search}%");
                   });
+
+                if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
+                    $q->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ["%{$cleanRun}%"]);
+                }
             });
         }
 

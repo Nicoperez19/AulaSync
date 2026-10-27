@@ -197,9 +197,9 @@
                                             @foreach($grupo['reservas'] as $i => $reserva)
                                                 <tr class="hover:bg-gray-100 dark:hover:bg-gray-600">
                                                     <td class="px-3 py-2">{{ $i + 1 }}</td>
-                                                    <td class="px-3 py-2">{{ $reserva->run_solicitante }}</td>
+                                                    <td class="px-3 py-2">{{ $reserva->run_solicitante ?: ($reserva->run_profesor ?? 'N/A') }}</td>
                                                     <td class="px-3 py-2 font-medium">
-                                                        {{ $reserva->solicitante->nombre ?? 'N/A' }}
+                                                        {{ $reserva->solicitante->nombre ?? $reserva->profesor->name ?? 'N/A' }}
                                                     </td>
                                                     <td class="px-3 py-2">
                                                         {{ \Carbon\Carbon::parse($reserva->hora)->format('H:i') }}
