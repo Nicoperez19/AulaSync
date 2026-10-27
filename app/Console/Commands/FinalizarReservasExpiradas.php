@@ -20,6 +20,12 @@ class FinalizarReservasExpiradas extends Command
     protected $signature = 'reservas:finalizar-expiradas';
     protected $description = 'Finaliza automáticamente las reservas de tipo clase al término de cada módulo';
 
+    /**
+     * Margen máximo (en minutos) después de la hora de salida antes de auto-finalizar la reserva,
+     * permitiendo que el docente registre su salida normalmente al terminar el módulo.
+     */
+    private const MARGEN_SALIDA_MINUTOS = 10;
+
     // Horarios de módulos por día
     private $horariosModulos = [
         'lunes' => [
@@ -186,27 +192,38 @@ class FinalizarReservasExpiradas extends Command
                 $debeFinalizar = false;
                 $motivo = '';
 
-                // 1. Verificar por hora_salida (Prioridad)
+                // 1. Verificar por hora_salida (Prioridad) con margen de gracia (10 min máx)
                 if (!empty($reserva->hora_salida)) {
-                    if ($reserva->hora_salida <= $horaActual) {
+                    $horaSalidaConMargen = Carbon::parse($fechaHoy . ' ' . $reserva->hora_salida)
+                        ->addMinutes(self::MARGEN_SALIDA_MINUTOS)
+                        ->format('H:i:s');
+                    if ($horaSalidaConMargen <= $horaActual) {
                         $debeFinalizar = true;
-                        $motivo = "Hora de salida alcanzada ({$reserva->hora_salida})";
+                        $motivo = "Hora de salida alcanzada ({$reserva->hora_salida} + " . self::MARGEN_SALIDA_MINUTOS . " min margen)";
                     }
                 }
-                // 2. Fallback para clases sin hora_salida (usando módulos)
+                // 2. Fallback para clases sin hora_salida (usando módulos) con margen de gracia
                 elseif ($reserva->tipo_reserva === 'clase' && !empty($reserva->id_asignatura)) {
                     $horaFinModulo = $this->obtenerHoraFinClase($reserva, $diaKey);
-                    if ($horaFinModulo && $horaFinModulo <= $horaActual) {
-                        $debeFinalizar = true;
-                        $motivo = "Término de módulo de clase ({$horaFinModulo})";
+                    if ($horaFinModulo) {
+                        $horaFinConMargen = Carbon::parse($fechaHoy . ' ' . $horaFinModulo)
+                            ->addMinutes(self::MARGEN_SALIDA_MINUTOS)
+                            ->format('H:i:s');
+                        if ($horaFinConMargen <= $horaActual) {
+                            $debeFinalizar = true;
+                            $motivo = "Término de módulo de clase ({$horaFinModulo} + " . self::MARGEN_SALIDA_MINUTOS . " min margen)";
+                        }
                     }
                 }
-                // 3. Fallback para reservas manuales antiguas (1 hora de duración por defecto)
+                // 3. Fallback para reservas manuales antiguas (1 hora de duración por defecto + margen)
                 else {
-                    $horaLimite = Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
+                    $horaLimite = Carbon::parse($fechaHoy . ' ' . $reserva->hora)
+                        ->addHour()
+                        ->addMinutes(self::MARGEN_SALIDA_MINUTOS)
+                        ->format('H:i:s');
                     if ($horaLimite <= $horaActual) {
                         $debeFinalizar = true;
-                        $motivo = "Tiempo límite excedido (1h desde inicio a las {$reserva->hora})";
+                        $motivo = "Tiempo límite excedido (1h + " . self::MARGEN_SALIDA_MINUTOS . " min margen desde inicio a las {$reserva->hora})";
                     }
                 }
 
@@ -233,23 +250,51 @@ class FinalizarReservasExpiradas extends Command
     {
         try {
             $periodo = SemesterHelper::getCurrentPeriod();
+            $espacioLimpio = str_replace(['-', ' '], '', $reserva->id_espacio);
+            $runLimpio = preg_replace('/[^0-9kK]/', '', $reserva->run_profesor ?? '');
+
             $planificaciones = Planificacion_Asignatura::on('tenant')
-                ->where('id_asignatura', $reserva->id_asignatura)
-                ->where('id_espacio', $reserva->id_espacio)
+                ->where(function ($q) use ($reserva, $espacioLimpio) {
+                    $q->where('id_espacio', $reserva->id_espacio)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
+                ->where(function ($q) use ($reserva, $runLimpio) {
+                    $q->where('id_asignatura', $reserva->id_asignatura);
+                    if (!empty($runLimpio)) {
+                        $q->orWhereHas('asignatura', function ($aq) use ($runLimpio) {
+                            $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        });
+                    }
+                })
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
+                })
+                ->whereHas('modulo', function ($q) use ($diaKey) {
+                    $q->whereRaw("LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(dia, 'á', 'a'), 'é', 'e'), 'í', 'i'), 'ó', 'o'), 'ú', 'u')) = ?", [$diaKey]);
                 })
                 ->get();
 
             if ($planificaciones->isEmpty())
                 return null;
 
-            $numMaxModulo = 0;
+            $modulosDia = [];
             foreach ($planificaciones as $plan) {
                 $parts = explode('.', $plan->id_modulo);
                 $num = isset($parts[1]) ? (int) $parts[1] : 0;
-                if ($num > $numMaxModulo)
-                    $numMaxModulo = $num;
+                if ($num > 0) {
+                    $modulosDia[$num] = true;
+                }
+            }
+
+            if (empty($modulosDia)) {
+                return null;
+            }
+
+            // Si la reserva tiene modulo_inicio, encadenar desde ahí; si no, usar el máximo del bloque
+            $moduloBase = $reserva->modulo_inicio ? (int) $reserva->modulo_inicio : min(array_keys($modulosDia));
+            $numMaxModulo = $moduloBase;
+            while (isset($modulosDia[$numMaxModulo + 1])) {
+                $numMaxModulo++;
             }
 
             return $this->horariosModulos[$diaKey][$numMaxModulo]['fin'] ?? null;

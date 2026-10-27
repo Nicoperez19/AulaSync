@@ -83,14 +83,25 @@ class RecuperacionClasesTable extends Component
         $this->validate($this->rulesReagendar());
 
         $recuperacion = RecuperacionClase::findOrFail($this->recuperacionId);
-        $recuperacion->update([
-            'fecha_reagendada' => $this->fecha_reagendada,
-            'id_modulo_reagendado' => $this->id_modulo_reagendado,
-            'id_espacio_reagendado' => $this->id_espacio_reagendado,
-            'notas' => $this->notas,
-            'estado' => 'reagendada',
-            'gestionado_por' => Auth::user()->run,
-        ]);
+        $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
+            $recuperacion->update([
+                'fecha_reagendada' => $this->fecha_reagendada,
+                'id_modulo_reagendado' => $this->id_modulo_reagendado,
+                'id_espacio_reagendado' => $this->id_espacio_reagendado,
+                'notas' => $this->notas,
+                'estado' => 'reagendada',
+                'gestionado_por' => Auth::user()->run,
+            ]);
+
+            if ($recuperacion->claseNoRealizada) {
+                $recuperacion->claseNoRealizada->update([
+                    'fecha_clase' => $this->fecha_reagendada,
+                    'id_modulo' => $this->id_modulo_reagendado,
+                    'id_espacio' => $this->id_espacio_reagendado ?: $recuperacion->id_espacio,
+                    'estado' => 'pendiente',
+                ]);
+            }
+        });
 
         // Crear notificación de clase reagendada
         \App\Models\Notificacion::crearNotificacionClaseReagendada($recuperacion);
@@ -152,10 +163,15 @@ class RecuperacionClasesTable extends Component
     public function marcarRealizada($id)
     {
         $recuperacion = RecuperacionClase::findOrFail($id);
-        $recuperacion->update([
-            'estado' => 'realizada',
-            'gestionado_por' => Auth::user()->run,
-        ]);
+        $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
+            $recuperacion->update([
+                'estado' => 'realizada',
+                'gestionado_por' => Auth::user()->run,
+            ]);
+            if ($recuperacion->claseNoRealizada) {
+                $recuperacion->claseNoRealizada->update(['estado' => 'recuperada']);
+            }
+        });
         session()->flash('message', 'Clase marcada como realizada.');
     }
 

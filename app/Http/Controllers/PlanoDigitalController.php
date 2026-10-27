@@ -1497,11 +1497,20 @@ class PlanoDigitalController extends Controller
                     if ($planificacion) {
                         $nuevaReserva->id_asignatura = $planificacion->id_asignatura;
                         
-                        // Encontrar bloques consecutivos de planificación
+                        // Encontrar bloques consecutivos de planificación del mismo docente en este espacio
                         $periodo = SemesterHelper::getCurrentPeriod();
+                        $espacioLimpioForzado = str_replace(['-', ' '], '', $idEspacio);
                         $planificacionesMismoBloque = Planificacion_Asignatura::with('modulo')
-                            ->where('id_espacio', $idEspacio)
-                            ->where('id_asignatura', $planificacion->id_asignatura)
+                            ->where(function ($eq) use ($idEspacio, $espacioLimpioForzado) {
+                                $eq->where('id_espacio', $idEspacio)
+                                   ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioForzado]);
+                            })
+                            ->where(function ($q) use ($planificacion, $runNuevo) {
+                                $q->where('id_asignatura', $planificacion->id_asignatura)
+                                  ->orWhereHas('asignatura', function ($aq) use ($runNuevo) {
+                                      $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runNuevo]);
+                                  });
+                            })
                             ->whereHas('horario', function ($q) use ($periodo) {
                                 $q->where('periodo', $periodo);
                             })
@@ -1535,7 +1544,8 @@ class PlanoDigitalController extends Controller
                     } else {
                         // Buscar en PlanificacionProfesorColaborador
                         $hoyColab = Carbon::today()->toDateString();
-                        $planColaborador = PlanificacionProfesorColaborador::whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $idEspacio)])
+                        $espacioLimpioForzado = str_replace(['-', ' '], '', $idEspacio);
+                        $planColaborador = PlanificacionProfesorColaborador::whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioForzado])
                             ->whereHas('profesorColaborador', function ($q) use ($runNuevo, $hoyColab) {
                                 $q->where('estado', 'activo')
                                   ->where('fecha_inicio', '<=', $hoyColab)
@@ -1554,8 +1564,19 @@ class PlanoDigitalController extends Controller
                             $nuevaReserva->id_asignatura = $planColaborador->profesorColaborador->id_asignatura ?? null;
                             $idColab = $planColaborador->id_profesor_colaborador;
                             $planificacionesMismoBloque = PlanificacionProfesorColaborador::with('modulo')
-                                ->where('id_espacio', $idEspacio)
-                                ->where('id_profesor_colaborador', $idColab)
+                                ->where(function ($eq) use ($idEspacio, $espacioLimpioForzado) {
+                                    $eq->where('id_espacio', $idEspacio)
+                                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioForzado]);
+                                })
+                                ->where(function ($q) use ($idColab, $runNuevo, $hoyColab) {
+                                    $q->where('id_profesor_colaborador', $idColab)
+                                      ->orWhereHas('profesorColaborador', function ($cq) use ($runNuevo, $hoyColab) {
+                                          $cq->where('estado', 'activo')
+                                             ->where('fecha_inicio', '<=', $hoyColab)
+                                             ->where('fecha_termino', '>=', $hoyColab)
+                                             ->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runNuevo]);
+                                      });
+                                })
                                 ->whereHas('modulo', function ($q) use ($diaActual) {
                                     $q->where('dia', $diaActual);
                                 })
@@ -1799,6 +1820,17 @@ class PlanoDigitalController extends Controller
                     ->first();
 
                 if ($reservaFinalizadaHoy) {
+                    if (
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Finalizada automáticamente') &&
+                        !str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Devolución de llave registrada')
+                    ) {
+                        $reservaFinalizadaHoy->observaciones = trim(
+                            ($reservaFinalizadaHoy->observaciones ?? '') .
+                            "\nDevolución de llave registrada por el docente a las {$horaActualStr}."
+                        );
+                        $reservaFinalizadaHoy->save();
+                    }
+
                     return response()->json([
                         'tipo' => 'clase_ya_finalizada',
                         'mensaje' => 'Esta clase ya fue finalizada con éxito' . ($reservaFinalizadaHoy->hora_salida ? ' a las ' . substr($reservaFinalizadaHoy->hora_salida, 0, 5) : '') . '. El registro para este bloque ya se encuentra completado.',
@@ -1809,6 +1841,46 @@ class PlanoDigitalController extends Controller
                             'espacio' => $espacio->nombre_espacio
                         ]
                     ]);
+                }
+            } else {
+                // Si el docente no tiene un nuevo bloque iniciando ahora pero viene a devolver la llave
+                // pocos minutos después de que el sistema auto-finalizara su reserva (tras los 10 min de margen),
+                // registrar su salida tardía en lugar de abrir una reserva espontánea falsa.
+                $reservaAutoCerradaReciente = Reserva::where(function ($query) use ($runUsuario) {
+                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                })
+                    ->where('id_espacio', $idEspacio)
+                    ->where('fecha_reserva', Carbon::today()->toDateString())
+                    ->where('estado', 'finalizada')
+                    ->where('observaciones', 'LIKE', '%Finalizada automáticamente%')
+                    ->latest('updated_at')
+                    ->first();
+
+                if ($reservaAutoCerradaReciente && !empty($reservaAutoCerradaReciente->hora_salida)) {
+                    $minutosDesdeSalida = Carbon::parse(Carbon::today()->toDateString() . ' ' . $reservaAutoCerradaReciente->hora_salida)
+                        ->diffInMinutes($ahora, false);
+
+                    if ($minutosDesdeSalida >= 0 && $minutosDesdeSalida <= 25) {
+                        if (!str_contains($reservaAutoCerradaReciente->observaciones ?? '', 'Devolución de llave registrada')) {
+                            $reservaAutoCerradaReciente->observaciones = trim(
+                                ($reservaAutoCerradaReciente->observaciones ?? '') .
+                                "\nDevolución de llave registrada por el docente a las {$horaActualStr}."
+                            );
+                            $reservaAutoCerradaReciente->save();
+                        }
+
+                        return response()->json([
+                            'tipo' => 'clase_ya_finalizada',
+                            'mensaje' => 'Salida registrada a las ' . substr($horaActualStr, 0, 5) . '. La reserva ya había finalizado al término del bloque (' . substr($reservaAutoCerradaReciente->hora_salida, 0, 5) . ').',
+                            'espacio_disponible' => false,
+                            'reserva' => [
+                                'id_reserva' => $reservaAutoCerradaReciente->id_reserva,
+                                'hora_salida' => $horaActualStr,
+                                'espacio' => $espacio->nombre_espacio
+                            ]
+                        ]);
+                    }
                 }
             }
 

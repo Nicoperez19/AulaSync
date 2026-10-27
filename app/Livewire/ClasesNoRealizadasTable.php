@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PeriodoAcademico;
 use App\Models\ClaseNoRealizada;
+use App\Models\RecuperacionClase;
 use App\Models\Asignatura;
 use App\Models\Profesor;
 use App\Models\Carrera;
@@ -950,17 +951,52 @@ class ClasesNoRealizadasTable extends Component
                 $observacionReagendamiento .= " Motivo: {$observaciones}";
             }
 
+            $fechaOriginal = $clase->fecha_clase->toDateString();
+            $espacioOriginal = $clase->id_espacio;
+            $moduloOriginal = trim(explode(',', (string) $clase->id_modulo)[0]);
             $valoresAnteriores = $clase->only(['fecha_clase', 'id_espacio', 'id_modulo', 'estado', 'observaciones']);
             $estadoAnterior = $clase->estado;
             
             // Cambiar estado a PENDIENTE (esperando recuperación)
-            $clase->update([
-                'fecha_clase' => $nuevaFecha,
-                'id_espacio' => $nuevoEspacio,
-                'id_modulo' => $nuevoModuloId,
-                'estado' => 'pendiente', // Estado específico para clases reagendadas
-                'observaciones' => $observacionReagendamiento,
-            ]);
+            $clase->getConnection()->transaction(function () use ($clase, $nuevaFecha, $nuevoEspacio, $nuevoModuloId, $observacionReagendamiento, $fechaOriginal, $espacioOriginal, $moduloOriginal) {
+                $clase->update([
+                    'fecha_clase' => $nuevaFecha,
+                    'id_espacio' => $nuevoEspacio,
+                    'id_modulo' => $nuevoModuloId,
+                    'estado' => 'pendiente',
+                    'observaciones' => $observacionReagendamiento,
+                ]);
+
+                $recuperacion = RecuperacionClase::where('id_clase_no_realizada', $clase->id)->first()
+                    ?? RecuperacionClase::where('run_profesor', $clase->run_profesor)
+                        ->where('id_asignatura', $clase->id_asignatura)
+                        ->where('id_espacio', $espacioOriginal)
+                        ->whereDate('fecha_clase_original', $fechaOriginal)
+                        ->where('id_modulo_original', $moduloOriginal)
+                        ->first();
+
+                if (!$recuperacion) {
+                    $recuperacion = new RecuperacionClase();
+                }
+
+                $recuperacion->fill([
+                    'id_clase_no_realizada' => $clase->id,
+                    'run_profesor' => $clase->run_profesor,
+                    'id_asignatura' => $clase->id_asignatura,
+                    'id_espacio' => $espacioOriginal,
+                    'fecha_clase_original' => $fechaOriginal,
+                    'id_modulo_original' => $moduloOriginal,
+                    'fecha_reagendada' => $nuevaFecha,
+                    'id_modulo_reagendado' => trim(explode(',', $nuevoModuloId)[0]),
+                    'id_espacio_reagendado' => $nuevoEspacio,
+                    'estado' => 'reagendada',
+                    'notificado' => false,
+                    'fecha_notificacion' => null,
+                    'notas' => $observacionReagendamiento,
+                    'gestionado_por' => auth()->user()->run,
+                ]);
+                $recuperacion->save();
+            });
 
             app(AuditoriaService::class)->registrar(
                 $clase,
@@ -976,11 +1012,11 @@ class ClasesNoRealizadasTable extends Component
             
             Log::info("Clase reagendada exitosamente", [
                 'clase_id' => $id,
-                'fecha_original' => $clase->fecha_clase->format('Y-m-d'),
+                'fecha_original' => $fechaOriginal,
                 'fecha_nueva' => $nuevaFecha,
-                'espacio_original' => $clase->id_espacio,
+                'espacio_original' => $espacioOriginal,
                 'espacio_nuevo' => $nuevoEspacio,
-                'modulo_original' => $clase->id_modulo,
+                'modulo_original' => $moduloOriginal,
                 'modulo_nuevo' => $nuevoModuloId,
                 'estado' => 'pendiente',
             ]);

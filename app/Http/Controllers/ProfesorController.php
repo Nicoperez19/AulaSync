@@ -445,8 +445,29 @@ class ProfesorController extends Controller
 
             if (!$esTemporal && $programacion) {
                 $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
-                    ->where('id_espacio', $espacio->id_espacio)
-                    ->where('id_asignatura', $programacion->id_asignatura)
+                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                        $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                    })
+                    ->where(function ($qPrincipal) use ($programacion, $profesor, $runProfesor, $runLimpio, $runSinDv) {
+                        $qPrincipal->where('id_asignatura', $programacion->id_asignatura)
+                            ->orWhereHas('asignatura', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                                $q->where('run_profesor', $profesor->run_profesor)
+                                  ->orWhere('run_profesor', $runProfesor)
+                                  ->orWhere('run_profesor', $runLimpio)
+                                  ->orWhere('run_profesor', $runSinDv)
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                            })
+                            ->orWhereHas('horario', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                                $q->where('run_profesor', $profesor->run_profesor)
+                                  ->orWhere('run_profesor', $runProfesor)
+                                  ->orWhere('run_profesor', $runLimpio)
+                                  ->orWhere('run_profesor', $runSinDv)
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                            });
+                    })
                     ->where(function ($q) use ($periodo, $programacion) {
                         $q->where('id_horario', $programacion->id_horario)
                           ->orWhereHas('horario', function ($hq) use ($periodo) {
@@ -483,8 +504,26 @@ class ProfesorController extends Controller
                 // Clases temporales (colaborador)
                 $idColab = $planColaborador->id_profesor_colaborador;
                 $planificacionesMismoBloque = \App\Models\PlanificacionProfesorColaborador::with('modulo')
-                    ->where('id_espacio', $espacio->id_espacio)
-                    ->where('id_profesor_colaborador', $idColab)
+                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                        $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                    })
+                    ->where(function ($q) use ($idColab, $profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {
+                        $q->where('id_profesor_colaborador', $idColab)
+                          ->orWhereHas('profesorColaborador', function ($cq) use ($profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {
+                              $cq->where('estado', 'activo')
+                                 ->where('fecha_inicio', '<=', $fechaActual)
+                                 ->where('fecha_termino', '>=', $fechaActual)
+                                 ->where(function ($subQ) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                                     $subQ->where('run_profesor_colaborador', $profesor->run_profesor)
+                                          ->orWhere('run_profesor_colaborador', $runProfesor)
+                                          ->orWhere('run_profesor_colaborador', $runLimpio)
+                                          ->orWhere('run_profesor_colaborador', $runSinDv)
+                                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                                 });
+                          });
+                    })
                     ->whereHas('modulo', function ($q) use ($diasPosibles) {
                         $q->whereIn('dia', $diasPosibles);
                     })

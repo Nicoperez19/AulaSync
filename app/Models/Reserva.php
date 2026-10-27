@@ -152,15 +152,16 @@ class Reserva extends Model
     {
         $fecha = $fecha ?? now()->toDateString();
         $hora = $hora ?? now()->format('H:i:s');
+        // Margen de 10 minutos para no liberar el espacio antes de que el docente marque su salida al finalizar el módulo
+        $horaConMargen = \Carbon\Carbon::parse($fecha . ' ' . $hora)->subMinutes(10)->format('H:i:s');
 
         return $query->where('estado', 'activa')
                      ->where('fecha_reserva', $fecha)
-                     ->where(function($q) use ($hora) {
+                     ->where(function($q) use ($hora, $horaConMargen) {
                          $q->where('hora', '<=', $hora)
-                           ->where(function($inner) use ($hora) {
+                           ->where(function($inner) use ($horaConMargen) {
                                $inner->whereNull('hora_salida')
-                                     ->orWhere('hora_salida', '>', $hora)
-                                     ->orWhere('tipo_reserva', 'espontanea')
+                                     ->orWhere('hora_salida', '>', $horaConMargen)
                                      ->orWhere('observaciones', 'like', '%Sala de Estudio%');
                            });
                      });
@@ -174,11 +175,15 @@ class Reserva extends Model
         if (str_contains(strtolower($this->observaciones ?? ''), 'sala de estudio')) {
             return true;
         }
-        if ($this->tipo_reserva === 'espontanea') {
-            return true;
-        }
-        if ($this->relationLoaded('espacio') && $this->espacio && str_contains(strtolower($this->espacio->tipo_espacio ?? ''), 'estudio')) {
-            return true;
+        $espacio = $this->relationLoaded('espacio')
+            ? $this->espacio
+            : Espacio::withoutGlobalScopes()->find($this->id_espacio);
+        if ($espacio) {
+            $tipo = strtolower($espacio->tipo_espacio ?? '');
+            $nombre = strtolower($espacio->nombre_espacio ?? '');
+            if (str_contains($tipo, 'estudio') || str_contains($nombre, 'estudio')) {
+                return true;
+            }
         }
         return false;
     }
