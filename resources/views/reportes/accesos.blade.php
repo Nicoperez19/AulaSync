@@ -107,11 +107,13 @@
                         <select name="periodo" 
                                 id="periodo_filtro"
                                 class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white dark:bg-gray-700 dark:text-white">
-                            @foreach($periodosDisponibles as $p)
-                                <option value="{{ $p->codigo }}" {{ ($periodo ?? '') == $p->codigo ? 'selected' : '' }}>
-                                    {{ $p->display_label }}
-                                </option>
-                            @endforeach
+                            @if(!empty($periodosDisponibles))
+                                @foreach($periodosDisponibles as $p)
+                                    <option value="{{ $p->codigo }}" {{ ($periodo ?? '') == $p->codigo ? 'selected' : '' }}>
+                                        {{ $p->display_label }}
+                                    </option>
+                                @endforeach
+                            @endif
                             <option value="" {{ empty($periodo) ? 'selected' : '' }}>Todos los semestres</option>
                         </select>
                     </div>

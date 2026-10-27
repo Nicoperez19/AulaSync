@@ -13,7 +13,7 @@
         </button>
 
         <!-- Logo -->
-        <a href="{{ auth()->user()->hasAnyRole(['Usuario', 'Estudiante en Práctica']) ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director']) ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
+        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : (auth()->user()->hasRole('Profesor') && !auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Estudiante en Práctica']) ? route('docente.dashboard') : route('dashboard')) }}" class="flex items-center">
             <x-application-logo-navbar />
         </a>
     </div>
@@ -74,7 +74,7 @@
                     {{ __('Perfil') }}
                 </x-dropdown-link>
 
-                @if(Auth::user()->is_superuser || Auth::user()->hasRole('Administrador'))
+                @if(Auth::user()->isSuperAdmin() || (Auth::user()->hasRole('Administrador') && !Auth::user()->id_sede))
                     <x-dropdown-link :href="route('sedes.selection')">
                         <x-heroicon-s-office-building class="w-4 h-4 mr-2 inline" aria-hidden="true" />
                         {{ __('Cambiar Sede') }}

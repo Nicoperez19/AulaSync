@@ -127,7 +127,7 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
 });
 
 // Dashboard - Administrador, Supervisor, Director o permiso dashboard
-Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|dashboard', 'extend.execution:300'])->group(function () {
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|Estudiante en Práctica|dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');

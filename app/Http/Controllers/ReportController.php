@@ -986,54 +986,90 @@ class ReportController extends Controller
     // 3. Accesos registrados
     public function accesos(Request $request)
     {
-        // Obtener datos para filtros primero
-        $pisos = $this->obtenerPisosDisponibles();
-        $espacios = $this->obtenerEspaciosDisponibles();
-        $tiposUsuario = $this->obtenerTiposUsuario();
+        try {
+            $pisos = $this->obtenerPisosDisponibles();
+        } catch (\Throwable $e) {
+            $pisos = [];
+        }
+        try {
+            $espacios = $this->obtenerEspaciosDisponibles();
+        } catch (\Throwable $e) {
+            $espacios = [];
+        }
+        try {
+            $tiposUsuario = $this->obtenerTiposUsuario();
+        } catch (\Throwable $e) {
+            $tiposUsuario = [];
+        }
 
         // Semestres / Periodos disponibles
-        $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
+        try {
+            $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
+        } catch (\Throwable $e) {
+            $periodosDisponibles = collect();
+        }
+
         $periodosLimites = [];
-        foreach ($periodosDisponibles as $p) {
-            $lim = SemesterHelper::getLimitesPeriodo($p->codigo);
-            if (!empty($lim['inicio']) && !empty($lim['fin'])) {
-                $periodosLimites[$p->codigo] = [
-                    'inicio' => $lim['inicio']->format('Y-m-d'),
-                    'fin' => min(Carbon::today(), $lim['fin'])->format('Y-m-d'),
-                ];
+        if ($periodosDisponibles && count($periodosDisponibles) > 0) {
+            foreach ($periodosDisponibles as $p) {
+                try {
+                    $inicioStr = isset($p->fecha_inicio) ? Carbon::parse($p->fecha_inicio)->format('Y-m-d') : null;
+                    $finStr = isset($p->fecha_fin) ? Carbon::parse($p->fecha_fin)->format('Y-m-d') : null;
+                    $hoyStr = Carbon::today()->format('Y-m-d');
+                    $periodosLimites[$p->codigo] = [
+                        'inicio' => $inicioStr ?: $hoyStr,
+                        'fin' => ($finStr && $finStr < $hoyStr) ? $finStr : $hoyStr,
+                    ];
+                } catch (\Throwable $e) {
+                    // Ignorar error de parsing puntual
+                }
             }
         }
 
         // Unidades Académicas
         try {
-            $tenant = \App\Models\Tenant::current();
             $unidadesAcademicas = \Illuminate\Support\Facades\DB::connection('tenant')->table('carreras')
-                ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
-                ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
-                ->when($tenant && $tenant->sede_id, fn ($query) => $query->where('f.id_sede', $tenant->sede_id))
-                ->select('carreras.id_carrera', 'carreras.nombre')
-                ->orderByRaw('CAST(carreras.id_carrera AS UNSIGNED) ASC')
-                ->orderBy('carreras.id_carrera', 'ASC')
+                ->select('id_carrera', 'nombre')
+                ->orderBy('nombre', 'ASC')
                 ->get();
-        } catch (\Exception $e) {
-            $unidadesAcademicas = collect();
+        } catch (\Throwable $e) {
+            try {
+                $unidadesAcademicas = \App\Models\Carrera::orderBy('nombre')->get(['id_carrera', 'nombre']);
+            } catch (\Throwable $e2) {
+                $unidadesAcademicas = collect();
+            }
         }
 
         // Periodo actual por defecto
-        $periodoActual = SemesterHelper::getCurrentPeriod();
+        try {
+            $periodoActual = SemesterHelper::getCurrentPeriod();
+        } catch (\Throwable $e) {
+            $periodoActual = Carbon::now()->year . '-' . (Carbon::now()->month >= 8 ? 2 : 1);
+        }
+
         $periodo = $request->get('periodo', $periodoActual);
 
-        $limitesPeriodo = $periodo ? SemesterHelper::getLimitesPeriodo($periodo) : null;
-        $defaultInicio = ($limitesPeriodo && $limitesPeriodo['valido']) 
-            ? $limitesPeriodo['inicio']->format('Y-m-d') 
-            : Carbon::now()->startOfMonth()->format('Y-m-d');
-        $defaultFin = ($limitesPeriodo && $limitesPeriodo['valido']) 
-            ? min(Carbon::today(), $limitesPeriodo['fin'])->format('Y-m-d') 
-            : Carbon::now()->endOfMonth()->format('Y-m-d');
+        $defaultInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
+        $defaultFin = Carbon::now()->endOfMonth()->format('Y-m-d');
+
+        if (!empty($periodo)) {
+            try {
+                $limitesPeriodo = SemesterHelper::getLimitesPeriodo($periodo);
+                if (!empty($limitesPeriodo['inicio'])) {
+                    $defaultInicio = Carbon::parse($limitesPeriodo['inicio'])->format('Y-m-d');
+                }
+                if (!empty($limitesPeriodo['fin'])) {
+                    $finPeriodo = Carbon::parse($limitesPeriodo['fin']);
+                    $defaultFin = $finPeriodo->gt(Carbon::today()) ? Carbon::today()->format('Y-m-d') : $finPeriodo->format('Y-m-d');
+                }
+            } catch (\Throwable $e) {
+                // Mantener fechas del mes por defecto
+            }
+        }
 
         // Obtener filtros de la request
-        $fechaInicio = $request->get('fecha_inicio', $defaultInicio);
-        $fechaFin = $request->get('fecha_fin', $defaultFin);
+        $fechaInicio = $request->get('fecha_inicio', $defaultInicio) ?: $defaultInicio;
+        $fechaFin = $request->get('fecha_fin', $defaultFin) ?: $defaultFin;
         $search = $request->get('search', '');
         $ua = $request->get('ua', '');
         $estado = $request->get('estado', '');
@@ -1042,7 +1078,12 @@ class ReportController extends Controller
         $espacio = $request->get('espacio', '');
 
         // Obtener accesos registrados con filtros
-        $accesos = $this->obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso, $tipoUsuario, $espacio, $search, $ua, $estado);
+        try {
+            $accesos = $this->obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso, $tipoUsuario, $espacio, $search, $ua, $estado);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error en obtenerAccesosRegistrados: ' . $e->getMessage());
+            $accesos = collect();
+        }
 
         return view('reportes.accesos', compact(
             'accesos',
@@ -1206,14 +1247,14 @@ class ReportController extends Controller
                 'espacio.piso.facultad:id_facultad,nombre_facultad'
             ])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->when(!empty($estado), function ($q) use ($estado) {
+            ->where(function ($q) use ($estado) {
                 if ($estado === 'activa') {
                     $q->where('estado', 'activa');
                 } elseif ($estado === 'finalizada') {
                     $q->where('estado', 'finalizada');
+                } else {
+                    $q->whereIn('estado', ['activa', 'finalizada']);
                 }
-            }, function ($q) {
-                $q->whereIn('estado', ['activa', 'finalizada']);
             })
             ->whereNotNull('hora')
             ->orderBy('fecha_reserva', 'desc')
@@ -2460,31 +2501,29 @@ class ReportController extends Controller
 
         // Obtener todas las salas de estudio (flexible por tipo o nombre)
         $salasEstudio = Espacio::where(function ($q) {
-            $q->where('tipo_espacio', 'like', '%estudio%')
+            $q->where('tipo_espacio', 'Sala de Estudio')
+              ->orWhere('tipo_espacio', 'like', '%estudio%')
               ->orWhere('nombre_espacio', 'like', '%estudio%');
         })->get();
 
         $espaciosIds = $salasEstudio->pluck('id_espacio')->filter()->toArray();
 
-        // Construir query base: incluir reservas por espacio o marcadas como espontaneas/estudio
+        // Construir query base: restringir estrictamente a salas de estudio
         $query = Reserva::with(['solicitante', 'profesor', 'espacio'])
             ->where(function ($q) use ($espaciosIds) {
                 if (!empty($espaciosIds)) {
-                    $q->whereIn('id_espacio', $espaciosIds)
-                      ->orWhere('observaciones', 'like', '%estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea');
+                    $q->whereIn('id_espacio', $espaciosIds);
                 } else {
-                    $q->where('observaciones', 'like', '%estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea')
-                      ->orWhereHas('espacio', function ($qe) {
-                          $qe->where('tipo_espacio', 'like', '%estudio%')
-                             ->orWhere('nombre_espacio', 'like', '%estudio%');
-                      });
+                    $q->whereHas('espacio', function ($qe) {
+                        $qe->where('tipo_espacio', 'Sala de Estudio')
+                           ->orWhere('tipo_espacio', 'like', '%estudio%')
+                           ->orWhere('nombre_espacio', 'like', '%estudio%');
+                    });
                 }
             })
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->orderBy('fecha_reserva')
-            ->orderBy('hora');
+            ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'desc');
 
         if ($salaId) {
             $query->where('id_espacio', $salaId);
@@ -2505,7 +2544,7 @@ class ReportController extends Controller
                      'capacidad_maxima' => 6
                  ];
 
-            $grupos = $this->agruparReservasPorSesion($reservasSala);
+            $grupos = $this->agruparReservasPorSesion($reservasSala->sortBy('hora'));
 
             if (count($grupos) > 0) {
                 $gruposPorSala[$espacioId] = [
@@ -2520,10 +2559,11 @@ class ReportController extends Controller
         $totalGrupos = collect($gruposPorSala)->sum(function ($item) {
             return count($item['grupos']);
         });
-        $salasUsadas = count($gruposPorSala);
+        $salasUsadas = $reservas->pluck('id_espacio')->unique()->count();
         $promedioPersonasPorGrupo = $totalGrupos > 0 ? round($totalAccesos / $totalGrupos, 1) : 0;
 
         return view('reportes.salas-estudio', compact(
+            'reservas',
             'gruposPorSala',
             'salasEstudio',
             'fechaInicio',
@@ -2615,7 +2655,8 @@ class ReportController extends Controller
 
         // Obtener datos (mismo código que en salasEstudio)
         $salasEstudio = Espacio::where(function ($q) {
-            $q->where('tipo_espacio', 'like', '%estudio%')
+            $q->where('tipo_espacio', 'Sala de Estudio')
+              ->orWhere('tipo_espacio', 'like', '%estudio%')
               ->orWhere('nombre_espacio', 'like', '%estudio%');
         })->get();
 
@@ -2624,21 +2665,18 @@ class ReportController extends Controller
         $query = Reserva::with(['solicitante', 'profesor', 'espacio'])
             ->where(function ($q) use ($espaciosIds) {
                 if (!empty($espaciosIds)) {
-                    $q->whereIn('id_espacio', $espaciosIds)
-                      ->orWhere('observaciones', 'like', '%estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea');
+                    $q->whereIn('id_espacio', $espaciosIds);
                 } else {
-                    $q->where('observaciones', 'like', '%estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea')
-                      ->orWhereHas('espacio', function ($qe) {
-                          $qe->where('tipo_espacio', 'like', '%estudio%')
-                             ->orWhere('nombre_espacio', 'like', '%estudio%');
-                      });
+                    $q->whereHas('espacio', function ($qe) {
+                        $qe->where('tipo_espacio', 'Sala de Estudio')
+                           ->orWhere('tipo_espacio', 'like', '%estudio%')
+                           ->orWhere('nombre_espacio', 'like', '%estudio%');
+                    });
                 }
             })
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->orderBy('fecha_reserva')
-            ->orderBy('hora');
+            ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'desc');
 
         if ($salaId) {
             $query->where('id_espacio', $salaId);

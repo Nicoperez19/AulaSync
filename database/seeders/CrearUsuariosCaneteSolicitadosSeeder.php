@@ -60,9 +60,10 @@ class CrearUsuariosCaneteSolicitadosSeeder extends Seeder
         $yenny->syncRoles([$adminRole]);
         $this->command?->info("Usuario creado/actualizado: Yenny Huaquiñir Núñez (Administrador - Sede Cañete)");
 
-        // 5. Crear / Configurar Rol: Estudiante en Práctica
+        // 5. Crear / Configurar Rol: Estudiante en Práctica con acceso a Dashboard
         $estudiantePracticaRole = Role::firstOrCreate(['name' => 'Estudiante en Práctica', 'guard_name' => 'web']);
         $estudiantePracticaRole->syncPermissions([
+            'dashboard',              // Acceso al Dashboard
             'reportes',               // Lista de clases registradas y no registradas (Control de Clases)
             'monitoreo de espacios',  // Visualización del plano virtual
             'horarios por espacios',  // Consulta de horarios de aulas
@@ -71,7 +72,7 @@ class CrearUsuariosCaneteSolicitadosSeeder extends Seeder
             'visor de mapas',         // Visualizador de mapas
             'visor de usuarios',      // Visualizador de usuarios
         ]);
-        $this->command?->info("Perfil/Rol 'Estudiante en Práctica' configurado.");
+        $this->command?->info("Perfil/Rol 'Estudiante en Práctica' configurado con acceso al Dashboard.");
 
         // 6. Crear Estudiante en Práctica: Amaya Figueroa Vásquez
         $amaya = User::updateOrCreate(
@@ -81,6 +82,7 @@ class CrearUsuariosCaneteSolicitadosSeeder extends Seeder
                 'email' => 'afigueroa@ucsc.cl',
                 'password' => Hash::make('22258512'),
                 'id_sede' => 'CT',
+                'id_carrera' => 1205, // Técnico Universitario en Administración
                 'is_superuser' => false,
             ]
         );

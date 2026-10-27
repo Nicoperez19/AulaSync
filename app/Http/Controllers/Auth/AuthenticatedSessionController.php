@@ -120,9 +120,9 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('docente.dashboard');
         }
 
-        // Si el usuario es Director con sede asignada, redirigir directamente
-        if ($user->hasRole('Director') && $user->id_sede) {
-            Log::info('✅ Director con sede asignada detectado, redirigiendo automáticamente', [
+        // Si el usuario tiene una sede específica asignada y NO es superusuario global, redirigir directamente a su sede
+        if ($user->id_sede && !$user->isSuperAdmin()) {
+            Log::info('✅ Usuario con sede asignada detectado, redirigiendo automáticamente a su sede', [
                 'run' => $user->run,
                 'id_sede' => $user->id_sede,
             ]);

@@ -20,6 +20,11 @@ class SedeSelectionController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+        // Si el usuario tiene una sede específica asignada y NO es superadministrador, redirigir directamente
+        if ($user->id_sede && !$user->isSuperAdmin()) {
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
+        }
         
         $query = Sede::whereHas('tenant', function ($query) {
             $query->where('is_active', true);
@@ -54,6 +59,14 @@ class SedeSelectionController extends Controller
      */
     public function redirect(Request $request, $sedeId)
     {
+        $user = Auth::user();
+
+        // Si el usuario tiene una sede específica asignada y NO es superadministrador, bloquear acceso a otras sedes
+        if ($user->id_sede && !$user->isSuperAdmin() && $sedeId !== $user->id_sede) {
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede])
+                ->with('error', 'Solo tienes acceso a tu sede asignada.');
+        }
+
         $sede = Sede::with('tenant')->findOrFail($sedeId);
 
         $tenantService = app(\App\Services\TenantSessionService::class);
