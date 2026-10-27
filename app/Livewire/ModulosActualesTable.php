@@ -354,16 +354,17 @@ class ModulosActualesTable extends Component
      */
     private function verificarClaseTerminoAntes($espacio, $numeroUltimoModulo, $moduloActual)
     {
-        if (!$moduloActual || !$numeroUltimoModulo) {
+        if (!$moduloActual) {
             return false;
         }
 
-        // Si estamos en el rango de módulos de la clase o antes del final
-        if ($moduloActual['numero'] <= $numeroUltimoModulo) {
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio);
+
+        // Si estamos en el rango de módulos de la clase o antes del final (o si no se pudo determinar el último módulo)
+        if (!$numeroUltimoModulo || $moduloActual['numero'] <= $numeroUltimoModulo) {
             // Verificar si hay una reserva del profesor que ya finalizó (con hora_salida)
-            $reservaFinalizada = Reserva::where('id_espacio', $espacio)
+            $reservaFinalizada = Reserva::whereIn('id_espacio', $espaciosEquiv)
                 ->where('fecha_reserva', Carbon::now()->toDateString())
-                ->whereNotNull('run_profesor')
                 ->where('estado', 'finalizada')
                 ->whereNotNull('hora_salida')
                 ->orderBy('created_at', 'desc')
@@ -374,8 +375,8 @@ class ModulosActualesTable extends Component
                 $horaActual = Carbon::now()->format('H:i:s');
                 $horaSalida = $reservaFinalizada->hora_salida;
 
-                // Si ya registró salida, la clase terminó antes
-                return $horaSalida < $horaActual || !empty($horaSalida);
+                // Si ya registró salida, la clase terminó antes / finalizó
+                return $horaSalida <= $horaActual || !empty($horaSalida);
             }
         }
 
@@ -1347,11 +1348,22 @@ class ModulosActualesTable extends Component
                             // Obtener los números de módulos para verificar estado
                             $planificacionesAsignatura = $todasLasPlanificaciones
                                 ->get($planificacionActiva->id_asignatura, collect())
+                                ->filter(function ($p) use ($espaciosEquivActual) {
+                                    return in_array($p->id_espacio, $espaciosEquivActual);
+                                })
                                 ->sortBy(function ($planificacion) {
                                     $moduloParts = explode('.', $planificacion->id_modulo);
 
                                     return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
                                 });
+                            if ($planificacionesAsignatura->isEmpty()) {
+                                $planificacionesAsignatura = $todasLasPlanificaciones
+                                    ->get($planificacionActiva->id_asignatura, collect())
+                                    ->sortBy(function ($planificacion) {
+                                        $moduloParts = explode('.', $planificacion->id_modulo);
+                                        return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
+                                    });
+                            }
 
                             if ($planificacionesAsignatura->isNotEmpty()) {
                                 $moduloInicio = $planificacionesAsignatura->first();

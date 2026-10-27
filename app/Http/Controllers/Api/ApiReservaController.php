@@ -487,6 +487,12 @@ class ApiReservaController extends Controller
                 $espacio->save();
             }
 
+            try {
+                $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+                \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+                \Illuminate\Support\Facades\Cache::forget('estados_espacios');
+            } catch (\Throwable $e) {}
+
             // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
             $reservaAutoFinalizada = Reserva::where('id_espacio', $request->espacio_id)
                 ->where('estado', 'finalizada')
