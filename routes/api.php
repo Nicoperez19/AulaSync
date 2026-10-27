@@ -450,10 +450,13 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         $espacios = \App\Models\Espacio::whereNotIn('estado', ['Mantención', 'Mantenimiento', 'Inactivo', 'Deshabilitado', 'Baja'])
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala estudio%'")
-            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%taller%'")
-            ->whereRaw("(LOWER(tipo_espacio) NOT LIKE '%laboratorio%' OR LOWER(tipo_espacio) LIKE '%laboratorio de computacion%' OR LOWER(tipo_espacio) LIKE '%laboratorio computacion%')")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de reuniones%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala reuniones%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%oficina%'")
             ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%estudio%'")
-            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%taller%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%reunion%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%oficina%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%bodega%'")
             ->select('id_espacio', 'nombre_espacio', 'tipo_espacio')
             ->orderBy('nombre_espacio')
             ->get();
@@ -475,14 +478,6 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         // Extraer los números de inicio y fin (ej: de "MI.7" -> 7, o de "7" -> 7)
         $inicioNum = (int) (str_contains((string)$moduloInicio, '.') ? explode('.', (string)$moduloInicio)[1] : preg_replace('/[^0-9]/', '', (string)$moduloInicio));
         $finNum = (int) (str_contains((string)$moduloFin, '.') ? explode('.', (string)$moduloFin)[1] : preg_replace('/[^0-9]/', '', (string)$moduloFin));
-
-        // Si el módulo recibido incluye prefijo de día válido, priorizar ese prefijo
-        if (str_contains((string)$moduloInicio, '.')) {
-            $prefijoRecibido = strtoupper(explode('.', (string)$moduloInicio)[0]);
-            if (in_array($prefijoRecibido, ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'])) {
-                $prefijoDia = $prefijoRecibido;
-            }
-        }
 
         if ($inicioNum <= 0) {
             $inicioNum = 1;
@@ -523,29 +518,71 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         $horaInicio = $primerModuloObj ? substr($primerModuloObj->hora_inicio, 0, 5) : ($modulosBase[$inicioNum]['inicio'] ?? '08:10');
         $horaFin = $ultimoModuloObj ? substr($ultimoModuloObj->hora_termino, 0, 5) : ($modulosBase[$finNum]['termino'] ?? '20:00');
 
-        $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar) {
+        $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar, $prefijoDia) {
+            // 1. Verificar planificaciones normales
             foreach ($modulosIds as $moduloId) {
-                $planificado = \App\Models\Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
-                    ->where('id_modulo', $moduloId)
-                    ->exists();
-                
-                if ($planificado) {
+                $planificadoQuery = \App\Models\Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
+                    ->where('id_modulo', $moduloId);
+
+                if (\App\Models\Planificacion_Asignatura::tieneColumnaVigencia()) {
+                    $planificadoQuery = $planificadoQuery->vigentesEn($fecha);
+                }
+
+                if ($planificadoQuery->exists()) {
                     return false;
                 }
             }
-            
+
+            // 2. Verificar planificaciones de profesores colaboradores
+            try {
+                if (\Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('planificaciones_profesores_colaboradores')) {
+                    foreach ($modulosIds as $moduloId) {
+                        $planificadoColab = \Illuminate\Support\Facades\DB::connection('tenant')->table('planificaciones_profesores_colaboradores as ppc')
+                            ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
+                            ->where('ppc.id_modulo', $moduloId)
+                            ->where('ppc.id_espacio', $espacio->id_espacio)
+                            ->where('pc.estado', 'activo')
+                            ->where('pc.fecha_inicio', '<=', $fecha)
+                            ->where('pc.fecha_termino', '>=', $fecha)
+                            ->exists();
+
+                        if ($planificadoColab) {
+                            return false;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Si la tabla no existe o falla la conexión, continuar
+            }
+
+            // 3. Verificar reservas confirmadas / activas / programadas
             foreach ($modulosAVerificar as $numModulo) {
+                $moduloIdActual = "{$prefijoDia}.{$numModulo}";
+
                 $reservado = \App\Models\Reserva::where('id_espacio', $espacio->id_espacio)
                     ->whereDate('fecha_reserva', $fecha)
-                    ->whereRaw("modulos LIKE ?", ["%{$numModulo}%"])
-                    ->whereIn('estado', ['confirmada', 'en_curso', 'activa'])
+                    ->whereIn('estado', ['confirmada', 'en_curso', 'activa', 'programada'])
+                    ->where(function ($query) use ($numModulo, $moduloIdActual) {
+                        $query->where(function ($sub) use ($numModulo) {
+                            $sub->whereNotNull('modulo_inicio')
+                                ->whereNotNull('modulo_fin')
+                                ->where('modulo_inicio', '<=', $numModulo)
+                                ->where('modulo_fin', '>=', $numModulo);
+                        })
+                        ->orWhere('modulo_inicio', $numModulo)
+                        ->orWhere('modulo_fin', $numModulo)
+                        ->orWhere(function ($sub) use ($moduloIdActual) {
+                            $sub->whereNotNull('id_modulo')
+                                ->whereRaw("FIND_IN_SET(?, REPLACE(id_modulo, ' ', '')) > 0", [$moduloIdActual]);
+                        });
+                    })
                     ->exists();
-                
+
                 if ($reservado) {
                     return false;
                 }
             }
-            
+
             return true;
         })->values();
 

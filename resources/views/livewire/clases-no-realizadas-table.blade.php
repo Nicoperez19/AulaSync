@@ -845,8 +845,10 @@ function initClasesNoRealizadasScripts() {
                     // Listener para cambio de fecha
                     dateInput.addEventListener('change', (e) => {
                         filtrarModulosPorDia(e.target.value);
-                        // Limpiar espacio si cambia la fecha
+                        // Limpiar espacio e info si cambia la fecha
                         document.getElementById('swal-nuevo-espacio').innerHTML = '<option value="">Selecciona fecha y módulo primero</option>';
+                        const infoP = document.getElementById('espacios-disponibles-info');
+                        if (infoP) infoP.textContent = '';
                     });
                 } catch (error) {
                     console.error('Error cargando módulos:', error);

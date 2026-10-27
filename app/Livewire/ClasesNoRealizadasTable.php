@@ -868,13 +868,14 @@ class ClasesNoRealizadasTable extends Component
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
         
-        // Detectar automáticamente cuántos módulos no se realizaron
-        // Contar todos los módulos programados para esta asignatura
-        $totalModulosProgramados = \App\Models\Planificacion_Asignatura::where('id_asignatura', $clase->id_asignatura)
-            ->count();
+        // Detectar automáticamente cuántos módulos corresponden a esta sesión no realizada
+        // Si la clase tiene id_modulo separado por comas (ej: "MI.7,MI.8"), contar cuántos son.
+        // Si es un solo módulo (ej: "MI.7"), corresponde a 1 módulo.
+        $modulosArray = array_filter(array_map('trim', explode(',', (string)$clase->id_modulo)));
+        $totalModulosProgramados = !empty($modulosArray) ? count($modulosArray) : 1;
         
         // Log para debugging
-        Log::info("Clase no realizada: {$clase->id}, Asignatura: {$clase->id_asignatura}, Total módulos programados: {$totalModulosProgramados}");
+        Log::info("Clase no realizada modal reagendar: {$clase->id}, Asignatura: {$clase->id_asignatura}, Módulos de la sesión: {$totalModulosProgramados} ({$clase->id_modulo})");
 
         $this->dispatch('show-reagendar-modal', [
             'id' => $id,
