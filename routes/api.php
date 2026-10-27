@@ -281,10 +281,57 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             }
         }
 
+        $claseYaFinalizada = false;
+        $reservaFinalizadaInfo = null;
+
+        if ($tieneProgramacion && $modulosInfo) {
+            $hoyFecha = \Carbon\Carbon::today()->toDateString();
+            $numModulo = \App\Helpers\ModulosHelper::getNumeroModulo($modulosInfo['id_modulo']);
+
+            $reservaFinalizada = \App\Models\Reserva::where('fecha_reserva', $hoyFecha)
+                ->where('estado', 'finalizada')
+                ->where(function ($q) use ($espacio, $espacioLimpio) {
+                    $q->where('id_espacio', $espacio)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
+                ->where(function ($q) use ($usuario, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $usuario)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->where(function ($q) use ($modulosInfo, $numModulo) {
+                    if (!empty($modulosInfo['id_asignatura'])) {
+                        $q->where('id_asignatura', $modulosInfo['id_asignatura']);
+                    }
+                    if ($numModulo !== null) {
+                        $q->orWhere(function ($sub) use ($numModulo) {
+                            $sub->where('modulo_inicio', '<=', $numModulo)
+                                ->where('modulo_fin', '>=', $numModulo);
+                        });
+                    }
+                })
+                ->latest('updated_at')
+                ->first();
+
+            if ($reservaFinalizada) {
+                $claseYaFinalizada = true;
+                $tieneProgramacion = false; // Detener auto-inicio de clase ya concluida
+                $reservaFinalizadaInfo = [
+                    'id_reserva' => $reservaFinalizada->id_reserva,
+                    'hora_salida' => $reservaFinalizada->hora_salida,
+                    'anticipada' => (bool)$reservaFinalizada->clase_finalizada_anticipadamente,
+                ];
+            }
+        }
+
         return response()->json([
             'success' => true,
             'tieneProgramacion' => $tieneProgramacion,
             'tiene_clase' => $tieneProgramacion,
+            'clase_ya_finalizada' => $claseYaFinalizada,
+            'reserva_finalizada_info' => $reservaFinalizadaInfo,
             'modulosInfo' => $modulosInfo,
             'debug' => [
                 'dia_actual' => $diaActual,

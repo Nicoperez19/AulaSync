@@ -395,6 +395,47 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Protección contra re-apertura automática: Verificar si la clase ya fue finalizada hoy
+            $idAsignaturaCheck = $programacion ? $programacion->id_asignatura : ($planColaborador?->profesorColaborador?->id_asignatura);
+            $idModuloCheck = $programacion ? $programacion->id_modulo : ($planColaborador?->id_modulo);
+            $numModuloActualCheck = \App\Helpers\ModulosHelper::getNumeroModulo($idModuloCheck);
+
+            $reservaFinalizadaHoy = Reserva::where('fecha_reserva', $fechaActual)
+                ->where('estado', 'finalizada')
+                ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    $eq->where('id_espacio', $espacio->id_espacio)
+                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
+                ->where(function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $profesor->run_profesor)
+                      ->orWhere('run_profesor', $runProfesor)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->where(function ($q) use ($idAsignaturaCheck, $numModuloActualCheck) {
+                    if (!empty($idAsignaturaCheck)) {
+                        $q->where('id_asignatura', $idAsignaturaCheck);
+                    }
+                    if ($numModuloActualCheck !== null) {
+                        $q->orWhere(function ($sub) use ($numModuloActualCheck) {
+                            $sub->where('modulo_inicio', '<=', $numModuloActualCheck)
+                                ->where('modulo_fin', '>=', $numModuloActualCheck);
+                        });
+                    }
+                })
+                ->latest('updated_at')
+                ->first();
+
+            if ($reservaFinalizadaHoy) {
+                return response()->json([
+                    'success' => false,
+                    'clase_ya_finalizada' => true,
+                    'mensaje' => 'Esta clase ya fue finalizada el día de hoy' . ($reservaFinalizadaHoy->hora_salida ? ' a las ' . substr($reservaFinalizadaHoy->hora_salida, 0, 5) : '') . '. No es posible iniciarla nuevamente en el mismo bloque horario.'
+                ], 400);
+            }
+
             // Encontrar bloques consecutivos de planificación
             $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
             $idAsignatura = null;

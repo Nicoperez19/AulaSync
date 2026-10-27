@@ -1450,10 +1450,14 @@
             try {
                 const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
                 const result = await response.json();
-                return result.success && (result.tieneProgramacion === true || result.tiene_clase === true);
+                return {
+                    tieneClase: Boolean(result.success && (result.tieneProgramacion === true || result.tiene_clase === true)),
+                    claseYaFinalizada: Boolean(result.clase_ya_finalizada),
+                    mensaje: result.mensaje || null
+                };
             } catch (error) {
                 console.error('Error al verificar programación en espacio:', error);
-                return false;
+                return { tieneClase: false, claseYaFinalizada: false };
             }
         }
 
@@ -1673,6 +1677,7 @@
         let lastBufferLength = 0;
         let processingTimeout = null;
         let errorTimeout = null;
+        let ultimaDevolucionExitosa = 0;
 
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
@@ -1725,6 +1730,13 @@
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
+                return;
+            }
+
+            // Debounce post-devolución: ignorar escaneos en los primeros 3.5 segundos tras devolver
+            if (Date.now() - ultimaDevolucionExitosa < 3500) {
+                console.log('Escaneo ignorado por tiempo de seguridad post-devolución');
+                bufferQR = '';
                 return;
             }
 
@@ -1903,9 +1915,27 @@
             // Determinar el flujo según el tipo de usuario
             if (usuarioInfo.tipo_usuario === 'profesor') {
                 // Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
-                const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
+                const progVerif = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
-                if (tieneClaseAqui === true) {
+                if (progVerif.claseYaFinalizada) {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Clase ya finalizada',
+                        text: 'Esta clase ya fue finalizada para el bloque actual.',
+                        icon: 'info',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#0066CC',
+                        timer: 3500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                    limpiarEstadoLectura();
+                    ordenEscaneo = 'usuario';
+                    detenerWatchdog();
+                    return;
+                }
+
+                if (progVerif.tieneClase === true) {
                     // Mostrar SweetAlert indicando que se está creando el registro de clase
                     Swal.fire({
                         title: 'Creando registro de clase...',
@@ -2244,6 +2274,7 @@
                     procesandoDevolucion = false;
                     ordenEscaneo = 'usuario';
                     detenerWatchdog();
+                    ultimaDevolucionExitosa = Date.now();
                     return 'devolucion_exitosa';
                 } else {
                     // Mostrar error específico de devolución
@@ -2269,6 +2300,31 @@
                     }, 100);
                     return;
                 }
+            }
+
+            if (resultadoVerificacion.tipo === 'clase_ya_finalizada') {
+                cerrarModalEsperaLlaves(false);
+                Swal.close();
+                Swal.fire({
+                    title: 'Clase ya finalizada',
+                    text: resultadoVerificacion.mensaje || 'Esta clase ya fue finalizada con éxito para este bloque.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#0066CC',
+                    timer: 4000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                limpiarEstadoLectura();
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 1000);
+                return;
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {

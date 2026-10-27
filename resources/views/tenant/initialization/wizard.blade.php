@@ -224,14 +224,8 @@
             </div>
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-800 text-white py-4 mt-auto">
-            <div class="container mx-auto px-4 text-center">
-                <p class="text-gray-400 text-sm">
-                    &copy; {{ date('Y') }} SIA | Sistema de Información de Aulas - Configuración Inicial de Sede
-                </p>
-            </div>
-        </footer>
+        <!-- Footer Institucional UCSC -->
+        <x-footer class="mt-auto py-4 bg-white/80 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700" />
     </div>
 </body>
 </html>
