@@ -137,12 +137,8 @@
             @endif
         </main>
 
-        <!-- Footer Estandarizado SIA -->
-        <footer class="py-5 text-center text-xs text-gray-500 border-t border-gray-200/80 bg-white/60 backdrop-blur-sm dark:bg-gray-900/60 dark:border-gray-800 dark:text-gray-400">
-            <div class="container mx-auto px-4">
-                &copy; {{ date('Y') }} SIA &bull; Universidad Católica de la Santísima Concepción. Todos los derechos reservados.
-            </div>
-        </footer>
+        <!-- Footer Institucional UCSC -->
+        <x-footer class="py-4 mt-8 bg-white/60 backdrop-blur-sm border-t border-gray-200/80 dark:bg-gray-900/60 dark:border-gray-800" />
     </div>
 </body>
 

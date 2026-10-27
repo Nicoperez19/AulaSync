@@ -1728,6 +1728,46 @@ class PlanoDigitalController extends Controller
                 }
             }
 
+            // Si el docente tiene clase oficial en este bloque pero ya la finalizó hoy, no permitir reabrirla automáticamente
+            if ($tieneClaseAhora) {
+                $idAsignaturaClase = $claseProgramadaScanner?->id_asignatura ?? $claseColabScanner?->profesorColaborador?->id_asignatura;
+                $numModuloClase = \App\Helpers\ModulosHelper::getNumeroModulo($claseProgramadaScanner?->id_modulo ?? $claseColabScanner?->id_modulo);
+
+                $reservaFinalizadaHoy = Reserva::where(function ($query) use ($runUsuario) {
+                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                })
+                    ->where('id_espacio', $idEspacio)
+                    ->where('fecha_reserva', Carbon::today()->toDateString())
+                    ->where('estado', 'finalizada')
+                    ->where(function ($q) use ($idAsignaturaClase, $numModuloClase) {
+                        if (!empty($idAsignaturaClase)) {
+                            $q->where('id_asignatura', $idAsignaturaClase);
+                        }
+                        if ($numModuloClase !== null) {
+                            $q->orWhere(function ($sub) use ($numModuloClase) {
+                                $sub->where('modulo_inicio', '<=', $numModuloClase)
+                                    ->where('modulo_fin', '>=', $numModuloClase);
+                            });
+                        }
+                    })
+                    ->latest('updated_at')
+                    ->first();
+
+                if ($reservaFinalizadaHoy) {
+                    return response()->json([
+                        'tipo' => 'clase_ya_finalizada',
+                        'mensaje' => 'Esta clase ya fue finalizada con éxito' . ($reservaFinalizadaHoy->hora_salida ? ' a las ' . substr($reservaFinalizadaHoy->hora_salida, 0, 5) : '') . '. El registro para este bloque ya se encuentra completado.',
+                        'espacio_disponible' => false,
+                        'reserva' => [
+                            'id_reserva' => $reservaFinalizadaHoy->id_reserva,
+                            'hora_salida' => $reservaFinalizadaHoy->hora_salida,
+                            'espacio' => $espacio->nombre_espacio
+                        ]
+                    ]);
+                }
+            }
+
             // Verificar si el usuario tiene reservas PROGRAMADAS en este espacio hoy
             $reservasProgramadasUsuario = Reserva::where(function ($query) use ($runUsuario) {
                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])

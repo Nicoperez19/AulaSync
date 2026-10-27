@@ -200,48 +200,59 @@ class OcupacionSemanalService
                 $idModuloStr = $prefijo . '.' . $moduloNum;
                 $espaciosUsados = [];
 
-                // 1. Programación de clases (sólo en días hábiles regulares sin feriado/receso activo,
-                // y descontando salas cuya clase fue registrada como no realizada en ese módulo)
+                // 1. Programación académica regular: suma todos los espacios con carga académica programada,
+                // independiente de si la clase fue impartida o no (compromiso de sala por planificación)
                 if (!$esDiaFeriadoOReceso && isset($planificacionesSemana[$idModuloStr])) {
                     foreach ($planificacionesSemana[$idModuloStr] as $planItem) {
-                        $keyNoRealizada = "{$fechaDelDia}_{$idModuloStr}_{$planItem->id_espacio}";
-                        if (!isset($espaciosNoRealizados[$keyNoRealizada])) {
+                        if (!empty($planItem->id_espacio)) {
                             $espaciosUsados[] = $planItem->id_espacio;
                         }
                     }
                 }
 
-                // 2. Reservas de uso real
+                // 2. Reservas espontáneas y préstamos de espacios (salas de estudio, auditorios, laboratorios, etc.)
                 $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
                 foreach ($reservasDia as $reserva) {
                     $overlap = false;
                     $modInicio = $reserva->modulo_inicio ? (int) $reserva->modulo_inicio : null;
                     $modFin = $reserva->modulo_fin ? (int) $reserva->modulo_fin : null;
 
+                    // A) Coincidencia por rango de módulos numéricos
                     if ($modInicio !== null && $modFin !== null) {
                         if ($moduloNum >= $modInicio && $moduloNum <= $modFin) {
                             $overlap = true;
                         }
-                    } else {
-                        if ($horarioModulo && !empty($reserva->hora)) {
-                            try {
-                                $resInicio = $reserva->hora;
-                                $resFin = $reserva->hora_salida ?: Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
-                                $modInicioHorario = $horarioModulo['inicio'];
-                                $modFinHorario = $horarioModulo['fin'];
+                    }
 
-                                $overlapStart = max($resInicio, $modInicioHorario);
-                                $overlapEnd = min($resFin, $modFinHorario);
-                                if ($overlapStart < $overlapEnd) {
-                                    $overlap = true;
-                                }
-                            } catch (\Throwable $e) {
-                                // Ignorar reserva si hora está malformada
-                            }
+                    // B) Coincidencia por lista o JSON de módulos
+                    if (!$overlap && !empty($reserva->modulos)) {
+                        $modsArr = is_array($reserva->modulos)
+                            ? $reserva->modulos
+                            : (json_decode($reserva->modulos, true) ?: array_map('trim', explode(',', (string) $reserva->modulos)));
+                        if (is_array($modsArr) && in_array((string) $moduloNum, array_map('strval', $modsArr), true)) {
+                            $overlap = true;
                         }
                     }
 
-                    if ($overlap) {
+                    // C) Coincidencia por solapamiento de horas (inicio / término)
+                    if (!$overlap && $horarioModulo && !empty($reserva->hora)) {
+                        try {
+                            $resInicio = $reserva->hora;
+                            $resFin = $reserva->hora_salida ?: Carbon::parse($reserva->hora)->addMinutes(45)->format('H:i:s');
+                            $modInicioHorario = $horarioModulo['inicio'];
+                            $modFinHorario = $horarioModulo['fin'];
+
+                            $overlapStart = max($resInicio, $modInicioHorario);
+                            $overlapEnd = min($resFin, $modFinHorario);
+                            if ($overlapStart < $overlapEnd) {
+                                $overlap = true;
+                            }
+                        } catch (\Throwable $e) {
+                            // Ignorar reserva si hora está malformada
+                        }
+                    }
+
+                    if ($overlap && !empty($reserva->id_espacio)) {
                         $espaciosUsados[] = $reserva->id_espacio;
                     }
                 }
