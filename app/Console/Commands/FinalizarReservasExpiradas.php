@@ -8,6 +8,7 @@ use App\Models\Espacio;
 use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Tenant;
+use App\Models\VetoSalaEstudio;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -159,6 +160,29 @@ class FinalizarReservasExpiradas extends Command
             $finalizadas = 0;
 
             foreach ($reservasActivas as $reserva) {
+                // Salas de estudio: el espacio se libera ÚNICAMENTE cuando el alumno/encargado escanea el carnet.
+                // Si excede las 2 horas (120 minutos) sin devolución, se aplica sanción automática de 1 semana.
+                if ($reserva->esSalaEstudio()) {
+                    $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva) . ' ' . $reserva->hora;
+                    $inicio = Carbon::parse($inicioStr);
+                    $minutosTranscurridos = (int) $inicio->diffInMinutes($ahora, false);
+
+                    if ($minutosTranscurridos > 120) {
+                        $runResponsable = $reserva->run_solicitante ?? $reserva->run_profesor;
+                        if ($runResponsable && !VetoSalaEstudio::estaVetado($runResponsable)) {
+                            VetoSalaEstudio::aplicarVetoPorTiempoExcedido(
+                                $runResponsable,
+                                $reserva->id_reserva,
+                                $minutosTranscurridos,
+                                7
+                            );
+                            $this->warn("  ⚠️ Sanción automática de 1 semana aplicada a {$runResponsable} por exceder 2h en sala {$reserva->id_espacio} ({$minutosTranscurridos} min).");
+                        }
+                    }
+                    // No finalizamos automáticamente la reserva para que no se suelte la sala sola
+                    continue;
+                }
+
                 $debeFinalizar = false;
                 $motivo = '';
 
@@ -274,4 +298,3 @@ class FinalizarReservasExpiradas extends Command
         }
     }
 }
-

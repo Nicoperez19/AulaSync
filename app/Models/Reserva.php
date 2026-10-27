@@ -157,8 +157,30 @@ class Reserva extends Model
                      ->where('fecha_reserva', $fecha)
                      ->where(function($q) use ($hora) {
                          $q->where('hora', '<=', $hora)
-                           ->where('hora_salida', '>', $hora);
+                           ->where(function($inner) use ($hora) {
+                               $inner->whereNull('hora_salida')
+                                     ->orWhere('hora_salida', '>', $hora)
+                                     ->orWhere('tipo_reserva', 'espontanea')
+                                     ->orWhere('observaciones', 'like', '%Sala de Estudio%');
+                           });
                      });
+    }
+
+    /**
+     * Determinar si la reserva corresponde a una sala de estudio
+     */
+    public function esSalaEstudio(): bool
+    {
+        if (str_contains(strtolower($this->observaciones ?? ''), 'sala de estudio')) {
+            return true;
+        }
+        if ($this->tipo_reserva === 'espontanea') {
+            return true;
+        }
+        if ($this->relationLoaded('espacio') && $this->espacio && str_contains(strtolower($this->espacio->tipo_espacio ?? ''), 'estudio')) {
+            return true;
+        }
+        return false;
     }
 
     /**

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -192,15 +192,18 @@
 <!-- Modal 2: Devolución Registrada Exitosamente -->
 <div id="modal-devolucion-exitosa" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
     <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center relative">
-        <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            <i class="fas fa-check-circle"></i>
+        <div id="dev-icon-container" class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+            <i id="dev-icon" class="fas fa-check-circle"></i>
         </div>
-        <h3 class="text-xl font-bold text-gray-900 mb-1">🔑 Devolución Registrada</h3>
-        <p class="text-sm text-gray-600 mb-4">La devolución de la sala se ha completado correctamente.</p>
+        <h3 id="dev-titulo" class="text-xl font-bold text-gray-900 mb-1">🔑 Devolución Registrada</h3>
+        <p id="dev-subtitulo" class="text-sm text-gray-600 mb-4">La devolución de la sala se ha completado correctamente.</p>
         
+        <div id="dev-alerta-sancion" class="hidden bg-red-50 border border-red-300 text-red-800 rounded-xl p-3 text-xs mb-3 text-left"></div>
+
         <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-left space-y-2 mb-5 text-xs">
             <div class="flex justify-between"><span class="font-semibold text-green-900">Usuario:</span> <span id="dev-estudiante" class="font-bold"></span></div>
             <div class="flex justify-between"><span class="font-semibold text-green-900">Sala Liberada:</span> <span id="dev-sala" class="font-bold text-green-800"></span></div>
+            <div class="flex justify-between"><span class="font-semibold text-green-900">Tiempo de Uso:</span> <span id="dev-duracion" class="font-bold text-green-900"></span></div>
             <div class="flex justify-between"><span class="font-semibold text-green-900">Hora Devolución:</span> <span id="dev-hora"></span></div>
         </div>
 
@@ -953,6 +956,53 @@
                 asignarSalaAEstudiante(codEspacio);
             }
         }
+    }
+
+    function mostrarModalDevolucion(data, idEspacioFallback) {
+        document.getElementById('dev-estudiante').textContent = data.nombre_estudiante || 'Usuario';
+        document.getElementById('dev-sala').textContent = data.id_espacio || idEspacioFallback || 'Sala';
+        document.getElementById('dev-hora').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        const iconContainer = document.getElementById('dev-icon-container');
+        const icon = document.getElementById('dev-icon');
+        const titulo = document.getElementById('dev-titulo');
+        const subtitulo = document.getElementById('dev-subtitulo');
+        const alerta = document.getElementById('dev-alerta-sancion');
+        const duracion = document.getElementById('dev-duracion');
+
+        if (duracion) {
+            duracion.textContent = (data.minutos_transcurridos || 0) + ' min';
+        }
+
+        if (data.sancionado) {
+            if (iconContainer) iconContainer.className = 'w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl animate-pulse';
+            if (icon) icon.className = 'fas fa-exclamation-triangle';
+            if (titulo) {
+                titulo.textContent = '⚠️ Devolución Fuera de Plazo';
+                titulo.className = 'text-xl font-bold text-red-700 mb-1';
+            }
+            if (subtitulo) subtitulo.textContent = 'El usuario ha superado las 2 horas máximas permitidas.';
+            if (alerta) {
+                alerta.classList.remove('hidden');
+                alerta.innerHTML = `<strong>🚫 SANCIÓN AUTOMÁTICA (1 SEMANA):</strong><br>El usuario estuvo <b>${data.minutos_transcurridos || 0} min</b> en la sala. Ha sido bloqueado para solicitar salas de estudio por 1 semana (hasta ${data.fecha_fin_veto || "7 días"}).`;
+            }
+        } else {
+            if (iconContainer) iconContainer.className = 'w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl';
+            if (icon) icon.className = 'fas fa-check-circle';
+            if (titulo) {
+                titulo.textContent = '🔑 Devolución Registrada';
+                titulo.className = 'text-xl font-bold text-gray-900 mb-1';
+            }
+            if (subtitulo) subtitulo.textContent = 'La devolución de la sala se ha completado correctamente a tiempo.';
+            if (alerta) alerta.classList.add('hidden');
+        }
+
+        document.getElementById('modal-devolucion-exitosa').classList.remove('hidden');
+        
+        if (devolucionTimer) clearTimeout(devolucionTimer);
+        devolucionTimer = setTimeout(cerrarModalDevolucion, data.sancionado ? 7000 : 2500);
+
+        cargarReservas();
     }
 
     function cerrarModalDevolucion() {
