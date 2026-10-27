@@ -75,6 +75,7 @@ class SalaEstudioService
             $minutosTranscurridos = 0;
             $vencida = false;
             $proximaVencer = false;
+            $sancionado = false;
             if ($reserva->estado === 'activa' && $reserva->fecha_reserva && $reserva->hora) {
                 $inicioStr = ($reserva->fecha_reserva instanceof Carbon ? $reserva->fecha_reserva->format('Y-m-d') : $reserva->fecha_reserva) . ' ' . $reserva->hora;
                 $inicio = Carbon::parse($inicioStr);
@@ -82,6 +83,9 @@ class SalaEstudioService
 
                 if ($minutosTranscurridos >= 120) {
                     $vencida = true;
+                    if ($runResponsable !== 'N/A' && VetoSalaEstudio::estaVetado($runResponsable)) {
+                        $sancionado = true;
+                    }
                 } elseif ($minutosTranscurridos >= 105) {
                     $proximaVencer = true;
                 }
@@ -100,6 +104,7 @@ class SalaEstudioService
                 'minutos_transcurridos' => max(0, $minutosTranscurridos),
                 'vencida' => $vencida,
                 'proxima_vencer' => $proximaVencer,
+                'sancionado' => $sancionado,
                 'observaciones' => $reserva->observaciones,
             ];
         });
@@ -143,13 +148,16 @@ class SalaEstudioService
         $runConGuion = (is_numeric($dv) ? $runClean : (strlen($runBase) >= 7 ? substr($runBase, 0, -1) . '-' . $dv : $runClean));
         $runSinGuion = $runBase . (is_numeric($dv) ? '' : $dv);
 
+        // Verificar si el usuario se encuentra con un bloqueo/veto activo
         $veto = VetoSalaEstudio::vetoActivo($runClean) ?? VetoSalaEstudio::vetoActivo($runBase);
         if ($veto) {
+            $hastaTxt = $veto->fecha_fin_veto ? ' hasta el ' . $veto->fecha_fin_veto->format('d/m/Y H:i') : '';
             return [
                 'success' => false,
                 'status' => 403,
-                'message' => '🚫 Acceso Denegado: Usuario vetado. Motivo: ' . $veto->observacion,
+                'message' => "🚫 Acceso Denegado: Usuario bloqueado{$hastaTxt}. Motivo: {$veto->observacion}",
                 'vetado' => true,
+                'fecha_fin_veto' => $veto->fecha_fin_veto ? $veto->fecha_fin_veto->format('d/m/Y H:i') : null,
             ];
         }
 
@@ -184,7 +192,6 @@ class SalaEstudioService
         // Verificar si ya hay una reserva activa del responsable en cualquier sala de estudio => DEVOLUCIÓN
         $reservaActiva = Reserva::on('tenant')
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
             ->where(function ($q) use ($runClean, $runBase, $runConGuion, $runSinGuion) {
                 $q->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])
                   ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
@@ -193,24 +200,56 @@ class SalaEstudioService
             ->first();
 
         if ($reservaActiva) {
+            $inicioStr = ($reservaActiva->fecha_reserva instanceof Carbon ? $reservaActiva->fecha_reserva->format('Y-m-d') : $reservaActiva->fecha_reserva) . ' ' . $reservaActiva->hora;
+            $inicio = Carbon::parse($inicioStr);
+            $minutosTranscurridos = (int) $inicio->diffInMinutes(now(), false);
+
+            $sancionado = false;
+            $fechaFinVetoTxt = null;
+
+            // Si se pasa de las 2 horas (120 min), aplicar bloqueo de 1 semana
+            if ($minutosTranscurridos > 120) {
+                $sancionado = true;
+                $veto = VetoSalaEstudio::aplicarVetoPorTiempoExcedido($run, $reservaActiva->id_reserva, $minutosTranscurridos, 7);
+                $fechaFinVetoTxt = now()->addDays(7)->format('d/m/Y');
+                $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . " | Devuelta con atraso ({$minutosTranscurridos} min) - Bloqueo 1 semana aplicado");
+            } else {
+                $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Sala devuelta mediante escáner a tiempo');
+            }
+
             $reservaActiva->estado = 'finalizada';
             $reservaActiva->hora_salida = now()->format('H:i:s');
-            $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Sala devuelta mediante escáner');
             $reservaActiva->save();
 
             $espacioLiberado = Espacio::on('tenant')->where('id_espacio', $reservaActiva->id_espacio)->first();
             if ($espacioLiberado) {
-                $espacioLiberado->estado = 'Disponible';
-                $espacioLiberado->save();
+                // Verificar si quedan otras reservas activas en el espacio
+                $otrasActivas = Reserva::on('tenant')
+                    ->where('id_espacio', $espacioLiberado->id_espacio)
+                    ->where('estado', 'activa')
+                    ->where('id_reserva', '!=', $reservaActiva->id_reserva)
+                    ->exists();
+
+                if (!$otrasActivas) {
+                    $espacioLiberado->estado = 'Disponible';
+                    $espacioLiberado->save();
+                }
             }
+
+            $mensaje = $sancionado
+                ? "Devolución registrada para {$nombreAlumno} en la sala {$reservaActiva->id_espacio}. ⚠️ SANCIÓN APLICADA: Superó el límite de 2 horas ({$minutosTranscurridos} min). Usuario bloqueado por 1 semana hasta el {$fechaFinVetoTxt}."
+                : "Devolución registrada exitosamente para {$nombreAlumno} en la sala {$reservaActiva->id_espacio} ({$minutosTranscurridos} min de uso).";
 
             return [
                 'success' => true,
                 'status' => 200,
                 'devolucion' => true,
+                'sancionado' => $sancionado,
+                'minutos_transcurridos' => $minutosTranscurridos,
+                'fecha_fin_veto' => $fechaFinVetoTxt,
                 'nombre_estudiante' => $nombreAlumno,
                 'id_espacio' => $reservaActiva->id_espacio,
-                'message' => "Devolución registrada exitosamente para {$nombreAlumno} en la sala {$reservaActiva->id_espacio}.",
+                'message' => $mensaje,
             ];
         }
 
@@ -226,7 +265,6 @@ class SalaEstudioService
 
         $countReservasActivas = Reserva::on('tenant')
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
             ->where(function ($q) use ($runClean, $runBase, $runConGuion, $runSinGuion) {
                 $q->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])
                   ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
@@ -269,6 +307,7 @@ class SalaEstudioService
             'run_solicitante' => $run,
             'fecha_reserva' => $ahora->toDateString(),
             'hora' => $ahora->format('H:i:s'),
+            'hora_salida' => $ahora->copy()->addHours(2)->format('H:i:s'), // Límite de 2 horas
             'estado' => 'activa',
             'tipo_reserva' => 'espontanea',
             'observaciones' => 'Sala de Estudio - Lector QR (2h max)',
@@ -289,7 +328,7 @@ class SalaEstudioService
     }
 
     /**
-     * Verificar en segundo plano reservas activas de salas de estudio para notificaciones.
+     * Verificar en segundo plano reservas activas de salas de estudio para notificaciones y bloqueos.
      */
     public function verificarNotificaciones(): array
     {
@@ -310,6 +349,7 @@ class SalaEstudioService
 
         $advertenciasEnviadas = 0;
         $vencidosEnviadas = 0;
+        $bloqueosAplicados = 0;
 
         foreach ($reservasActivas as $reserva) {
             if ($reserva->fecha_reserva && $reserva->hora) {
@@ -319,10 +359,17 @@ class SalaEstudioService
 
                 $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
                 $nombreAlumno = $solicitante ? $solicitante->nombre : ($reserva->run_solicitante ?? 'Alumno');
+                $runResponsable = $reserva->run_solicitante ?? $reserva->run_profesor;
 
                 if ($minutosTranscurridos >= 120) {
                     Notificacion::crearNotificacionSalaEstudioVencida($reserva, $nombreAlumno);
                     $vencidosEnviadas++;
+
+                    // Aplicar sanción de 1 semana si aún no está vetado
+                    if ($runResponsable && !VetoSalaEstudio::estaVetado($runResponsable)) {
+                        VetoSalaEstudio::aplicarVetoPorTiempoExcedido($runResponsable, $reserva->id_reserva, $minutosTranscurridos, 7);
+                        $bloqueosAplicados++;
+                    }
                 } elseif ($minutosTranscurridos >= 105) {
                     Notificacion::crearNotificacionSalaEstudioAdvertencia($reserva, $nombreAlumno);
                     $advertenciasEnviadas++;
@@ -333,6 +380,7 @@ class SalaEstudioService
         return [
             'advertencias_enviadas' => $advertenciasEnviadas,
             'vencidos_enviadas' => $vencidosEnviadas,
+            'bloqueos_aplicados' => $bloqueosAplicados,
         ];
     }
 }

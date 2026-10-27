@@ -1,4 +1,4 @@
-<x-show-layout>
+﻿<x-show-layout>
     <style>
         @keyframes parpadeo {
             0% {
@@ -4464,10 +4464,7 @@
                     actualizarListaAlumnosSalaEstudio();
                     actualizarContadoresSalaEstudio();
                     
-                    mostrarNotificacionSalaEstudio(
-                        `${resultado.nombre} - Salida registrada (${resultado.hora_entrada} - ${resultado.hora_salida})`, 
-                        'info'
-                    );
+                    if (resultado.sancionado) {                         Swal.fire({                             icon: 'warning',                             title: '⚠️ Devolución Fuera de Plazo',                             html: `<div class="text-left text-sm space-y-2"><p>El alumno <b>${resultado.nombre}</b> excedió el límite de 2 horas (tiempo: <b>${resultado.minutos_transcurridos} min</b>).</p><p class="text-red-600 font-bold">🚫 Sancionado con bloqueo de 1 semana para salas de estudio (hasta ${resultado.fecha_fin_veto}).</p></div>`,                             confirmButtonText: 'Entendido',                             confirmButtonColor: '#950101'                         });                     } else {                     mostrarNotificacionSalaEstudio(                         `${resultado.nombre} - Salida registrada (${resultado.hora_entrada} - ${resultado.hora_salida})`,                          'info'                     );                     }
                 } else {
                     // Es una entrada - agregar a la lista
                     salaEstudioActual.alumnosRegistrados.push({
@@ -4520,6 +4517,7 @@
                                     </div>
                                     <div class="pt-4 border-t border-white border-opacity-30">
                                         <div class="flex items-start gap-3">
+                                    ${resultado.veto.fecha_fin_veto ? `                                     <div class="flex items-start gap-3">                                         <i class="fas fa-hourglass-end text-white text-xl mt-1"></i>                                         <div>                                             <p class="font-semibold text-white mb-1">Bloqueado hasta:</p>                                             <p class="text-white text-opacity-90 font-bold">${resultado.veto.fecha_fin_veto}</p>                                         </div>                                     </div>                                     ` : ""}
                                             <i class="fas fa-exclamation-circle text-white text-xl mt-1"></i>
                                             <div class="flex-1">
                                                 <p class="font-semibold text-white mb-2">Motivo del veto:</p>

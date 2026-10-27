@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'AulaSync') }} - Selección de Sede</title>
+    <title>{{ config('app.name', 'SIA') }} - Selección de Sede</title>
 
     <!-- Fuentes institucionales -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,31 +22,18 @@
 
 <body class="font-sans antialiased bg-[#F1EFF2] dark:bg-[#191919] min-h-screen flex flex-col justify-between text-gray-800 dark:text-gray-200">
     <div class="min-h-screen flex flex-col justify-between">
-        <!-- Navbar Institucional Rojo UCSC -->
-        <nav class="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 py-3 bg-[#D2091E] shadow-[0_4px_6px_rgba(255,255,255,0.3)]">
-            <div class="flex items-center gap-3">
-                <x-application-logo-navbar />
-                <span class="text-white text-base sm:text-lg font-bold tracking-tight border-l border-white/30 pl-3">
-                    AulaSync
-                </span>
-            </div>
-            
-            <div class="flex items-center gap-3">
-                @if(auth()->check())
-                    <div class="hidden sm:flex items-center gap-2.5 text-white/95 text-sm mr-2">
-                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs text-white uppercase border border-white/30">
-                            {{ mb_substr(auth()->user()->name, 0, 2, 'UTF-8') }}
-                        </div>
-                        <span class="font-medium text-white">{{ auth()->user()->name }}</span>
-                    </div>
-                @endif
-                <a href="{{ route('logout') }}" 
-                   class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-black/20 hover:bg-black/35 border border-white/20 transition-all duration-200 shadow-sm" 
-                   title="Cerrar sesión">
-                    <i class="fas fa-sign-out-alt text-xs"></i>
-                    <span>Cerrar Sesión</span>
-                </a>
-            </div>
+        <!-- Navbar Institucional Rojo UCSC (solo color y botón de cerrar sesión) -->
+        <nav class="sticky top-0 z-30 flex items-center justify-end px-4 sm:px-8 py-3 bg-[#D2091E] shadow-[0_4px_6px_rgba(255,255,255,0.3)] min-h-[56px]">
+            <a href="{{ route('logout') }}" 
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+               class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-black/20 hover:bg-black/35 border border-white/20 transition-all duration-200 shadow-sm cursor-pointer" 
+               title="Cerrar sesión">
+                <i class="fas fa-sign-out-alt text-xs"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                @csrf
+            </form>
         </nav>
 
         <!-- Main Content -->
@@ -60,7 +47,7 @@
                     Seleccione su Sede
                 </h1>
                 <p class="text-sm sm:text-base text-gray-600 max-w-xl mx-auto mt-2 dark:text-gray-400">
-                    Elija la sede a la que desea acceder para continuar con su sesión en la plataforma <strong class="text-[#950101] font-semibold dark:text-red-400">AulaSync</strong>.
+                    Elija la sede a la que desea acceder para continuar con su sesión en la plataforma <strong class="text-[#950101] font-semibold dark:text-red-400">SIA</strong>.
                 </p>
             </div>
 
@@ -150,10 +137,10 @@
             @endif
         </main>
 
-        <!-- Footer Estandarizado AulaSync -->
+        <!-- Footer Estandarizado SIA -->
         <footer class="py-5 text-center text-xs text-gray-500 border-t border-gray-200/80 bg-white/60 backdrop-blur-sm dark:bg-gray-900/60 dark:border-gray-800 dark:text-gray-400">
             <div class="container mx-auto px-4">
-                &copy; {{ date('Y') }} AulaSync &bull; Universidad Católica de la Santísima Concepción. Todos los derechos reservados.
+                &copy; {{ date('Y') }} SIA &bull; Universidad Católica de la Santísima Concepción. Todos los derechos reservados.
             </div>
         </footer>
     </div>

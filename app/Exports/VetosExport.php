@@ -30,18 +30,19 @@ class VetosExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             'estado',
             'observacion',
             'fecha_veto',
+            'fecha_fin_veto',
             'vetado_por',
             'fecha_liberacion',
             'liberado_por'
         ])
-        ->with(['solicitante:run,nombre']); // Solo cargar campos necesarios
+        ->with(['solicitante:run,nombre']);
 
         if ($this->estado) {
             $query->where('estado', $this->estado);
         }
 
         return $query->orderBy('fecha_veto', 'desc')
-                    ->limit(10000) // Límite para exportación
+                    ->limit(10000)
                     ->get();
     }
 
@@ -55,6 +56,7 @@ class VetosExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             'Estado',
             'Motivo',
             'Fecha Veto',
+            'Vencimiento Sanción',
             'Vetado Por',
             'Fecha Liberación',
             'Liberado Por'
@@ -70,7 +72,8 @@ class VetosExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             ucfirst($veto->tipo_veto),
             ucfirst($veto->estado),
             $veto->observacion,
-            $veto->fecha_veto->format('d/m/Y H:i'),
+            $veto->fecha_veto ? $veto->fecha_veto->format('d/m/Y H:i') : '-',
+            $veto->fecha_fin_veto ? $veto->fecha_fin_veto->format('d/m/Y H:i') : 'Indefinido',
             $veto->vetado_por ?? 'Sistema',
             $veto->fecha_liberacion ? $veto->fecha_liberacion->format('d/m/Y H:i') : '-',
             $veto->liberado_por ?? '-'
@@ -108,9 +111,10 @@ class VetosExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             'E' => 12,  // Estado
             'F' => 40,  // Motivo
             'G' => 18,  // Fecha Veto
-            'H' => 20,  // Vetado Por
-            'I' => 18,  // Fecha Liberación
-            'J' => 20,  // Liberado Por
+            'H' => 20,  // Vencimiento Sanción
+            'I' => 20,  // Vetado Por
+            'J' => 18,  // Fecha Liberación
+            'K' => 20,  // Liberado Por
         ];
     }
 }
