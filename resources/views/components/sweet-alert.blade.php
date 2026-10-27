@@ -33,7 +33,7 @@
         animation: swalModalOut 180ms ease-in !important;
     }
 
-    /* Estilos globales y unificados de SweetAlert2 con Paleta Oficial AulaSync */
+    /* Estilos globales y unificados de SweetAlert2 con Paleta Oficial SIA */
     .swal2-popup {
         font-family: 'Roboto', sans-serif !important;
         border-radius: 1.25rem !important;
@@ -117,9 +117,9 @@
         if (typeof Swal !== 'undefined') {
             const originalFire = Swal.fire;
 
-            // Paleta de colores oficial del sistema AulaSync
+            // Paleta de colores oficial del sistema SIA
             const SYSTEM_COLORS = {
-                primary: '#D12420',        // Rojo Institucional UCSC / AulaSync
+                primary: '#D12420',        // Rojo Institucional UCSC / SIA
                 primaryDark: '#950101',    // Carmesí Oscuro
                 success: '#10B981',        // Verde Confirmar / Aceptar / Continuar
                 successHover: '#059669',   // Verde Intenso Hover

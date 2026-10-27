@@ -85,41 +85,20 @@
 </head>
 <body class="font-sans antialiased bg-gray-50 min-h-screen">
     <div class="min-h-screen flex flex-col justify-between">
-        <!-- Header -->
-        <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold text-gray-800 text-base sm:text-lg">SIA</span>
-                        <span class="text-gray-500 text-xs sm:text-sm hidden sm:inline">| Sistema de Información de Aulas</span>
-                    </div>
-                    <div class="flex items-center space-x-3 sm:space-x-4">
-                        <span class="text-xs sm:text-sm text-gray-600">
-                            <span class="font-semibold text-gray-800">{{ $sede->nombre_sede ?? 'Configuración de Sede' }}</span>
-                        </span>
-
-                        <div class="flex items-center space-x-2 border-l border-gray-300 pl-3">
-                            <a href="{{ route('tenant.initialization.cancel') }}" 
-                               class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition" 
-                               title="Cancelar y volver a Selección de Sedes">
-                                <i class="fas fa-arrow-left mr-1.5"></i>
-                                <span class="hidden md:inline">Selección de Sedes</span>
-                            </a>
-                            
-                            @auth
-                            <form method="POST" action="{{ route('logout') }}" class="inline">
-                                @csrf
-                                <button type="submit" 
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 transition" 
-                                        title="Cerrar sesión">
-                                    <i class="fas fa-sign-out-alt mr-1"></i>
-                                    <span class="hidden md:inline">Cerrar Sesión</span>
-                                </button>
-                            </form>
-                            @endauth
-                        </div>
-                    </div>
-                </div>
+        <!-- Header (solo color y botón de cerrar sesión) -->
+        <header class="sticky top-0 z-30 bg-[#D2091E] shadow-[0_4px_6px_rgba(255,255,255,0.3)] min-h-[56px]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-end">
+                @auth
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" 
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-black/20 hover:bg-black/35 border border-white/20 transition-all duration-200 shadow-sm cursor-pointer" 
+                            title="Cerrar sesión">
+                        <i class="fas fa-sign-out-alt text-xs"></i>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </form>
+                @endauth
             </div>
         </header>
 

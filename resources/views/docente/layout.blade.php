@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Portal Docente') | {{ config('app.name', 'AulaSync') }}</title>
+    <title>@yield('title', 'Portal Docente') | {{ config('app.name', 'SIA') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -113,7 +113,7 @@
     {{-- Footer --}}
     <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
-            &copy; {{ date('Y') }} AulaSync &bull; Portal Docente de Asistencia y Gestión de Aulas
+            &copy; {{ date('Y') }} SIA &bull; Portal Docente de Asistencia y Gestión de Aulas
         </div>
     </footer>
 

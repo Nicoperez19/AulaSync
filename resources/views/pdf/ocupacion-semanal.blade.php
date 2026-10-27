@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Ocupación Semanal - AulaSync</title>
+    <title>Reporte de Ocupación Semanal - SIA</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
 
@@ -243,7 +243,7 @@
                         @endif
                     </td>
                     <td class="header-title">
-                        <h1>AulaSync &bull; OCUPACIÓN SEMANAL</h1>
+                        <h1>SIA &bull; OCUPACIÓN SEMANAL</h1>
                         <p>Reporte Oficial de Ocupación por Módulo y Día</p>
                     </td>
                     <td class="header-meta">
@@ -353,7 +353,7 @@
                     <div class="card">
                         <div class="card-label">Generado Por</div>
                         <div class="card-value" style="font-size: 9px; font-weight: 600; padding-top: 3px; color: #475569;">
-                            {{ auth()->user()->name ?? 'Sistema AulaSync' }} &bull; {{ now()->format('d/m/Y H:i') }}
+                            {{ auth()->user()->name ?? 'Sistema SIA' }} &bull; {{ now()->format('d/m/Y H:i') }}
                         </div>
                     </div>
                 </td>
@@ -361,7 +361,7 @@
         </table>
 
         <div class="footer">
-            AulaSync &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
+            SIA &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
         </div>
     </div>
 </body>
