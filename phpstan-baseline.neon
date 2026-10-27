@@ -1,0 +1,651 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Command \"crear\\:usuarios\\-profesores\" does not have option \"dry\\-run\"\\.$#"
+			count: 1
+			path: app/Console/Commands/CrearUsuariosProfesores.php
+
+		-
+			message: "#^Method App\\\\Console\\\\Commands\\\\FinalizarReservasNoDevueltas\\:\\:obtenerDiaSemana\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Console/Commands/FinalizarReservasNoDevueltas.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Planificacion_Asignatura\\:\\:\\$id_planificacion\\.$#"
+			count: 2
+			path: app/Console/Commands/NormalizarEspaciosTHCommand.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Espacio\\:\\:\\$estado \\('Disponible'\\|'Ocupado'\\|'Reservado'\\) does not accept 'disponible'\\|'ocupado'\\|'reservado'\\.$#"
+			count: 1
+			path: app/Console/Commands/NormalizarEstadosEspacios.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Tenant\\:\\:\\$nombre_sede\\.$#"
+			count: 1
+			path: app/Console/Commands/ReconciliarHorariosDocentesCommand.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$nombre_asignatura\\.$#"
+			count: 2
+			path: app/Console/Commands/ReconciliarReservasEspontaneas.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$id\\.$#"
+			count: 3
+			path: app/Console/Commands/VerificarDatosTabla.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$id\\.$#"
+			count: 1
+			path: app/Console/Commands/VerificarDatosTabla.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$correo\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$id\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$nombre\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$run\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$codigo_espacio\\.$#"
+			count: 2
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$id\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\|Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, App\\\\Models\\\\Reserva\\>\\:\\:\\$codigo_espacio\\.$#"
+			count: 3
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\|Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, App\\\\Models\\\\Reserva\\>\\:\\:\\$fecha\\.$#"
+			count: 3
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\|Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, App\\\\Models\\\\Reserva\\>\\:\\:\\$modulo_final\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\|Illuminate\\\\Database\\\\Eloquent\\\\Collection\\<int, App\\\\Models\\\\Reserva\\>\\:\\:\\$modulo_inicial\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Solicitante\\:\\:\\$run\\.$#"
+			count: 1
+			path: app/Http/Controllers/AdminPanelController.php
+
+		-
+			message: "#^Access to an undefined property object\\:\\:\\$id_asignatura\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/ApiReservaController.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/ApiReservaController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$cantidad\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/EspacioApiController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$total\\.$#"
+			count: 1
+			path: app/Http/Controllers/Api/EspacioApiController.php
+
+		-
+			message: "#^Parameter \\#1 \\$user of class Illuminate\\\\Auth\\\\Events\\\\Verified constructor expects Illuminate\\\\Contracts\\\\Auth\\\\MustVerifyEmail, App\\\\Models\\\\User\\|null given\\.$#"
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: "#^Parameter \\#1 \\$run of method App\\\\Http\\\\Controllers\\\\DashboardController\\:\\:normalizeRun\\(\\) expects string\\|null, int\\<min, \\-1\\>\\|int\\<1, max\\> given\\.$#"
+			count: 2
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'email_profesor' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'horario' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'id_asignatura' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'nombre_carrera' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'run_profesor' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'sede' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 'tipo_profesor' on array\\{id_asignatura\\: 0, codigo_asignatura\\: 1, nombre_asignatura\\: 2, seccion\\: 3, sede\\: \\(int\\|string\\), inscritos\\: 9, run_profesor\\: \\(int\\|string\\), nombre_profesor\\: \\(int\\|string\\), \\.\\.\\.\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Offset 4 on array\\{string, non\\-falsy\\-string, numeric\\-string, ''\\|numeric\\-string, non\\-empty\\-string\\} in isset\\(\\) always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Parameter \\#1 \\$import of static method Maatwebsite\\\\Excel\\\\Facades\\\\Excel\\:\\:toArray\\(\\) expects object, array given\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Horario\\:\\:\\$run_profesor \\(int\\) does not accept string\\.$#"
+			count: 1
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Relation 'profesor' is not found in App\\\\Models\\\\DataLoad model\\.$#"
+			count: 2
+			path: app/Http/Controllers/DataLoadController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\EspacioController\\:\\:obtenerClaseAnterior\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/EspacioController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\EspacioController\\:\\:obtenerInformacionPlanificacionActual\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/EspacioController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\EspacioController\\:\\:obtenerInformacionProfesor\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/EspacioController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\EspacioController\\:\\:obtenerInformacionSolicitante\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/EspacioController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\EspacioController\\:\\:obtenerProximaClase\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/EspacioController.php
+
+		-
+			message: "#^Offset 'codigo_asignatura' on array\\{asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Offset 'codigo_asignatura' on array\\{id_espacio\\: string, asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string, espacio\\: string, \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Offset 'dia' on array\\{asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Offset 'dia' on array\\{id_espacio\\: string, asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string, espacio\\: string, \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Offset 'hora_inicio' on array\\{asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Offset 'hora_inicio' on array\\{id_espacio\\: string, asignatura\\: string, codigo_asignatura\\: string, profesor\\: array\\{name\\: string\\}\\|null, dia\\: string, hora_inicio\\: string, hora_termino\\: string, espacio\\: string, \\.\\.\\.\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Horario\\:\\:\\$planificaciones is not writable\\.$#"
+			count: 1
+			path: app/Http/Controllers/HorariosController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Piso\\:\\:\\$id_piso\\.$#"
+			count: 1
+			path: app/Http/Controllers/PisoController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\User\\:\\:\\$sede_id\\.$#"
+			count: 1
+			path: app/Http/Controllers/ProfesorColaboradorController.php
+
+		-
+			message: "#^Comparison operation \"\\>\" between 75 and 0 is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/ProfesorColaboradorController.php
+
+		-
+			message: "#^Else branch is unreachable because ternary operator condition is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/ProfesorColaboradorController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\User\\:\\:\\$anio_ingreso\\.$#"
+			count: 2
+			path: app/Http/Controllers/ProfileController.php
+
+		-
+			message: "#^Method App\\\\Http\\\\Controllers\\\\ReservasController\\:\\:verificarEstadosEspacios\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Http/Controllers/ReservasController.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Espacio\\:\\:\\$estado \\('Disponible'\\|'Ocupado'\\|'Reservado'\\) does not accept 'disponible'\\.$#"
+			count: 1
+			path: app/Http/Controllers/ReservasController.php
+
+		-
+			message: "#^Offset 'domingo'\\|'jueves'\\|'lunes'\\|'martes'\\|'miercoles'\\|'sabado'\\|'viernes' on array\\{lunes\\: 'LU', martes\\: 'MA', miercoles\\: 'MI', jueves\\: 'JU', viernes\\: 'VI', sabado\\: 'SA', domingo\\: 'DO'\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Http/Controllers/SolicitanteController.php
+
+		-
+			message: "#^If condition is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/TenantInitializationController.php
+
+		-
+			message: "#^Ternary operator condition is always true\\.$#"
+			count: 1
+			path: app/Http/Controllers/TenantInitializationController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$nombre\\.$#"
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$run\\.$#"
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Solicitante\\:\\:\\$run\\.$#"
+			count: 1
+			path: app/Http/Controllers/UserController.php
+
+		-
+			message: "#^Relation 'creador' is not found in App\\\\Models\\\\DiaFeriado model\\.$#"
+			count: 1
+			path: app/Livewire/CalendarioAcademicoTable.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\DestinatarioCorreo\\:\\:\\$pivot\\.$#"
+			count: 1
+			path: app/Livewire/CorreosMasivosManager.php
+
+		-
+			message: "#^Relation 'creador' is not found in App\\\\Models\\\\DiaFeriado model\\.$#"
+			count: 1
+			path: app/Livewire/DiasFeriadosTable.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Livewire\\\\MapEditor\\:\\:\\$canvasData\\.$#"
+			count: 1
+			path: app/Livewire/MapEditor.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Livewire\\\\MapEditor\\:\\:\\$selectedEspacio\\.$#"
+			count: 1
+			path: app/Livewire/MapEditor.php
+
+		-
+			message: "#^Elseif condition is always false\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Left side of && is always true\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Method App\\\\Livewire\\\\ModulosActualesTable\\:\\:obtenerProximaClase\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Negated boolean expression is always true\\.$#"
+			count: 3
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Variable \\$estado on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Variable \\$tieneClase on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Variable \\$tieneReservaPendiente on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Variable \\$tieneReservaProfesor on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Variable \\$tieneReservaSolicitante on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Livewire/ModulosActualesTable.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Asistencia\\:\\:\\$hora_salida \\(Carbon\\\\Carbon\\|null\\) does not accept string\\.$#"
+			count: 1
+			path: app/Models/Asistencia.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Asignatura\\:\\:\\$nombre\\.$#"
+			count: 1
+			path: app/Models/ProfesorAtraso.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$nombre\\.$#"
+			count: 1
+			path: app/Models/ProfesorAtraso.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$nombre_completo\\.$#"
+			count: 1
+			path: app/Models/ProfesorAtraso.php
+
+		-
+			message: "#^Parameter \\#1 \\$string of function str_pad expects string, int\\<1, 999\\> given\\.$#"
+			count: 1
+			path: app/Models/Reserva.php
+
+		-
+			message: "#^Dead catch \\- Throwable is never thrown in the try block\\.$#"
+			count: 2
+			path: app/Services/ComprobanteReservaService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$id_area_academica\\.$#"
+			count: 1
+			path: app/Services/CorreoAdministrativoService.php
+
+		-
+			message: "#^Relation 'areaAcademica' is not found in App\\\\Models\\\\Espacio model\\.$#"
+			count: 1
+			path: app/Services/CorreoAdministrativoService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$cargo\\.$#"
+			count: 1
+			path: app/Services/CorreoMasivoService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id\\.$#"
+			count: 2
+			path: app/Services/CorreoMasivoService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$rol\\.$#"
+			count: 1
+			path: app/Services/CorreoMasivoService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$user\\.$#"
+			count: 10
+			path: app/Services/CorreoMasivoService.php
+
+		-
+			message: "#^Method App\\\\Services\\\\CorreoMasivoService\\:\\:obtenerAreaAcademicaAsistente\\(\\) is unused\\.$#"
+			count: 1
+			path: app/Services/CorreoMasivoService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Espacio\\:\\:\\$estado_espacio\\.$#"
+			count: 6
+			path: app/Services/EspacioService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\LicenciaProfesor\\:\\:\\$tipo_licencia\\.$#"
+			count: 1
+			path: app/Services/LicenciaRecuperacionService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$nombre_profesor\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$fecha\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$hora_dia\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Reserva\\:\\:\\$total_reservas\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model\\:\\:\\$id_espacio\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Called 'count' on Laravel collection, but could have been retrieved as a query\\.$#"
+			count: 1
+			path: app/Services/OccupancyService.php
+
+		-
+			message: "#^Method Carbon\\\\Carbon\\:\\:addDay\\(\\) invoked with 1 parameter, 0 required\\.$#"
+			count: 5
+			path: app/Services/OcupacionSemanalService.php
+
+		-
+			message: "#^Offset 'jueves'\\|'lunes'\\|'martes'\\|'miercoles'\\|'sabado'\\|'viernes' on array\\{lunes\\: 'LU', martes\\: 'MA', miercoles\\: 'MI', jueves\\: 'JU', viernes\\: 'VI', sabado\\: 'SA'\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/OcupacionSemanalService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$apellidos\\.$#"
+			count: 1
+			path: app/Services/ReservaService.php
+
+		-
+			message: "#^Access to an undefined property App\\\\Models\\\\Profesor\\:\\:\\$nombres\\.$#"
+			count: 1
+			path: app/Services/ReservaService.php
+
+		-
+			message: "#^Property App\\\\Models\\\\Espacio\\:\\:\\$estado \\('Disponible'\\|'Ocupado'\\|'Reservado'\\) does not accept 'disponible'\\.$#"
+			count: 1
+			path: app/Services/ReservaService.php
+
+		-
+			message: "#^Empty array passed to foreach\\.$#"
+			count: 1
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Offset 'carrera' on \\*NEVER\\* on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Offset 'id_asignatura' on \\*NEVER\\* on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 2
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Offset 'ua' on \\*NEVER\\* on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Unreachable statement \\- code above always terminates\\.$#"
+			count: 1
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Variable \\$bloqueActual in empty\\(\\) always exists and is always falsy\\.$#"
+			count: 2
+			path: app/Services/TodasClasesService.php
+
+		-
+			message: "#^Class Monolog\\\\Formatter\\\\SyslogUdpFormatter not found\\.$#"
+			count: 1
+			path: config/logging.php
+
+		-
+			message: "#^Array has 2 duplicate keys with value 'expiration' \\('expiration', 'expiration'\\)\\.$#"
+			count: 1
+			path: config/sanctum.php
+
+		-
+			message: "#^Array has 2 duplicate keys with value 'guard' \\('guard', 'guard'\\)\\.$#"
+			count: 1
+			path: config/sanctum.php
+
+		-
+			message: "#^Array has 2 duplicate keys with value 'middleware' \\('middleware', 'middleware'\\)\\.$#"
+			count: 1
+			path: config/sanctum.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Schema\\\\ForeignKeyDefinition\\:\\:nullable\\(\\)\\.$#"
+			count: 5
+			path: database/migrations/central/2025_03_26_000012_create_users_table.php
+
+		-
+			message: "#^Dead catch \\- Exception is never thrown in the try block\\.$#"
+			count: 1
+			path: database/migrations/tenant/2025_10_14_130808_add_external_fields_to_destinatarios_correos_table.php
+
+		-
+			message: "#^Call to an undefined method Illuminate\\\\Database\\\\Schema\\\\ForeignKeyDefinition\\:\\:name\\(\\)\\.$#"
+			count: 1
+			path: database/migrations/tenant/2025_11_18_000101_create_planificaciones_profesores_colaboradores_table.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between mixed and null will always evaluate to false\\.$#"
+			count: 1
+			path: database/migrations/tenant/2026_01_28_161000_update_la_espacios_pisos.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between mixed and null will always evaluate to false\\.$#"
+			count: 1
+			path: database/seeders/EspacioSeeder.php
+
+		-
+			message: "#^Offset 'IT_CCP'\\|'IT_CH'\\|'IT_CT'\\|'IT_LA'\\|'IT_TH' on array\\{IT_TH\\: array\\{array\\{numero_piso\\: 1\\}, array\\{numero_piso\\: 2\\}\\}, IT_CT\\: array\\{array\\{numero_piso\\: 1\\}, array\\{numero_piso\\: 2\\}, array\\{numero_piso\\: 3, nombre_piso\\: 'Taller Gastronómico'\\}\\}, IT_CH\\: array\\{array\\{numero_piso\\: 1\\}, array\\{numero_piso\\: 2\\}, array\\{numero_piso\\: 3\\}\\}, IT_LA\\: array\\{array\\{numero_piso\\: 1, nombre_piso\\: 'CAUPOLICÁN 276'\\}, array\\{numero_piso\\: 2, nombre_piso\\: 'VILLAGRÁN 220'\\}, array\\{numero_piso\\: 3, nombre_piso\\: 'VILLAGRÁN 251'\\}\\}, IT_CCP\\: array\\{array\\{numero_piso\\: 1, nombre_piso\\: 'Piso 1'\\}, array\\{numero_piso\\: 2, nombre_piso\\: 'Piso 2'\\}\\}\\} on left side of \\?\\? always exists and is not nullable\\.$#"
+			count: 1
+			path: database/seeders/PisoSeeder.php
+
+		-
+			message: "#^Ternary operator condition is always true\\.$#"
+			count: 1
+			path: database/seeders/PisoSeeder.php
+
+		-
+			message: "#^Parameter \\#1 \\$value of function bcrypt expects string, int\\<min, \\-1\\>\\|int\\<1, max\\> given\\.$#"
+			count: 1
+			path: database/seeders/UserSeeder.php
+
+		-
+			message: "#^Call to static method current\\(\\) on an unknown class Tenant\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method find\\(\\) on an unknown class Tenant\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method normalizarDia\\(\\) on an unknown class ModulosHelper\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method now\\(\\) on an unknown class Carbon\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method today\\(\\) on an unknown class Carbon\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method with\\(\\) on an unknown class PlanificacionProfesorColaborador\\.$#"
+			count: 1
+			path: routes/api.php
+
+		-
+			message: "#^Call to static method with\\(\\) on an unknown class Planificacion_Asignatura\\.$#"
+			count: 2
+			path: routes/api.php
+
+		-
+			message: "#^Class CacheHealthController not found\\.$#"
+			count: 4
+			path: routes/api.php
+
+		-
+			message: "#^Class ProfesorController not found\\.$#"
+			count: 3
+			path: routes/api.php
+
+		-
+			message: "#^Class SolicitanteController not found\\.$#"
+			count: 3
+			path: routes/api.php

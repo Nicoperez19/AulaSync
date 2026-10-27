@@ -14,12 +14,12 @@
 
             <div class="flex items-center gap-2.5">
                 <button type="button" onclick="abrirModalManualReserva()" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer">
                     <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>Nueva Reserva</span>
                 </button>
                 <a href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-md shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
                     <svg class="w-4 h-4 shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -37,93 +37,101 @@
     <input type="text" id="qr-input-global" class="sr-only absolute top-0 left-0 opacity-0 w-1 h-1 pointer-events-none" autofocus autocomplete="off">
 
     <!-- Filtros -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Solicitante</label>
-                    <div class="relative">
-                        <input type="text" id="filtro-solicitante" oninput="aplicarFiltrosLocales()" placeholder="Nombre o RUN..." class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                        </div>
-                    </div>
-                </div>
+    <!-- Sección FILTROS -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
+            </h3>
+        </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                    <select id="filtro-estado" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="todos">Todos los estados</option>
-                        <option value="activa">Activas</option>
-                        <option value="finalizada">Finalizadas</option>
-                        <option value="cancelada">Canceladas</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio</label>
-                    <select id="filtro-espacio" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="todos">Todos los espacios</option>
-                    </select>
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
-                    <select id="filtro-modulo" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="todos">Todos los módulos</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                    <input type="date" id="filtro-fecha" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
-                    <select id="filtro-orden" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
-                        <option value="desc">Fecha (más reciente)</option>
-                        <option value="asc">Fecha (más antigua)</option>
-                    </select>
-                </div>
-                
-                <div class="flex items-end">
-                    <button onclick="cargarReservas()" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-sm">
-                        <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
-                        Actualizar
-                    </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Solicitante</label>
+                <div class="relative">
+                    <input type="text" id="filtro-solicitante" oninput="aplicarFiltrosLocales()" placeholder="Nombre o RUN..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
             </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
+                <select id="filtro-estado" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="todos">Todos los estados</option>
+                    <option value="activa">Activas</option>
+                    <option value="finalizada">Finalizadas</option>
+                    <option value="cancelada">Canceladas</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Espacio</label>
+                <select id="filtro-espacio" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="todos">Todos los espacios</option>
+                </select>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Módulo</label>
+                <select id="filtro-modulo" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="todos">Todos los módulos</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Fecha</label>
+                <input type="date" id="filtro-fecha" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Ordenar por</label>
+                <select id="filtro-orden" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="desc">Fecha (más reciente)</option>
+                    <option value="asc">Fecha (más antigua)</option>
+                </select>
+            </div>
         </div>
+
+        <!-- Botones de Acción separados por línea -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <button type="button" 
+                    onclick="limpiarFiltrosSalasEstudio()" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+            <button onclick="cargarReservas()" 
+                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
+            </button>
+        </div>
+    </div>
     </div>
 
     <!-- Tabla de reservas -->
-    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-4 sm:p-6">
-            <div class="hidden lg:block">
-                <div class="overflow-x-auto">
-                    <table class="w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-10">
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-10">
                                     <input type="checkbox" id="select-all-reservas" class="rounded">
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28 cursor-pointer hover:text-gray-700">
-                                    ESTADO <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-28 cursor-pointer hover:text-red-100">
+                                    ESTADO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28 cursor-pointer hover:text-gray-700">
-                                    ESPACIO <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-28 cursor-pointer hover:text-red-100">
+                                    ESPACIO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700">
-                                    RESPONSABLE <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase cursor-pointer hover:text-red-100">
+                                    RESPONSABLE <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32 cursor-pointer hover:text-gray-700">
-                                    FECHA <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-32 cursor-pointer hover:text-red-100">
+                                    FECHA <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
                                 </th>
-                                <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-44 cursor-pointer hover:text-gray-700">
-                                    PERMANENCIA (MAX 2H) <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-44 cursor-pointer hover:text-red-100">
+                                    PERMANENCIA (MAX 2H) <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
                                 </th>
-                                <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">
+                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-32">
                                     ACCIONES
                                 </th>
                             </tr>
@@ -138,11 +146,10 @@
                                 </td>
                             </tr>
                         </tbody>
-                    </table>
-                </div>
-            </div>
+            </table>
+        </div>
 
-            <!-- Versión Mobile (Cards) -->
+        <!-- Versión Mobile (Cards) -->
             <div id="tabla-reservas-cards" class="lg:hidden space-y-4">
                 <div class="flex flex-col items-center justify-center py-12 text-gray-500">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
@@ -156,11 +163,11 @@
                     Mostrando <span id="paginacion-desde" class="font-semibold text-gray-900">0</span> a <span id="paginacion-hasta" class="font-semibold text-gray-900">0</span> de <span id="paginacion-total" class="font-semibold text-gray-900">0</span> reservas
                 </div>
                 <div class="flex items-center gap-1.5">
-                    <button id="btn-pagina-anterior" onclick="cambiarPagina(paginaActual - 1)" class="px-3 py-1.5 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    <button id="btn-pagina-anterior" onclick="cambiarPagina(paginaActual - 1)" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
                         <i class="fa-solid fa-chevron-left mr-1"></i> Anterior
                     </button>
                     <div id="paginacion-numeros" class="flex items-center gap-1"></div>
-                    <button id="btn-pagina-siguiente" onclick="cambiarPagina(paginaActual + 1)" class="px-3 py-1.5 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                    <button id="btn-pagina-siguiente" onclick="cambiarPagina(paginaActual + 1)" class="px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
                         Siguiente <i class="fa-solid fa-chevron-right ml-1"></i>
                     </button>
                 </div>
@@ -300,12 +307,12 @@
             <form id="form-registro-solicitante" onsubmit="guardarYContinuar(event)" class="space-y-4 text-xs">
                 <div>
                     <label class="block font-semibold text-gray-700 mb-1">RUN / Identificación *</label>
-                    <input type="text" id="reg-run" readonly class="w-full text-sm bg-gray-100 border-gray-300 rounded-md font-bold text-gray-800 px-3 py-2">
+                    <input type="text" id="reg-run" readonly class="w-full text-sm bg-gray-100 border-gray-300 rounded-lg font-bold text-gray-800 px-3 py-2">
                 </div>
 
                 <div>
                     <label class="block font-semibold text-gray-700 mb-1">Tipo de Solicitante *</label>
-                    <select id="reg-tipo" required class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-medium px-3 py-2">
+                    <select id="reg-tipo" required class="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-[#950101] focus:border-[#950101] focus:border-blue-500 font-medium px-3 py-2">
                         <option value="">Seleccione el tipo</option>
                         <option value="estudiante" selected>Estudiante</option>
                         <option value="personal">Personal Administrativo</option>
@@ -317,19 +324,19 @@
 
                 <div>
                     <label class="block font-semibold text-gray-700 mb-1">Nombre Completo *</label>
-                    <input type="text" id="reg-nombre" required placeholder="Ej. Juan Pérez Garay" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2">
+                    <input type="text" id="reg-nombre" required placeholder="Ej. Juan Pérez Garay" class="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-[#950101] focus:border-[#950101] focus:border-blue-500 px-3 py-2">
                 </div>
 
                 <div>
                     <label class="block font-semibold text-gray-700 mb-1">Correo Electrónico *</label>
-                    <input type="email" id="reg-correo" required placeholder="usuario@ejemplo.cl" class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2">
+                    <input type="email" id="reg-correo" required placeholder="usuario@ejemplo.cl" class="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-[#950101] focus:border-[#950101] focus:border-blue-500 px-3 py-2">
                 </div>
 
                 <div>
                     <label class="block font-semibold text-gray-700 mb-1">Teléfono *</label>
                     <div class="flex">
                         <span class="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md text-gray-600 font-medium">+56</span>
-                        <input type="tel" id="reg-telefono" placeholder="912345678" maxlength="9" pattern="[0-9]{9}" class="flex-1 text-sm border-gray-300 rounded-r-md shadow-sm focus:ring-blue-500 focus:border-blue-500 px-3 py-2">
+                        <input type="tel" id="reg-telefono" placeholder="912345678" maxlength="9" pattern="[0-9]{9}" class="flex-1 text-sm border-gray-300 rounded-r-md shadow-sm focus:ring-[#950101] focus:border-[#950101] focus:border-blue-500 px-3 py-2">
                     </div>
                 </div>
 
@@ -613,6 +620,17 @@
         }
     }
 
+    function limpiarFiltrosSalasEstudio() {
+        const s = document.getElementById('filtro-solicitante'); if (s) s.value = '';
+        const e = document.getElementById('filtro-estado'); if (e) e.value = 'todos';
+        const esp = document.getElementById('filtro-espacio'); if (esp) esp.value = 'todos';
+        const m = document.getElementById('filtro-modulo'); if (m) m.value = 'todos';
+        const f = document.getElementById('filtro-fecha'); if (f) f.value = '';
+        const o = document.getElementById('filtro-orden'); if (o) o.value = 'desc';
+        cargarReservas();
+    }
+    window.limpiarFiltrosSalasEstudio = limpiarFiltrosSalasEstudio;
+
     function aplicarFiltrosLocales() {
         const solicitanteFiltro = (document.getElementById('filtro-solicitante')?.value || '').toLowerCase().trim();
 
@@ -694,7 +712,7 @@
                 const btn = document.createElement('button');
                 btn.textContent = i;
                 btn.onclick = () => cambiarPagina(i);
-                btn.className = `px-3 py-1.5 border text-xs sm:text-sm font-semibold rounded-md transition ${
+                btn.className = `px-3 py-1.5 border text-xs sm:text-sm font-semibold rounded-lg transition ${
                     i === paginaActual
                         ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                         : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
@@ -727,21 +745,21 @@
 
             return `
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-2 py-3"><input type="checkbox" class="rounded border-gray-300"></td>
-                    <td class="px-2 py-3">${badgeEstado}</td>
-                    <td class="px-2 py-3 text-sm text-gray-900 font-medium">${r.id_espacio}</td>
+                    <td class="px-2 py-3 text-center"><input type="checkbox" class="rounded border-gray-300"></td>
+                    <td class="px-2 py-3 text-center">${badgeEstado}</td>
+                    <td class="px-2 py-3 text-center text-sm text-gray-900 font-medium">${r.id_espacio}</td>
                     <td class="px-2 py-3">
                         <div class="text-sm font-medium text-gray-900">${r.nombre_responsable}</div>
                         <div class="text-xs text-gray-500">RUN: ${r.run_responsable}</div>
                     </td>
-                    <td class="px-2 py-3 text-sm text-gray-900">${r.fecha_reserva} <span class="text-xs text-gray-500">${r.hora_inicio ? r.hora_inicio.substring(0, 5) : ''}</span></td>
-                    <td class="px-2 py-3 text-xs text-gray-900 font-medium">
+                    <td class="px-2 py-3 text-center text-sm text-gray-900">${r.fecha_reserva} <span class="text-xs text-gray-500">${r.hora_inicio ? r.hora_inicio.substring(0, 5) : ''}</span></td>
+                    <td class="px-2 py-3 text-center text-xs text-gray-900 font-medium">
                         <span class="${r.vencida ? 'text-red-600 font-bold' : (r.proxima_vencer ? 'text-yellow-700 font-bold' : 'text-gray-900')}">
                             ${tiempoTexto}
                         </span>
                     </td>
-                    <td class="px-2 py-3 text-right">
-                        <div class="flex justify-end items-center gap-1">
+                    <td class="px-2 py-3 text-center">
+                        <div class="flex justify-center items-center gap-1">
                             ${r.estado === 'activa' ? `
                                 <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" 
                                         class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded shadow-sm transition-colors mr-1">
@@ -776,11 +794,11 @@
                     <div class="text-xs text-gray-500">RUN: ${r.run_responsable} • ${r.fecha_reserva}</div>
                     <div class="pt-2 flex gap-2 justify-end">
                         ${r.estado === 'activa' ? `
-                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="flex-1 py-2 border border-transparent bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-md shadow-xs transition-all">
+                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="flex-1 py-2 border border-transparent bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded-lg shadow-xs transition-all">
                                 Devolver Sala
                             </button>
                         ` : ''}
-                        <a href="/reservas/${r.id_reserva}/comprobante" target="_blank" class="px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-md flex items-center justify-center shadow-xs transition-all">
+                        <a href="/reservas/${r.id_reserva}/comprobante" target="_blank" class="px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-lg flex items-center justify-center shadow-xs transition-all">
                             <i class="fa-solid fa-file-pdf mr-1.5 text-red-600"></i> PDF
                         </a>
                     </div>

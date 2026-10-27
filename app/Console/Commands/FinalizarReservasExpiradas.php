@@ -2,21 +2,21 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Reserva;
-use App\Models\Espacio;
-use App\Models\Modulo;
-use App\Models\Planificacion_Asignatura;
-use App\Models\Tenant;
+use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
+use App\Models\Espacio;
+use App\Models\Planificacion_Asignatura;
+use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Log;
 
 class FinalizarReservasExpiradas extends Command
 {
     protected $signature = 'reservas:finalizar-expiradas';
+
     protected $description = 'Finaliza automáticamente las reservas de tipo clase al término de cada módulo';
 
     // Horarios de módulos por día
@@ -36,7 +36,7 @@ class FinalizarReservasExpiradas extends Command
             12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
         'martes' => [
             1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
@@ -53,7 +53,7 @@ class FinalizarReservasExpiradas extends Command
             12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
         'miercoles' => [
             1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
@@ -70,7 +70,7 @@ class FinalizarReservasExpiradas extends Command
             12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
         'jueves' => [
             1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
@@ -87,7 +87,7 @@ class FinalizarReservasExpiradas extends Command
             12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
         'viernes' => [
             1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
@@ -104,7 +104,7 @@ class FinalizarReservasExpiradas extends Command
             12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
         'sabado' => [
             1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
@@ -112,8 +112,8 @@ class FinalizarReservasExpiradas extends Command
             3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
             4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
             5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00']
-        ]
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+        ],
     ];
 
     public function handle()
@@ -123,6 +123,7 @@ class FinalizarReservasExpiradas extends Command
         $tenants = Tenant::all();
         if ($tenants->isEmpty()) {
             $this->warn('No se encontraron tenants.');
+
             return 0;
         }
 
@@ -145,7 +146,7 @@ class FinalizarReservasExpiradas extends Command
             $fechaHoy = $ahora->toDateString();
             $horaActual = $ahora->format('H:i:s');
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-            $diaKey = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diaKey = ModulosHelper::normalizarDia($diaActual);
 
             // Buscar TODAS las reservas activas de hoy
             // Usamos withoutGlobalScopes() para asegurar que procesamos todo el tenant
@@ -154,7 +155,7 @@ class FinalizarReservasExpiradas extends Command
                 ->where('fecha_reserva', $fechaHoy)
                 ->get();
 
-            $this->info("  Total de reservas activas encontradas: " . $reservasActivas->count());
+            $this->info('  Total de reservas activas encontradas: '.$reservasActivas->count());
 
             $finalizadas = 0;
 
@@ -163,14 +164,14 @@ class FinalizarReservasExpiradas extends Command
                 $motivo = '';
 
                 // 1. Verificar por hora_salida (Prioridad)
-                if (!empty($reserva->hora_salida)) {
+                if (! empty($reserva->hora_salida)) {
                     if ($reserva->hora_salida <= $horaActual) {
                         $debeFinalizar = true;
                         $motivo = "Hora de salida alcanzada ({$reserva->hora_salida})";
                     }
                 }
                 // 2. Fallback para clases sin hora_salida (usando módulos)
-                elseif ($reserva->tipo_reserva === 'clase' && !empty($reserva->id_asignatura)) {
+                elseif ($reserva->tipo_reserva === 'clase' && ! empty($reserva->id_asignatura)) {
                     $horaFinModulo = $this->obtenerHoraFinClase($reserva, $diaKey);
                     if ($horaFinModulo && $horaFinModulo <= $horaActual) {
                         $debeFinalizar = true;
@@ -189,7 +190,7 @@ class FinalizarReservasExpiradas extends Command
                 if ($debeFinalizar) {
                     // Si se calculó una hora de fin para la clase, usarla para la salida
                     $horaSalidaCalculada = null;
-                    if ($reserva->tipo_reserva === 'clase' && !empty($reserva->id_asignatura)) {
+                    if ($reserva->tipo_reserva === 'clase' && ! empty($reserva->id_asignatura)) {
                         $horaSalidaCalculada = $this->obtenerHoraFinClase($reserva, $diaKey);
                     }
                     $this->finalizarReserva($reserva, $motivo, $horaSalidaCalculada);
@@ -200,8 +201,8 @@ class FinalizarReservasExpiradas extends Command
             $this->info("  Reservas finalizadas en este tenant: {$finalizadas}");
 
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
-            Log::error("Error en FinalizarReservasExpiradas para tenant {$tenant->name}: " . $e->getMessage());
+            $this->error("  Error procesando tenant {$tenant->name}: ".$e->getMessage());
+            Log::error("Error en FinalizarReservasExpiradas para tenant {$tenant->name}: ".$e->getMessage());
         }
     }
 
@@ -217,15 +218,17 @@ class FinalizarReservasExpiradas extends Command
                 })
                 ->get();
 
-            if ($planificaciones->isEmpty())
+            if ($planificaciones->isEmpty()) {
                 return null;
+            }
 
             $numMaxModulo = 0;
             foreach ($planificaciones as $plan) {
                 $parts = explode('.', $plan->id_modulo);
                 $num = isset($parts[1]) ? (int) $parts[1] : 0;
-                if ($num > $numMaxModulo)
+                if ($num > $numMaxModulo) {
                     $numMaxModulo = $num;
+                }
             }
 
             return $this->horariosModulos[$diaKey][$numMaxModulo]['fin'] ?? null;
@@ -245,7 +248,7 @@ class FinalizarReservasExpiradas extends Command
 
             $obs = $reserva->observaciones ?? '';
             $nuevaObs = "Finalizada automáticamente: {$motivo}.";
-            $reserva->observaciones = $obs ? $obs . "\n" . $nuevaObs : $nuevaObs;
+            $reserva->observaciones = $obs ? $obs."\n".$nuevaObs : $nuevaObs;
             $reserva->save();
 
             // Liberar el espacio inmediatamente
@@ -258,7 +261,7 @@ class FinalizarReservasExpiradas extends Command
                     ->where('id_reserva', '!=', $reserva->id_reserva)
                     ->exists();
 
-                if (!$otraReserva) {
+                if (! $otraReserva) {
                     $espacio->estado = 'Disponible';
                     $espacio->save();
                     $this->info("    Espacio {$espacio->nombre_espacio} liberado.");
@@ -269,9 +272,8 @@ class FinalizarReservasExpiradas extends Command
             $this->info("  ✅ Reserva {$reserva->id_reserva} finalizada. Motivo: {$motivo}");
         } catch (\Exception $e) {
             DB::connection('tenant')->rollBack();
-            Log::error("Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
-            $this->error("  ❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
+            Log::error("Error al finalizar reserva {$reserva->id_reserva}: ".$e->getMessage());
+            $this->error("  ❌ Error al finalizar reserva {$reserva->id_reserva}: ".$e->getMessage());
         }
     }
 }
-

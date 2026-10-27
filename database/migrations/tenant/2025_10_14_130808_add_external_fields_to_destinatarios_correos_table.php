@@ -16,7 +16,7 @@ return new class extends Migration
             Schema::table('destinatarios_correos', function (Blueprint $table) {
                 $table->dropForeign(['user_id']);
             });
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // La restricción ya no existe, continuar
         }
 
@@ -25,13 +25,13 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable()->change();
 
             // Agregar campos para destinatarios externos (no registrados) solo si no existen
-            if (!Schema::hasColumn('destinatarios_correos', 'es_externo')) {
+            if (! Schema::hasColumn('destinatarios_correos', 'es_externo')) {
                 $table->boolean('es_externo')->default(false)->after('user_id');
             }
-            if (!Schema::hasColumn('destinatarios_correos', 'email_externo')) {
+            if (! Schema::hasColumn('destinatarios_correos', 'email_externo')) {
                 $table->string('email_externo')->nullable()->after('es_externo');
             }
-            if (!Schema::hasColumn('destinatarios_correos', 'nombre_externo')) {
+            if (! Schema::hasColumn('destinatarios_correos', 'nombre_externo')) {
                 $table->string('nombre_externo')->nullable()->after('email_externo');
             }
         });
@@ -40,7 +40,7 @@ return new class extends Migration
             // Recrear la restricción de clave foránea
             try {
                 // $table->foreign('user_id')->references('run')->on('users')->onDelete('cascade'); // FK a tabla central
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // La restricción ya existe, continuar
             }
         });

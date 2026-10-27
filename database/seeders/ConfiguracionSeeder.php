@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Configuracion;
 use App\Models\Facultad;
 use App\Models\Sede;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ConfiguracionSeeder extends Seeder
@@ -23,7 +22,7 @@ class ConfiguracionSeeder extends Seeder
                 ['clave' => "logo_institucional_{$sede->id_sede}"],
                 [
                     'valor' => '',
-                    'descripcion' => "Logo institucional de la sede {$sede->nombre_sede}"
+                    'descripcion' => "Logo institucional de la sede {$sede->nombre_sede}",
                 ]
             );
         }
@@ -36,7 +35,7 @@ class ConfiguracionSeeder extends Seeder
                 ['clave' => "correo_administrativo_{$facultad->id_facultad}"],
                 [
                     'valor' => '',
-                    'descripcion' => "Correo administrativo de la escuela {$facultad->nombre_facultad}"
+                    'descripcion' => "Correo administrativo de la escuela {$facultad->nombre_facultad}",
                 ]
             );
 
@@ -44,7 +43,7 @@ class ConfiguracionSeeder extends Seeder
                 ['clave' => "nombre_remitente_{$facultad->id_facultad}"],
                 [
                     'valor' => $facultad->nombre_facultad,
-                    'descripcion' => "Nombre del remitente para correos de {$facultad->nombre_facultad}"
+                    'descripcion' => "Nombre del remitente para correos de {$facultad->nombre_facultad}",
                 ]
             );
         }
@@ -54,7 +53,7 @@ class ConfiguracionSeeder extends Seeder
             ['clave' => 'nombre_institucion'],
             [
                 'valor' => 'Universidad del Desarrollo',
-                'descripcion' => 'Nombre de la institución'
+                'descripcion' => 'Nombre de la institución',
             ]
         );
 

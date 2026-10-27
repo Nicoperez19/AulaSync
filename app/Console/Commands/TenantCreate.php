@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Tenant;
 use App\Models\Sede;
+use App\Models\Tenant;
+use Illuminate\Console\Command;
 
 class TenantCreate extends Command
 {
@@ -40,24 +40,26 @@ class TenantCreate extends Command
         // Validar que el dominio no exista
         if (Tenant::where('domain', $domain)->exists()) {
             $this->error("Tenant with domain '{$domain}' already exists!");
+
             return 1;
         }
 
         // Validar sede si se proporciona
         if ($sedeId) {
             $sede = Sede::find($sedeId);
-            if (!$sede) {
+            if (! $sede) {
                 $this->error("Sede with ID '{$sedeId}' not found!");
+
                 return 1;
             }
 
             // Si no se proporciona nombre, usar el de la sede
-            if (!$this->option('name')) {
+            if (! $this->option('name')) {
                 $name = $sede->nombre_sede;
             }
 
             // Si no se proporciona prefijo, usar el de la sede
-            if (!$prefix) {
+            if (! $prefix) {
                 $prefix = $sede->prefijo_sala;
             }
         }
@@ -96,6 +98,7 @@ class TenantCreate extends Command
             return 0;
         } catch (\Exception $e) {
             $this->error("Failed to create tenant: {$e->getMessage()}");
+
             return 1;
         }
     }

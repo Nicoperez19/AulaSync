@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Agrega el campo database_host para soportar arquitecturas donde
      * cada tenant tiene su base de datos en un servidor/contenedor diferente.
      */

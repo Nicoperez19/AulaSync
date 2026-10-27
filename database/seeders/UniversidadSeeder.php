@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Universidad;
+use Illuminate\Database\Seeder;
 
 class UniversidadSeeder extends Seeder
 {
@@ -15,7 +15,7 @@ class UniversidadSeeder extends Seeder
         Universidad::create([
             'id_universidad' => 'UCSC',
             'nombre_universidad' => 'Universidad Católica de la Santisima Concepcion',
-            'imagen_logo' => 'ucsc.png', 
+            'imagen_logo' => 'ucsc.png',
         ]);
     }
 }

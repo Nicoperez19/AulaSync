@@ -18,7 +18,7 @@ return new class extends Migration
              || DB::table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
              || str_contains(strtolower(DB::connection()->getDatabaseName()), 'la');
 
-        if (!$isLA) {
+        if (! $isLA) {
             return;
         }
 
@@ -40,7 +40,7 @@ return new class extends Migration
 
         // 2. Si no existe un piso con numero_piso = 3 para IT_LA, crearlo
         $existePiso3 = DB::table('pisos')->where('id_facultad', 'IT_LA')->where('numero_piso', 3)->exists();
-        if (!$existePiso3) {
+        if (! $existePiso3) {
             DB::table('pisos')->insert([
                 'id' => 12,
                 'numero_piso' => 3,

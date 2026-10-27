@@ -1,9 +1,8 @@
-<div data-aulasync-root style="display: contents;">
 <div>
     <!-- Título Solicitudes y Reservas -->
     <div class="mb-4">
         <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
-            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            <i class="fas fa-calendar-check text-[#950101] text-xl"></i>
             <span>Solicitudes y Reservas</span>
         </span>
     </div>
@@ -17,7 +16,7 @@
                     <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total Reservas</p>
                     <p class="text-3xl font-black text-blue-950 mt-1">{{ number_format($kpis['total'] ?? 0) }}</p>
                 </div>
-                <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
+                <div class="p-3 bg-blue-100 rounded-lg text-[#950101]">
                     <i class="fas fa-calendar-check text-xl"></i>
                 </div>
             </div>
@@ -67,7 +66,7 @@
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-filter text-blue-600"></i> FILTROS
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
             </h3>
         </div>
 
@@ -76,7 +75,7 @@
             <div>
                 <label for="tipo_espacio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo de Espacio</label>
                 <select id="tipo_espacio_filtro" wire:model.live="tipoEspacio"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todos (Auditorio, Salas de Estudio, Laboratorios)</option>
                     <option value="Auditorio">Auditorio</option>
                     <option value="Sala de Estudio">Salas de Estudio</option>
@@ -92,7 +91,7 @@
                            id="search_input"
                            wire:model.live.debounce.400ms="search"
                            placeholder="Profesor, solicitante, RUN o espacio..."
-                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]" />
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
             </div>
@@ -101,7 +100,7 @@
             <div>
                 <label for="estado_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
                 <select id="estado_filtro" wire:model.live="estado"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todos</option>
                     <option value="activa">Activa</option>
                     <option value="finalizada">Finalizada</option>
@@ -116,7 +115,7 @@
                 <input type="date"
                        id="fecha_inicio_filtro"
                        wire:model.live="fechaInicio"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
 
             {{-- Hasta --}}
@@ -125,7 +124,7 @@
                 <input type="date"
                        id="fecha_fin_filtro"
                        wire:model.live="fechaFin"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
         </div>
 
@@ -141,7 +140,7 @@
     <!-- Botón Exportar al estilo Control de Clases -->
     <div class="flex justify-end mb-4">
         <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
-           class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las reservas</span>
         </a>
@@ -151,48 +150,48 @@
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 border-b border-gray-200 dark:bg-gray-900/60 dark:border-gray-700">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                     <tr>
-                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('id_reserva')">
+                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('id_reserva')">
                             <span class="inline-flex items-center gap-1 justify-center">
                                 ID Reserva
                                 @if($sortField === 'id_reserva')
-                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
                                 @else
-                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
                                 @endif
                             </span>
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('fecha_reserva')">
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_reserva')">
                             <span class="inline-flex items-center gap-1 justify-center">
                                 Fecha
                                 @if($sortField === 'fecha_reserva')
-                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
                                 @else
-                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
                                 @endif
                             </span>
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Horario
                         </th>
-                        <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer select-none hover:text-gray-900" wire:click="sortBy('id_espacio')">
+                        <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('id_espacio')">
                             <span class="inline-flex items-center gap-1 justify-center">
                                 Espacio
                                 @if($sortField === 'id_espacio')
-                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-600 text-xs"></i>
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
                                 @else
-                                    <i class="fa-solid fa-sort text-xs text-gray-400"></i>
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
                                 @endif
                             </span>
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Usuario / Solicitante
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Estado
                         </th>
-                        <th scope="col" class="w-44 px-3 py-3.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                        <th scope="col" class="min-w-[220px] px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
@@ -201,7 +200,7 @@
                     @forelse ($reservas as $reserva)
                         <tr wire:key="reserva-row-{{ $reserva->id_reserva }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
                             <td class="w-24 px-3 py-3 text-center align-middle whitespace-nowrap">
-                                <span class="font-medium text-blue-600 dark:text-blue-400 text-sm">#{{ $reserva->id_reserva }}</span>
+                                <span class="font-medium text-[#950101] dark:text-blue-400 text-sm">#{{ $reserva->id_reserva }}</span>
                             </td>
                             <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <div class="font-medium text-gray-800 dark:text-gray-200 text-sm">
@@ -226,7 +225,7 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-left align-middle">
+                            <td class="px-3 py-3 text-center align-middle">
                                 <div class="font-medium text-gray-800 dark:text-gray-200 text-sm truncate max-w-xs" title="{{ $reserva->nombre_usuario }}">
                                     {{ $reserva->nombre_usuario }}
                                 </div>
@@ -253,26 +252,29 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="w-44 px-3 py-3 text-center align-middle whitespace-nowrap">
-                                <div class="flex items-center justify-center gap-1">
+                            <td class="min-w-[220px] px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
                                     <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
-                                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
                                        title="Editar reserva">
-                                        <i class="fa-solid fa-edit w-3.5 h-3.5"></i>
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
                                     </a>
                                     <a href="{{ route('reservas.comprobante', $reserva->id_reserva) }}"
                                        target="_blank"
-                                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors shadow-xs dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 transition-colors shadow-xs"
                                        title="Descargar Comprobante PDF">
-                                        <i class="fa-solid fa-file-pdf w-3.5 h-3.5"></i>
+                                        <i class="fa-solid fa-file-pdf text-xs"></i>
+                                        <span>PDF</span>
                                     </a>
                                     <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" title="Cancelar reserva"
-                                                class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition-colors shadow-xs btn-delete-reserva dark:bg-red-900/40 dark:text-red-300 dark:border-red-700"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs btn-delete-reserva"
                                                 data-espacio="{{ $reserva->id_espacio }}">
-                                            <x-icons.delete class="w-3.5 h-3.5" aria-hidden="true" />
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                            <span>Cancelar</span>
                                         </button>
                                     </form>
 
@@ -313,7 +315,7 @@
                                     <i class="fa-solid fa-calendar-xmark text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                     <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron reservas con los filtros seleccionados.</p>
                                     @if(!empty($search) || !empty($tipoEspacio) || !empty($fechaInicio) || !empty($fechaFin) || !empty($estado))
-                                        <button type="button" wire:click="limpiarFiltros" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline font-medium">
+                                        <button type="button" wire:click="limpiarFiltros" class="mt-2 text-xs text-[#950101] hover:text-blue-800 underline font-medium">
                                             Restablecer todos los filtros
                                         </button>
                                     @endif
@@ -348,8 +350,8 @@
                         text: '¿Estás seguro de cancelar y eliminar definitivamente esta reserva? Esta acción liberará el espacio.',
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonColor: '#DC2626',
-                        cancelButtonColor: '#6B7280',
+                        confirmButtonColor: '#D12420',
+                        cancelButtonColor: '#8D8D8D',
                         confirmButtonText: 'Sí, cancelar reserva',
                         cancelButtonText: 'No, mantener'
                     }).then((result) => {
@@ -370,4 +372,3 @@
         });
     });
 </script>
-</div>

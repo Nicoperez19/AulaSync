@@ -112,7 +112,7 @@ class CareersTable extends Component
                     }
                 });
             })
-            ->orderBy(in_array($this->sortField, ['id_carrera', 'nombre'], true) ? $this->sortField : 'id_carrera', $this->sortDirection === 'desc' ? 'desc' : 'asc')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.careers-table', compact('carreras'));

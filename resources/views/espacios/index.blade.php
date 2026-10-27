@@ -209,7 +209,7 @@
 
                     <!-- Botón de acción -->
                     <div class="flex justify-end pt-6 border-t border-gray-200">
-                        <x-button class="gap-2 bg-red-600 hover:bg-red-700 focus:ring-red-500">
+                        <x-button variant="primary" class="gap-2">
                             <x-icons.add class="w-5 h-5" aria-hidden="true" />
                             <span>{{ __('Agregar Espacio') }}</span>
                         </x-button>
@@ -377,7 +377,7 @@
         });
 
         // Recargar datos cuando se abre el modal
-        document.addEventListener('livewire:init', function () {
+        document.addEventListener('livewire:load', function () {
             // Escuchar el evento de apertura del modal
             window.addEventListener('open-modal', function (event) {
                 if (event.detail === 'add-espacio') {

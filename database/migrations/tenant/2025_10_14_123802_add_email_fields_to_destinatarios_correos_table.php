@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::table('destinatarios_correos', function (Blueprint $table) {
             // Hacer user_id nullable
             $table->unsignedBigInteger('user_id')->nullable()->change();
-            
+
             // Agregar campos para destinatarios sin usuario registrado
             $table->string('email')->nullable()->after('user_id');
             $table->string('nombre')->nullable()->after('email');
-            
+
             // Agregar índice para búsquedas por email
             $table->index('email');
         });

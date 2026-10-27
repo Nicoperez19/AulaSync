@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class ControlDocenteSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     * 
+     *
      * Crea usuarios de Control Docente para cada sede (LA, TH, CT, CH)
      * que pueden registrar reservas desde el Plano Digital.
      */
@@ -56,7 +56,7 @@ class ControlDocenteSeeder extends Seeder
                     'email' => $userData['email'],
                     'password' => bcrypt($userData['run']), // Contraseña es el mismo RUN
                     'celular' => '912345678',
-                    'direccion' => 'Campus ' . $userData['ciudad'],
+                    'direccion' => 'Campus '.$userData['ciudad'],
                     'fecha_nacimiento' => '1992-08-15',
                     'id_sede' => $userData['id_sede'],
                     'id_universidad' => 'UCSC',
@@ -64,7 +64,7 @@ class ControlDocenteSeeder extends Seeder
             );
 
             // Asignar rol Control Docente (creado por RoleSeeder)
-            if (!$user->hasRole('Control Docente')) {
+            if (! $user->hasRole('Control Docente')) {
                 $user->assignRole('Control Docente');
             }
         }

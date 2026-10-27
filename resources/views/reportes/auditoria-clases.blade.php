@@ -19,12 +19,12 @@
                     <span>Volver a Control de Clases</span>
                 </a>
                 <a href="{{ route('reportes.auditoria-clases.export', ['format' => 'excel']) }}?{{ http_build_query(request()->all()) }}"
-                   class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+                   class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
                     <i class="fas fa-file-excel"></i>
                     <span>Exportar Excel</span>
                 </a>
                 <a href="{{ route('reportes.auditoria-clases.export', ['format' => 'pdf']) }}?{{ http_build_query(request()->all()) }}" target="_blank"
-                   class="inline-flex items-center justify-center px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+                   class="btn btn-pdf gap-2 px-4 py-2.5 text-sm font-semibold">
                     <i class="fas fa-file-pdf"></i>
                     <span>Exportar PDF</span>
                 </a>
@@ -72,11 +72,11 @@
 
                 <div class="sm:col-span-2 lg:col-span-5 flex justify-end gap-2 pt-2 border-t border-gray-100">
                     <a href="{{ route('reportes.auditoria-clases.index') }}"
-                       class="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg shadow-sm transition-all duration-200">
-                        Limpiar Filtros
+                       class="inline-flex items-center justify-center px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 text-xs font-semibold rounded-lg shadow-sm transition-all duration-200">
+                        <i class="fas fa-undo mr-1.5 text-xs"></i> Limpiar
                     </a>
                     <button type="submit"
-                            class="inline-flex items-center justify-center px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                            class="inline-flex items-center justify-center px-5 py-2 bg-[#191919] hover:bg-black text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200">
                         <i class="fas fa-filter mr-1.5 text-xs"></i> Filtrar
                     </button>
                 </div>
@@ -87,16 +87,16 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha y Hora</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario Responsable</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Docente Afectado</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura / Espacio</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Clase</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Transición</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo / Observación</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Fecha y Hora</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Usuario Responsable</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Acción</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Docente Afectado</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Asignatura / Espacio</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Fecha Clase</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Transición</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-white uppercase tracking-wider">Motivo / Observación</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200 text-sm">

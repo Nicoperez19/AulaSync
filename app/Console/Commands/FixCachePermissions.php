@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 
 class FixCachePermissions extends Command
 {
@@ -47,7 +47,7 @@ class FixCachePermissions extends Command
         $this->checkPermissions();
 
         $this->info('✅ Corrección de permisos completada.');
-        
+
         return 0;
     }
 
@@ -67,12 +67,12 @@ class FixCachePermissions extends Command
         ];
 
         foreach ($cacheDirectories as $directory) {
-            if (!File::exists($directory)) {
+            if (! File::exists($directory)) {
                 try {
                     File::makeDirectory($directory, 0775, true);
                     $this->info("📁 Creado directorio: {$directory}");
                 } catch (\Exception $e) {
-                    $this->error("❌ Error creando directorio {$directory}: " . $e->getMessage());
+                    $this->error("❌ Error creando directorio {$directory}: ".$e->getMessage());
                 }
             } else {
                 if ($this->option('show-details')) {
@@ -91,7 +91,7 @@ class FixCachePermissions extends Command
     private function createCacheSubdirectories()
     {
         $cacheDataPath = storage_path('framework/cache/data');
-        
+
         // Crear algunos subdirectorios comunes basados en hashes frecuentes
         $commonHashes = [
             '00', '01', '02', '03', '04', '05', '06', '07', '08', '09',
@@ -103,12 +103,12 @@ class FixCachePermissions extends Command
             '3c', '3d', '3e', '3f', '40', '41', '42', '43', '44', '45',
             '46', '47', '48', '49', '4a', '4b', '4c', '4d', '4e', '4f',
             '50', '51', '52', '53', '54', '55', '56', '57', '58', '59',
-            '5a', '5b', '5c', '5d', '5e', '5f'
+            '5a', '5b', '5c', '5d', '5e', '5f',
         ];
 
         foreach ($commonHashes as $hash) {
-            $hashDir = $cacheDataPath . DIRECTORY_SEPARATOR . $hash;
-            if (!File::exists($hashDir)) {
+            $hashDir = $cacheDataPath.DIRECTORY_SEPARATOR.$hash;
+            if (! File::exists($hashDir)) {
                 try {
                     File::makeDirectory($hashDir, 0755, true);
                     if ($this->option('show-details')) {
@@ -116,7 +116,7 @@ class FixCachePermissions extends Command
                     }
                 } catch (\Exception $e) {
                     if ($this->option('show-details')) {
-                        $this->warn("⚠️  No se pudo crear subdirectorio {$hash}: " . $e->getMessage());
+                        $this->warn("⚠️  No se pudo crear subdirectorio {$hash}: ".$e->getMessage());
                     }
                 }
             }
@@ -124,8 +124,8 @@ class FixCachePermissions extends Command
             // Crear segundo nivel de subdirectorios para los hashes más comunes
             if (in_array($hash, ['51', '11', '00', '01', 'ff', 'aa'])) {
                 foreach (['00', '11', '22', '33', '44', '55', '66', '77', '88', '99', 'aa', 'bb', 'cc', 'dd', 'ee', 'ff'] as $subHash) {
-                    $subHashDir = $hashDir . DIRECTORY_SEPARATOR . $subHash;
-                    if (!File::exists($subHashDir)) {
+                    $subHashDir = $hashDir.DIRECTORY_SEPARATOR.$subHash;
+                    if (! File::exists($subHashDir)) {
                         try {
                             File::makeDirectory($subHashDir, 0755, true);
                             if ($this->option('show-details')) {
@@ -159,20 +159,20 @@ class FixCachePermissions extends Command
         foreach ($checkDirectories as $directory) {
             if (File::exists($directory)) {
                 $permissions = substr(sprintf('%o', fileperms($directory)), -4);
-                
+
                 if ($this->option('show-details')) {
                     $this->info("📋 {$directory}: permisos {$permissions}");
                 }
 
                 // Verificar si es escribible
-                if (!is_writable($directory)) {
+                if (! is_writable($directory)) {
                     $this->warn("⚠️  Directorio no escribible: {$directory}");
-                    
+
                     try {
                         chmod($directory, 0775);
                         $this->info("✅ Permisos corregidos para: {$directory}");
                     } catch (\Exception $e) {
-                        $this->error("❌ No se pudieron corregir permisos para {$directory}: " . $e->getMessage());
+                        $this->error("❌ No se pudieron corregir permisos para {$directory}: ".$e->getMessage());
                     }
                 } else {
                     if ($this->option('show-details')) {

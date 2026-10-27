@@ -34,7 +34,7 @@
 
 <body>
     <div x-data="mainState" class="font-sans antialiased "  x-cloak>
-        <div class="flex flex-col min-h-screen text-black bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
+        <div class="flex flex-col min-h-screen text-black bg-[#F1EFF2] dark:bg-[#191919] dark:text-gray-200">
             {{ $slot }}
         </div>
 

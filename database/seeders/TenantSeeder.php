@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Tenant;
 use App\Models\Sede;
+use App\Models\Tenant;
+use Illuminate\Database\Seeder;
 
 class TenantSeeder extends Seeder
 {
@@ -19,12 +19,12 @@ class TenantSeeder extends Seeder
         foreach ($sedes as $sede) {
             // Crear un tenant por cada sede
             // El subdominio se puede derivar del prefijo_sala o del nombre de la sede
-            $domain = $sede->prefijo_sala 
-                ? strtolower($sede->prefijo_sala) 
+            $domain = $sede->prefijo_sala
+                ? strtolower($sede->prefijo_sala)
                 : strtolower(str_replace(' ', '-', $sede->prefijo_sala));
 
             // Generar nombre de base de datos único para cada sede
-            $databaseName = 'aulamanager_' . strtolower($sede->prefijo_sala);
+            $databaseName = 'aulamanager_'.strtolower($sede->prefijo_sala);
 
             Tenant::updateOrCreate(
                 ['domain' => $domain],

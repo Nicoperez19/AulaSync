@@ -24,13 +24,13 @@ return new class extends Migration
             $table->enum('estado', ['pendiente', 'justificado', 'confirmado'])->default('pendiente');
             $table->timestamp('hora_deteccion')->useCurrent();
             $table->timestamps();
-            
+
             // Índices para mejorar el rendimiento
             $table->index(['run_profesor', 'fecha_clase']);
             $table->index(['id_asignatura', 'fecha_clase']);
             $table->index(['periodo']);
             $table->index(['estado']);
-            
+
             // Clave única para evitar duplicados
             $table->unique(['id_asignatura', 'id_espacio', 'id_modulo', 'fecha_clase'], 'unique_clase_no_realizada');
         });

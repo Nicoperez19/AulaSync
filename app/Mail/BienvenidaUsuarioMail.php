@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -14,17 +15,15 @@ class BienvenidaUsuarioMail extends Mailable
     use Queueable, SerializesModels;
 
     public User $user;
+
     public ?string $password;
+
     public ?string $roleName;
+
     public string $loginUrl;
 
     /**
      * Create a new message instance.
-     *
-     * @param User $user
-     * @param string|null $password
-     * @param string|null $roleName
-     * @param string|null $loginUrl
      */
     public function __construct(User $user, ?string $password = null, ?string $roleName = null, ?string $loginUrl = null)
     {
@@ -63,7 +62,7 @@ class BienvenidaUsuarioMail extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

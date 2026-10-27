@@ -527,8 +527,8 @@
                         showCancelButton: true,
                         confirmButtonText: '⚠️ Sí, Forzar y Crear Reserva',
                         cancelButtonText: 'Cancelar y Revisar',
-                        confirmButtonColor: '#D97706',
-                        cancelButtonColor: '#6B7280',
+                        confirmButtonColor: '#D12420',
+                        cancelButtonColor: '#8D8D8D',
                     });
 
                     if (confirmacionPrevia.isConfirmed) {
@@ -651,7 +651,7 @@
                             denyButtonColor: '#2563EB',
                             showCancelButton: true,
                             cancelButtonText: 'Crear otra reserva',
-                            cancelButtonColor: '#6B7280',
+                            cancelButtonColor: '#8D8D8D',
                             confirmButtonColor: '#10B981',
                             width: '600px'
                         }).then((dialogResult) => {
@@ -689,8 +689,8 @@
                             showCancelButton: true,
                             confirmButtonText: '⚠️ Forzar y Crear Reserva',
                             cancelButtonText: 'Cancelar',
-                            confirmButtonColor: '#D97706',
-                            cancelButtonColor: '#6B7280',
+                            confirmButtonColor: '#D12420',
+                            cancelButtonColor: '#8D8D8D',
                             width: '550px'
                         });
 

@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Models\AsistenteAcademico;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\AreaAcademica;
 
 class AsistentesAcademicosTable extends Component
 {
@@ -46,34 +45,28 @@ class AsistentesAcademicosTable extends Component
     {
         $searchTerm = trim($this->search);
 
-        $sortField = in_array($this->sortField, ['nombre', 'email'], true) ? $this->sortField : 'nombre';
-        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
-
         $asistentesAcademicos = AsistenteAcademico::query()
             ->with(['areaAcademica.facultad.sede.universidad'])
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                // Las áreas académicas viven en la base central: se resuelven sus IDs
-                // aparte para no cruzar bases de datos dentro de un whereHas.
-                $areaIds = AreaAcademica::query()
-                    ->where(function ($aq) use ($searchTerm) {
-                        $aq->where('nombre_area_academica', 'like', '%' . $searchTerm . '%')
-                           ->orWhere('id_area_academica', 'like', '%' . $searchTerm . '%');
-                    })
-                    ->pluck('id_area_academica')
-                    ->all();
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
-                $query->where(function ($q) use ($searchTerm, $areaIds) {
-                    $q->where('nombre', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('nombre_remitente', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('telefono', 'like', '%' . $searchTerm . '%');
-
-                    if (!empty($areaIds)) {
-                        $q->orWhereIn('id_area_academica', $areaIds);
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhereHas('areaAcademica', function ($aq) use ($t) {
+                              $aq->where('nombre_area_academica', 'like', '%' . $t . '%')
+                                 ->where('tipo_area_academica', 'escuela');
+                          });
                     }
                 });
             })
-            ->orderBy($sortField, $sortDirection)
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.asistentes-academicos-table', compact('asistentesAcademicos'));

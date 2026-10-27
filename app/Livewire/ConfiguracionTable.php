@@ -62,7 +62,7 @@ class ConfiguracionTable extends Component
                     }
                 });
             })
-            ->orderBy(in_array($this->sortField, ['clave', 'descripcion'], true) ? $this->sortField : 'clave', $this->sortDirection === 'desc' ? 'desc' : 'asc')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.configuracion-table', compact('configuraciones'));

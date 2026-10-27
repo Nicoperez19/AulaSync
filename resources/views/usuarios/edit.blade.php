@@ -13,11 +13,8 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('users.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                <x-button href="{{ route('users.index') }}" variant="back">
+                    <i class="mr-2 fa-solid fa-arrow-left"></i>
                     Volver
                 </x-button>
             </div>
@@ -136,7 +133,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                                 </svg>
                             </x-slot>
-                            <select name="id_sede" id="id_sede" class="block w-full py-2 pl-10 pr-3 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <select name="id_sede" id="id_sede" class="block w-full py-2 pl-10 pr-3 text-base border-gray-300 rounded-md focus:outline-none focus:ring-[#D12420] focus:border-[#D12420] sm:text-sm">
                                 <option value="">{{ __('Sin Sede Asignada') }}</option>
                                 @foreach($sedes as $sede)
                                     <option value="{{ $sede->id_sede }}" {{ old('id_sede', $user->id_sede ?? '') == $sede->id_sede ? 'selected' : '' }}>
@@ -278,10 +275,13 @@
                 </div>
 
                 <!-- Botón de Guardar -->
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">
-                        <x-icons.adjust class="w-6 h-6" aria-hidden="true" />
-                        <span>{{ __('Guardar Cambios') }}</span>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <x-button href="{{ route('users.index') }}" variant="cancel">
+                        {{ __('Cancelar') }}
+                    </x-button>
+                    <x-button type="submit" variant="save">
+                        <i class="mr-2 fa-solid fa-floppy-disk"></i>
+                        {{ __('Guardar Cambios') }}
                     </x-button>
                 </div>
             </div>
@@ -319,12 +319,14 @@
                     }
 
                     Swal.fire({
-                        title: '¿Seguro de editar?',
-                        text: "Estás a punto de guardar los cambios.",
-                        icon: 'warning',
+                        title: '¿Guardar cambios?',
+                        text: 'Estás a punto de guardar los cambios realizados.',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, editar',
+                        confirmButtonText: 'Sí, guardar',
                         cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#8D8D8D',
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {

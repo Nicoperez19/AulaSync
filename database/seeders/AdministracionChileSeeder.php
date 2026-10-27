@@ -1,16 +1,18 @@
 <?php
+
 namespace Database\Seeders;
-use Illuminate\Database\Seeder;
 
 use App\Models\Comuna;
 use App\Models\Provincia;
 use App\Models\Region;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class AdministracionChileSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = \Carbon\Carbon::now();
+        $now = Carbon::now();
 
         $regiones = [
             [1, 'Arica y Parinacota', 'AP'],
@@ -28,7 +30,7 @@ class AdministracionChileSeeder extends Seeder
             [13, 'Los Ríos', 'LR'],
             [14, 'Los Lagos', 'LL'],
             [15, 'Aisén del General Carlos Ibáñez del Campo', 'AI'],
-            [16, 'Magallanes y de la Antártica Chilena', 'MG']
+            [16, 'Magallanes y de la Antártica Chilena', 'MG'],
         ];
 
         $regiones = array_map(function ($region) use ($now) {

@@ -13,7 +13,7 @@ class AssetHelper
     public static function render($expression): string
     {
         $assets = json_decode($expression, true);
-        if (!is_array($assets)) {
+        if (! is_array($assets)) {
             // If it's a string like 'resources/css/app.css', wrap it
             $assets = [$expression];
         }
@@ -28,27 +28,27 @@ class AssetHelper
             foreach ($assets as $asset) {
                 // Remove leading 'resources/'
                 $assetKey = str_replace('resources/', '', $asset);
-                
+
                 if (isset($manifest[$assetKey])) {
                     $file = $manifest[$assetKey]['file'];
-                    
+
                     if (str_ends_with($file, '.css')) {
                         $html .= sprintf(
-                            '<link rel="stylesheet" href="%s" />' . PHP_EOL,
+                            '<link rel="stylesheet" href="%s" />'.PHP_EOL,
                             asset("build/$file")
                         );
                     } elseif (str_ends_with($file, '.js')) {
                         $html .= sprintf(
-                            '<script type="module" src="%s"></script>' . PHP_EOL,
+                            '<script type="module" src="%s"></script>'.PHP_EOL,
                             asset("build/$file")
                         );
                     }
-                    
+
                     // Load CSS dependencies
                     if (isset($manifest[$assetKey]['css'])) {
                         foreach ($manifest[$assetKey]['css'] as $cssFile) {
                             $html .= sprintf(
-                                '<link rel="stylesheet" href="%s" />' . PHP_EOL,
+                                '<link rel="stylesheet" href="%s" />'.PHP_EOL,
                                 asset("build/$cssFile")
                             );
                         }
@@ -61,12 +61,12 @@ class AssetHelper
             foreach ($assets as $asset) {
                 if (str_ends_with($asset, '.css')) {
                     $html .= sprintf(
-                        '<link rel="stylesheet" href="http://localhost:5173/%s" />' . PHP_EOL,
+                        '<link rel="stylesheet" href="http://localhost:5173/%s" />'.PHP_EOL,
                         $asset
                     );
                 } else {
                     $html .= sprintf(
-                        '<script type="module" src="http://localhost:5173/%s"></script>' . PHP_EOL,
+                        '<script type="module" src="http://localhost:5173/%s"></script>'.PHP_EOL,
                         $asset
                     );
                 }

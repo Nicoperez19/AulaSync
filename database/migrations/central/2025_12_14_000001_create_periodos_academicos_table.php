@@ -26,7 +26,7 @@ return new class extends Migration
             // Índices
             $table->unique(['anio', 'semestre'], 'periodo_unico');
             $table->index(['activo', 'fecha_inicio', 'fecha_fin'], 'periodo_activo_fechas');
-            
+
             // Foreign key
             $table->foreign('created_by')->references('run')->on('users')->onDelete('set null');
         });

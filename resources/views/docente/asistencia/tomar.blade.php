@@ -146,6 +146,25 @@
             const baseUrl = "{{ route('docente.asistencia.show', $id) }}";
             window.location.href = baseUrl + '?fecha=' + encodeURIComponent(nuevaFecha);
         }
+
+        // Sincronizar el contexto de asistencia con el agente sin intervenir en los checks.
+        (function iniciarSincronizacionAsistencia() {
+            const idAsignaturaActual = "{{ $id }}";
+            const tenantIdActual = @json(session('tenant_id'));
+            async function notificarAgente() {
+                try {
+                    await fetch(`http://127.0.0.1:8181/set-asignatura?id=${encodeURIComponent(idAsignaturaActual)}&tenant_id=${encodeURIComponent(tenantIdActual || '')}`, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                } catch (e) {
+                    // El agente puede no estar ejecutándose en este equipo.
+                }
+            }
+
+            notificarAgente();
+            setInterval(notificarAgente, 15000);
+        })();
     </script>
     @endpush
 </x-app-layout>

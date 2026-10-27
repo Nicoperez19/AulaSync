@@ -35,7 +35,7 @@ return new class extends Migration
         if (DB::getDriverName() === 'mysql') {
             try {
                 DB::statement('ALTER TABLE dias_feriados DROP INDEX dias_feriados_search_index');
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Ignorar si no existe
             }
         }

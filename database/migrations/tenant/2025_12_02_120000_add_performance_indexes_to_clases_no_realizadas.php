@@ -16,7 +16,7 @@ return new class extends Migration
             // Índice compuesto para la consulta principal del listado
             // Cubre: periodo, fecha_clase, estado (los filtros más comunes)
             $table->index(['periodo', 'fecha_clase', 'estado'], 'idx_clases_periodo_fecha_estado');
-            
+
             // Índice para ordenamiento por created_at (muy usado)
             $table->index(['created_at'], 'idx_clases_created_at');
         });

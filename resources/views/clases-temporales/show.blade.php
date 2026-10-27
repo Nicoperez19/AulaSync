@@ -88,7 +88,7 @@
                             <div class="flex items-center gap-4">
                                 <div class="flex-shrink-0 h-16 w-16 rounded-full flex items-center justify-center text-white font-bold text-xl"
                                      style="background-color: #cd1627;">
-                                    {{ strtoupper(substr($profesorColaborador->profesor->name ?? '?', 0, 2)) }}
+                                    {{ mb_strtoupper(mb_substr($profesorColaborador->profesor->name ?? '?', 0, 2, 'UTF-8'), 'UTF-8') }}
                                 </div>
                                 <div class="flex-1">
                                     <p class="text-lg font-semibold text-gray-900">{{ $profesorColaborador->profesor->name ?? 'N/A' }}</p>

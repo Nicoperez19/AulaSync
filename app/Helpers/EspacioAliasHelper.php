@@ -8,10 +8,9 @@ class EspacioAliasHelper
      * Normaliza un identificador de espacio proveniente de la programación externa (Excel/API)
      * al identificador oficial de espacio en AulaSync para la sede correspondiente.
      *
-     * @param string $espacioRaw Nombre o código de espacio leído (ej. "TH-30", "TH-09", "30")
-     * @param string|null $sedeId Identificador de la sede (ej. "TH", "LA", "CH", "CT")
-     * @param array $contexto Datos adicionales de contexto: ['carrera' => ..., 'asignatura' => ..., 'tipo_bloque' => ...]
-     * @return string
+     * @param  string  $espacioRaw  Nombre o código de espacio leído (ej. "TH-30", "TH-09", "30")
+     * @param  string|null  $sedeId  Identificador de la sede (ej. "TH", "LA", "CH", "CT")
+     * @param  array  $contexto  Datos adicionales de contexto: ['carrera' => ..., 'asignatura' => ..., 'tipo_bloque' => ...]
      */
     public static function normalizar(string $espacioRaw, ?string $sedeId = null, array $contexto = []): string
     {
@@ -30,15 +29,11 @@ class EspacioAliasHelper
     /**
      * Devuelve la lista de identificadores equivalentes para un espacio dado.
      * Permite hacer búsquedas bidireccionales donde cualquiera de los alias sea reconocido.
-     *
-     * @param string $espacioId
-     * @param string|null $sedeId
-     * @return array
      */
     public static function obtenerEquivalentes(string $espacioId, ?string $sedeId = null): array
     {
         $espacioUpper = strtoupper(trim($espacioId));
-        $sedeUpper    = strtoupper(trim($sedeId ?? ''));
+        $sedeUpper = strtoupper(trim($sedeId ?? ''));
 
         // ── Aliases para Talcahuano (TH) ────────────────────────────────────
         // TH-30 (nombre en programación académica) ↔ TH-L09 (id en AulaSync)

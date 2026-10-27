@@ -52,6 +52,7 @@ class GenerarClasesRecuperacion extends Command
 
         if ($licencias->isEmpty()) {
             $this->warn('No se encontraron licencias para procesar.');
+
             return 0;
         }
 
@@ -64,15 +65,15 @@ class GenerarClasesRecuperacion extends Command
             try {
                 $clasesGeneradas = $this->service->generarClasesARecuperar($licencia);
                 $totalClasesGeneradas += $clasesGeneradas;
-                
+
                 $this->newLine();
                 $this->info("Licencia ID {$licencia->id_licencia} - Profesor: {$licencia->profesor->name} - {$clasesGeneradas} clases generadas");
-                
+
             } catch (\Exception $e) {
                 $this->newLine();
-                $this->error("Error en licencia ID {$licencia->id_licencia}: " . $e->getMessage());
+                $this->error("Error en licencia ID {$licencia->id_licencia}: ".$e->getMessage());
             }
-            
+
             $bar->advance();
         }
 

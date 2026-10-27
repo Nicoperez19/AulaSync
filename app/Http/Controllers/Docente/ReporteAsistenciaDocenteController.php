@@ -169,16 +169,16 @@ class ReporteAsistenciaDocenteController extends Controller
             abort(403, 'No tienes autorización para ver la ficha de esta sesión.');
         }
 
-        $tituloClase = $sesion->asignatura?->nombre_asignatura
-            ?? $sesion->profesorColaborador?->nombre_asignatura
+        $tituloClase = $sesion->asignatura?->nombre_asignatura 
+            ?? $sesion->profesorColaborador?->nombre_asignatura 
             ?? 'Clase Temporal';
-        $codigoClase = $sesion->asignatura?->codigo_asignatura
-            ?? $sesion->profesorColaborador?->asignatura?->codigo_asignatura
+        $codigoClase = $sesion->asignatura?->codigo_asignatura 
+            ?? $sesion->profesorColaborador?->asignatura?->codigo_asignatura 
             ?? 'N/A';
-        $seccionClase = $sesion->asignatura?->seccion
-            ?? $sesion->profesorColaborador?->asignatura?->seccion
+        $seccionClase = $sesion->asignatura?->seccion 
+            ?? $sesion->profesorColaborador?->asignatura?->seccion 
             ?? 'N/A';
-        $carreraNombre = $sesion->asignatura?->carrera?->nombre
+        $carreraNombre = $sesion->asignatura?->carrera?->nombre 
             ?? ($sesion->profesorColaborador?->asignatura?->carrera?->nombre ?? 'Sin carrera');
 
         $asistencias = $sesion->asistencias->sortBy(function ($a) {

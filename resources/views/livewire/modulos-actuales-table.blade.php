@@ -1,4 +1,3 @@
-<div data-aulasync-root style="display: contents;">
 <div class="p-6" x-data="{
         pagina: 0,
         paginaAnterior: -1,
@@ -524,7 +523,7 @@
         }, 3600000); // 1 hora = 3600000 milisegundos
 
         // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
-        document.addEventListener('livewire:init', function() {
+        document.addEventListener('livewire:load', function() {
             Livewire.on('datosActualizados', function() {
                 window.dispatchEvent(new CustomEvent('actualizar-feriado', {
                     detail: {
@@ -542,5 +541,4 @@
             });
         });
     </script>
-</div>
 </div>

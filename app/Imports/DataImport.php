@@ -4,7 +4,6 @@ namespace App\Imports;
 
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Illuminate\Support\Collection;
 
 class DataImport implements ToArray, WithHeadingRow
 {
@@ -13,6 +12,7 @@ class DataImport implements ToArray, WithHeadingRow
     public function array(array $rows)
     {
         $this->data = $rows;
+
         return $rows;
     }
 
@@ -20,4 +20,4 @@ class DataImport implements ToArray, WithHeadingRow
     {
         return $this->data;
     }
-} 
+}

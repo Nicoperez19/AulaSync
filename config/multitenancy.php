@@ -1,5 +1,32 @@
 <?php
 
+use App\Models\AreaAcademica;
+use App\Models\Asignatura;
+use App\Models\Asistencia;
+use App\Models\AsistenteAcademico;
+use App\Models\Carrera;
+use App\Models\ClaseNoRealizada;
+use App\Models\Espacio;
+use App\Models\Facultad;
+use App\Models\Horario;
+use App\Models\JefeCarrera;
+use App\Models\LicenciaProfesor;
+use App\Models\LlaveNoDevuelta;
+use App\Models\Mapa;
+use App\Models\Modulo;
+use App\Models\Notificacion;
+use App\Models\Piso;
+use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
+use App\Models\Profesor;
+use App\Models\ProfesorAtraso;
+use App\Models\ProfesorColaborador;
+use App\Models\RecuperacionClase;
+use App\Models\Reserva;
+use App\Models\Solicitante;
+use App\Models\VetoSalaEstudio;
+use App\Models\Visitante;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -45,32 +72,32 @@ return [
      * These models will automatically be scoped by tenant
      */
     'tenant_models' => [
-        \App\Models\Espacio::class,
-        \App\Models\Mapa::class,
-        \App\Models\Piso::class,
-        \App\Models\Planificacion_Asignatura::class,
-        \App\Models\Profesor::class,
-        \App\Models\Asignatura::class,
-        \App\Models\Reserva::class,
-        \App\Models\Horario::class,
-        \App\Models\Modulo::class,
-        \App\Models\ClaseNoRealizada::class,
-        \App\Models\LicenciaProfesor::class,
-        \App\Models\RecuperacionClase::class,
-        \App\Models\Asistencia::class,
-        \App\Models\ProfesorAtraso::class,
-        \App\Models\ProfesorColaborador::class,
-        \App\Models\PlanificacionProfesorColaborador::class,
-        \App\Models\AsistenteAcademico::class,
-        \App\Models\JefeCarrera::class,
-        \App\Models\VetoSalaEstudio::class,
-        \App\Models\Visitante::class,
-        \App\Models\Carrera::class,
-        \App\Models\Facultad::class,
-        \App\Models\AreaAcademica::class,
-        \App\Models\Solicitante::class,
-        \App\Models\Notificacion::class,
-        \App\Models\LlaveNoDevuelta::class,
+        Espacio::class,
+        Mapa::class,
+        Piso::class,
+        Planificacion_Asignatura::class,
+        Profesor::class,
+        Asignatura::class,
+        Reserva::class,
+        Horario::class,
+        Modulo::class,
+        ClaseNoRealizada::class,
+        LicenciaProfesor::class,
+        RecuperacionClase::class,
+        Asistencia::class,
+        ProfesorAtraso::class,
+        ProfesorColaborador::class,
+        PlanificacionProfesorColaborador::class,
+        AsistenteAcademico::class,
+        JefeCarrera::class,
+        VetoSalaEstudio::class,
+        Visitante::class,
+        Carrera::class,
+        Facultad::class,
+        AreaAcademica::class,
+        Solicitante::class,
+        Notificacion::class,
+        LlaveNoDevuelta::class,
     ],
 
     /**

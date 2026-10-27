@@ -55,6 +55,7 @@ class MigrateCentral extends Command
         } else {
             $this->error('❌ Error en migraciones CENTRAL');
             $this->line(Artisan::output());
+
             return 1;
         }
 

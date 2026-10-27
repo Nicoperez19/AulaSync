@@ -72,15 +72,10 @@ class HorariosController extends Controller
         $query = Profesor::with(['areaAcademica', 'facultad']);
 
         if ($request->filled('search')) {
-            $search = trim($request->search);
-            // Permite buscar RUN con puntos y guion (12.345.678-9 → 123456789)
-            $cleanRun = preg_replace('/[^0-9Kk]/', '', $search);
-            $query->where(function ($q) use ($search, $cleanRun) {
-                $q->where('name', 'like', '%' . $search . '%');
-
-                if ($cleanRun !== '') {
-                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%');
-                }
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('run_profesor', 'like', '%' . $search . '%');
             });
         }
 

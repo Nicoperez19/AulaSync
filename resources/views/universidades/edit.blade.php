@@ -12,11 +12,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('universities.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                <x-button href="{{ route('universities.index') }}" variant="back">
+                    <i class="mr-2 fa-solid fa-arrow-left"></i>
                     Volver
                 </x-button>
             </div>
@@ -57,7 +54,7 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="comunas_id" :value="__('Comuna')" />
-                        <select name="comunas_id" id="comunas_id" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m" required>
+                        <select name="comunas_id" id="comunas_id" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m" required>
                             <option value="" disabled>{{ __('Seleccionar Comuna') }}</option>
                             @foreach ($comunas as $comuna)
                                 <option value="{{ $comuna->id }}"
@@ -88,8 +85,14 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Guardar Cambios') }}</x-button>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <x-button href="{{ route('universities.index') }}" variant="cancel">
+                        {{ __('Cancelar') }}
+                    </x-button>
+                    <x-button type="submit" variant="save">
+                        <i class="mr-2 fa-solid fa-floppy-disk"></i>
+                        {{ __('Guardar Cambios') }}
+                    </x-button>
                 </div>
             </div>
         </form>
@@ -107,8 +110,8 @@
                     text: "Estás a punto de actualizar la información de la universidad.",
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#6b7280',
+                    confirmButtonColor: '#10B981',
+                    cancelButtonColor: '#8D8D8D',
                     confirmButtonText: 'Sí, guardar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {

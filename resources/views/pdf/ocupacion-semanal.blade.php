@@ -2,8 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Ocupación Semanal - SIA</title>
+    <title>Reporte de Ocupación Semanal - AulaSync</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
         @page {
             size: A4 landscape;
             margin: 12mm 16mm 12mm 16mm;
@@ -14,7 +16,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 9px;
             color: #1e293b;
             background-color: #ffffff;
@@ -241,17 +243,14 @@
                         @endif
                     </td>
                     <td class="header-title">
-                        <h1>SIA &bull; OCUPACIÓN SEMANAL</h1>
+                        <h1>AulaSync &bull; OCUPACIÓN SEMANAL</h1>
                         <p>Reporte Oficial de Ocupación por Módulo y Día</p>
                     </td>
                     <td class="header-meta">
                         <div class="meta-box">
                             <div><strong>Período:</strong> {{ $datos['periodo'] ?? 'N/A' }} &nbsp;|&nbsp; <strong>Sem. {{ $datos['semana_iso'] ?? '' }}</strong></div>
                             <div><strong>Rango:</strong> {{ $datos['semana_inicio'] ?? '' }} al {{ $datos['semana_fin'] ?? '' }}</div>
-                            <div>
-                                <strong>Filtro:</strong> <span class="badge badge-filtro">{{ strtoupper(str_replace('_', ' ', $datos['tipo_filtro'] ?? 'TODOS')) }}</span>
-                                &nbsp;&bull;&nbsp; <strong>Espacios:</strong> {{ $datos['total_espacios'] ?? 0 }}
-                            </div>
+                            <div><strong>Espacios:</strong> {{ $datos['total_espacios'] ?? 0 }}</div>
                         </div>
                     </td>
                 </tr>
@@ -354,7 +353,7 @@
                     <div class="card">
                         <div class="card-label">Generado Por</div>
                         <div class="card-value" style="font-size: 9px; font-weight: 600; padding-top: 3px; color: #475569;">
-                            {{ auth()->user()->name ?? 'Sistema SIA' }} &bull; {{ now()->format('d/m/Y H:i') }}
+                            {{ auth()->user()->name ?? 'Sistema AulaSync' }} &bull; {{ now()->format('d/m/Y H:i') }}
                         </div>
                     </div>
                 </td>
@@ -362,7 +361,7 @@
         </table>
 
         <div class="footer">
-            SIA | Sistema de Información de Aulas &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
+            AulaSync &bull; Universidad Católica de la Santísima Concepción &bull; Información sujeta a planificación académica y reservas registradas.
         </div>
     </div>
 </body>

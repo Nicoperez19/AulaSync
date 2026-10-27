@@ -2,16 +2,17 @@
 
 namespace App\Imports;
 
-use App\Models\User;
 use App\Models\DataLoad;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Illuminate\Support\Facades\Hash;
 
 class UsersImport implements ToModel, WithHeadingRow, WithValidation
 {
     protected $dataLoad;
+
     protected $registrosProcesados = 0;
 
     public function __construct(DataLoad $dataLoad)
@@ -44,7 +45,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
             'celular' => 'nullable|string|max:20',
             'direccion' => 'nullable|string|max:255',
             'fecha_nacimiento' => 'required|date',
-            'anio_ingreso' => 'required|integer|min:1900|max:' . (date('Y') + 1),
+            'anio_ingreso' => 'required|integer|min:1900|max:'.(date('Y') + 1),
         ];
     }
 
@@ -81,7 +82,7 @@ class UsersImport implements ToModel, WithHeadingRow, WithValidation
         // Actualizar el estado de la carga
         $this->dataLoad->update([
             'estado' => 'completado',
-            'registros_cargados' => $this->registrosProcesados
+            'registros_cargados' => $this->registrosProcesados,
         ]);
     }
-} 
+}

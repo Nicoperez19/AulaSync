@@ -13,11 +13,8 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('asignaturas.index') }}" 
-                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                <x-button href="{{ route('asignaturas.index') }}" variant="back">
+                    <i class="mr-2 fa-solid fa-arrow-left"></i>
                     Volver
                 </x-button>
             </div>
@@ -88,7 +85,7 @@
                     <div>
                         <x-form.label for="run_profesor" :value="__('Profesor Titular')" />
                         <select name="run_profesor" id="run_profesor"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             <option value="" disabled>{{ __('Seleccionar Profesor') }}</option>
                             @foreach($profesores as $profesor)
@@ -102,7 +99,7 @@
                     <div>
                         <x-form.label for="run_profesor_reemplazo" :value="__('Profesor Reemplazo (opcional)')" />
                         <select name="run_profesor_reemplazo" id="run_profesor_reemplazo"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m">
                             <option value="">Sin reemplazo</option>
                             @foreach($profesores as $profesor)
                                 <option value="{{ $profesor->run_profesor }}" 
@@ -115,7 +112,7 @@
                     <div>
                         <x-form.label for="id_carrera" :value="__('Carrera')" />
                         <select name="id_carrera" id="id_carrera"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             <option value="" disabled>{{ __('Seleccionar Carrera') }}</option>
                             @foreach($carreras as $carrera)
@@ -128,8 +125,14 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Guardar Cambios') }}</x-button>
+                <div class="flex items-center justify-end gap-3 mt-6">
+                    <x-button href="{{ route('asignaturas.index') }}" variant="cancel">
+                        {{ __('Cancelar') }}
+                    </x-button>
+                    <x-button type="submit" variant="save">
+                        <i class="mr-2 fa-solid fa-floppy-disk"></i>
+                        {{ __('Guardar Cambios') }}
+                    </x-button>
                 </div>
             </div>
         </form>
@@ -144,12 +147,14 @@
                     e.preventDefault();
 
                     Swal.fire({
-                        title: '¿Seguro de editar?',
-                        text: "Estás a punto de guardar los cambios.",
-                        icon: 'warning',
+                        title: '¿Guardar cambios?',
+                        text: 'Estás a punto de guardar los cambios realizados.',
+                        icon: 'question',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, editar',
+                        confirmButtonText: 'Sí, guardar',
                         cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#8D8D8D',
                         reverseButtons: true
                     }).then((result) => {
                         if (result.isConfirmed) {

@@ -17,7 +17,7 @@ return [
     'password' => env('MAIL_PASSWORD'),
     'from_address' => env('MAIL_FROM_ADDRESS', 'soporteaulasync@gmail.com'),
     'from_name' => env('MAIL_FROM_NAME', 'SIA | Sistema de Información de Aulas'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Gmail App Password
@@ -27,9 +27,9 @@ return [
     | No uses tu contraseña normal de Gmail
     |
     */
-    
+
     'app_password' => env('MAIL_PASSWORD'),
-    
+
     /*
     |--------------------------------------------------------------------------
     | Gmail Settings
@@ -38,7 +38,7 @@ return [
     | Configuraciones adicionales para Gmail
     |
     */
-    
+
     'timeout' => 60,
     'verify_peer' => false,
     'verify_peer_name' => false,

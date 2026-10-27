@@ -43,21 +43,6 @@ class ProfesorAtrasosTable extends Component
             : $limites['fin']->format('Y-m-d');
     }
 
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFechaInicio()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFechaFin()
-    {
-        $this->resetPage();
-    }
-
     public function updatedPeriodo($value)
     {
         $this->resetPage();

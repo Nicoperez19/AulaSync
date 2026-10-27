@@ -44,7 +44,7 @@
     <!-- Horarios Espacios - Solo Administrador y Supervisor -->
     @can('horarios por espacios')
         <x-sidebar.link title="Horarios por Espacios"
-            href="{{ $tieneEspacios ? ($sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard'))) : '#' }}"
+            href="{{ $tieneEspacios ? ($sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasAnyRole(['Usuario', 'Estudiante en Práctica']) ? route('espacios.show') : route('dashboard'))) : '#' }}"
             :isActive="request()->routeIs('espacios.show')"
             onclick="{{ !$tieneEspacios ? 'mostrarSweetAlertNoEspacios(event)' : '' }}">
             <x-slot name="icon">
@@ -66,12 +66,20 @@
     @endcan
 
     <!-- Carga Masiva - Solo Administrador -->
-    @can('mantenedor de carga de datos')
+        @can('mantenedor de carga de datos')
         <x-sidebar.link title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')">
             <x-slot name="icon">
                 <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
+
+        @if(auth()->user()?->is_superuser || auth()->user()?->hasRole(['Super Admin', 'Administrador']))
+            <x-sidebar.link title="Carga de Estudiantes" href="{{ route('estudiantes.carga-masiva.index') }}" :isActive="request()->routeIs('estudiantes.carga-masiva.*')">
+                <x-slot name="icon">
+                    <i class="flex-shrink-0 w-6 h-6 text-center text-lg fa-solid fa-users-rectangle" aria-hidden="true"></i>
+                </x-slot>
+            </x-sidebar.link>
+        @endif
     @endcan
 
     <!-- Tablero Académico - Todos los roles autorizados -->

@@ -3,13 +3,12 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Corrige los tipos de datos en la tabla profesor_atrasos:
      * - id_espacio: de BIGINT a VARCHAR (los espacios son strings como 'TH-L04')
      * - id_modulo: aumentar tamaño para soportar múltiples módulos
@@ -27,10 +26,10 @@ return new class extends Migration
         Schema::table('profesor_atrasos', function (Blueprint $table) {
             // Cambiar id_espacio a string
             $table->string('id_espacio', 50)->change();
-            
+
             // Aumentar tamaño de id_modulo para soportar múltiples módulos
             $table->string('id_modulo', 100)->change();
-            
+
             // Hacer nullable hora_programada y hora_llegada
             $table->time('hora_programada')->nullable()->change();
             $table->time('hora_llegada')->nullable()->change();

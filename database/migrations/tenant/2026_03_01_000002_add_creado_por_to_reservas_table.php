@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (Schema::hasTable('reservas') && !Schema::hasColumn('reservas', 'creado_por')) {
+        if (Schema::hasTable('reservas') && ! Schema::hasColumn('reservas', 'creado_por')) {
             Schema::table('reservas', function (Blueprint $table) {
                 $table->string('creado_por')->nullable()->after('run_solicitante');
             });

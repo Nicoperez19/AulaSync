@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Piso;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
+use Illuminate\Console\Command;
 
 class VerificarDatosTabla extends Command
 {
@@ -41,25 +41,25 @@ class VerificarDatosTabla extends Command
         foreach ($espacios as $espacio) {
             if (empty($espacio->id_espacio)) {
                 $errores++;
-                $this->error("⚠️  Espacio con ID vacío encontrado: " . $espacio->id);
-                
+                $this->error('⚠️  Espacio con ID vacío encontrado: '.$espacio->id);
+
                 if ($fix) {
-                    $espacio->id_espacio = 'ESP_' . $espacio->id;
+                    $espacio->id_espacio = 'ESP_'.$espacio->id;
                     $espacio->save();
                     $reparaciones++;
-                    $this->info("✅ Reparado: ID asignado como ESP_" . $espacio->id);
+                    $this->info('✅ Reparado: ID asignado como ESP_'.$espacio->id);
                 }
             }
 
             if (empty($espacio->nombre_espacio)) {
                 $errores++;
-                $this->error("⚠️  Espacio sin nombre: " . $espacio->id_espacio);
-                
+                $this->error('⚠️  Espacio sin nombre: '.$espacio->id_espacio);
+
                 if ($fix) {
-                    $espacio->nombre_espacio = 'Espacio ' . $espacio->id_espacio;
+                    $espacio->nombre_espacio = 'Espacio '.$espacio->id_espacio;
                     $espacio->save();
                     $reparaciones++;
-                    $this->info("✅ Reparado: Nombre asignado");
+                    $this->info('✅ Reparado: Nombre asignado');
                 }
             }
         }
@@ -70,13 +70,13 @@ class VerificarDatosTabla extends Command
         foreach ($pisos as $piso) {
             if (empty($piso->nombre_piso)) {
                 $errores++;
-                $this->error("⚠️  Piso sin nombre: " . $piso->id);
-                
+                $this->error('⚠️  Piso sin nombre: '.$piso->id);
+
                 if ($fix) {
-                    $piso->nombre_piso = 'Piso ' . $piso->id;
+                    $piso->nombre_piso = 'Piso '.$piso->id;
                     $piso->save();
                     $reparaciones++;
-                    $this->info("✅ Reparado: Nombre de piso asignado");
+                    $this->info('✅ Reparado: Nombre de piso asignado');
                 }
             }
         }
@@ -85,19 +85,19 @@ class VerificarDatosTabla extends Command
         $this->info('📚 Verificando planificaciones...');
         $planificaciones = Planificacion_Asignatura::with(['asignatura', 'asignatura.profesor'])->get();
         foreach ($planificaciones as $planificacion) {
-            if (!$planificacion->asignatura) {
+            if (! $planificacion->asignatura) {
                 $errores++;
-                $this->error("⚠️  Planificación sin asignatura: ID " . $planificacion->id);
-                
+                $this->error('⚠️  Planificación sin asignatura: ID '.$planificacion->id);
+
                 if ($fix) {
                     // Eliminamos planificaciones huérfanas
                     $planificacion->delete();
                     $reparaciones++;
-                    $this->info("✅ Eliminada planificación huérfana");
+                    $this->info('✅ Eliminada planificación huérfana');
                 }
-            } elseif ($planificacion->asignatura && !$planificacion->asignatura->profesor) {
+            } elseif ($planificacion->asignatura && ! $planificacion->asignatura->profesor) {
                 $errores++;
-                $this->error("⚠️  Asignatura sin profesor: " . ($planificacion->asignatura->nombre_asignatura ?? 'Sin nombre'));
+                $this->error('⚠️  Asignatura sin profesor: '.($planificacion->asignatura->nombre_asignatura ?? 'Sin nombre'));
             }
         }
 
@@ -107,12 +107,12 @@ class VerificarDatosTabla extends Command
         foreach ($reservas as $reserva) {
             if (empty($reserva->id_espacio)) {
                 $errores++;
-                $this->error("⚠️  Reserva sin espacio asignado: ID " . $reserva->id);
-                
+                $this->error('⚠️  Reserva sin espacio asignado: ID '.$reserva->id);
+
                 if ($fix) {
                     $reserva->delete();
                     $reparaciones++;
-                    $this->info("✅ Eliminada reserva sin espacio");
+                    $this->info('✅ Eliminada reserva sin espacio');
                 }
             }
         }

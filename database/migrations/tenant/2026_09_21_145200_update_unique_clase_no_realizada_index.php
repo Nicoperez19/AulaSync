@@ -14,7 +14,7 @@ return new class extends Migration
 
         // 1. Eliminar la clave única anterior si todavía existe (evitar error si ya fue eliminada)
         $oldIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada'");
-        if (!empty($oldIndex)) {
+        if (! empty($oldIndex)) {
             $conn->statement('ALTER TABLE clases_no_realizadas DROP INDEX unique_clase_no_realizada');
         }
 
@@ -33,7 +33,7 @@ return new class extends Migration
         $conn = Schema::getConnection();
 
         $newIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada_profesor'");
-        if (!empty($newIndex)) {
+        if (! empty($newIndex)) {
             $conn->statement('ALTER TABLE clases_no_realizadas DROP INDEX unique_clase_no_realizada_profesor');
         }
 

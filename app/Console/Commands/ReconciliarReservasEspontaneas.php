@@ -2,16 +2,14 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Reserva;
+use App\Helpers\EspacioAliasHelper;
+use App\Helpers\ModulosHelper;
 use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
-use App\Models\Planificacion_Asignatura;
-use App\Models\PlanificacionProfesorColaborador;
-use App\Models\ProfesorColaborador;
+use App\Models\Reserva;
 use App\Models\Tenant;
-use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 
@@ -28,7 +26,7 @@ class ReconciliarReservasEspontaneas extends Command
         $dryRun = $this->option('dry-run');
         $desde = $this->option('desde') ?: Carbon::now()->subMonth()->startOfMonth()->toDateString();
 
-        $this->info("Iniciando reconciliación de reservas desde {$desde}..." . ($dryRun ? ' (MODO SIMULACIÓN)' : ''));
+        $this->info("Iniciando reconciliación de reservas desde {$desde}...".($dryRun ? ' (MODO SIMULACIÓN)' : ''));
 
         $tenants = Tenant::all();
 
@@ -43,31 +41,32 @@ class ReconciliarReservasEspontaneas extends Command
             $this->processTenant($tenant, $desde, $dryRun, $backupData);
         }
 
-        if (!$dryRun && !empty($backupData['tenants'])) {
+        if (! $dryRun && ! empty($backupData['tenants'])) {
             try {
                 $backupDir = storage_path('app/backups');
-                if (!File::exists($backupDir)) {
+                if (! File::exists($backupDir)) {
                     @File::makeDirectory($backupDir, 0755, true);
                 }
-                $filename = 'reconciliacion_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
-                $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
+                $filename = 'reconciliacion_backup_'.Carbon::now()->format('Y-m-d_His').'.json';
+                $fullPath = $backupDir.DIRECTORY_SEPARATOR.$filename;
                 @File::put($fullPath, json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
                 $this->newLine();
-                $this->info("==================================================================");
-                $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
+                $this->info('==================================================================');
+                $this->info('🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:');
                 $this->info("   Archivo: {$fullPath}");
-                $this->info("   Si necesitas revertir estos cambios, ejecuta:");
-                $this->line("   <fg=yellow>php artisan reservas:revertir-reconciliacion</>");
-                $this->info("==================================================================");
+                $this->info('   Si necesitas revertir estos cambios, ejecuta:');
+                $this->line('   <fg=yellow>php artisan reservas:revertir-reconciliacion</>');
+                $this->info('==================================================================');
             } catch (\Throwable $e) {
                 // Omitir si hay problemas de permisos en storage de Linux
                 $this->newLine();
-                $this->warn("Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).");
+                $this->warn('Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).');
             }
         }
 
-        $this->info("Proceso de reconciliación finalizado exitosamente.");
+        $this->info('Proceso de reconciliación finalizado exitosamente.');
+
         return 0;
     }
 
@@ -82,7 +81,7 @@ class ReconciliarReservasEspontaneas extends Command
                 ->whereNotNull('run_profesor')
                 ->where(function ($q) {
                     $q->where('tipo_reserva', 'espontanea')
-                      ->orWhereNull('id_asignatura');
+                        ->orWhereNull('id_asignatura');
                 })
                 ->get();
 
@@ -102,7 +101,7 @@ class ReconciliarReservasEspontaneas extends Command
             foreach ($reservas as $reserva) {
                 try {
                     $run = $reserva->run_profesor;
-                    if (!$run || !$reserva->hora || !$reserva->fecha_reserva) {
+                    if (! $run || ! $reserva->hora || ! $reserva->fecha_reserva) {
                         continue;
                     }
 
@@ -115,16 +114,16 @@ class ReconciliarReservasEspontaneas extends Command
                     $diaSemana = $fechaCarbon->format('l');
                     $diasMap = [
                         'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
-                        'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo'
+                        'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo',
                     ];
                     $diaEsp = $diasMap[$diaSemana] ?? $diaSemana;
                     $diaNorm = ModulosHelper::normalizarDia($diaEsp);
                     $diasPosibles = array_unique([strtolower($diaEsp), $diaNorm, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
-                    $horaCarbon = Carbon::parse($fechaStr . ' ' . $horaStr);
+                    $horaCarbon = Carbon::parse($fechaStr.' '.$horaStr);
                     $horaMaxInicio = $horaCarbon->copy()->addMinutes(60)->toTimeString();
 
-                    $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($reserva->id_espacio, $tenant->sede_id ?? null);
+                    $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($reserva->id_espacio, $tenant->sede_id ?? null);
 
                     // 1. Buscar en planificación regular del profesor
                     $clasePlanificada = DB::connection('tenant')
@@ -135,8 +134,8 @@ class ReconciliarReservasEspontaneas extends Command
                         ->whereIn('pa.id_espacio', $espaciosEquiv)
                         ->where(function ($q) use ($run, $runLimpio) {
                             $q->where('h.run_profesor', $run)
-                              ->orWhere('h.run_profesor', $runLimpio)
-                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                                ->orWhere('h.run_profesor', $runLimpio)
+                                ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                         })
                         ->whereIn('m.dia', $diasPosibles)
                         ->where('m.hora_inicio', '<=', $horaMaxInicio)
@@ -146,7 +145,7 @@ class ReconciliarReservasEspontaneas extends Command
                         ->first();
 
                     // 2. Si no se encuentra, buscar en profesores colaboradores
-                    if (!$clasePlanificada) {
+                    if (! $clasePlanificada) {
                         $clasePlanificada = DB::connection('tenant')
                             ->table('planificaciones_profesores_colaboradores as ppc')
                             ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
@@ -155,8 +154,8 @@ class ReconciliarReservasEspontaneas extends Command
                             ->whereIn('ppc.id_espacio', $espaciosEquiv)
                             ->where(function ($q) use ($run, $runLimpio) {
                                 $q->where('pc.run_profesor_colaborador', $run)
-                                  ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                                    ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                             })
                             ->where('pc.estado', 'activo')
                             ->whereIn('m.dia', $diasPosibles)
@@ -173,7 +172,7 @@ class ReconciliarReservasEspontaneas extends Command
                     }
 
                     // 3. Fallback adicional: verificar si es colaborador de la asignatura dictada en este espacio y horario
-                    if (!$clasePlanificada) {
+                    if (! $clasePlanificada) {
                         $clasePlanificada = DB::connection('tenant')
                             ->table('planificacion_asignaturas as pa')
                             ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
@@ -182,8 +181,8 @@ class ReconciliarReservasEspontaneas extends Command
                             ->whereIn('pa.id_espacio', $espaciosEquiv)
                             ->where(function ($q) use ($run, $runLimpio) {
                                 $q->where('pc.run_profesor_colaborador', $run)
-                                  ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                                    ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                             })
                             ->where('pc.estado', 'activo')
                             ->whereIn('m.dia', $diasPosibles)
@@ -194,14 +193,14 @@ class ReconciliarReservasEspontaneas extends Command
                             ->first();
                     }
 
-                    if ($clasePlanificada && !empty($clasePlanificada->id_asignatura)) {
+                    if ($clasePlanificada && ! empty($clasePlanificada->id_asignatura)) {
                         $this->line("  ✓ Reconciliando Reserva {$reserva->id_reserva} (Fecha: {$fechaStr}, Sala: {$reserva->id_espacio}) -> Asignatura: {$clasePlanificada->nombre_asignatura} ({$clasePlanificada->id_asignatura})");
 
-                        if (!$dryRun) {
+                        if (! $dryRun) {
                             // 1. Guardar copia del estado original de la reserva
                             $tenantBackup['reservas'][] = [
-                                'id_reserva'    => $reserva->id_reserva,
-                                'tipo_reserva'  => $reserva->tipo_reserva,
+                                'id_reserva' => $reserva->id_reserva,
+                                'tipo_reserva' => $reserva->tipo_reserva,
                                 'id_asignatura' => $reserva->id_asignatura,
                                 'observaciones' => $reserva->observaciones,
                             ];
@@ -213,7 +212,7 @@ class ReconciliarReservasEspontaneas extends Command
                                 ->pluck('id')
                                 ->toArray();
 
-                            if (!empty($asistenciasIds)) {
+                            if (! empty($asistenciasIds)) {
                                 $tenantBackup['asistencias_ids'] = array_merge(
                                     $tenantBackup['asistencias_ids'],
                                     $asistenciasIds
@@ -228,7 +227,7 @@ class ReconciliarReservasEspontaneas extends Command
                                 ->get()
                                 ->toArray();
 
-                            if (!empty($clasesParaBorrar)) {
+                            if (! empty($clasesParaBorrar)) {
                                 $tenantBackup['clases_no_realizadas'] = array_merge(
                                     $tenantBackup['clases_no_realizadas'],
                                     $clasesParaBorrar
@@ -237,9 +236,9 @@ class ReconciliarReservasEspontaneas extends Command
 
                             // Actualizar reserva
                             $reserva->update([
-                                'tipo_reserva'  => 'clase',
+                                'tipo_reserva' => 'clase',
                                 'id_asignatura' => $clasePlanificada->id_asignatura,
-                                'observaciones' => trim(($reserva->observaciones ?? '') . "\n[Reconciliado con clase programada: {$clasePlanificada->nombre_asignatura}]"),
+                                'observaciones' => trim(($reserva->observaciones ?? '')."\n[Reconciliado con clase programada: {$clasePlanificada->nombre_asignatura}]"),
                             ]);
 
                             // Actualizar asistencias de estudiantes que estaban sin asignatura
@@ -263,18 +262,18 @@ class ReconciliarReservasEspontaneas extends Command
                         $reconciliadas++;
                     }
                 } catch (\Exception $e) {
-                    $this->warn("  ⚠ Error al procesar reserva {$reserva->id_reserva}: " . $e->getMessage());
+                    $this->warn("  ⚠ Error al procesar reserva {$reserva->id_reserva}: ".$e->getMessage());
                 }
             }
 
-            if (!$dryRun && (!empty($tenantBackup['reservas']) || !empty($tenantBackup['clases_no_realizadas']))) {
+            if (! $dryRun && (! empty($tenantBackup['reservas']) || ! empty($tenantBackup['clases_no_realizadas']))) {
                 $backupData['tenants'][$tenant->id] = $tenantBackup;
             }
 
             $this->info("  Total en {$tenant->name}: {$reconciliadas} reservas reconciliadas, {$asistenciasActualizadas} asistencias corregidas, {$clasesLimpiadas} inasistencias falsas eliminadas.");
 
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            $this->error("  Error procesando tenant {$tenant->name}: ".$e->getMessage());
         }
     }
 }

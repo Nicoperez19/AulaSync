@@ -1,8 +1,9 @@
 <?php
+
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Carrera;
+use Illuminate\Database\Seeder;
 
 class CarreraSeeder extends Seeder
 {

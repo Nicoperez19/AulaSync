@@ -67,13 +67,14 @@ class LimpiarPlanificacionesDuplicadas extends Command
             $query->where('h.periodo', $periodo);
             $this->info("Filtrando por período: {$periodo}");
         } else {
-            $this->info("Analizando todos los períodos...");
+            $this->info('Analizando todos los períodos...');
         }
 
         $duplicados = $query->get();
 
         if ($duplicados->isEmpty()) {
             $this->info('✅ No se encontraron duplicados.');
+
             return 0;
         }
 
@@ -112,13 +113,15 @@ class LimpiarPlanificacionesDuplicadas extends Command
 
         if ($dryRun) {
             $this->info('🔍 Modo DRY-RUN: No se eliminará nada.');
-            $this->info("   Ejecuta sin --dry-run para eliminar los duplicados.");
+            $this->info('   Ejecuta sin --dry-run para eliminar los duplicados.');
+
             return 0;
         }
 
         // Confirmar eliminación
-        if (!$force && !$this->confirm("¿Deseas eliminar {$totalDuplicados} registros duplicados?")) {
+        if (! $force && ! $this->confirm("¿Deseas eliminar {$totalDuplicados} registros duplicados?")) {
             $this->info('Operación cancelada.');
+
             return 0;
         }
 
@@ -153,16 +156,17 @@ class LimpiarPlanificacionesDuplicadas extends Command
                 'periodo' => $periodo ?? 'todos',
                 'grupos_duplicados' => $duplicados->count(),
                 'registros_eliminados' => $eliminados,
-                'usuario' => auth()->user()->name ?? 'CLI'
+                'usuario' => auth()->user()->name ?? 'CLI',
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error("❌ Error durante la eliminación: " . $e->getMessage());
+            $this->error('❌ Error durante la eliminación: '.$e->getMessage());
             Log::error('Error en limpieza de duplicados', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return 1;
         }
 

@@ -60,7 +60,7 @@ class PermissionsTable extends Component
                     }
                 });
             })
-            ->orderBy(in_array($this->sortField, ['id', 'name'], true) ? $this->sortField : 'name', $this->sortDirection === 'desc' ? 'desc' : 'asc')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
 
         $allPermissions = Permission::all();

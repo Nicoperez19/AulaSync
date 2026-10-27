@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Profesor;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
@@ -167,8 +168,8 @@ class UserSeeder extends Seeder
                 );
 
                 // Asignar rol Profesor si existe y el usuario no tiene ya ese rol
-                if (\Spatie\Permission\Models\Role::where('name', 'Profesor')->exists()) {
-                    if (!$newUser->hasRole('Profesor')) {
+                if (Role::where('name', 'Profesor')->exists()) {
+                    if (! $newUser->hasRole('Profesor')) {
                         $newUser->assignRole('Profesor');
                     }
                 }

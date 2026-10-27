@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('area_academicas', function (Blueprint $table) {
-            $table->string('id_area_academica',20)->primary(); 
+            $table->string('id_area_academica', 20)->primary();
             $table->string('nombre_area_academica', 255);
-            $table->enum('tipo_area_academica', ['departamento', 'escuela']); 
+            $table->enum('tipo_area_academica', ['departamento', 'escuela']);
             $table->string('id_facultad', 20);
-            
+
             // This FK is valid because 'facultades' also exists in Tenant DB
             $table->foreign('id_facultad')->references('id_facultad')->on('facultades')->onDelete('cascade');
-            
+
             $table->timestamps();
         });
     }

@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Helpers\EspacioAliasHelper;
+use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
 use App\Models\ClaseNoRealizada;
+use App\Models\DiaFeriado;
 use App\Models\Notificacion;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
@@ -12,7 +15,6 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Config;
 
 class DetectarClasesNoRealizadas extends Command
 {
@@ -154,7 +156,7 @@ class DetectarClasesNoRealizadas extends Command
     public function handle()
     {
         $this->info('Iniciando detección de clases no realizadas...');
-        $this->info('Tiempo de gracia: ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos');
+        $this->info('Tiempo de gracia: '.self::TIEMPO_GRACIA_MINUTOS.' minutos');
 
         $fechaEspecifica = $this->option('fecha');
         $desde = $this->option('desde');
@@ -185,7 +187,7 @@ class DetectarClasesNoRealizadas extends Command
             $esHoy = $fechaObj->isToday();
 
             // Si es un día pasado o se especificó --force, evaluar todos los módulos del día
-            if (!$esHoy || $this->option('force')) {
+            if (! $esHoy || $this->option('force')) {
                 $horaActual = '23:59:59';
             } else {
                 $horaActual = Carbon::now()->format('H:i:s');
@@ -194,19 +196,22 @@ class DetectarClasesNoRealizadas extends Command
             // Solo ejecutar en días laborales (lunes a sábado)
             if ($diaActual === 'domingo') {
                 $this->info("Fecha $fechaActual es domingo, se omite.");
+
                 continue;
             }
 
             // Verificar si hay horarios para este día
-            if (!isset($this->horariosModulos[$diaKey])) {
+            if (! isset($this->horariosModulos[$diaKey])) {
                 $this->info("No hay horarios definidos para el día: $diaKey ($fechaActual)");
+
                 continue;
             }
 
             // Mapear el día a su prefijo
             $prefijoDia = $this->obtenerPrefijoDia($diaActual);
-            if (!$prefijoDia) {
+            if (! $prefijoDia) {
                 $this->error("No se pudo determinar el prefijo del día: $diaActual ($fechaActual)");
+
                 continue;
             }
 
@@ -231,26 +236,28 @@ class DetectarClasesNoRealizadas extends Command
 
             $this->info("Procesando tenant: {$tenant->name} ({$tenant->database})");
 
-            if (!$horaActual) {
+            if (! $horaActual) {
                 $hoy = Carbon::now();
                 $horaActual = $hoy->format('H:i:s');
             }
 
             // Verificar si hoy es feriado o día sin actividad para este tenant
-            if (\App\Models\DiaFeriado::esFeriado($fechaActual)) {
+            if (DiaFeriado::esFeriado($fechaActual)) {
                 $this->info("  [{$tenant->database}] Hoy es feriado o día sin actividad. Se omiten detecciones automáticas.");
+
                 return;
             }
 
             // Obtener módulos que ya pasaron el tiempo de gracia
             $modulosParaVerificar = $this->obtenerModulosParaVerificar($diaKey, $horaActual);
-            
+
             if (empty($modulosParaVerificar)) {
                 $this->info("  [{$tenant->database}] No hay módulos que hayan pasado el tiempo de gracia todavía.");
+
                 return;
             }
 
-            $this->info("  [{$tenant->database}] Módulos a verificar: " . implode(', ', $modulosParaVerificar));
+            $this->info("  [{$tenant->database}] Módulos a verificar: ".implode(', ', $modulosParaVerificar));
 
             // Obtener planificaciones de los módulos a verificar
             $planificaciones = $this->obtenerPlanificacionesModulos($prefijoDia, $modulosParaVerificar, $periodo);
@@ -260,17 +267,18 @@ class DetectarClasesNoRealizadas extends Command
             $clasesRealizadas = 0;
 
             // Agrupar planificaciones por asignatura + espacio (para manejar clases de múltiples módulos)
-            $clasesAgrupadas = $planificaciones->groupBy(function($plan) {
-                return $plan->id_asignatura . '-' . $plan->id_espacio;
+            $clasesAgrupadas = $planificaciones->groupBy(function ($plan) {
+                return $plan->id_asignatura.'-'.$plan->id_espacio;
             });
 
             foreach ($clasesAgrupadas as $key => $modulosClase) {
-                $primerModulo = $modulosClase->sortBy(function($p) {
+                $primerModulo = $modulosClase->sortBy(function ($p) {
                     $parts = explode('.', $p->id_modulo);
-                    return isset($parts[1]) ? (int)$parts[1] : 0;
+
+                    return isset($parts[1]) ? (int) $parts[1] : 0;
                 })->first();
 
-                if (!$primerModulo || !$primerModulo->asignatura) {
+                if (! $primerModulo || ! $primerModulo->asignatura) {
                     continue;
                 }
 
@@ -278,10 +286,9 @@ class DetectarClasesNoRealizadas extends Command
                 // ya que el horario es específico para este bloque y espacio.
                 $runProfesor = $primerModulo->horario->run_profesor ?? $primerModulo->asignatura->run_profesor ?? null;
 
-                if (!$runProfesor) {
+                if (! $runProfesor) {
                     continue;
                 }
-
 
                 // Variable $yaRegistrada global eliminada para permitir evaluación por módulo.
                 // Anteriormente, si un módulo estaba registrado, omitía todo el bloque.
@@ -290,13 +297,13 @@ class DetectarClasesNoRealizadas extends Command
                 $primerModuloNum = $this->obtenerNumeroModulo($primerModulo->id_modulo);
                 $horaInicioClase = $this->horariosModulos[$diaKey][$primerModuloNum]['inicio'] ?? null;
 
-                if (!$horaInicioClase) {
+                if (! $horaInicioClase) {
                     continue;
                 }
 
-                $margenMinutos = \App\Helpers\ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                $margenMinutos = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
                 // Calcular hora límite (inicio + margen de ingreso)
-                $horaLimite = Carbon::parse($fechaActual . ' ' . $horaInicioClase)
+                $horaLimite = Carbon::parse($fechaActual.' '.$horaInicioClase)
                     ->addMinutes($margenMinutos)
                     ->format('H:i:s');
 
@@ -311,16 +318,16 @@ class DetectarClasesNoRealizadas extends Command
                 // Verificar si el profesor tiene reserva activa en el espacio esperado (o sus equivalentes)
                 // Priorizar reservas activas sobre finalizadas (por si hubo doble escaneo)
                 // y dentro del mismo estado, la más reciente.
-                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? null);
+                $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? null);
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
                     ->whereIn('id_espacio', $espaciosEquiv)
-                    ->where(function($q) use ($runProfesor, $runLimpio) {
+                    ->where(function ($q) use ($runProfesor, $runLimpio) {
                         $q->where('run_profesor', $runProfesor)
-                          ->orWhere('run_solicitante', $runProfesor)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio]);
+                            ->orWhere('run_solicitante', $runProfesor)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio]);
                     })
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')
@@ -336,11 +343,11 @@ class DetectarClasesNoRealizadas extends Command
                     // Verificar si llegó con atraso (después de los 15 minutos)
                     if ($horaEntrada > $horaLimite) {
                         $minutosAtraso = Carbon::parse($horaInicioClase)->diffInMinutes(Carbon::parse($horaEntrada));
-                    
+
                         // Registrar atraso si existe la tabla
                         $this->registrarAtraso($primerModulo, $runProfesor, $fechaActual, $horaEntrada, $minutosAtraso, $periodo);
                         $atrasosDetectados++;
-                        
+
                         $this->info(sprintf(
                             '  ⏰ ATRASO detectado: %s - Profesor: %s - Atraso: %d min',
                             $primerModulo->asignatura->nombre_asignatura ?? 'Desconocida',
@@ -352,7 +359,7 @@ class DetectarClasesNoRealizadas extends Command
                     }
 
                     // Registrar cada módulo de la clase como REALIZADA / REGISTRADA
-                    if (!$this->option('dry-run')) {
+                    if (! $this->option('dry-run')) {
                         foreach ($modulosClase as $modulo) {
                             ClaseNoRealizada::updateOrCreate(
                                 [
@@ -367,19 +374,19 @@ class DetectarClasesNoRealizadas extends Command
                                     'motivo' => $minutosAtraso > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada (ingreso a las {$horaEntrada})",
                                     'observaciones' => "Profesor registró ingreso a las {$horaEntrada}",
                                     'estado' => 'realizada',
-                                    'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual . ' ' . $horaEntrada),
+                                    'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual.' '.$horaEntrada),
                                 ]
                             );
                         }
                     }
 
                     // Verificar retiros anticipados si la reserva está finalizada
-                    if ($reserva->estado === 'finalizada' && !empty($reserva->hora_salida)) {
+                    if ($reserva->estado === 'finalizada' && ! empty($reserva->hora_salida)) {
                         $this->verificarRetiroAnticipado($modulosClase, $reserva, $diaKey, $fechaActual, $periodo, $runProfesor);
                     }
                 } else {
                     // El profesor NO hizo reserva y ya pasó el tiempo de gracia
-                    if (!$this->option('dry-run')) {
+                    if (! $this->option('dry-run')) {
                         // Registrar cada módulo de la clase como no realizado
                         foreach ($modulosClase as $modulo) {
                             // Verificar si ya existe registro de clase no realizada para este módulo hoy
@@ -401,8 +408,8 @@ class DetectarClasesNoRealizadas extends Command
                                 'run_profesor' => $runProfesor,
                                 'fecha_clase' => $fechaActual,
                                 'periodo' => $periodo,
-                                'motivo' => 'No se registró ingreso del profesor después de ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos (detección automática)',
-                                'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual . ' 23:59:59'),
+                                'motivo' => 'No se registró ingreso del profesor después de '.self::TIEMPO_GRACIA_MINUTOS.' minutos (detección automática)',
+                                'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual.' 23:59:59'),
                             ]);
 
                             if ($claseNoRealizada && $claseNoRealizada->wasRecentlyCreated) {
@@ -430,10 +437,10 @@ class DetectarClasesNoRealizadas extends Command
             $this->info("    - Clases realizadas: $clasesRealizadas");
 
         } catch (\Exception $e) {
-            $this->error("Error procesando tenant {$tenant->database}: " . $e->getMessage());
+            $this->error("Error procesando tenant {$tenant->database}: ".$e->getMessage());
             try {
-                Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: " . $e->getMessage(), [
-                    'trace' => $e->getTraceAsString()
+                Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: ".$e->getMessage(), [
+                    'trace' => $e->getTraceAsString(),
                 ]);
             } catch (\Throwable $logEx) {
                 // Ignorar errores de log — no bloquear el flujo por permisos de archivo
@@ -451,7 +458,7 @@ class DetectarClasesNoRealizadas extends Command
         }
 
         // Ordenar módulos por número
-        $modulos = $modulosClase->sortBy(function($p) {
+        $modulos = $modulosClase->sortBy(function ($p) {
             return $this->obtenerNumeroModulo($p->id_modulo);
         })->values();
 
@@ -460,11 +467,13 @@ class DetectarClasesNoRealizadas extends Command
         foreach ($modulos as $index => $modulo) {
             $n = $index + 1; // Número de módulo en la secuencia (1, 2, 3...)
             $toleranciaMinutos = 10 * ($n - 1); // 10 min * (N-1)
-            
+
             $numModulo = $this->obtenerNumeroModulo($modulo->id_modulo);
             $horaFinModulo = $this->horariosModulos[$diaKey][$numModulo]['fin'] ?? null;
-            
-            if (!$horaFinModulo) continue;
+
+            if (! $horaFinModulo) {
+                continue;
+            }
 
             $horaRequerida = Carbon::parse($horaFinModulo)->subMinutes($toleranciaMinutos)->format('H:i:s');
 
@@ -479,7 +488,7 @@ class DetectarClasesNoRealizadas extends Command
                     ->where('run_profesor', $runProfesor)
                     ->exists();
 
-                if (!$yaRegistrado) {
+                if (! $yaRegistrado) {
                     $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
                         'id_asignatura' => $modulo->id_asignatura,
                         'id_espacio' => $modulo->id_espacio,
@@ -490,7 +499,7 @@ class DetectarClasesNoRealizadas extends Command
                         'motivo' => "Retiro anticipado: El profesor finalizó a las {$horaSalida}, antes del mínimo requerido ({$horaRequerida}) para el módulo {$n} del bloque.",
                         'hora_deteccion' => now(),
                     ]);
-                    
+
                     $this->error(sprintf(
                         '  ❌ RETIRO ANTICIPADO: %s - Profesor: %s - Módulo: %s - Salida: %s < Req: %s',
                         $modulo->asignatura->nombre_asignatura ?? 'Desconocida',
@@ -526,8 +535,8 @@ class DetectarClasesNoRealizadas extends Command
         $prefijoDia = $mapaPrefijos[$diaKey] ?? 'LU';
 
         foreach ($horariosDelDia as $numModulo => $horario) {
-            $idModulo = $prefijoDia . '.' . $numModulo;
-            $margenMinutos = \App\Helpers\ModulosHelper::getMargenIngresoMinutos($idModulo);
+            $idModulo = $prefijoDia.'.'.$numModulo;
+            $margenMinutos = ModulosHelper::getMargenIngresoMinutos($idModulo);
 
             // Calcular hora límite: inicio + margen de ingreso
             $horaLimite = Carbon::parse($horario['inicio'])
@@ -548,8 +557,8 @@ class DetectarClasesNoRealizadas extends Command
      */
     private function obtenerPlanificacionesModulos($prefijoDia, $modulosNumeros, $periodo)
     {
-        $modulosIds = array_map(function($num) use ($prefijoDia) {
-            return $prefijoDia . '.' . $num;
+        $modulosIds = array_map(function ($num) use ($prefijoDia) {
+            return $prefijoDia.'.'.$num;
         }, $modulosNumeros);
 
         return Planificacion_Asignatura::with(['asignatura.profesor', 'horario.profesor', 'espacio', 'modulo'])
@@ -567,7 +576,8 @@ class DetectarClasesNoRealizadas extends Command
     private function obtenerNumeroModulo($idModulo)
     {
         $parts = explode('.', $idModulo);
-        return isset($parts[1]) ? (int)$parts[1] : 0;
+
+        return isset($parts[1]) ? (int) $parts[1] : 0;
     }
 
     /**
@@ -577,8 +587,9 @@ class DetectarClasesNoRealizadas extends Command
     {
         try {
             // Verificar si existe la tabla de atrasos
-            if (!DB::getSchemaBuilder()->hasTable('profesor_atrasos')) {
-                Log::info("Tabla profesor_atrasos no existe, se omite registro de atraso");
+            if (! DB::getSchemaBuilder()->hasTable('profesor_atrasos')) {
+                Log::info('Tabla profesor_atrasos no existe, se omite registro de atraso');
+
                 return;
             }
 
@@ -605,7 +616,7 @@ class DetectarClasesNoRealizadas extends Command
                 ]
             );
         } catch (\Exception $e) {
-            Log::warning("No se pudo registrar atraso: " . $e->getMessage());
+            Log::warning('No se pudo registrar atraso: '.$e->getMessage());
         }
     }
 
@@ -633,6 +644,6 @@ class DetectarClasesNoRealizadas extends Command
      */
     private function normalizarDia($diaActual)
     {
-        return \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        return ModulosHelper::normalizarDia($diaActual);
     }
 }

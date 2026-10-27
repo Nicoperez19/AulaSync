@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\AreaAcademica;
+use Illuminate\Database\Seeder;
 
 class AreaAcademicaSeeder extends Seeder
 {

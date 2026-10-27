@@ -1,4 +1,3 @@
-<div data-aulasync-root style="display: contents;">
 <div class="p-6">
 
     <!-- Header -->
@@ -204,8 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
         }).then((result) => {
             if (result.isConfirmed) {
                 window.Livewire.find('{{ $this->getId() }}').call('confirmDeleteTipo', tipo.id);
@@ -232,8 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
         }).then((result) => {
             if (result.isConfirmed) {
                 window.Livewire.find('{{ $this->getId() }}').call('confirmDeleteDestinatario', destinatario.id);
@@ -259,8 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
         }).then((result) => {
             if (result.isConfirmed) {
                 window.Livewire.find('{{ $this->getId() }}').call('confirmDeletePlantilla', plantilla.id);
@@ -288,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text: data[0].message,
             icon: 'error',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#DC2626'
+            confirmButtonColor: '#D12420'
         });
     });
 });
@@ -386,4 +385,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 </script>
-</div>
+

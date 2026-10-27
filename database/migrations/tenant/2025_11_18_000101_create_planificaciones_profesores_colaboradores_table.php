@@ -26,7 +26,7 @@ return new class extends Migration
                 ->references('id_modulo')
                 ->on('modulos')
                 ->onDelete('cascade');
-            
+
             $table->foreign('id_espacio', 'fk_planif_prof_colab_espacio')
                 ->references('id_espacio')
                 ->on('espacios')
@@ -35,9 +35,9 @@ return new class extends Migration
             // Índices para búsquedas rápidas
             $table->index(['id_profesor_colaborador', 'id_modulo'], 'idx_prof_colab_modulo');
             $table->index('id_espacio', 'idx_prof_colab_espacio');
-            
+
             // Evitar duplicados en la misma combinación
-            $table->unique(['id_profesor_colaborador', 'id_modulo', 'id_espacio'], 
+            $table->unique(['id_profesor_colaborador', 'id_modulo', 'id_espacio'],
                 'unique_prof_colab_mod_esp');
         });
     }

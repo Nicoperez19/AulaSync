@@ -11,11 +11,11 @@ return new class extends Migration
     public function up(): void
     {
         // Verificar que estamos en la base de datos de Los Ángeles
-        $isLA = \DB::table('facultades')->where('id_facultad', 'IT_LA')->exists()
-            || \DB::table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
-            || str_contains(strtolower(\DB::connection()->getDatabaseName()), 'la');
+        $isLA = DB::table('facultades')->where('id_facultad', 'IT_LA')->exists()
+            || DB::table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
+            || str_contains(strtolower(DB::connection()->getDatabaseName()), 'la');
 
-        if (!$isLA) {
+        if (! $isLA) {
             return;
         }
 
@@ -32,10 +32,11 @@ return new class extends Migration
 
         // 3. Cargar espacios desde el archivo de configuración
         $sedeId = 'LA';
-        $file = __DIR__ . "/../../seeders/Data/Espacios/{$sedeId}.php";
+        $file = __DIR__."/../../seeders/Data/Espacios/{$sedeId}.php";
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             echo "⚠ No hay archivo de definición de espacios para LA\n";
+
             return;
         }
 
@@ -58,15 +59,15 @@ return new class extends Migration
                 if (isset($espacio['piso_id']) && isset($pisoMap[$espacio['piso_id']])) {
                     $espacio['piso_id'] = $pisoMap[$espacio['piso_id']];
                 }
-                
+
                 // Asegurar capacidad_maxima
-                if (!isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
+                if (! isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
                     $espacio['capacidad_maxima'] = $espacio['puestos_disponibles'] ?? 0;
                 }
-                
+
                 $espacio['created_at'] = now();
                 $espacio['updated_at'] = now();
-                
+
                 return $espacio;
             })
             ->all();

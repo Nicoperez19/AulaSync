@@ -1,4 +1,3 @@
-<div data-aulasync-root style="display: contents;">
 <div wire:poll.60s>
 
     @if($periodoNoIniciado)
@@ -25,7 +24,7 @@
     <!-- Título Clases Realizadas -->
     <div class="mb-4">
         <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
-            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            <i class="fas fa-calendar-check text-[#950101] text-xl"></i>
             <span>Clases Realizadas</span>
         </span>
     </div>
@@ -34,13 +33,13 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Total realizadas / Evaluadas -->
         <button type="button" wire:click="$set('estado', '')"
-                class="text-left stat-card bg-blue-50 hover:bg-blue-100/70 border {{ $estado === '' ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-blue-200' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
+                class="text-left stat-card bg-slate-50 hover:bg-slate-100/70 border {{ $estado === '' ? 'border-[#D12420] ring-2 ring-[#D12420]/20' : 'border-[#C0C0C0]' }} rounded-xl p-4 shadow-sm transition cursor-pointer">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total clases</p>
-                    <p class="text-3xl font-black text-blue-950 mt-1">{{ $estadisticas['total'] }}</p>
+                    <p class="text-slate-700 text-xs font-semibold uppercase tracking-wider">Total clases</p>
+                    <p class="text-3xl font-black text-[#191919] mt-1">{{ $estadisticas['total'] }}</p>
                 </div>
-                <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
+                <div class="p-3 bg-slate-100 rounded-lg text-[#D12420]">
                     <i class="fas fa-calendar-check text-xl"></i>
                 </div>
             </div>
@@ -93,7 +92,7 @@
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-filter text-blue-600"></i> FILTROS
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
             </h3>
         </div>
 
@@ -103,7 +102,7 @@
                 <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Semestre</label>
                 <select wire:model.live="periodo" 
                         id="periodo_filtro"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     @foreach($periodosDisponibles as $p)
                         <option value="{{ $p->codigo }}">
                             {{ $p->display_label }}
@@ -120,7 +119,7 @@
                     <input type="text" 
                            wire:model.live.debounce.800ms="search" 
                            id="search"
-                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]"
                            placeholder="Profesor, asignatura, RUN o espacio...">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
@@ -131,7 +130,7 @@
                 <label for="ua_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Unidad Académica</label>
                 <select wire:model.live="ua" 
                         id="ua_filtro"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todas las UAs</option>
                     @if(isset($unidadesAcademicas) && count($unidadesAcademicas) > 0)
                         @foreach($unidadesAcademicas as $u)
@@ -148,7 +147,7 @@
                 <label for="estado" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
                 <select wire:model.live.debounce.800ms="estado" 
                         id="estado"
-                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
                     <option value="">Todos</option>
                     <option value="no_realizada">No registrada</option>
                     <option value="impartidas">Todas las impartidas / efectivas</option>
@@ -165,7 +164,7 @@
                 <input type="date" 
                        wire:model.live.debounce.800ms="fecha_inicio" 
                        id="fecha_inicio"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
 
             <!-- Hasta -->
@@ -174,7 +173,7 @@
                 <input type="date" 
                        wire:model.live.debounce.800ms="fecha_fin" 
                        id="fecha_fin"
-                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
             </div>
         </div>
 
@@ -185,8 +184,8 @@
                 <i class="fas fa-undo text-xs"></i> Limpiar
             </button>
             <button type="button" wire:click="aplicarFiltros" 
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
-                <i class="fas fa-check text-xs"></i> Aplicar filtros
+                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
             </button>
         </div>
     </div>
@@ -199,7 +198,7 @@
             <span>Registro de Auditoría</span>
         </a>
         <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
-           class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las clases</span>
         </a>
@@ -250,39 +249,39 @@
                 </div>
             @endif
 
-            <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
                                 <th class="px-3 py-3 text-center w-10">
                                     <input type="checkbox" 
                                            wire:model.live="selectAllPage" 
-                                           class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer"
+                                           class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer"
                                            title="Seleccionar todas las clases no registradas"
                                            @if(empty($currentPageNoRealizadasKeys)) disabled @endif>
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-24" 
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer w-24" 
                                     wire:click="sortBy('fecha_clase')">
                                     Fecha
                                     @if($sortField === 'fecha_clase')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Profesor</th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asignatura</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Espacio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Inicio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Fin</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                <th class="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-32">Profesor</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-40">Asignatura</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Espacio</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Mód. Inicio</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Mód. Fin</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer"
                                     wire:click="sortBy('estado')">
                                     Estado
                                     @if($sortField === 'estado')
-                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                                        <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Detección</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 sticky right-0 bg-gray-50">Acciones</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Detección</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[200px]">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -299,13 +298,13 @@
                                             <input type="checkbox" 
                                                    wire:model.live="selectedClases" 
                                                    value="{{ $clase['unique_key'] }}" 
-                                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer">
+                                                   class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
                                         @else
                                             <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden seleccionar clases no registradas">
                                         @endif
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
-                                        <div class="flex items-center gap-1">
+                                        <div class="flex items-center gap-1 justify-center">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
                                             @if($clase['estado'] === 'Pendiente de Recuperación')
                                                 <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
@@ -377,52 +376,42 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-4 text-sm font-medium w-32 sticky right-0 bg-white">
-                                        <div class="flex space-x-1">
+                                    <td class="px-4 py-4 text-center align-middle whitespace-nowrap">
+                                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
                                             @if($clase['estado'] === 'No Registrada')
-                                                <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
-                                                            class="action-button reagendar p-1"
-                                                            title="Reagendar Clase">
-                                                        <i class="fas fa-calendar-plus icon-animate text-xs"></i>
-                                                    </button>
-                                                    <span class="tooltip-text">Reagendar</span>
-                                                </div>
+                                                <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition-colors shadow-xs"
+                                                        title="Reagendar Clase">
+                                                    <i class="fas fa-calendar-plus text-xs"></i>
+                                                    <span>Reagendar</span>
+                                                </button>
                                             @endif
                                             @if($clase['estado'] === 'Pendiente de Recuperación' || $clase['estado'] === 'No Registrada')
-                                                <div class="custom-tooltip">
-                                                    <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
-                                                            class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
-                                                            title="Marcar como recuperada">
-                                                        <i class="fas fa-check-circle icon-animate text-xs"></i>
-                                                    </button>
-                                                    <span class="tooltip-text">Recuperada</span>
-                                                </div>
+                                                <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
+                                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors shadow-xs"
+                                                        title="Marcar como recuperada">
+                                                    <i class="fas fa-check-circle text-xs"></i>
+                                                    <span>Recuperada</span>
+                                                </button>
                                             @endif
-                                            <div class="custom-tooltip">
-                                                <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
-                                                        class="action-button editar p-1"
-                                                        title="Editar">
-                                                    <i class="fas fa-edit icon-animate text-xs"></i>
-                                                </button>
-                                                <span class="tooltip-text">Editar</span>
-                                            </div>
-                                            <div class="custom-tooltip">
-                                                <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
-                                                        class="action-button eliminar p-1"
-                                                        title="Eliminar">
-                                                    <i class="fas fa-trash icon-animate text-xs"></i>
-                                                </button>
-                                                <span class="tooltip-text">Eliminar</span>
-                                            </div>
-                                            <div class="custom-tooltip">
-                                                <button wire:click="prepararAccion('historial', {{ json_encode($clase) }})" 
-                                                        class="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition duration-150"
-                                                        title="Ver Historial de Auditoría">
-                                                    <i class="fas fa-history text-xs"></i>
-                                                </button>
-                                                <span class="tooltip-text">Auditoría</span>
-                                            </div>
+                                            <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 hover:text-[#950101] transition-colors shadow-xs"
+                                                    title="Editar">
+                                                <i class="fas fa-edit text-xs"></i>
+                                                <span>Editar</span>
+                                            </button>
+                                            <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 border border-red-200 rounded-lg hover:bg-[#D12420] hover:text-white transition-colors shadow-xs"
+                                                    title="Eliminar">
+                                                <i class="fas fa-trash text-xs"></i>
+                                                <span>Eliminar</span>
+                                            </button>
+                                            <button wire:click="prepararAccion('historial', {{ json_encode($clase) }})" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-700 hover:text-white transition-colors shadow-xs"
+                                                    title="Ver Historial de Auditoría">
+                                                <i class="fas fa-history text-xs"></i>
+                                                <span>Auditoría</span>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -473,7 +462,7 @@
                             ? (this.motivoJ === '__OTRO__' ? this.otroJ.trim() : this.motivoJ)
                             : (this.motivoR === '__OTRO__' ? this.otroR.trim() : this.motivoR);
                         if (!motivo) {
-                            Swal.fire({ title: 'Atención', text: 'Por favor especifica un motivo para la acción masiva.', icon: 'warning', confirmButtonColor: '#1E293B' });
+                            Swal.fire({ title: 'Atención', text: 'Por favor especifica un motivo para la acción masiva.', icon: 'warning', confirmButtonColor: '#D12420' });
                             return;
                         }
                         this.open = false;
@@ -497,7 +486,7 @@
                      x-on:click.self="open = false">
                     <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
                         <!-- Cabecera Institucional -->
-                        <div class="p-4 bg-light-cloud-blue text-white flex items-center justify-between">
+                        <div class="p-4 bg-[#D12420] text-white flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
                                 <div class="p-1.5 bg-white/20 rounded-lg">
                                     <i class="fas fa-shield-alt text-lg"></i>
@@ -687,8 +676,8 @@ function initClasesNoRealizadasScripts() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-save"></i> Guardar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#8D8D8D',
             didOpen: () => {
                 document.getElementById('swal-estado').focus();
             },
@@ -744,8 +733,8 @@ function initClasesNoRealizadasScripts() {
                         </div>
                     </div>
                     
-                    <div class="bg-blue-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-semibold text-blue-900 mb-2">Clase Original</h4>
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-4">
+                        <h4 class="font-semibold text-slate-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
                         <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
@@ -799,7 +788,7 @@ function initClasesNoRealizadasScripts() {
             confirmButtonText: '<i class="fas fa-calendar-check"></i> Reagendar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
             confirmButtonColor: '#10B981',
-            cancelButtonColor: '#6B7280',
+            cancelButtonColor: '#8D8D8D',
             didOpen: async () => {
                 const dateInput = document.getElementById('swal-nueva-fecha');
                 const hoy = new Date().toISOString().split('T')[0];
@@ -1036,8 +1025,8 @@ function initClasesNoRealizadasScripts() {
             showCancelButton: true,
             confirmButtonText: '<i class="fas fa-trash"></i> Sí, eliminar',
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
-            confirmButtonColor: '#DC2626',
-            cancelButtonColor: '#6B7280',
+            confirmButtonColor: '#D12420',
+            cancelButtonColor: '#8D8D8D',
         }).then((result) => {
             if (result.isConfirmed) {
                 window.Livewire.find('{{ $this->getId() }}').call('confirmDelete', clase.id);
@@ -1069,7 +1058,7 @@ function initClasesNoRealizadasScripts() {
             text: message,
             icon: 'error',
             confirmButtonText: 'Entendido',
-            confirmButtonColor: '#DC2626'
+            confirmButtonColor: '#D12420'
         });
     });
 
@@ -1119,7 +1108,7 @@ function initClasesNoRealizadasScripts() {
             html: htmlContent,
             width: '600px',
             confirmButtonText: 'Cerrar',
-            confirmButtonColor: '#334155',
+            confirmButtonColor: '#8D8D8D',
         });
     });
 }
@@ -1131,4 +1120,3 @@ if (document.readyState === 'loading') {
 }
 </script>
 @endpush
-</div>

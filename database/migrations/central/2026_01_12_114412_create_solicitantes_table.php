@@ -22,7 +22,7 @@ return new class extends Migration
             $table->boolean('activo')->default(true);
             $table->timestamp('fecha_registro')->nullable();
             $table->timestamps();
-            
+
             $table->index('run_solicitante');
             $table->index('activo');
         });

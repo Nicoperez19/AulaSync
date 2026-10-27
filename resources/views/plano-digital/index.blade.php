@@ -75,7 +75,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#2563eb'
+                confirmButtonColor: '#D12420'
             });
         }
 

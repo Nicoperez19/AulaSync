@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Models\JefeCarrera;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Carrera;
 
 class JefesCarreraTable extends Component
 {
@@ -46,32 +45,27 @@ class JefesCarreraTable extends Component
     {
         $searchTerm = trim($this->search);
 
-        $sortField = in_array($this->sortField, ['nombre', 'email'], true) ? $this->sortField : 'nombre';
-        $sortDirection = $this->sortDirection === 'desc' ? 'desc' : 'asc';
-
         $jefesCarrera = JefeCarrera::query()
             ->with(['carrera.areaAcademica.facultad.sede.universidad'])
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                // Las carreras viven en la base central: se resuelven sus IDs aparte
-                $carreraIds = Carrera::query()
-                    ->where(function ($cq) use ($searchTerm) {
-                        $cq->where('nombre', 'like', '%' . $searchTerm . '%')
-                           ->orWhere('id_carrera', 'like', '%' . $searchTerm . '%');
-                    })
-                    ->pluck('id_carrera')
-                    ->all();
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
-                $query->where(function ($q) use ($searchTerm, $carreraIds) {
-                    $q->where('nombre', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('telefono', 'like', '%' . $searchTerm . '%');
-
-                    if (!empty($carreraIds)) {
-                        $q->orWhereIn('id_carrera', $carreraIds);
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhereHas('carrera', function ($cq) use ($t) {
+                              $cq->where('nombre', 'like', '%' . $t . '%');
+                          });
                     }
                 });
             })
-            ->orderBy($sortField, $sortDirection)
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.jefes-carrera-table', compact('jefesCarrera'));

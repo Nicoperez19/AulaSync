@@ -30,13 +30,13 @@ return new class extends Migration
             // Datos horarios
             $table->date('fecha_clase')->index();
             $table->time('hora_entrada')->nullable()
-                  ->comment('Hora en que el profesor registró entrada');
+                ->comment('Hora en que el profesor registró entrada');
             $table->time('hora_termino_esperada')->nullable()
-                  ->comment('Hora estimada de término del módulo o clase');
+                ->comment('Hora estimada de término del módulo o clase');
 
             // Cuándo el sistema cerró el espacio automáticamente
             $table->timestamp('cerrado_en')
-                  ->comment('Momento en que el sistema liberó el espacio al cambio de día');
+                ->comment('Momento en que el sistema liberó el espacio al cambio de día');
 
             $table->timestamps();
         });

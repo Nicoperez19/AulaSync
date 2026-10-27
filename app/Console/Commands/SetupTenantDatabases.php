@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Artisan;
 use App\Models\Tenant;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 
 class SetupTenantDatabases extends Command
 {
@@ -35,8 +35,8 @@ class SetupTenantDatabases extends Command
 
         // Mostrar información de conexión
         $this->info('Conexión a BD:');
-        $this->line('  Host: ' . config('database.connections.tenant.host'));
-        $this->line('  Usuario: ' . config('database.connections.tenant.username'));
+        $this->line('  Host: '.config('database.connections.tenant.host'));
+        $this->line('  Usuario: '.config('database.connections.tenant.username'));
         $this->newLine();
 
         // Obtener todos los tenants
@@ -45,6 +45,7 @@ class SetupTenantDatabases extends Command
         if ($tenants->isEmpty()) {
             $this->error('No se encontraron tenants configurados.');
             $this->info('Por favor ejecuta primero: php artisan db:seed --class=CentralDatabaseSeeder');
+
             return 1;
         }
 
@@ -55,8 +56,9 @@ class SetupTenantDatabases extends Command
         $this->newLine();
 
         if ($this->option('fresh')) {
-            if (!$this->confirm('⚠️  ¿Estás seguro de que quieres ejecutar migrate:fresh? Se perderán todos los datos de las tablas.', false)) {
+            if (! $this->confirm('⚠️  ¿Estás seguro de que quieres ejecutar migrate:fresh? Se perderán todos los datos de las tablas.', false)) {
                 $this->info('Operación cancelada.');
+
                 return 0;
             }
         }
@@ -73,7 +75,7 @@ class SetupTenantDatabases extends Command
 
     /**
      * Procesar un tenant: conectar a su BD, ejecutar migraciones y seeders.
-     * 
+     *
      * NOTA: Las operaciones se ejecutan usando la conexión 'tenant' definida en config/database.php
      * con las credenciales DB_USERNAME y DB_PASSWORD del archivo .env
      */
@@ -84,7 +86,7 @@ class SetupTenantDatabases extends Command
         $this->newLine();
         $this->info("Procesando tenant: {$tenant->name}");
         $this->line("  Database: {$dbName}");
-        $this->line("  Usuario BD: " . config('database.connections.tenant.username'));
+        $this->line('  Usuario BD: '.config('database.connections.tenant.username'));
 
         try {
             // Usar conexión mysql para operaciones DDL (crear/borrar bases de datos)
@@ -92,7 +94,7 @@ class SetupTenantDatabases extends Command
 
             // Verificar si la database existe
             $databases = $adminDB->select("SHOW DATABASES WHERE `Database` = '{$dbName}'");
-            $exists = !empty($databases);
+            $exists = ! empty($databases);
 
             if ($this->option('fresh') && $exists) {
                 $this->warn("  Eliminando database existente: {$dbName}");
@@ -100,7 +102,7 @@ class SetupTenantDatabases extends Command
                 $exists = false;
             }
 
-            if (!$exists) {
+            if (! $exists) {
                 $this->line("  Creando database: {$dbName}");
                 $adminDB->statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
@@ -135,7 +137,7 @@ class SetupTenantDatabases extends Command
                 $this->line($output);
                 throw new \Exception("Migraciones fallaron: {$output}");
             } else {
-                $this->line("  ✓ Migraciones completadas exitosamente");
+                $this->line('  ✓ Migraciones completadas exitosamente');
             }
 
             // Ejecutar seeders si se solicita
@@ -153,16 +155,16 @@ class SetupTenantDatabases extends Command
                 ]);
 
                 if ($exitCode !== 0) {
-                    $this->warn("  ⚠ Seeders completados con advertencias");
+                    $this->warn('  ⚠ Seeders completados con advertencias');
                 } else {
-                    $this->line("  ✓ Seeders completados exitosamente");
+                    $this->line('  ✓ Seeders completados exitosamente');
                 }
             }
 
             $this->info("  ✅ {$tenant->name} configurado correctamente");
 
         } catch (\Exception $e) {
-            $this->error("  ❌ Error procesando {$tenant->name}: " . $e->getMessage());
+            $this->error("  ❌ Error procesando {$tenant->name}: ".$e->getMessage());
         }
     }
 }

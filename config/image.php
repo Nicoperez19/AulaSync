@@ -40,4 +40,4 @@ return [
         'enabled' => true,
         'lifetime' => 60 * 24, // 24 hours
     ],
-]; 
+];

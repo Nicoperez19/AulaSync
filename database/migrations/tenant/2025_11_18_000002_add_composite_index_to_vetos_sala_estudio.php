@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('vetos_sala_estudio', function (Blueprint $table) {
             // Índice compuesto para optimizar consultas frecuentes
             $table->index(['estado', 'fecha_veto'], 'idx_estado_fecha_veto');
-            
+
             // Índice para tipo de veto
             $table->index('tipo_veto');
         });

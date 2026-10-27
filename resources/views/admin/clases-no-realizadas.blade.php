@@ -43,7 +43,7 @@
                     :class="activeTab === 'no-realizadas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
                     class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
                 >
-                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-[#950101]' : 'text-gray-400'"></i>
                     <span>Control de Clases</span>
                 </button>
                 <button 
@@ -65,7 +65,7 @@
                     :class="activeTab === 'reservas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
                     class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
                 >
-                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-[#950101]' : 'text-gray-400'"></i>
                     <span>Solicitudes y Reservas</span>
                 </button>
             </div>
@@ -93,7 +93,7 @@
                     :class="activeTab === 'no-realizadas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
                     class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
                 >
-                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-[#950101]' : 'text-gray-400'"></i>
                     <span>Control de Clases</span>
                 </button>
                 <button 
@@ -102,7 +102,7 @@
                     :class="activeTab === 'reservas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
                     class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
                 >
-                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-[#950101]' : 'text-gray-400'"></i>
                     <span>Solicitudes y Reservas</span>
                 </button>
             </div>

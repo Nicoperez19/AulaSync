@@ -126,7 +126,7 @@ class UsersTable extends Component
             });
 
         $roles = Role::orderBy('name')->get();
-        $users = $query->orderBy(in_array($this->sortField, ['run', 'name', 'email'], true) ? $this->sortField : 'name', $this->sortDirection === 'desc' ? 'desc' : 'asc')->paginate($this->perPage);
+        $users = $query->orderBy($this->sortField, $this->sortDirection)->paginate($this->perPage);
 
         return view('livewire.users-table', [
             'users' => $users,

@@ -17,6 +17,6 @@ return [
     'sent' => '¡Mensaje enviado!  Hemos enviado el enlace de recuperación a tu correo. ¡Revisa tu bandeja de entrada (y la carpeta de spam, por si acaso)! ',
     'throttled' => '¡Ups! Espera un momento antes de intentar de nuevo. ',
     'token' => '¡Oops! Este enlace de recuperación ya no es válido. ',
-    'user' => "¡Hmm! El correo electrónico no está registrado en nuestro sistema.",
+    'user' => '¡Hmm! El correo electrónico no está registrado en nuestro sistema.',
 
 ];

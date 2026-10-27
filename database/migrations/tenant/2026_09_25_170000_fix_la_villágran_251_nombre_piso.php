@@ -20,7 +20,7 @@ return new class extends Migration
              || DB::connection($connection)->table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
              || str_contains(strtolower(DB::connection($connection)->getDatabaseName()), 'la');
 
-        if (!$isLA) {
+        if (! $isLA) {
             return;
         }
 
@@ -38,7 +38,7 @@ return new class extends Migration
                     'nombre_piso' => $edificio['nombre_piso'],
                     'numero_piso' => $edificio['numero_piso'],
                     'id_facultad' => $edificio['id_facultad'],
-                    'updated_at'  => now(),
+                    'updated_at' => now(),
                 ]);
             } else {
                 DB::connection($connection)->table('pisos')->insert(array_merge($edificio, [
