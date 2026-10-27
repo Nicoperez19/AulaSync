@@ -447,11 +447,11 @@ Route::get('/modulos', function () {
 
 Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function ($fecha, $moduloInicio, $moduloFin) {
     try {
-        $espacios = \App\Models\Espacio::where('estado', 'Disponible')
+        $espacios = \App\Models\Espacio::whereNotIn('estado', ['Mantención', 'Mantenimiento', 'Inactivo', 'Deshabilitado', 'Baja'])
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%taller%'")
-            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%laboratorio%' OR LOWER(tipo_espacio) LIKE '%laboratorio de computacion%' OR LOWER(tipo_espacio) LIKE '%laboratorio computacion%'")
+            ->whereRaw("(LOWER(tipo_espacio) NOT LIKE '%laboratorio%' OR LOWER(tipo_espacio) LIKE '%laboratorio de computacion%' OR LOWER(tipo_espacio) LIKE '%laboratorio computacion%')")
             ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%estudio%'")
             ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%taller%'")
             ->select('id_espacio', 'nombre_espacio', 'tipo_espacio')
@@ -472,25 +472,56 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         ];
         $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
 
-        $modulosAVerificar = range((int)$moduloInicio, (int)$moduloFin);
+        // Extraer los números de inicio y fin (ej: de "MI.7" -> 7, o de "7" -> 7)
+        $inicioNum = (int) (str_contains((string)$moduloInicio, '.') ? explode('.', (string)$moduloInicio)[1] : preg_replace('/[^0-9]/', '', (string)$moduloInicio));
+        $finNum = (int) (str_contains((string)$moduloFin, '.') ? explode('.', (string)$moduloFin)[1] : preg_replace('/[^0-9]/', '', (string)$moduloFin));
+
+        // Si el módulo recibido incluye prefijo de día válido, priorizar ese prefijo
+        if (str_contains((string)$moduloInicio, '.')) {
+            $prefijoRecibido = strtoupper(explode('.', (string)$moduloInicio)[0]);
+            if (in_array($prefijoRecibido, ['LU', 'MA', 'MI', 'JU', 'VI', 'SA', 'DO'])) {
+                $prefijoDia = $prefijoRecibido;
+            }
+        }
+
+        if ($inicioNum <= 0) {
+            $inicioNum = 1;
+        }
+        if ($finNum < $inicioNum) {
+            $finNum = $inicioNum;
+        }
+
+        $modulosAVerificar = range($inicioNum, $finNum);
         $modulosIds = array_map(function($num) use ($prefijoDia) {
             return "{$prefijoDia}.{$num}";
         }, $modulosAVerificar);
 
-        $primerModuloObj = \App\Models\Modulo::find($modulosIds[0]);
-        $ultimoModuloObj = \App\Models\Modulo::find(end($modulosIds));
-        
-        if (!$primerModuloObj || !$ultimoModuloObj) {
-            return response()->json([
-                'error' => 'Módulo no encontrado',
-                'debug' => [
-                    'modulos_construidos' => $modulosIds
-                ]
-            ], 404);
-        }
+        $primerModuloObj = \App\Models\Modulo::withoutGlobalScopes()->where('id_modulo', $modulosIds[0])->first()
+            ?? \App\Models\Modulo::find($modulosIds[0]);
+        $ultimoModuloObj = \App\Models\Modulo::withoutGlobalScopes()->where('id_modulo', end($modulosIds))->first()
+            ?? \App\Models\Modulo::find(end($modulosIds));
 
-        $horaInicio = substr($primerModuloObj->hora_inicio, 0, 5);
-        $horaFin = substr($ultimoModuloObj->hora_termino, 0, 5);
+        // Horarios base como fallback en caso de que algún módulo no esté en BD
+        $modulosBase = [
+            1 => ['inicio' => '08:10', 'termino' => '09:00'],
+            2 => ['inicio' => '09:10', 'termino' => '10:00'],
+            3 => ['inicio' => '10:10', 'termino' => '11:00'],
+            4 => ['inicio' => '11:10', 'termino' => '12:00'],
+            5 => ['inicio' => '12:10', 'termino' => '13:00'],
+            6 => ['inicio' => '13:10', 'termino' => '14:00'],
+            7 => ['inicio' => '14:10', 'termino' => '15:00'],
+            8 => ['inicio' => '15:10', 'termino' => '16:00'],
+            9 => ['inicio' => '16:10', 'termino' => '17:00'],
+            10 => ['inicio' => '17:10', 'termino' => '18:00'],
+            11 => ['inicio' => '18:10', 'termino' => '19:00'],
+            12 => ['inicio' => '19:10', 'termino' => '20:00'],
+            13 => ['inicio' => '20:10', 'termino' => '21:00'],
+            14 => ['inicio' => '21:10', 'termino' => '22:00'],
+            15 => ['inicio' => '22:10', 'termino' => '23:00'],
+        ];
+
+        $horaInicio = $primerModuloObj ? substr($primerModuloObj->hora_inicio, 0, 5) : ($modulosBase[$inicioNum]['inicio'] ?? '08:10');
+        $horaFin = $ultimoModuloObj ? substr($ultimoModuloObj->hora_termino, 0, 5) : ($modulosBase[$finNum]['termino'] ?? '20:00');
 
         $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar) {
             foreach ($modulosIds as $moduloId) {
