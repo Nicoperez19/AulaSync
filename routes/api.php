@@ -557,23 +557,34 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
 
             // 3. Verificar reservas confirmadas / activas / programadas
             foreach ($modulosAVerificar as $numModulo) {
-                $moduloIdActual = "{$prefijoDia}.{$numModulo}";
+                $modInicio = $modulosBase[$numModulo]['inicio'] ?? '08:10';
+                $modFin = $modulosBase[$numModulo]['termino'] ?? '20:00';
+                $modInicioTime = strlen($modInicio) === 5 ? "{$modInicio}:00" : $modInicio;
+                $modFinTime = strlen($modFin) === 5 ? "{$modFin}:00" : $modFin;
 
                 $reservado = \App\Models\Reserva::where('id_espacio', $espacio->id_espacio)
                     ->whereDate('fecha_reserva', $fecha)
                     ->whereIn('estado', ['confirmada', 'en_curso', 'activa', 'programada'])
-                    ->where(function ($query) use ($numModulo, $moduloIdActual) {
+                    ->where(function ($query) use ($numModulo, $modInicioTime, $modFinTime) {
+                        // Caso A: Tiene modulo_inicio / modulo_fin definidos
                         $query->where(function ($sub) use ($numModulo) {
                             $sub->whereNotNull('modulo_inicio')
-                                ->whereNotNull('modulo_fin')
                                 ->where('modulo_inicio', '<=', $numModulo)
-                                ->where('modulo_fin', '>=', $numModulo);
+                                ->where(function ($sub2) use ($numModulo) {
+                                    $sub2->whereNull('modulo_fin')
+                                         ->where('modulo_inicio', '=', $numModulo)
+                                         ->orWhere('modulo_fin', '>=', $numModulo);
+                                });
                         })
-                        ->orWhere('modulo_inicio', $numModulo)
-                        ->orWhere('modulo_fin', $numModulo)
-                        ->orWhere(function ($sub) use ($moduloIdActual) {
-                            $sub->whereNotNull('id_modulo')
-                                ->whereRaw("FIND_IN_SET(?, REPLACE(id_modulo, ' ', '')) > 0", [$moduloIdActual]);
+                        // Caso B: Si modulo_inicio es null, verificar traslape por horario (hora y hora_salida)
+                        ->orWhere(function ($sub) use ($modInicioTime, $modFinTime) {
+                            $sub->whereNull('modulo_inicio')
+                                ->whereNotNull('hora')
+                                ->where('hora', '<', $modFinTime)
+                                ->where(function ($sub2) use ($modInicioTime) {
+                                    $sub2->whereNull('hora_salida')
+                                         ->orWhere('hora_salida', '>', $modInicioTime);
+                                });
                         });
                     })
                     ->exists();
