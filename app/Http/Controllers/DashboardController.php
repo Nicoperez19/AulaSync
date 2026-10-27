@@ -107,6 +107,7 @@ class DashboardController extends Controller
 
         // Pre-cargar clases no realizadas de hoy agrupadas por espacio
         $clasesNoRealizadasHoy = ClaseNoRealizada::where('fecha_clase', $fechaHoy)
+            ->where('estado', 'no_realizada')
             ->get()
             ->groupBy('id_espacio');
 
@@ -788,39 +789,10 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
-                $registroCNR = null;
-                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
-                foreach ($modulosClase as $mItem) {
-                    foreach ($espaciosClaseEquiv as $espIdEq) {
-                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
-                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
-                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
-                            break 2;
-                        }
-                    }
-                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
-                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
-                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
-                        break;
-                    }
-                }
-
-                if ($registroCNR) {
-                    if ($registroCNR->estado === 'recuperada') {
-                        $recuperadas++;
-                    } elseif ($registroCNR->estado === 'justificado') {
-                        $justificadas++;
-                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
-                        $realizadas++;
-                    } else {
-                        $noRegistradas++;
-                    }
-                    continue;
-                }
-
-                // 2. Verificar si hubo reserva / escaneo en el espacio (o equivalentes) para este bloque
+                // 1. Verificar primero si hubo reserva / escaneo en el espacio (o equivalentes) para este bloque
+                // Si hubo reserva (el docente llegó a tiempo o con atraso), la clase SÍ se realizó.
                 $reservaEncontrada = null;
+                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
                 $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
                 $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
 
@@ -856,6 +828,41 @@ class DashboardController extends Controller
                 }
 
                 if ($reservaEncontrada) {
+                    $realizadas++;
+                    continue;
+                }
+
+                // 2. Si no hubo reserva, verificar si esta clase está oficialmente registrada en ClaseNoRealizada
+                $registroCNR = null;
+                foreach ($modulosClase as $mItem) {
+                    foreach ($espaciosClaseEquiv as $espIdEq) {
+                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
+                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
+                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
+                            break 2;
+                        }
+                    }
+                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
+                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
+                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
+                        break;
+                    }
+                }
+
+                if ($registroCNR) {
+                    if ($registroCNR->estado === 'recuperada') {
+                        $recuperadas++;
+                    } elseif ($registroCNR->estado === 'justificado') {
+                        $justificadas++;
+                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
+                        $realizadas++;
+                    } else {
+                        $noRegistradas++;
+                    }
+                    continue;
+                }
+
+                if (false) {
                     $realizadas++;
                 } else {
                     // Si aún no termina el horario de la clase, queda pendiente

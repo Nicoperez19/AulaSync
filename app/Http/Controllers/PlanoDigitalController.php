@@ -313,6 +313,7 @@ class PlanoDigitalController extends Controller
             $clasesNoRealizadasHoy = ClaseNoRealizada::with('modulo')
                 ->where('id_espacio', $idEspacio)
                 ->where('fecha_clase', $fechaActual)
+                ->where('estado', 'no_realizada')
                 ->get();
 
             // Verificar si hay alguna clase no realizada cuyo módulo AÚN NO HA TERMINADO
@@ -798,6 +799,7 @@ class PlanoDigitalController extends Controller
 
             $clasesNoRealizadasGlobal = ClaseNoRealizada::with('modulo')
                 ->where('fecha_clase', $fechaActual)
+                ->where('estado', 'no_realizada')
                 ->get()
                 ->groupBy('id_espacio');
 
@@ -878,8 +880,6 @@ class PlanoDigitalController extends Controller
 
                 if ($estadoTabla === 'Mantención' || $estadoTabla === 'Mantenimiento') {
                     $estado = 'Mantención';
-                } elseif ($tieneClaseSinAsistentes) {
-                    $estado = 'Clase no registrada';
                 } elseif ($tieneReservaActiva) {
                     $reservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->first();
                     if ($reservaActiva && $reservaActiva->tipo_reserva === 'espontanea') {
@@ -887,6 +887,8 @@ class PlanoDigitalController extends Controller
                     } else {
                         $estado = 'Clase registrada';
                     }
+                } elseif ($tieneClaseSinAsistentes) {
+                    $estado = 'Clase no registrada';
                 } elseif ($estadoTabla === 'Ocupado') {
                     $estado = 'Ocupado';
                 } else {
