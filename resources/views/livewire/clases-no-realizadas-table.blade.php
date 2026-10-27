@@ -190,12 +190,12 @@
         </div>
     </div>
 
-    <!-- Botón Exportar y Auditoría -->
+    <!-- Botón Exportar y Auditorías -->
     <div class="flex flex-wrap justify-end gap-2 mb-4">
         <a href="{{ route('reportes.auditoria-clases.index') }}"
            class="inline-flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
             <i class="fas fa-clipboard-user"></i>
-            <span>Registro de Auditoría</span>
+            <span>Auditorías</span>
         </a>
         <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
            class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">

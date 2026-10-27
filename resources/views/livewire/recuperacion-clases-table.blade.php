@@ -78,6 +78,10 @@
 
             <!-- Botones de navegación -->
             <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+                <a href="{{ route('reportes.auditoria-clases.index', ['tab' => 'reagendamientos']) }}"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-slate-800 hover:bg-slate-900 shadow-xs">
+                    <i class="mr-2 fa-solid fa-clipboard-user"></i>Auditorías
+                </a>
                 <a href="{{ route('ausencias-profesores') }}"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg bg-[#D12420] hover:bg-[#950101] shadow-xs">
                     <i class="mr-2 fa-solid fa-user-clock"></i>Ausencias de Profesores

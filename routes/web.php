@@ -473,6 +473,10 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('auditoria-clases', [AuditoriaClaseController::class, 'index'])->name('reportes.auditoria-clases.index');
     Route::get('auditoria-clases/export/{format}', [AuditoriaClaseController::class, 'export'])->name('reportes.auditoria-clases.export');
     Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
+
+    // Auditoría de Reagendamientos
+    Route::get('auditoria-reagendamientos', [AuditoriaClaseController::class, 'reagendamientos'])->name('reportes.auditoria-reagendamientos.index');
+    Route::get('auditoria-reagendamientos/export/{format}', [AuditoriaClaseController::class, 'exportReagendamientos'])->name('reportes.auditoria-reagendamientos.export');
 });
 
 require __DIR__ . '/auth.php';

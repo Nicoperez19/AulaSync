@@ -83,6 +83,14 @@ class RecuperacionClasesTable extends Component
         $this->validate($this->rulesReagendar());
 
         $recuperacion = RecuperacionClase::findOrFail($this->recuperacionId);
+        $estadoAnterior = $recuperacion->estado;
+        $valoresAnteriores = [
+            'fecha_clase' => $recuperacion->fecha_clase_original?->format('Y-m-d'),
+            'id_espacio' => $recuperacion->id_espacio,
+            'id_modulo' => $recuperacion->id_modulo_original,
+            'estado' => $recuperacion->estado,
+        ];
+
         $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
             $recuperacion->update([
                 'fecha_reagendada' => $this->fecha_reagendada,
@@ -102,6 +110,32 @@ class RecuperacionClasesTable extends Component
                 ]);
             }
         });
+
+        try {
+            $espacioFinal = $this->id_espacio_reagendado ?: $recuperacion->id_espacio;
+            $obsAuditoria = "Reagendada desde " . ($recuperacion->fecha_clase_original ? $recuperacion->fecha_clase_original->format('d/m/Y') : 'N/A')
+                . " ({$recuperacion->id_espacio}, módulo {$recuperacion->id_modulo_original}) a {$this->fecha_reagendada} ({$espacioFinal}, módulo {$this->id_modulo_reagendado})."
+                . ($this->notas ? " Notas: {$this->notas}" : '');
+
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'reagendar',
+                $valoresAnteriores,
+                [
+                    'fecha_clase' => $this->fecha_reagendada,
+                    'id_espacio' => $espacioFinal,
+                    'id_modulo' => $this->id_modulo_reagendado,
+                    'estado' => 'reagendada',
+                ],
+                $this->notas ?: 'Reagendamiento de clase',
+                $obsAuditoria,
+                $estadoAnterior,
+                'reagendada',
+                'web'
+            );
+        } catch (\Throwable $e) {
+            // Silencioso
+        }
 
         // Crear notificación de clase reagendada
         \App\Models\Notificacion::crearNotificacionClaseReagendada($recuperacion);
@@ -153,16 +187,33 @@ class RecuperacionClasesTable extends Component
     public function obviar($id)
     {
         $recuperacion = RecuperacionClase::findOrFail($id);
+        $estadoAnterior = $recuperacion->estado;
         $recuperacion->update([
             'estado' => 'obviada',
             'gestionado_por' => Auth::user()->run,
         ]);
+
+        try {
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'obviar_recuperacion',
+                ['estado' => $estadoAnterior],
+                ['estado' => 'obviada'],
+                'Recuperación obviada',
+                $recuperacion->notas,
+                $estadoAnterior,
+                'obviada',
+                'web'
+            );
+        } catch (\Throwable $e) {}
+
         session()->flash('message', 'Reagendamiento obviado.');
     }
 
     public function marcarRealizada($id)
     {
         $recuperacion = RecuperacionClase::findOrFail($id);
+        $estadoAnterior = $recuperacion->estado;
         $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
             $recuperacion->update([
                 'estado' => 'realizada',
@@ -172,6 +223,21 @@ class RecuperacionClasesTable extends Component
                 $recuperacion->claseNoRealizada->update(['estado' => 'recuperada']);
             }
         });
+
+        try {
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'marcar_recuperada',
+                ['estado' => $estadoAnterior],
+                ['estado' => 'recuperada'],
+                'Clase marcada como recuperada',
+                $recuperacion->notas,
+                $estadoAnterior,
+                'recuperada',
+                'web'
+            );
+        } catch (\Throwable $e) {}
+
         session()->flash('message', 'Clase marcada como realizada.');
     }
 
