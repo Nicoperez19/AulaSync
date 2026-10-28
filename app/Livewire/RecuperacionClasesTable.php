@@ -91,7 +91,11 @@ class RecuperacionClasesTable extends Component
             'estado' => $recuperacion->estado,
         ];
 
-        $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
+        $fechaReagendadaAnterior = $recuperacion->fecha_reagendada?->format('Y-m-d');
+        $moduloReagendadoAnterior = $recuperacion->id_modulo_reagendado;
+        $espacioReagendadoAnterior = $recuperacion->id_espacio_reagendado ?: $recuperacion->id_espacio;
+
+        $recuperacion->getConnection()->transaction(function () use ($recuperacion, $fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
             $recuperacion->update([
                 'fecha_reagendada' => $this->fecha_reagendada,
                 'id_modulo_reagendado' => $this->id_modulo_reagendado,
@@ -101,13 +105,43 @@ class RecuperacionClasesTable extends Component
                 'gestionado_por' => Auth::user()->run,
             ]);
 
-            if ($recuperacion->claseNoRealizada) {
-                $recuperacion->claseNoRealizada->update([
+            $espacioDestino = $this->id_espacio_reagendado ?: $recuperacion->id_espacio;
+            $cnr = $recuperacion->claseNoRealizada;
+
+            if (!$cnr) {
+                $cnr = \App\Models\ClaseNoRealizada::where('run_profesor', $recuperacion->run_profesor)
+                    ->where('id_asignatura', $recuperacion->id_asignatura)
+                    ->where(function ($q) use ($recuperacion, $fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
+                        if ($recuperacion->fecha_clase_original && $recuperacion->id_modulo_original) {
+                            $q->where(function ($sub) use ($recuperacion) {
+                                $sub->whereDate('fecha_clase', $recuperacion->fecha_clase_original->format('Y-m-d'))
+                                    ->where(function ($mq) use ($recuperacion) {
+                                        $mq->where('id_modulo', $recuperacion->id_modulo_original)
+                                           ->orWhere('id_modulo', 'like', '%' . $recuperacion->id_modulo_original . '%');
+                                    });
+                            });
+                        }
+                        if ($fechaReagendadaAnterior && $moduloReagendadoAnterior) {
+                            $q->orWhere(function ($sub) use ($fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
+                                $sub->whereDate('fecha_clase', $fechaReagendadaAnterior)
+                                    ->where('id_espacio', $espacioReagendadoAnterior)
+                                    ->where('id_modulo', $moduloReagendadoAnterior);
+                            });
+                        }
+                    })
+                    ->first();
+            }
+
+            if ($cnr) {
+                $cnr->update([
                     'fecha_clase' => $this->fecha_reagendada,
                     'id_modulo' => $this->id_modulo_reagendado,
-                    'id_espacio' => $this->id_espacio_reagendado ?: $recuperacion->id_espacio,
+                    'id_espacio' => $espacioDestino,
                     'estado' => 'pendiente',
                 ]);
+                if ($recuperacion->id_clase_no_realizada !== $cnr->id) {
+                    $recuperacion->update(['id_clase_no_realizada' => $cnr->id]);
+                }
             }
         });
 
@@ -217,10 +251,19 @@ class RecuperacionClasesTable extends Component
         $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
             $recuperacion->update([
                 'estado' => 'realizada',
-                'gestionado_por' => Auth::user()->run,
+                'gestionado_por' => Auth::user()?->run,
             ]);
             if ($recuperacion->claseNoRealizada) {
                 $recuperacion->claseNoRealizada->update(['estado' => 'recuperada']);
+            } elseif ($recuperacion->fecha_reagendada && $recuperacion->id_modulo_reagendado) {
+                \App\Models\ClaseNoRealizada::where('run_profesor', $recuperacion->run_profesor)
+                    ->where('id_asignatura', $recuperacion->id_asignatura)
+                    ->whereDate('fecha_clase', $recuperacion->fecha_reagendada->format('Y-m-d'))
+                    ->where(function ($q) use ($recuperacion) {
+                        $q->where('id_modulo', $recuperacion->id_modulo_reagendado)
+                          ->orWhere('id_modulo', 'like', '%' . $recuperacion->id_modulo_reagendado . '%');
+                    })
+                    ->update(['estado' => 'recuperada']);
             }
         });
 
@@ -243,6 +286,10 @@ class RecuperacionClasesTable extends Component
 
     public function render()
     {
+        try {
+            \App\Models\ClaseNoRealizada::sincronizarRecuperacionesConReservas();
+        } catch (\Throwable $e) {}
+
         $query = RecuperacionClase::with(['profesor', 'asignatura', 'licencia', 'moduloOriginal', 'espacioReagendado'])
             ->when($this->search, function ($q) {
                 $rawSearch = trim($this->search);

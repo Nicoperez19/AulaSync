@@ -279,6 +279,26 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                     'es_temporal' => true,
                     'nombre_asignatura' => $planColaborador->profesorColaborador->nombre_asignatura_temporal ?? null,
                 ];
+            } else {
+                $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $espacio,
+                    $usuario,
+                    $hoyFecha,
+                    $horaActualStr,
+                    30
+                );
+                if ($recProg) {
+                    $tieneProgramacion = true;
+                    $modulosInfo = [
+                        'id_modulo' => $recProg['id_modulo'],
+                        'hora_inicio' => $recProg['hora_inicio'],
+                        'hora_termino' => $recProg['hora_termino'],
+                        'id_asignatura' => $recProg['id_asignatura'],
+                        'es_temporal' => false,
+                        'es_recuperacion' => true,
+                        'nombre_asignatura' => $recProg['nombre_asignatura'] ?? null,
+                    ];
+                }
             }
         }
 

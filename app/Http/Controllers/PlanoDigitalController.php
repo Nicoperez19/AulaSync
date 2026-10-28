@@ -1790,13 +1790,30 @@ class PlanoDigitalController extends Controller
                     ->first();
                 if ($claseColabScanner) {
                     $tieneClaseAhora = true;
+                } else {
+                    $recScanner = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                        $idEspacio,
+                        $runUsuario,
+                        Carbon::today()->toDateString(),
+                        $horaActualStr,
+                        15
+                    );
+                    if ($recScanner) {
+                        $tieneClaseAhora = true;
+                    }
                 }
             }
 
             // Si el docente tiene clase oficial en este bloque pero ya la finalizó hoy, no permitir reabrirla automáticamente
             if ($tieneClaseAhora) {
-                $idAsignaturaClase = $claseProgramadaScanner?->id_asignatura ?? $claseColabScanner?->profesorColaborador?->id_asignatura;
-                $numModuloClase = \App\Helpers\ModulosHelper::getNumeroModulo($claseProgramadaScanner?->id_modulo ?? $claseColabScanner?->id_modulo);
+                $idAsignaturaClase = $claseProgramadaScanner?->id_asignatura
+                    ?? $claseColabScanner?->profesorColaborador?->id_asignatura
+                    ?? ($recScanner['id_asignatura'] ?? null);
+                $numModuloClase = \App\Helpers\ModulosHelper::getNumeroModulo(
+                    $claseProgramadaScanner?->id_modulo
+                    ?? $claseColabScanner?->id_modulo
+                    ?? ($recScanner['id_modulo'] ?? null)
+                );
 
                 $reservaFinalizadaHoy = Reserva::where(function ($query) use ($runUsuario) {
                     $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
@@ -2503,6 +2520,35 @@ class PlanoDigitalController extends Controller
                     })->orDoesntHave('horario');
                 })
                 ->get();
+
+            // Incluir también clases reagendadas / en recuperación para el día de hoy
+            $hoyStr = Carbon::today()->toDateString();
+            $recuperacionesHoy = \App\Models\RecuperacionClase::with(['asignatura', 'moduloReagendado', 'espacioReagendado', 'espacio'])
+                ->whereIn('estado', ['reagendada', 'pendiente'])
+                ->whereDate('fecha_reagendada', $hoyStr)
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $run)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->get();
+
+            foreach ($recuperacionesHoy as $recItem) {
+                $modObj = $recItem->moduloReagendado ?: \App\Models\Modulo::find($recItem->id_modulo_reagendado);
+                $espObj = $recItem->espacioReagendado ?: $recItem->espacio;
+                if ($modObj && $recItem->asignatura && $espObj) {
+                    $planificaciones->push((object) [
+                        'id_asignatura' => $recItem->id_asignatura,
+                        'id_espacio'    => $espObj->id_espacio,
+                        'id_modulo'     => $modObj->id_modulo,
+                        'asignatura'    => $recItem->asignatura,
+                        'modulo'        => $modObj,
+                        'espacio'       => $espObj,
+                    ]);
+                }
+            }
 
 
 

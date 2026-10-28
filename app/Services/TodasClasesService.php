@@ -118,6 +118,12 @@ class TodasClasesService
             $currentDate->addDay();
         }
 
+        // ── 0. SINCRONIZAR RECUPERACIONES REAGENDADAS CON RESERVAS EXISTENTES ──
+        \App\Models\ClaseNoRealizada::sincronizarRecuperacionesConReservas(
+            $fechaInicio->toDateString(),
+            $fechaFin->toDateString()
+        );
+
         // ── 1. CACHE DE CLASES NO REALIZADAS / JUSTIFICADAS / REGISTRADAS ──
         $clasesNoRealizadasQuery = ClaseNoRealizada::with([
                 'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,periodo',
@@ -308,14 +314,14 @@ class TodasClasesService
                 ->orWhere('id_espacio', 'like', $searchTerm);
 
                 if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
-                    $q->whereHas('horario.profesor', function($pq) use ($cleanRun) {
+                    $q->orWhereHas('horario.profesor', function($pq) use ($cleanRun) {
                         $pq->where('run_profesor', 'like', '%' . $cleanRun . '%')
                            ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
                     });
                 }
 
                 if (!empty($palabras)) {
-                    $q->whereHas('horario.profesor', function($pq) use ($palabras) {
+                    $q->orWhereHas('horario.profesor', function($pq) use ($palabras) {
                         $pq->where(function($nameQ) use ($palabras) {
                             foreach ($palabras as $p) {
                                 $nameQ->where('name', 'like', '%' . $p . '%');
@@ -651,14 +657,14 @@ class TodasClasesService
                 ->orWhere('id_espacio', 'like', $searchTerm);
 
                 if (!empty($cleanRun) && strlen($cleanRun) >= 3) {
-                    $q->whereHas('profesorColaborador.profesor', function($pq) use ($cleanRun) {
+                    $q->orWhereHas('profesorColaborador.profesor', function($pq) use ($cleanRun) {
                         $pq->where('run_profesor', 'like', '%' . $cleanRun . '%')
                            ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
                     });
                 }
 
                 if (!empty($palabras)) {
-                    $q->whereHas('profesorColaborador.profesor', function($pq) use ($palabras) {
+                    $q->orWhereHas('profesorColaborador.profesor', function($pq) use ($palabras) {
                         $pq->where(function($nameQ) use ($palabras) {
                             foreach ($palabras as $p) {
                                 $nameQ->where('name', 'like', '%' . $p . '%');
@@ -993,54 +999,91 @@ class TodasClasesService
                 continue;
             }
 
-            $estadoStr = match($cnr->estado) {
-                'no_realizada'            => 'No Registrada',
-                'realizada', 'registrada' => 'Realizada',
-                'justificado'             => 'Justificada',
-                'recuperada'              => 'Recuperada',
-                'pendiente'               => 'Pendiente de Recuperación',
-                default                   => 'No Registrada',
-            };
-
-            if ($estado && $estadoStr !== $this->transformEstado($estado)) {
-                continue;
-            }
-
             $diaFecha = ModulosHelper::normalizarDia($dias[$fechaCnr->dayOfWeek] ?? '');
             $runProfNorm = $this->normalizeRun($cnr->run_profesor);
-            $modNumStr = preg_replace('/^[A-Z]{2}\./', '', (string) $cnr->id_modulo);
-            $horarioCanon = ModulosHelper::getHorarioModulo($diaFecha, (int) $modNumStr);
-
             $obsHist = $cnr->observaciones;
             if (empty($obsHist)) {
                 $obsHist = 'Registro histórico conservado tras ajuste de horario/docente';
             }
 
-            $clasesData->push([
-                'id'                => $cnr->id,
-                'fecha'             => clone $fechaCnr,
-                'dia'               => ucfirst($diaFecha),
-                'periodo'           => $periodoFechaCnr,
-                'profesor'          => $cnr->profesor->name ?? $cnr->run_profesor,
-                'run_profesor'      => $runProfNorm,
-                'ua'                => $this->resolverUa($cnr->asignatura, $cnr->profesor),
-                'carrera'           => $this->resolverNombreUa($cnr->asignatura, $cnr->profesor),
-                'asignatura'        => $cnr->asignatura->nombre_asignatura ?? 'N/A',
-                'codigo_asignatura' => $cnr->asignatura->codigo_asignatura ?? 'N/A',
-                'id_asignatura'     => $cnr->id_asignatura,
-                'espacio'           => $cnr->id_espacio,
-                'modulo'            => $modNumStr,
-                'id_modulo_raw'     => $cnr->id_modulo,
-                'hora_inicio'       => $cnr->modulo->hora_inicio ?? ($horarioCanon['inicio'] ?? '08:10:00'),
-                'hora_fin'          => $cnr->modulo->hora_termino ?? ($horarioCanon['fin'] ?? '09:00:00'),
-                'estado'            => $estadoStr,
-                'hora_entrada'      => null,
-                'hora_salida'       => null,
-                'motivo'            => $cnr->motivo,
-                'observaciones'     => $obsHist,
-                'hora_deteccion'    => $cnr->hora_deteccion ?? $fechaCnr,
-                'rol_bloque'        => 'historico',
-            ]);
+            $modulosCnr = array_values(array_filter(array_map('trim', explode(',', (string) $cnr->id_modulo))));
+            if (empty($modulosCnr)) {
+                $modulosCnr = [(string) $cnr->id_modulo];
+            }
+
+            foreach ($modulosCnr as $idModIndividual) {
+                $modNumStr = preg_replace('/^[A-Z]{2}\./', '', $idModIndividual);
+                $numModInt = (int) $modNumStr;
+                $horarioCanon = ModulosHelper::getHorarioModulo($diaFecha, $numModInt);
+                $horaInicioMod = $horarioCanon['inicio'] ?? ($cnr->modulo->hora_inicio ?? '08:10:00');
+                $horaFinMod = $horarioCanon['fin'] ?? ($cnr->modulo->hora_termino ?? '09:00:00');
+
+                $resMatchInfo = $this->resolverReservaParaClase(
+                    $fechaCnrStr,
+                    (string) $cnr->id_espacio,
+                    $cnr->id_asignatura,
+                    $runProfNorm,
+                    [$runProfNorm => true],
+                    Carbon::parse($horaInicioMod),
+                    Carbon::parse($horaFinMod),
+                    30,
+                    $numModInt
+                );
+                $reservaMatch = $resMatchInfo['reserva'] ?? null;
+
+                $estadoStr = match($cnr->estado) {
+                    'no_realizada'            => 'No Registrada',
+                    'realizada', 'registrada' => 'Realizada',
+                    'justificado'             => 'Justificada',
+                    'recuperada'              => 'Recuperada',
+                    'pendiente'               => 'Pendiente de Recuperación',
+                    default                   => 'No Registrada',
+                };
+
+                $horaEntradaCnr = null;
+                $horaSalidaCnr = null;
+
+                if ($reservaMatch) {
+                    $reservasUsadasIds[$reservaMatch->id_reserva] = true;
+                    $horaEntradaCnr = $reservaMatch->hora;
+                    $horaSalidaCnr = $reservaMatch->hora_salida;
+                    $esRec = in_array($cnr->estado, ['pendiente', 'recuperada'], true)
+                        || strtolower($reservaMatch->tipo_reserva ?? '') === 'recuperacion'
+                        || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'reagendada')
+                        || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'recupera');
+                    $estadoStr = $esRec ? 'Recuperada' : 'Realizada';
+                }
+
+                if ($estado && $estadoStr !== $this->transformEstado($estado)) {
+                    continue;
+                }
+
+                $clasesData->push([
+                    'id'                => $cnr->id,
+                    'fecha'             => clone $fechaCnr,
+                    'dia'               => ucfirst($diaFecha),
+                    'periodo'           => $periodoFechaCnr,
+                    'profesor'          => $cnr->profesor->name ?? $cnr->run_profesor,
+                    'run_profesor'      => $runProfNorm,
+                    'ua'                => $this->resolverUa($cnr->asignatura, $cnr->profesor),
+                    'carrera'           => $this->resolverNombreUa($cnr->asignatura, $cnr->profesor),
+                    'asignatura'        => $cnr->asignatura->nombre_asignatura ?? 'N/A',
+                    'codigo_asignatura' => $cnr->asignatura->codigo_asignatura ?? 'N/A',
+                    'id_asignatura'     => $cnr->id_asignatura,
+                    'espacio'           => $cnr->id_espacio,
+                    'modulo'            => $modNumStr,
+                    'id_modulo_raw'     => $idModIndividual,
+                    'hora_inicio'       => $horaInicioMod,
+                    'hora_fin'          => $horaFinMod,
+                    'estado'            => $estadoStr,
+                    'hora_entrada'      => $horaEntradaCnr,
+                    'hora_salida'       => $horaSalidaCnr,
+                    'motivo'            => $cnr->motivo,
+                    'observaciones'     => $obsHist,
+                    'hora_deteccion'    => $cnr->hora_deteccion ?? $fechaCnr,
+                    'rol_bloque'        => 'historico',
+                ]);
+            }
         }
 
         // ── 8. RESCATAR RESERVAS ESPONTÁNEAS, DE LABORATORIO ADICIONAL, RECUPERACIONES Y HORARIOS ANTERIORES ──
@@ -1121,8 +1164,7 @@ class TodasClasesService
                         'no_realizada' => 'No Registrada',
                         'realizada', 'registrada' => 'Realizada',
                         'justificado'  => 'Justificada',
-                        'recuperada'   => 'Recuperada',
-                        'pendiente'    => 'Pendiente de Recuperación',
+                        'recuperada', 'pendiente' => 'Recuperada',
                         default        => $estadoReservaStr,
                     };
                     $motivoFinalRes = $cnrRes->motivo ?: $motivoFinalRes;
@@ -1230,7 +1272,7 @@ class TodasClasesService
 
                 $horaSalidaBloque = null;
                 foreach ($bloqueItems as $item) {
-                    if ($item['estado'] === 'Realizada' && !empty($item['hora_salida'])) {
+                    if (in_array($item['estado'], ['Realizada', 'Recuperada'], true) && !empty($item['hora_salida'])) {
                         $horaSalidaBloque = $item['hora_salida'];
                         break;
                     }
@@ -1296,7 +1338,7 @@ class TodasClasesService
                 }
 
                 $realizadas = $bloqueItems->filter(function ($item) {
-                    return $item['estado'] === 'Realizada' && !empty($item['hora_entrada']) && $item['hora_entrada'] !== 'N/A';
+                    return in_array($item['estado'], ['Realizada', 'Recuperada'], true) && !empty($item['hora_entrada']) && $item['hora_entrada'] !== 'N/A';
                 });
                 $totalRealizadas = $realizadas->count();
 

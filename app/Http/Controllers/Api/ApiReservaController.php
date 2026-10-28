@@ -127,6 +127,17 @@ class ApiReservaController extends Controller
                     ->exists();
             }
 
+            if (!$tieneClaseProgramada) {
+                $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $espacioId,
+                    $run,
+                    $hoyFecha,
+                    $ahora->format('H:i:s'),
+                    60
+                );
+                $tieneClaseProgramada = $recProg !== null;
+            }
+
             return response()->json([
                 'estado' => 'disponible',
                 'tieneClaseProgramada' => $tieneClaseProgramada
@@ -259,6 +270,28 @@ class ApiReservaController extends Controller
                     ->first();
             }
 
+            // 1.d. Si aún no se encuentra, verificar si tiene una recuperación de clase reagendada para hoy en este espacio
+            $infoRecuperacionApi = null;
+            if (!$tieneClase) {
+                $infoRecuperacionApi = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $request->espacio_id,
+                    $request->run,
+                    $hoyFecha,
+                    $horaActualStr,
+                    60
+                );
+                if ($infoRecuperacionApi) {
+                    $tieneClase = (object) [
+                        'id_asignatura'     => $infoRecuperacionApi['id_asignatura'],
+                        'nombre_asignatura' => $infoRecuperacionApi['nombre_asignatura'] ?? 'Recuperación de clase',
+                        'id_modulo'         => $infoRecuperacionApi['id_modulo'],
+                        'hora_inicio'       => $infoRecuperacionApi['hora_inicio'],
+                        'hora_termino'      => $infoRecuperacionApi['hora_termino'],
+                        'es_recuperacion'   => true,
+                    ];
+                }
+            }
+
             $forzado = false;
 
             // 2. Verificar si el espacio está ocupado
@@ -380,7 +413,12 @@ class ApiReservaController extends Controller
                 $cantidadModulos = 1;
                 $horaSalidaCalculada = $tieneClase->hora_termino ?? null;
 
-                if (!empty($tieneClase->id_modulo)) {
+                if (!empty($infoRecuperacionApi)) {
+                    $numModuloInicio = $infoRecuperacionApi['modulo_inicio'];
+                    $numModuloFin = $infoRecuperacionApi['modulo_fin'];
+                    $cantidadModulos = $infoRecuperacionApi['cantidad_modulos'];
+                    $horaSalidaCalculada = $infoRecuperacionApi['hora_termino'];
+                } elseif (!empty($tieneClase->id_modulo)) {
                     $numModuloInicio = \App\Helpers\ModulosHelper::getNumeroModulo($tieneClase->id_modulo);
                     $numModuloFin = $numModuloInicio;
 
@@ -432,7 +470,9 @@ class ApiReservaController extends Controller
                 $reserva->id_asignatura = $tieneClase->id_asignatura ?? null;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $reserva->hora = $horaActualStr;
-                $reserva->tipo_reserva = $tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase';
+                $reserva->tipo_reserva = !empty($infoRecuperacionApi)
+                    ? 'recuperacion'
+                    : ($tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase');
                 $reserva->estado = 'activa';
                 $reserva->modulo_inicio = $numModuloInicio;
                 $reserva->modulo_fin = $numModuloFin;
