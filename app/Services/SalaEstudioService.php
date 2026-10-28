@@ -148,69 +148,39 @@ class SalaEstudioService
         $runConGuion = (is_numeric($dv) ? $runClean : (strlen($runBase) >= 7 ? substr($runBase, 0, -1) . '-' . $dv : $runClean));
         $runSinGuion = $runBase . (is_numeric($dv) ? '' : $dv);
 
-        // Verificar si el usuario se encuentra con un bloqueo/veto activo
-        $veto = VetoSalaEstudio::vetoActivo($runClean) ?? VetoSalaEstudio::vetoActivo($runBase);
-        if ($veto) {
-            $hastaTxt = $veto->fecha_fin_veto ? ' hasta el ' . $veto->fecha_fin_veto->format('d/m/Y H:i') : '';
-            return [
-                'success' => false,
-                'status' => 403,
-                'message' => "🚫 Acceso Denegado: Usuario bloqueado{$hastaTxt}. Motivo: {$veto->observacion}",
-                'vetado' => true,
-                'fecha_fin_veto' => $veto->fecha_fin_veto ? $veto->fecha_fin_veto->format('d/m/Y H:i') : null,
-            ];
-        }
-
         $usuario = User::whereIn('run', [$runClean, $runBase, $runConGuion, $runSinGuion])->first();
         $solicitante = Solicitante::on('tenant')->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])->first();
 
         $run = $solicitante ? $solicitante->run_solicitante : ($usuario ? $usuario->run : $runClean);
-
-        if (!$usuario && !$solicitante && !empty($validated['nombre']) && !empty($validated['correo'])) {
-            $solicitante = Solicitante::on('tenant')->create([
-                'run_solicitante' => $runClean,
-                'nombre' => $validated['nombre'],
-                'correo' => $validated['correo'],
-                'telefono' => $validated['telefono'] ?? null,
-                'tipo_solicitante' => $validated['tipo_solicitante'] ?? 'estudiante',
-            ]);
-            $run = $solicitante->run_solicitante;
-        }
-
-        if (!$usuario && !$solicitante) {
-            return [
-                'success' => false,
-                'status' => 200,
-                'requiere_registro' => true,
-                'run' => $runClean,
-                'message' => 'El usuario no se encuentra registrado. Por favor complete el registro.',
-            ];
-        }
-
         $nombreAlumno = $solicitante ? $solicitante->nombre : ($usuario ? $usuario->name : 'Usuario');
 
-        // Verificar si ya hay una reserva activa del responsable en cualquier sala de estudio => DEVOLUCIÓN
-        $reservaActiva = Reserva::on('tenant')
+        // 1. PRIMERO: Verificar si ya hay una reserva activa del responsable en cualquier sala de estudio => DEVOLUCIÓN
+        // Importante: la devolución/liberación SIEMPRE debe permitirse aunque el estudiante ya haya superado las 2 horas o esté vetado.
+        $reservaActivaQuery = Reserva::on('tenant')
             ->where('estado', 'activa')
             ->where(function ($q) use ($runClean, $runBase, $runConGuion, $runSinGuion) {
                 $q->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])
                   ->orWhereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion]);
-            })
-            ->whereDate('fecha_reserva', today())
-            ->first();
+            });
+
+        if (!empty($idEspacioRaw) && $idEspacioRaw !== 'DESCONOCIDO') {
+            $reservaEnEspacio = (clone $reservaActivaQuery)->where('id_espacio', $idEspacioRaw)->orderBy('fecha_reserva', 'desc')->first();
+            $reservaActiva = $reservaEnEspacio ?? $reservaActivaQuery->orderBy('fecha_reserva', 'desc')->first();
+        } else {
+            $reservaActiva = $reservaActivaQuery->orderBy('fecha_reserva', 'desc')->first();
+        }
 
         if ($reservaActiva) {
             $inicioStr = ($reservaActiva->fecha_reserva instanceof Carbon ? $reservaActiva->fecha_reserva->format('Y-m-d') : $reservaActiva->fecha_reserva) . ' ' . $reservaActiva->hora;
             $inicio = Carbon::parse($inicioStr);
-            $minutosTranscurridos = (int) $inicio->diffInMinutes(now(), false);
+            $minutosTranscurridos = max(0, (int) $inicio->diffInMinutes(now(), false));
 
             $sancionado = false;
             $fechaFinVetoTxt = null;
 
-            // Si se pasa de las 2 horas (120 min), aplicar bloqueo de 1 semana
+            // Primero liberar la reserva y el espacio para garantizar que NUNCA quede bloqueada la sala
             if ($minutosTranscurridos > 120) {
                 $sancionado = true;
-                $veto = VetoSalaEstudio::aplicarVetoPorTiempoExcedido($run, $reservaActiva->id_reserva, $minutosTranscurridos, 7);
                 $fechaFinVetoTxt = now()->addDays(7)->format('d/m/Y');
                 $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . " | Devuelta con atraso ({$minutosTranscurridos} min) - Bloqueo 1 semana aplicado");
             } else {
@@ -236,6 +206,11 @@ class SalaEstudioService
                 }
             }
 
+            // Si se pasó de las 2 horas (120 min), aplicar bloqueo de 1 semana (de forma segura, después de liberar la sala)
+            if ($sancionado) {
+                VetoSalaEstudio::aplicarVetoPorTiempoExcedido($run, $reservaActiva->id_reserva, $minutosTranscurridos, 7);
+            }
+
             $mensaje = $sancionado
                 ? "Devolución registrada para {$nombreAlumno} en la sala {$reservaActiva->id_espacio}. ⚠️ SANCIÓN APLICADA: Superó el límite de 2 horas ({$minutosTranscurridos} min). Usuario bloqueado por 1 semana hasta el {$fechaFinVetoTxt}."
                 : "Devolución registrada exitosamente para {$nombreAlumno} en la sala {$reservaActiva->id_espacio} ({$minutosTranscurridos} min de uso).";
@@ -250,6 +225,42 @@ class SalaEstudioService
                 'nombre_estudiante' => $nombreAlumno,
                 'id_espacio' => $reservaActiva->id_espacio,
                 'message' => $mensaje,
+            ];
+        }
+
+        // 2. SEGUNDO: Si NO está devolviendo una sala, verificar si el usuario tiene bloqueo/veto activo para impedir NUEVAS reservas
+        $veto = VetoSalaEstudio::vetoActivo($runClean) ?? VetoSalaEstudio::vetoActivo($runBase);
+        if ($veto) {
+            $fechaFinObj = $veto->fecha_fin_veto ?? ($veto->fecha_veto ? $veto->fecha_veto->copy()->addDays(7) : null);
+            $hastaTxt = $fechaFinObj ? ' hasta el ' . $fechaFinObj->format('d/m/Y H:i') : '';
+            return [
+                'success' => false,
+                'status' => 403,
+                'message' => "🚫 Acceso Denegado: Usuario bloqueado{$hastaTxt}. Motivo: {$veto->observacion}",
+                'vetado' => true,
+                'fecha_fin_veto' => $fechaFinObj ? $fechaFinObj->format('d/m/Y H:i') : null,
+            ];
+        }
+
+        if (!$usuario && !$solicitante && !empty($validated['nombre']) && !empty($validated['correo'])) {
+            $solicitante = Solicitante::on('tenant')->create([
+                'run_solicitante' => $runClean,
+                'nombre' => $validated['nombre'],
+                'correo' => $validated['correo'],
+                'telefono' => $validated['telefono'] ?? null,
+                'tipo_solicitante' => $validated['tipo_solicitante'] ?? 'estudiante',
+            ]);
+            $run = $solicitante->run_solicitante;
+            $nombreAlumno = $solicitante->nombre;
+        }
+
+        if (!$usuario && !$solicitante) {
+            return [
+                'success' => false,
+                'status' => 200,
+                'requiere_registro' => true,
+                'run' => $runClean,
+                'message' => 'El usuario no se encuentra registrado. Por favor complete el registro.',
             ];
         }
 
@@ -341,8 +352,7 @@ class SalaEstudioService
             ->where('estado', 'activa')
             ->where(function ($q) use ($espaciosEstudio) {
                 $q->whereIn('id_espacio', $espaciosEstudio)
-                  ->orWhere('observaciones', 'like', '%Sala de estudio%')
-                  ->orWhere('tipo_reserva', 'espontanea');
+                  ->orWhere('observaciones', 'like', '%Sala de estudio%');
             })
             ->whereDate('fecha_reserva', today())
             ->get();

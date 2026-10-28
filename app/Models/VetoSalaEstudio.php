@@ -50,6 +50,28 @@ class VetoSalaEstudio extends Model
     }
 
     /**
+     * Asegura que la columna fecha_fin_veto exista en el tenant actual; retorna true si está disponible
+     */
+    protected static function asegurarColumnaFechaFin(): bool
+    {
+        try {
+            $schema = \Illuminate\Support\Facades\Schema::connection('tenant');
+            if (!$schema->hasTable('vetos_sala_estudio')) {
+                return false;
+            }
+            if ($schema->hasColumn('vetos_sala_estudio', 'fecha_fin_veto')) {
+                return true;
+            }
+            $schema->table('vetos_sala_estudio', function (\Illuminate\Database\Schema\Blueprint $table) {
+                $table->timestamp('fecha_fin_veto')->nullable()->after('fecha_veto');
+            });
+            return $schema->hasColumn('vetos_sala_estudio', 'fecha_fin_veto');
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
      * Verificar si un RUN está vetado (considera fecha_fin_veto si existe)
      */
     public static function estaVetado($run)
@@ -62,26 +84,36 @@ class VetoSalaEstudio extends Model
      */
     public static function vetoActivo($run)
     {
-        $veto = self::where('run_vetado', $run)
-            ->where('estado', 'activo')
-            ->orderBy('fecha_veto', 'desc')
-            ->first();
+        try {
+            $veto = self::where('run_vetado', $run)
+                ->where('estado', 'activo')
+                ->orderBy('fecha_veto', 'desc')
+                ->first();
 
-        if (!$veto) {
+            if (!$veto) {
+                return null;
+            }
+
+            // Determinar fecha de término del veto (columna fecha_fin_veto o 7 días para sanciones automáticas)
+            $fechaFin = $veto->fecha_fin_veto;
+            if (!$fechaFin && $veto->fecha_veto && str_contains(strtolower($veto->observacion ?? ''), 'sanción automática')) {
+                $fechaFin = $veto->fecha_veto->copy()->addDays(7);
+            }
+
+            // Si tiene fecha de término y ya expiró, liberarlo automáticamente
+            if ($fechaFin && now()->greaterThanOrEqualTo($fechaFin)) {
+                $veto->update([
+                    'estado' => 'liberado',
+                    'liberado_por' => 'Sistema (Cumplimiento de sanción)',
+                    'fecha_liberacion' => now(),
+                ]);
+                return null;
+            }
+
+            return $veto;
+        } catch (\Throwable $e) {
             return null;
         }
-
-        // Si tiene fecha_fin_veto y ya expiró, liberarlo automáticamente
-        if ($veto->fecha_fin_veto && now()->greaterThanOrEqualTo($veto->fecha_fin_veto)) {
-            $veto->update([
-                'estado' => 'liberado',
-                'liberado_por' => 'Sistema (Cumplimiento de sanción)',
-                'fecha_liberacion' => now(),
-            ]);
-            return null;
-        }
-
-        return $veto;
     }
 
     /**
@@ -89,23 +121,33 @@ class VetoSalaEstudio extends Model
      */
     public static function aplicarVetoPorTiempoExcedido($run, $idReserva = null, $minutosTranscurridos = null, $diasSancion = 7)
     {
-        $vetoExistente = self::vetoActivo($run);
-        if ($vetoExistente) {
-            return $vetoExistente;
+        try {
+            $vetoExistente = self::vetoActivo($run);
+            if ($vetoExistente) {
+                return $vetoExistente;
+            }
+
+            $minutosTxt = $minutosTranscurridos ? " ({$minutosTranscurridos} min transcurridos)" : " (>120 min)";
+            $observacion = "Sanción automática (1 semana): Excedió el tiempo límite de 2 horas en sala de estudio{$minutosTxt}. Bloqueo por {$diasSancion} días.";
+
+            $datos = [
+                'run_vetado' => $run,
+                'tipo_veto' => 'individual',
+                'id_reserva_origen' => $idReserva,
+                'observacion' => $observacion,
+                'estado' => 'activo',
+                'vetado_por' => 'Sistema (Tiempo Excedido)',
+                'fecha_veto' => now(),
+            ];
+
+            if (self::asegurarColumnaFechaFin()) {
+                $datos['fecha_fin_veto'] = now()->addDays($diasSancion);
+            }
+
+            return self::create($datos);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('No se pudo registrar veto de sala de estudio: ' . $e->getMessage());
+            return null;
         }
-
-        $minutosTxt = $minutosTranscurridos ? " ({$minutosTranscurridos} min transcurridos)" : " (>120 min)";
-        $observacion = "Sanción automática (1 semana): Excedió el tiempo límite de 2 horas en sala de estudio{$minutosTxt}. Bloqueo por {$diasSancion} días.";
-
-        return self::create([
-            'run_vetado' => $run,
-            'tipo_veto' => 'individual',
-            'id_reserva_origen' => $idReserva,
-            'observacion' => $observacion,
-            'estado' => 'activo',
-            'vetado_por' => 'Sistema (Tiempo Excedido)',
-            'fecha_veto' => now(),
-            'fecha_fin_veto' => now()->addDays($diasSancion),
-        ]);
     }
 }
