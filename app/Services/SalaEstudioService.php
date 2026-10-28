@@ -150,9 +150,36 @@ class SalaEstudioService
 
         $usuario = User::whereIn('run', [$runClean, $runBase, $runConGuion, $runSinGuion])->first();
         $solicitante = Solicitante::on('tenant')->whereIn('run_solicitante', [$runClean, $runBase, $runConGuion, $runSinGuion])->first();
+        $profesor = Profesor::on('tenant')->whereIn('run_profesor', [$runClean, $runBase, $runConGuion, $runSinGuion])->first();
 
-        $run = $solicitante ? $solicitante->run_solicitante : ($usuario ? $usuario->run : $runClean);
-        $nombreAlumno = $solicitante ? $solicitante->nombre : ($usuario ? $usuario->name : 'Usuario');
+        // Si el usuario existe en users o profesors pero aún no está en la tabla solicitantes del tenant,
+        // sincronizarlo automáticamente en solicitantes para respetar la clave foránea reservas_run_solicitante_foreign.
+        if (!$solicitante && ($usuario || $profesor)) {
+            $runSync = $usuario ? (string) $usuario->run : (string) $profesor->run_profesor;
+            $nombreSync = $usuario ? $usuario->name : $profesor->name;
+            $correoSync = ($usuario ? $usuario->email : $profesor->email) ?: ($runSync . '@temp.com');
+            $telefonoSync = ($usuario ? ($usuario->celular ?? null) : ($profesor->celular ?? null)) ?: '000000000';
+            $tipoSync = $profesor ? 'personal' : 'estudiante';
+
+            if (Solicitante::on('tenant')->where('correo', $correoSync)->where('run_solicitante', '!=', $runSync)->exists()) {
+                $correoSync = $runSync . '@temp.com';
+            }
+
+            $solicitante = Solicitante::on('tenant')->firstOrCreate(
+                ['run_solicitante' => $runSync],
+                [
+                    'nombre' => $nombreSync ?: 'Usuario ' . $runSync,
+                    'correo' => $correoSync,
+                    'telefono' => $telefonoSync,
+                    'tipo_solicitante' => $tipoSync,
+                    'activo' => true,
+                    'fecha_registro' => now(),
+                ]
+            );
+        }
+
+        $run = $solicitante ? $solicitante->run_solicitante : ($usuario ? $usuario->run : ($profesor ? $profesor->run_profesor : $runClean));
+        $nombreAlumno = $solicitante ? $solicitante->nombre : ($usuario ? $usuario->name : ($profesor ? $profesor->name : 'Usuario'));
 
         // 1. PRIMERO: Verificar si ya hay una reserva activa del responsable en cualquier sala de estudio => DEVOLUCIÓN
         // Importante: la devolución/liberación SIEMPRE debe permitirse aunque el estudiante ya haya superado las 2 horas o esté vetado.
@@ -311,6 +338,24 @@ class SalaEstudioService
 
         $idEspacio = $espacio->id_espacio;
         $ahora = now();
+
+        // Garantizar que el registro exista en tenant.solicitantes justo antes de insertar en reservas
+        if (!Solicitante::on('tenant')->where('run_solicitante', $run)->exists()) {
+            $correoGarantizado = ($solicitante->correo ?? $usuario?->email ?? $profesor?->email) ?: ($run . '@temp.com');
+            if (Solicitante::on('tenant')->where('correo', $correoGarantizado)->where('run_solicitante', '!=', $run)->exists()) {
+                $correoGarantizado = $run . '_' . uniqid() . '@temp.com';
+            }
+            $solicitante = Solicitante::on('tenant')->create([
+                'run_solicitante' => $run,
+                'nombre' => $nombreAlumno ?: ('Usuario ' . $run),
+                'correo' => $correoGarantizado,
+                'telefono' => ($solicitante->telefono ?? $usuario?->celular ?? $profesor?->celular) ?: '000000000',
+                'tipo_solicitante' => $profesor ? 'personal' : 'estudiante',
+                'activo' => true,
+                'fecha_registro' => $ahora,
+            ]);
+            $run = $solicitante->run_solicitante;
+        }
 
         $nuevaReserva = Reserva::on('tenant')->create([
             'id_reserva' => Reserva::generarIdUnico(),
