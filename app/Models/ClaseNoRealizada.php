@@ -462,7 +462,7 @@ class ClaseNoRealizada extends Model
         ?string $runProfesor,
         string $fecha,
         ?string $horaActual = null,
-        int $minutosAnticipacion = 30
+        int $minutosAnticipacion = 60
     ): ?array {
         if (empty($runProfesor) && empty($idEspacio)) {
             return null;
@@ -478,7 +478,45 @@ class ClaseNoRealizada extends Model
 
         $runLimpio = $runProfesor ? strtoupper(preg_replace('/[^0-9Kk]/', '', $runProfesor)) : null;
         $runSinDv = ($runLimpio && strlen($runLimpio) > 1) ? substr($runLimpio, 0, -1) : $runLimpio;
-        $espacioLimpio = $idEspacio ? strtoupper(str_replace(['-', ' '], '', $idEspacio)) : null;
+
+        // Candidatos de espacio para comparación flexible (alias y prefijos de sede)
+        $candidatosEspacio = [];
+        if ($idEspacio) {
+            $candidatosEspacio[] = strtoupper(trim($idEspacio));
+            $candidatosEspacio[] = strtoupper(str_replace(['-', ' '], '', $idEspacio));
+            $sinPrefijoInput = preg_replace('/^[A-Z]{2,3}[\-_]?/', '', trim($idEspacio));
+            if ($sinPrefijoInput !== '') {
+                $candidatosEspacio[] = strtoupper($sinPrefijoInput);
+            }
+            try {
+                $equivs = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+                foreach ($equivs as $eq) {
+                    $candidatosEspacio[] = strtoupper(trim($eq));
+                    $candidatosEspacio[] = strtoupper(str_replace(['-', ' '], '', $eq));
+                    $sinPref = preg_replace('/^[A-Z]{2,3}[\-_]?/', '', trim($eq));
+                    if ($sinPref !== '') {
+                        $candidatosEspacio[] = strtoupper($sinPref);
+                    }
+                }
+            } catch (\Throwable $e) {}
+            $candidatosEspacio = array_unique(array_filter($candidatosEspacio));
+        }
+
+        $espacioCoincide = function ($espTarget) use ($candidatosEspacio) {
+            if (empty($candidatosEspacio)) {
+                return true;
+            }
+            if (!$espTarget) {
+                return false;
+            }
+            $targetUpper = strtoupper(trim((string) $espTarget));
+            $targetClean = strtoupper(str_replace(['-', ' '], '', (string) $espTarget));
+            $targetSinPref = strtoupper(preg_replace('/^[A-Z]{2,3}[\-_]?/', '', (string) $espTarget));
+
+            return in_array($targetUpper, $candidatosEspacio)
+                || in_array($targetClean, $candidatosEspacio)
+                || ($targetSinPref !== '' && in_array($targetSinPref, $candidatosEspacio));
+        };
 
         $itemsPorAsignatura = [];
 
@@ -486,7 +524,7 @@ class ClaseNoRealizada extends Model
         try {
             $rcQuery = \App\Models\RecuperacionClase::with(['asignatura', 'moduloReagendado'])
                 ->whereDate('fecha_reagendada', $fechaStr)
-                ->whereIn('estado', ['reagendada', 'realizada']);
+                ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada']);
 
             if ($runLimpio) {
                 $rcQuery->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
@@ -500,16 +538,21 @@ class ClaseNoRealizada extends Model
 
             foreach ($rcQuery->get() as $rc) {
                 $espRc = $rc->id_espacio_reagendado ?: $rc->id_espacio;
-                if ($espacioLimpio && strtoupper(str_replace(['-', ' '], '', (string) $espRc)) !== $espacioLimpio) {
+                if (!$espacioCoincide($espRc)) {
                     continue;
                 }
                 $idAsig = $rc->id_asignatura ?: 'RECUPERACION';
-                foreach (explode(',', (string) $rc->id_modulo_reagendado) as $mRaw) {
+                $modulosRaw = (string) ($rc->id_modulo_reagendado ?: $rc->id_modulo_original);
+                foreach (explode(',', $modulosRaw) as $mRaw) {
                     $mTrim = trim($mRaw);
                     if ($mTrim === '') continue;
                     $numMod = \App\Helpers\ModulosHelper::getNumeroModulo($mTrim);
                     if ($numMod <= 0 && is_numeric($mTrim)) {
                         $numMod = (int) $mTrim;
+                        $mTrim = "{$prefijoDia}.{$numMod}";
+                    }
+                    if ($numMod <= 0 && preg_match('/(\d+)/', $mTrim, $matches)) {
+                        $numMod = (int) $matches[1];
                         $mTrim = "{$prefijoDia}.{$numMod}";
                     }
                     if ($numMod > 0) {
@@ -529,7 +572,7 @@ class ClaseNoRealizada extends Model
             $cnrQuery = static::with(['asignatura', 'modulo'])
                 ->whereDate('fecha_clase', $fechaStr)
                 ->where(function ($q) {
-                    $q->whereIn('estado', ['pendiente', 'recuperada'])
+                    $q->whereIn('estado', ['pendiente', 'recuperada', 'programada'])
                       ->orWhere('observaciones', 'LIKE', '%Reagendada%');
                 });
 
@@ -544,7 +587,7 @@ class ClaseNoRealizada extends Model
             }
 
             foreach ($cnrQuery->get() as $cnr) {
-                if ($espacioLimpio && strtoupper(str_replace(['-', ' '], '', (string) $cnr->id_espacio)) !== $espacioLimpio) {
+                if (!$espacioCoincide($cnr->id_espacio)) {
                     continue;
                 }
                 $idAsig = $cnr->id_asignatura ?: 'RECUPERACION';
@@ -554,6 +597,10 @@ class ClaseNoRealizada extends Model
                     $numMod = \App\Helpers\ModulosHelper::getNumeroModulo($mTrim);
                     if ($numMod <= 0 && is_numeric($mTrim)) {
                         $numMod = (int) $mTrim;
+                        $mTrim = "{$prefijoDia}.{$numMod}";
+                    }
+                    if ($numMod <= 0 && preg_match('/(\d+)/', $mTrim, $matches)) {
+                        $numMod = (int) $matches[1];
                         $mTrim = "{$prefijoDia}.{$numMod}";
                     }
                     if ($numMod > 0) {
@@ -602,9 +649,11 @@ class ClaseNoRealizada extends Model
                 $hFin = $horariosDia[$modFin]['fin'] ?? '09:00:00';
 
                 if ($horaActual !== null) {
-                    $hActualCarbon = Carbon::parse($horaActual);
-                    $hIniConMargen = Carbon::parse($hIni)->subMinutes($minutosAnticipacion);
-                    $hFinCarbon = Carbon::parse($hFin);
+                    $horaLimpia = strlen($horaActual) <= 8 ? ($fechaStr . ' ' . $horaActual) : $horaActual;
+                    $hActualCarbon = Carbon::parse($horaLimpia);
+                    $hIniCarbon = Carbon::parse($fechaStr . ' ' . $hIni);
+                    $hIniConMargen = $hIniCarbon->copy()->subMinutes($minutosAnticipacion);
+                    $hFinCarbon = Carbon::parse($fechaStr . ' ' . $hFin);
 
                     if ($hActualCarbon->lt($hIniConMargen) || $hActualCarbon->gt($hFinCarbon)) {
                         continue;
@@ -612,13 +661,16 @@ class ClaseNoRealizada extends Model
                 }
 
                 $asigObj = $data['asignatura'];
+                $nombreAsig = $asigObj?->nombre_asignatura ?? 'Recuperación de Clase';
                 $bloquesCandidatos[] = [
                     'id_asignatura' => $data['id_asignatura'],
                     'asignatura' => $asigObj,
-                    'nombre_asignatura' => $asigObj?->nombre_asignatura ?? 'Recuperación de Clase',
+                    'nombre_asignatura' => $nombreAsig,
+                    'seccion' => $asigObj?->seccion ?? null,
                     'id_espacio' => $data['id_espacio'],
                     'run_profesor' => $data['run_profesor'],
                     'id_modulo' => reset($sec),
+                    'id_modulo_fin' => end($sec),
                     'modulos_ids' => array_values($sec),
                     'modulo_inicio' => (int) $modIni,
                     'modulo_fin' => (int) $modFin,
@@ -626,6 +678,7 @@ class ClaseNoRealizada extends Model
                     'hora_inicio' => $hIni,
                     'hora_termino' => $hFin,
                     'es_recuperacion' => true,
+                    'tipo' => 'clase_reagendada',
                 ];
             }
         }

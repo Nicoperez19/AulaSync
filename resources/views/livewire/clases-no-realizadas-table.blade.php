@@ -318,7 +318,12 @@
                                     <td class="px-3 py-4 text-sm text-gray-900 w-40">
                                         <div class="break-words">
                                             <div class="font-medium">{{ $clase['asignatura'] ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $clase['codigo_asignatura'] ?? '' }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $clase['codigo_asignatura'] ?? '' }}
+                                                @if(!empty($clase['seccion']) && $clase['seccion'] !== 'N/A')
+                                                    <span class="text-slate-600 font-medium">&bull; Sec. {{ $clase['seccion'] }}</span>
+                                                @endif
+                                            </div>
                                             @if(!empty($clase['ua']) && $clase['ua'] !== 'N/A')
                                                 <div class="text-xs font-semibold text-gray-700 mt-0.5" title="{{ $clase['carrera'] ?? '' }}">
                                                     UA: {{ $clase['ua'] }}
@@ -645,7 +650,7 @@ function initClasesNoRealizadasScripts() {
                 <div class="text-left space-y-4">
                     <div class="bg-gray-50 p-3 rounded-lg mb-4">
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
-                        <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        <p><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio}</p>
@@ -736,7 +741,7 @@ function initClasesNoRealizadasScripts() {
                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-4">
                         <h4 class="font-semibold text-slate-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
-                        <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        <p><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha_original}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio_original}</p>
@@ -1017,7 +1022,7 @@ function initClasesNoRealizadasScripts() {
             html: `
                 <div class="text-left">
                     <p class="mb-2"><strong>Profesor:</strong> ${clase.profesor}</p>
-                    <p class="mb-2"><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                    <p class="mb-2"><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                     <p class="mb-2"><strong>Fecha:</strong> ${clase.fecha}</p>
                     <br>
                     <p class="text-red-600"><strong>Esta acción no se puede deshacer</strong></p>
@@ -1072,7 +1077,7 @@ function initClasesNoRealizadasScripts() {
             <div class="text-left text-xs text-slate-700 max-h-96 overflow-y-auto">
                 <div class="mb-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
                     <p class="font-bold text-slate-900">${payload.profesor}</p>
-                    <p class="text-slate-600">${payload.asignatura}</p>
+                    <p class="text-slate-600">${payload.asignatura}${payload.seccion && payload.seccion !== 'N/A' ? ' (Sec. ' + payload.seccion + ')' : ''}</p>
                     <p class="text-[11px] text-slate-500 mt-0.5">Fecha de la clase: <strong>${payload.fecha}</strong></p>
                 </div>
         `;

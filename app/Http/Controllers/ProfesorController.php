@@ -410,7 +410,7 @@ class ProfesorController extends Controller
                     $profesor->run_profesor,
                     $fechaActual,
                     $horaActual,
-                    30
+                    60
                 );
             }
 
@@ -591,12 +591,15 @@ class ProfesorController extends Controller
                     'hora_termino' => $infoRecuperacion['hora_termino'],
                 ];
                 $moduloFinalObj = (object) [
-                    'id_modulo' => $infoRecuperacion['id_modulo_fin'],
+                    'id_modulo' => $infoRecuperacion['id_modulo_fin'] ?? $infoRecuperacion['id_modulo'],
                     'hora_inicio' => $infoRecuperacion['hora_inicio'],
                     'hora_termino' => $infoRecuperacion['hora_termino'],
                 ];
                 $idAsignatura = $infoRecuperacion['id_asignatura'];
                 $nombreAsignaturaResp = $infoRecuperacion['nombre_asignatura'] ?? 'Recuperación de clase';
+                if (!empty($infoRecuperacion['seccion'])) {
+                    $nombreAsignaturaResp .= ' (Sec. ' . $infoRecuperacion['seccion'] . ')';
+                }
             }
 
             // Si el docente ya tenía una reserva programada en este espacio hoy que cubra este horario,
@@ -648,9 +651,13 @@ class ProfesorController extends Controller
                 $profesor->run_profesor
             );
 
+            $esClaseReagendada = (bool) $infoRecuperacion;
+
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Reserva creada automáticamente según programación',
+                'mensaje' => $esClaseReagendada ? 'Clase reagendada registrada exitosamente' : 'Reserva creada automáticamente según programación',
+                'tipo' => $esClaseReagendada ? 'clase_reagendada' : 'clase_regular',
+                'es_recuperacion' => $esClaseReagendada,
                 'reserva' => [
                     'id'          => $reserva->id_reserva,
                     'profesor'    => $profesor->name,
@@ -660,6 +667,7 @@ class ProfesorController extends Controller
                     'asignatura'  => $nombreAsignaturaResp,
                     'hora_inicio' => $moduloInicioObj->hora_inicio ?? null,
                     'hora_termino'=> $moduloFinalObj->hora_termino ?? null,
+                    'tipo_reserva'=> $reserva->tipo_reserva,
                 ]
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

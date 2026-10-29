@@ -706,7 +706,7 @@ class ClasesNoRealizadasTable extends Component
                 }
 
                 // 3. Coincidencia en la asignatura o código: TODAS las palabras deben coincidir
-                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? ''));
+                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? '') . ' ' . ($item['seccion'] ?? ''));
                 $todasEnAsignatura = true;
                 foreach ($palabras as $p) {
                     if (!str_contains($asigNorm, $p)) {
@@ -724,6 +724,7 @@ class ClasesNoRealizadasTable extends Component
                     ($item['profesor'] ?? '') . ' ' .
                     ($item['asignatura'] ?? '') . ' ' .
                     ($item['codigo_asignatura'] ?? '') . ' ' .
+                    ($item['seccion'] ?? '') . ' ' .
                     $espacioRaw . ' ' .
                     str_replace('-', '', $espacioRaw) . ' ' .
                     ($item['ua'] ?? '') . ' ' .

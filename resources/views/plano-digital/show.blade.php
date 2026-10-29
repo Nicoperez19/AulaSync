@@ -1453,7 +1453,9 @@
                 return {
                     tieneClase: Boolean(result.success && (result.tieneProgramacion === true || result.tiene_clase === true)),
                     claseYaFinalizada: Boolean(result.clase_ya_finalizada),
-                    mensaje: result.mensaje || null
+                    mensaje: result.mensaje || null,
+                    modulosInfo: result.modulosInfo || null,
+                    esRecuperacion: Boolean(result.es_recuperacion || result.modulosInfo?.es_recuperacion || result.tipo === 'clase_reagendada')
                 };
             } catch (error) {
                 console.error('Error al verificar programación en espacio:', error);
@@ -1936,10 +1938,13 @@
                 }
 
                 if (progVerif.tieneClase === true) {
+                    const esRecuperacion = Boolean(progVerif.esRecuperacion || progVerif.modulosInfo?.es_recuperacion);
                     // Mostrar SweetAlert indicando que se está creando el registro de clase
                     Swal.fire({
-                        title: 'Creando registro de clase...',
-                        text: 'Por favor, espera un momento mientras registramos tu clase.',
+                        title: esRecuperacion ? 'Registrando clase reagendada...' : 'Creando registro de clase...',
+                        text: esRecuperacion
+                            ? 'Por favor, espera un momento mientras registramos tu clase reagendada.'
+                            : 'Por favor, espera un momento mientras registramos tu clase.',
                         allowOutsideClick: false,
                         allowEscapeKey: false,
                         showConfirmButton: false,
@@ -1951,9 +1956,12 @@
                     // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
                     const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
                     if (resultado && resultado.success) {
+                        const esClaseReagendada = esRecuperacion || resultado.tipo === 'clase_reagendada' || Boolean(resultado.es_recuperacion);
                         // Mostrar mensaje de proceso
                         const qrStatusEl = document.getElementById('qr-status');
-                        if (qrStatusEl) qrStatusEl.innerHTML = 'Reserva creada automáticamente...';
+                        if (qrStatusEl) {
+                            qrStatusEl.innerHTML = esClaseReagendada ? 'Clase reagendada registrada...' : 'Reserva creada automáticamente...';
+                        }
 
                         // Actualizar indicador en el mapa
                         const block = state.indicators.find(b => b.id === espacio);
@@ -1963,21 +1971,26 @@
                             drawIndicators();
                         }
 
-                        // Mostrar Sweet Alert de éxito para reserva automática (Clase programada)
+                        const asigNombre = resultado.reserva?.asignatura || progVerif.modulosInfo?.nombre_asignatura || '';
+                        const textoConfirmacion = esClaseReagendada
+                            ? (asigNombre ? `Se ha registrado la recuperación de clase para ${asigNombre}.` : 'Se ha registrado la clase reagendada exitosamente.')
+                            : 'Se ha registrado la clase automáticamente según tu programación.';
+
+                        // Mostrar Sweet Alert de éxito para reserva automática
                         Swal.fire({
-                            title: '¡Clase registrada!',
-                            text: 'Se ha registrado la clase automáticamente según tu programación.',
+                            title: esClaseReagendada ? '¡Clase reagendada registrada!' : '¡Clase registrada!',
+                            text: textoConfirmacion,
                             icon: 'success',
                             confirmButtonText: 'Aceptar',
                             confirmButtonColor: '#10B981',
-                            timer: 1500,
+                            timer: 2500,
                             timerProgressBar: true,
                             showConfirmButton: false
                         });
 
                         // Mostrar mensaje de reserva creada
                         if (qrStatusEl) {
-                            qrStatusEl.innerHTML = 'Reserva creada';
+                            qrStatusEl.innerHTML = esClaseReagendada ? 'Clase reagendada' : 'Reserva creada';
                             qrStatusEl.classList.remove('parpadeo');
                         }
 
@@ -1992,7 +2005,7 @@
                             if (qrInputManager) {
                                 qrInputManager.setActiveInput('main');
                             }
-                        }, 2000);
+                        }, 2500);
                     } else {
                         // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
                         Swal.fire({
@@ -3616,6 +3629,7 @@
                     if (data.tipo_reserva === 'clase_colaborador') etiqueta = 'Clase temporal';
                     if (data.tipo_reserva === 'programada') etiqueta = 'Reserva programada';
                     if (data.tipo_reserva === 'programada_docente') etiqueta = 'Clase programada';
+                    if (data.tipo_reserva === 'recuperacion') etiqueta = 'Clase reagendada';
 
                     const horaFin = data.hora_termino || data.hora_salida;
                     const horario = data.hora_inicio && horaFin ? 

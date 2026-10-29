@@ -285,18 +285,21 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                     $usuario,
                     $hoyFecha,
                     $horaActualStr,
-                    30
+                    60
                 );
                 if ($recProg) {
                     $tieneProgramacion = true;
                     $modulosInfo = [
                         'id_modulo' => $recProg['id_modulo'],
+                        'id_modulo_fin' => $recProg['id_modulo_fin'] ?? $recProg['id_modulo'],
                         'hora_inicio' => $recProg['hora_inicio'],
                         'hora_termino' => $recProg['hora_termino'],
                         'id_asignatura' => $recProg['id_asignatura'],
                         'es_temporal' => false,
                         'es_recuperacion' => true,
-                        'nombre_asignatura' => $recProg['nombre_asignatura'] ?? null,
+                        'tipo' => 'clase_reagendada',
+                        'nombre_asignatura' => $recProg['nombre_asignatura'] ?? 'Recuperación de Clase',
+                        'seccion' => $recProg['seccion'] ?? null,
                     ];
                 }
             }
@@ -347,10 +350,14 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             }
         }
 
+        $esRecuperacion = (bool) ($modulosInfo['es_recuperacion'] ?? false);
+
         return response()->json([
             'success' => true,
             'tieneProgramacion' => $tieneProgramacion,
             'tiene_clase' => $tieneProgramacion,
+            'es_recuperacion' => $esRecuperacion,
+            'tipo' => $esRecuperacion ? 'clase_reagendada' : 'clase_regular',
             'clase_ya_finalizada' => $claseYaFinalizada,
             'reserva_finalizada_info' => $reservaFinalizadaInfo,
             'modulosInfo' => $modulosInfo,

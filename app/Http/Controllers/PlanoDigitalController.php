@@ -1796,7 +1796,7 @@ class PlanoDigitalController extends Controller
                         $runUsuario,
                         Carbon::today()->toDateString(),
                         $horaActualStr,
-                        15
+                        60
                     );
                     if ($recScanner) {
                         $tieneClaseAhora = true;
@@ -2034,31 +2034,16 @@ class PlanoDigitalController extends Controller
 
                 // [NUEVO] Verificar si hay una clase programada (Planificacion_Asignatura) de otro docente
                 // que cubra el horario actual o que inicie en los próximos 15 minutos.
-                $horaActual = Carbon::now();
-                $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
-                $horaActualStr = $horaActual->format('H:i:s');
-                $runUsuarioLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
+                // IMPORTANTE: Solo evaluar si el docente escaneado NO tiene su propia clase/recuperación en este bloque.
+                $claseProgramadaOtro = null;
+                if (!$tieneClaseAhora) {
+                    $horaActual = Carbon::now();
+                    $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+                    $horaActualStr = $horaActual->format('H:i:s');
+                    $runUsuarioLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
 
-                $periodoActual = SemesterHelper::getCurrentPeriod();
-                $idEspacioLimpio = str_replace(['-', ' '], '', $idEspacio);
-                $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
-                    ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
-                    ->whereHas('horario', function ($query) use ($periodoActual) {
-                        $query->where('periodo', $periodoActual);
-                    })
-                    ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
-                        $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
-                    })
-                    ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr) {
-                        $query->where('dia', $diaActual)
-                              ->where('hora_inicio', '<=', $horaActualStr)
-                              ->where('hora_termino', '>', $horaActualStr);
-                    })
-                    ->first();
-
-                if (!$claseProgramadaOtro) {
-                    // Si no hay clase en curso, buscar si hay una clase que empiece en los próximos 15 minutos
-                    $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
+                    $periodoActual = SemesterHelper::getCurrentPeriod();
+                    $idEspacioLimpio = str_replace(['-', ' '], '', $idEspacio);
                     $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
                         ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
                         ->whereHas('horario', function ($query) use ($periodoActual) {
@@ -2067,12 +2052,31 @@ class PlanoDigitalController extends Controller
                         ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
                             $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
                         })
-                        ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimiteAnticipada) {
+                        ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr) {
                             $query->where('dia', $diaActual)
-                                  ->where('hora_inicio', '>', $horaActualStr)
-                                  ->where('hora_inicio', '<=', $horaLimiteAnticipada);
+                                  ->where('hora_inicio', '<=', $horaActualStr)
+                                  ->where('hora_termino', '>', $horaActualStr);
                         })
                         ->first();
+
+                    if (!$claseProgramadaOtro) {
+                        // Si no hay clase en curso, buscar si hay una clase que empiece en los próximos 15 minutos
+                        $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
+                        $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+                            ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
+                            ->whereHas('horario', function ($query) use ($periodoActual) {
+                                $query->where('periodo', $periodoActual);
+                            })
+                            ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
+                                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
+                            })
+                            ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimiteAnticipada) {
+                                $query->where('dia', $diaActual)
+                                      ->where('hora_inicio', '>', $horaActualStr)
+                                      ->where('hora_inicio', '<=', $horaLimiteAnticipada);
+                            })
+                            ->first();
+                    }
                 }
 
                 if ($claseProgramadaOtro) {
@@ -2535,17 +2539,61 @@ class PlanoDigitalController extends Controller
                 })
                 ->get();
 
+            $prefijosDias = [0 => 'DO', 1 => 'LU', 2 => 'MA', 3 => 'MI', 4 => 'JU', 5 => 'VI', 6 => 'SA'];
+            $prefijoDiaActual = $prefijosDias[Carbon::today()->dayOfWeek] ?? 'LU';
+
             foreach ($recuperacionesHoy as $recItem) {
-                $modObj = $recItem->moduloReagendado ?: \App\Models\Modulo::find($recItem->id_modulo_reagendado);
                 $espObj = $recItem->espacioReagendado ?: $recItem->espacio;
-                if ($modObj && $recItem->asignatura && $espObj) {
+                if (!$espObj || !$recItem->asignatura) {
+                    continue;
+                }
+                $modulosRaw = explode(',', (string) ($recItem->id_modulo_reagendado ?: $recItem->id_modulo_original));
+                foreach ($modulosRaw as $mRaw) {
+                    $mTrim = trim($mRaw);
+                    if ($mTrim === '') continue;
+                    $modObj = \App\Models\Modulo::find($mTrim);
+                    if (!$modObj && is_numeric($mTrim)) {
+                        $modObj = \App\Models\Modulo::find("{$prefijoDiaActual}.{$mTrim}");
+                    }
+                    if ($modObj) {
+                        $planificaciones->push((object) [
+                            'id_asignatura' => $recItem->id_asignatura,
+                            'id_espacio'    => $espObj->id_espacio,
+                            'id_modulo'     => $modObj->id_modulo,
+                            'asignatura'    => $recItem->asignatura,
+                            'modulo'        => $modObj,
+                            'espacio'       => $espObj,
+                            'es_recuperacion' => true,
+                        ]);
+                    }
+                }
+            }
+
+            // También consultar ClaseNoRealizada para hoy
+            $cnrsHoy = \App\Models\ClaseNoRealizada::with(['asignatura', 'modulo', 'espacio'])
+                ->whereDate('fecha_clase', $hoyStr)
+                ->where(function ($q) {
+                    $q->whereIn('estado', ['pendiente', 'recuperada', 'programada'])
+                      ->orWhere('observaciones', 'LIKE', '%Reagendada%');
+                })
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $run)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->get();
+            foreach ($cnrsHoy as $cnrItem) {
+                if ($cnrItem->modulo && $cnrItem->asignatura && $cnrItem->espacio) {
                     $planificaciones->push((object) [
-                        'id_asignatura' => $recItem->id_asignatura,
-                        'id_espacio'    => $espObj->id_espacio,
-                        'id_modulo'     => $modObj->id_modulo,
-                        'asignatura'    => $recItem->asignatura,
-                        'modulo'        => $modObj,
-                        'espacio'       => $espObj,
+                        'id_asignatura' => $cnrItem->id_asignatura,
+                        'id_espacio'    => $cnrItem->id_espacio,
+                        'id_modulo'     => $cnrItem->id_modulo,
+                        'asignatura'    => $cnrItem->asignatura,
+                        'modulo'        => $cnrItem->modulo,
+                        'espacio'       => $cnrItem->espacio,
+                        'es_recuperacion' => true,
                     ]);
                 }
             }

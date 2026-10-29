@@ -120,6 +120,7 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
             'UA (UNIDAD ACADÉMICA)',
             'Asignatura',
             'Código Asignatura',
+            'Sección',
             'Espacio',
             'Módulo',
             'Hora Inicio',
@@ -151,6 +152,7 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
             $clase['ua'] ?? 'N/A',
             $clase['asignatura'],
             $clase['codigo_asignatura'],
+            $clase['seccion'] ?? 'N/A',
             $clase['espacio'],
             $clase['modulo'],
             $clase['hora_inicio'],
@@ -169,7 +171,7 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
         
         // Aplicar colores según el estado
         for ($row = 2; $row <= $lastRow; $row++) {
-            $estado = $sheet->getCell('M' . $row)->getValue(); // Columna Estado (M tras añadir UA)
+            $estado = $sheet->getCell('N' . $row)->getValue(); // Columna Estado (N tras añadir Sección)
             
             $fillColor = match($estado) {
                 'Realizada'           => 'D1FAE5', // Verde claro
@@ -180,7 +182,7 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
                 default               => 'FFFFFF', // Blanco
             };
             
-            $sheet->getStyle('M' . $row)->applyFromArray([
+            $sheet->getStyle('N' . $row)->applyFromArray([
                 'fill' => [
                     'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['rgb' => $fillColor],
@@ -216,7 +218,7 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
 
         if ($lastRow >= 2) {
             // Estilo para las filas de datos
-            $styles['A2:Q' . $lastRow] = [
+            $styles['A2:R' . $lastRow] = [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -244,15 +246,16 @@ class TodasClasesSemestreSheet implements FromCollection, WithHeadings, WithMapp
             'F' => 25,  // UA (UNIDAD ACADÉMICA)
             'G' => 35,  // Asignatura
             'H' => 18,  // Código Asignatura
-            'I' => 12,  // Espacio
-            'J' => 10,  // Módulo
-            'K' => 12,  // Hora Inicio
-            'L' => 12,  // Hora Fin
-            'M' => 15,  // Estado
-            'N' => 12,  // Hora Entrada
-            'O' => 12,  // Hora Salida
-            'P' => 30,  // Motivo
-            'Q' => 35,  // Observaciones
+            'I' => 12,  // Sección
+            'J' => 12,  // Espacio
+            'K' => 10,  // Módulo
+            'L' => 12,  // Hora Inicio
+            'M' => 12,  // Hora Fin
+            'N' => 15,  // Estado
+            'O' => 12,  // Hora Entrada
+            'P' => 12,  // Hora Salida
+            'Q' => 30,  // Motivo
+            'R' => 35,  // Observaciones
         ];
     }
 

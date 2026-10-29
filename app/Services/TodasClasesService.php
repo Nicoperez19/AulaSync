@@ -126,7 +126,7 @@ class TodasClasesService
 
         // ── 1. CACHE DE CLASES NO REALIZADAS / JUSTIFICADAS / REGISTRADAS ──
         $clasesNoRealizadasQuery = ClaseNoRealizada::with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,periodo',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 'profesor:run_profesor,name,id_carrera,id_area_academica',
@@ -160,7 +160,7 @@ class TodasClasesService
                 'profesor:run_profesor,name,id_carrera,id_area_academica',
                 'profesor.carrera:id_carrera,nombre',
                 'profesor.areaAcademica:id_area_academica,nombre_area_academica',
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,periodo',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
             ])
@@ -275,7 +275,7 @@ class TodasClasesService
         $query = Planificacion_Asignatura::withoutGlobalScope('vigencia_activa')
             ->select($colsPlan)
             ->with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,run_profesor_reemplazo,periodo',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,run_profesor,run_profesor_reemplazo,periodo',
                 'asignatura.carrera:id_carrera,nombre,id_area_academica',
                 'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 $relEspacio,
@@ -309,7 +309,8 @@ class TodasClasesService
             $query->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
                 $q->whereHas('asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
-                       ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                       ->orWhere('codigo_asignatura', 'like', $searchTerm)
+                       ->orWhere('seccion', 'like', $searchTerm);
                 })
                 ->orWhere('id_espacio', 'like', $searchTerm);
 
@@ -461,6 +462,7 @@ class TodasClasesService
                                 'carrera'           => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
+                                'seccion'           => $planificacion->asignatura->seccion ?? 'N/A',
                                 'id_asignatura'     => $planificacion->id_asignatura,
                                 'espacio'           => $planificacion->id_espacio,
                                 'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
@@ -588,6 +590,7 @@ class TodasClasesService
                             'carrera' => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
+                            'seccion' => $planificacion->asignatura->seccion ?? 'N/A',
                             'id_asignatura' => $planificacion->id_asignatura,
                             'espacio' => $planificacion->id_espacio,
                             'modulo' => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
@@ -628,7 +631,7 @@ class TodasClasesService
                           'profesor:run_profesor,name,id_carrera,id_area_academica',
                           'profesor.carrera:id_carrera,nombre',
                           'profesor.areaAcademica:id_area_academica,nombre_area_academica',
-                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,id_carrera,run_profesor,periodo',
+                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,run_profesor,periodo',
                           'asignatura.carrera:id_carrera,nombre,id_area_academica',
                           'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                       ]);
@@ -649,7 +652,8 @@ class TodasClasesService
             $queryColab->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
                 $q->whereHas('profesorColaborador.asignatura', function($aq) use ($searchTerm) {
                     $aq->where('nombre_asignatura', 'like', $searchTerm)
-                       ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                       ->orWhere('codigo_asignatura', 'like', $searchTerm)
+                       ->orWhere('seccion', 'like', $searchTerm);
                 })
                 ->orWhereHas('profesorColaborador', function($cq) use ($searchTerm) {
                     $cq->where('nombre_asignatura_temporal', 'like', $searchTerm);
@@ -705,6 +709,7 @@ class TodasClasesService
                 $profesorModel = $colab->profesor;
                 $asignaturaNombre = $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? 'N/A';
                 $asignaturaCodigo = $colab->asignatura->codigo_asignatura ?? 'N/A';
+                $asignaturaSeccion = $colab->asignatura->seccion ?? 'N/A';
                 $idAsignatura = $colab->id_asignatura;
                 if ($idAsignatura) {
                     $asignaturasValidasPeriodo[$idAsignatura] = true;
@@ -820,6 +825,7 @@ class TodasClasesService
                                 'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                                 'asignatura'        => $asignaturaNombre,
                                 'codigo_asignatura' => $asignaturaCodigo,
+                                'seccion'           => $asignaturaSeccion,
                                 'id_asignatura'     => $idAsignatura,
                                 'espacio'           => $planificacion->id_espacio,
                                 'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
@@ -951,6 +957,7 @@ class TodasClasesService
                             'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
                             'asignatura'        => $asignaturaNombre,
                             'codigo_asignatura' => $asignaturaCodigo,
+                            'seccion'           => $asignaturaSeccion,
                             'id_asignatura'     => $idAsignatura,
                             'espacio'           => $planificacion->id_espacio,
                             'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
@@ -1069,6 +1076,7 @@ class TodasClasesService
                     'carrera'           => $this->resolverNombreUa($cnr->asignatura, $cnr->profesor),
                     'asignatura'        => $cnr->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $cnr->asignatura->codigo_asignatura ?? 'N/A',
+                    'seccion'           => $cnr->asignatura->seccion ?? 'N/A',
                     'id_asignatura'     => $cnr->id_asignatura,
                     'espacio'           => $cnr->id_espacio,
                     'modulo'            => $modNumStr,
@@ -1135,6 +1143,7 @@ class TodasClasesService
             $nombreProfesor = $res->profesor->name ?? ($res->run_profesor ?? $res->run_solicitante);
             $nombreAsig = $res->asignatura->nombre_asignatura ?? ($res->nombre_actividad ?: 'Reserva Académica / Uso de Sala');
             $codigoAsig = $res->asignatura->codigo_asignatura ?? 'RESERVA';
+            $seccionAsig = $res->asignatura->seccion ?? 'N/A';
 
             $etiquetaTipo = match(strtolower($res->tipo_reserva ?? '')) {
                 'espontanea' => 'Reserva espontánea registrada',
@@ -1185,6 +1194,7 @@ class TodasClasesService
                     'carrera'           => $this->resolverNombreUa($res->asignatura, $res->profesor),
                     'asignatura'        => $nombreAsig,
                     'codigo_asignatura' => $codigoAsig,
+                    'seccion'           => $seccionAsig,
                     'id_asignatura'     => $res->id_asignatura,
                     'espacio'           => $res->id_espacio,
                     'modulo'            => (string) $numMod,
@@ -1635,7 +1645,8 @@ class TodasClasesService
         $query->where(function($q) use ($searchTerm, $palabras, $cleanRun) {
             $q->whereHas('asignatura', function($aq) use ($searchTerm) {
                 $aq->where('nombre_asignatura', 'like', $searchTerm)
-                   ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                   ->orWhere('codigo_asignatura', 'like', $searchTerm)
+                   ->orWhere('seccion', 'like', $searchTerm);
             })
             ->orWhere('id_espacio', 'like', $searchTerm);
 
