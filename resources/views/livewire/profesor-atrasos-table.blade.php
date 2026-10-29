@@ -164,9 +164,6 @@
                                 <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {{ $atraso->profesor->name ?? 'N/A' }}
                                 </div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ $atraso->run_profesor }}
-                                </div>
                             </td>
                             <td class="px-4 py-3 text-center">
                                 <div class="text-sm text-gray-900 dark:text-gray-200 max-w-xs mx-auto truncate" title="{{ $atraso->asignatura->nombre_asignatura ?? 'N/A' }}">

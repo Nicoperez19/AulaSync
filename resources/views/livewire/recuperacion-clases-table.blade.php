@@ -122,17 +122,16 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                     @forelse ($recuperaciones as $recuperacion)
                         <tr wire:key="recuperacion-row-{{ $recuperacion->id_recuperacion }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 text-center align-middle whitespace-nowrap">
                                 {{ $recuperacion->fecha_clase_original->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 align-middle">
+                            <td class="px-4 py-3 text-sm text-gray-800 dark:text-gray-200 text-center align-middle">
                                 <div class="font-medium">{{ $recuperacion->profesor->name }}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $recuperacion->run_profesor }}</div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 align-middle">
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center align-middle">
                                 {{ $recuperacion->asignatura->nombre_asignatura ?? 'N/A' }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 align-middle">
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center align-middle">
                                 @if ($recuperacion->moduloOriginal)
                                     <div class="font-medium">{{ $recuperacion->moduloOriginal->nombre_modulo }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400">{{ ucfirst($recuperacion->moduloOriginal->dia) }}</div>
@@ -140,7 +139,7 @@
                                     <span class="text-gray-400">N/A</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm align-middle">
+                            <td class="px-4 py-3 text-sm text-center align-middle">
                                 @if ($recuperacion->licencia)
                                     <div class="text-xs">
                                         <div class="font-medium text-gray-700 dark:text-gray-300">
@@ -155,7 +154,7 @@
                                     <span class="text-gray-400 text-xs">Sin licencia</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm text-center align-middle whitespace-nowrap">
                                 @if ($recuperacion->fecha_reagendada)
                                     <div class="font-medium text-emerald-600 dark:text-emerald-400">
                                         {{ $recuperacion->fecha_reagendada->format('d/m/Y') }}
@@ -169,7 +168,7 @@
                                     <span class="text-gray-400 text-xs">Sin reagendar</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-sm align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm text-center align-middle whitespace-nowrap">
                                 @php
                                     $badgeColors = [
                                         'pendiente' => 'bg-yellow-100 text-yellow-800',

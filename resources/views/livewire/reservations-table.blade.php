@@ -227,14 +227,6 @@
                                     <span class="font-medium text-gray-900 dark:text-gray-100 text-sm leading-snug" title="{{ $reserva->nombre_usuario }}">
                                         {{ $reserva->nombre_usuario }}
                                     </span>
-                                    @php
-                                        $runUsuario = $reserva->run_profesor ?: $reserva->run_solicitante;
-                                    @endphp
-                                    @if($runUsuario)
-                                        <span class="text-xs text-gray-500 font-mono mt-0.5">
-                                            RUN: {{ $runUsuario }}
-                                        </span>
-                                    @endif
                                 </div>
                             </td>
                             <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
