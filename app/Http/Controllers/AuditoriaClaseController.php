@@ -23,10 +23,11 @@ class AuditoriaClaseController extends Controller
             $tab = 'justificaciones';
         }
 
-        $soloReagendamientos = ($tab === 'reagendamientos');
-        $query = $this->buildFilteredQuery($request, $soloReagendamientos);
+        $queryJustificaciones = $this->buildFilteredQuery($request, false);
+        $registrosJustificaciones = $queryJustificaciones->orderBy('created_at', 'desc')->paginate(20, ['*'], 'page_just')->withQueryString();
 
-        $registros = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+        $queryReagendamientos = $this->buildFilteredQuery($request, true);
+        $registrosReagendamientos = $queryReagendamientos->orderBy('created_at', 'desc')->paginate(20, ['*'], 'page_reag')->withQueryString();
 
         $accionesReagendamiento = ['reagendar', 'marcar_recuperada', 'obviar_recuperacion'];
         $totalReagendamientos = AuditoriaClase::where(function ($q) use ($accionesReagendamiento) {
@@ -38,29 +39,34 @@ class AuditoriaClaseController extends Controller
 
         $totalJustificaciones = AuditoriaClase::whereNotIn('accion', $accionesReagendamiento)->count();
 
-        if ($soloReagendamientos) {
-            $accionesDisponibles = [
-                'reagendar' => 'Reagendamiento de Clase',
-                'marcar_recuperada' => 'Marcada como Recuperada',
-                'obviar_recuperacion' => 'Recuperación Obviada',
-            ];
-        } else {
-            $accionesDisponibles = [
-                'justificar' => 'Justificación Individual',
-                'justificar_masivo' => 'Justificación Masiva',
-                'registrar' => 'Registro Individual',
-                'registrar_masivo' => 'Registro Masivo',
-                'cambiar_estado' => 'Cambio de Estado',
-                'eliminar' => 'Eliminación',
-            ];
-        }
+        $accionesDisponiblesJustificaciones = [
+            'justificar' => 'Justificación Individual',
+            'justificar_masivo' => 'Justificación Masiva',
+            'registrar' => 'Registro Individual',
+            'registrar_masivo' => 'Registro Masivo',
+            'cambiar_estado' => 'Cambio de Estado',
+            'eliminar' => 'Eliminación',
+        ];
+
+        $accionesDisponiblesReagendamientos = [
+            'reagendar' => 'Reagendamiento de Clase',
+            'marcar_recuperada' => 'Marcada como Recuperada',
+            'obviar_recuperacion' => 'Recuperación Obviada',
+        ];
+
+        $accionesDisponibles = ($tab === 'reagendamientos') ? $accionesDisponiblesReagendamientos : $accionesDisponiblesJustificaciones;
+        $registros = ($tab === 'reagendamientos') ? $registrosReagendamientos : $registrosJustificaciones;
 
         return view('reportes.auditoria-clases', [
             'registros' => $registros,
+            'registrosJustificaciones' => $registrosJustificaciones,
+            'registrosReagendamientos' => $registrosReagendamientos,
             'tab' => $tab,
             'totalJustificaciones' => $totalJustificaciones,
             'totalReagendamientos' => $totalReagendamientos,
             'accionesDisponibles' => $accionesDisponibles,
+            'accionesDisponiblesJustificaciones' => $accionesDisponiblesJustificaciones,
+            'accionesDisponiblesReagendamientos' => $accionesDisponiblesReagendamientos,
             'accionSeleccionada' => $request->query('accion', ''),
             'fechaInicio' => $request->query('fecha_inicio', ''),
             'fechaFin' => $request->query('fecha_fin', ''),
