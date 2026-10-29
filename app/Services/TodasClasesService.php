@@ -524,7 +524,7 @@ class TodasClasesService
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
-                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                                     default        => 'Feriado/Justificado',
                                 };
                                 $motivo = $claseNoRealizada->motivo ?: $motivo;
@@ -951,7 +951,7 @@ class TodasClasesService
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
-                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                                     default        => 'Feriado/Justificado',
                                 };
                                 $motivo = $claseNoRealizada->motivo ?: $motivo;
@@ -1489,7 +1489,7 @@ class TodasClasesService
                         'no_realizada' => 'No Registrada',
                         'realizada', 'registrada' => 'Realizada',
                         'justificado'  => 'Justificada',
-                        'recuperada', 'pendiente' => 'Recuperada',
+                        'recuperada', 'pendiente', 'reagendada', 'programada', 'confirmada' => 'Recuperada',
                         default        => $estadoReservaStr,
                     };
                     $motivoFinalRes = $cnrRes->motivo ?: $motivoFinalRes;
