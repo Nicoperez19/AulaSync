@@ -329,17 +329,17 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $clase['espacio'] }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $moduloInicio }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $moduloFin }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <div class="flex flex-col gap-1">
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <div class="flex flex-col gap-1 items-center justify-center">
                                             @if($clase['estado'] === 'No Registrada')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                     No Registrada
@@ -366,8 +366,8 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap">
-                                        <div class="break-words">
+                                    <td class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap text-center">
+                                        <div class="break-words text-center">
                                             @if(!empty($clase['hora_inicio']) && !empty($clase['hora_fin']))<div class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}</div><div class="text-xs text-gray-500">{{ ($clase['id_modulo_raw'] ?? $clase['modulo']) }} ({{ substr($clase['hora_inicio'], 0, 5) }} - {{ substr($clase['hora_fin'], 0, 5) }})</div>@elseif(isset($clase['hora_deteccion']))
                                                 <div>{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('d/m/Y') }}</div>
                                                 <div class="text-xs">{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('H:i') }}</div>
