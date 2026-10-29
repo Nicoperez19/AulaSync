@@ -406,12 +406,14 @@ function initStatusClasesChart() {
 
     const realizadas = parseInt(canvas.dataset.realizadas || '0');
     const recuperadas = parseInt(canvas.dataset.recuperadas || '0');
+    const justificadas = parseInt(canvas.dataset.justificadas || '0');
+    const totalImpartidasDataset = parseInt(canvas.dataset.totalImpartidas || '0');
     const noRegistradas = parseInt(canvas.dataset.noRegistradas || '0');
     const pctImpartidas = parseFloat(canvas.dataset.pctImpartidas || '0');
     const pctNoRegistradas = parseFloat(canvas.dataset.pctNoRegistradas || '0');
     const totalClases = parseInt(canvas.dataset.totalClases || '0');
 
-    const impartidasTotal = realizadas + recuperadas;
+    const impartidasTotal = totalImpartidasDataset > 0 ? totalImpartidasDataset : (realizadas + recuperadas + justificadas);
 
     const centerValor = document.getElementById('center-label-valor');
     const centerSub = document.getElementById('center-label-sub');

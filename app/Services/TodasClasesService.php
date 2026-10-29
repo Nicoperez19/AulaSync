@@ -1386,10 +1386,14 @@ class TodasClasesService
                     return isset($runsDocentesPeriodo[$this->normalizeRun($item['run_profesor'] ?? '')]);
                 })->values();
                 if ($clasesData->count() !== $totalAntes) {
-                    \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Clases de docentes fuera del período descartadas', [
-                        'periodo' => $periodo,
-                        'descartadas' => $totalAntes - $clasesData->count(),
-                    ]);
+                    try {
+                        \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Clases de docentes fuera del período descartadas', [
+                            'periodo' => $periodo,
+                            'descartadas' => $totalAntes - $clasesData->count(),
+                        ]);
+                    } catch (\Throwable $e) {
+                        // Ignorar errores de escritura si no hay permisos sobre storage/logs
+                    }
                 }
             }
         }
@@ -1398,11 +1402,15 @@ class TodasClasesService
             $uaStr = trim((string)$ua);
             $uaNorm = mb_strtolower($uaStr, 'UTF-8');
 
-            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
-                'ua_buscada' => $uaStr,
-                'total_antes_filtro' => $clasesData->count(),
-                'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
-            ]);
+            try {
+                \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
+                    'ua_buscada' => $uaStr,
+                    'total_antes_filtro' => $clasesData->count(),
+                    'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
+                ]);
+            } catch (\Throwable $e) {
+                // Ignorar errores de log
+            }
 
             $clasesData = $clasesData->filter(function($item) use ($uaStr, $uaNorm) {
                 $itemUa = trim((string)($item['ua'] ?? ''));
@@ -1413,9 +1421,13 @@ class TodasClasesService
                 return str_contains($carreraNombre, $uaNorm);
             });
 
-            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
-                'total_despues_filtro' => $clasesData->count(),
-            ]);
+            try {
+                \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
+                    'total_despues_filtro' => $clasesData->count(),
+                ]);
+            } catch (\Throwable $e) {
+                // Ignorar errores de log
+            }
         }
 
         return $clasesData->sortBy([

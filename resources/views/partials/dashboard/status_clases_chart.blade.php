@@ -34,6 +34,8 @@
             <canvas id="chart-status-clases-canvas"
                     data-realizadas="{{ $realizadas }}"
                     data-recuperadas="{{ $recuperadas }}"
+                    data-justificadas="{{ $justificadas }}"
+                    data-total-impartidas="{{ $total_impartidas }}"
                     data-no-registradas="{{ $no_registradas }}"
                     data-pct-impartidas="{{ $pct_impartidas }}"
                     data-pct-no-registradas="{{ $pct_no_registradas }}"
