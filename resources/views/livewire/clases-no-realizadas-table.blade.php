@@ -153,7 +153,7 @@
                     <option value="impartidas">Todas las impartidas / efectivas</option>
                     <option value="realizada">Registrada (Clase realizada)</option>
                     <option value="recuperada">Recuperada</option>
-                    <option value="pendiente">Pendiente de recuperación</option>
+                    <option value="pendiente">Pendiente de recuperación (Reagendada)</option>
                     <option value="justificado">Justificado</option>
                 </select>
             </div>

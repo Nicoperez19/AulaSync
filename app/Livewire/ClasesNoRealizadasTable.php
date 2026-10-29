@@ -170,7 +170,7 @@ class ClasesNoRealizadasTable extends Component
             'recuperada' => 'Recuperadas',
             'impartidas' => 'Impartidas / Efectivas',
             'justificado' => 'Justificadas',
-            'pendiente' => 'Pendientes de recuperación',
+            'pendiente', 'reagendada' => 'Pendientes de recuperación',
             default => 'Todos los estados'
         };
     }
@@ -655,7 +655,7 @@ class ClasesNoRealizadasTable extends Component
                         'realizada', 'registrada' => 'Realizada',
                         'recuperada' => 'Recuperada',
                         'justificado' => 'Justificada',
-                        'pendiente' => 'Pendiente de Recuperación',
+                        'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                         default => null
                     };
                     if ($estadoStr) {
