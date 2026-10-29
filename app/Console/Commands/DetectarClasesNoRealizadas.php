@@ -394,6 +394,24 @@ class DetectarClasesNoRealizadas extends Command
                                 continue; // Ya fue procesada
                             }
 
+                            // Si esta clase ya fue reagendada (la CNR original se movió a la nueva fecha),
+                            // no volver a crear una CNR "no_realizada" en la fecha original.
+                            $yaReagendada = \App\Models\RecuperacionClase::where('run_profesor', $runProfesor)
+                                ->where('id_asignatura', $modulo->id_asignatura)
+                                ->whereDate('fecha_clase_original', $fechaActual)
+                                ->where(function ($q) use ($modulo) {
+                                    $q->where('id_modulo_original', $modulo->id_modulo)
+                                      ->orWhere('id_modulo_original', 'like', $modulo->id_modulo . ',%')
+                                      ->orWhere('id_modulo_original', 'like', '%,' . $modulo->id_modulo)
+                                      ->orWhere('id_modulo_original', 'like', '%,' . $modulo->id_modulo . ',%');
+                                })
+                                ->where('estado', '!=', 'obviada')
+                                ->exists();
+
+                            if ($yaReagendada) {
+                                continue; // Clase reagendada: queda pendiente de recuperación
+                            }
+
                             $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
                                 'id_asignatura' => $modulo->id_asignatura,
                                 'id_espacio' => $modulo->id_espacio,

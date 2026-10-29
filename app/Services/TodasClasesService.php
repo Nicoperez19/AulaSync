@@ -1814,6 +1814,18 @@ class TodasClasesService
         $espacios = EspacioAliasHelper::obtenerEquivalentes($idEspacio);
         $runNorm = $this->normalizeRun($runProfesor);
 
+        // 0. Si la CNR encontrada está "no_realizada" pero existe una recuperación/reagendamiento para esta
+        //    misma fecha original y módulo, la recuperación tiene prioridad. Esto ocurre cuando el detector
+        //    automático vuelve a crear la CNR en la fecha original después de que la CNR original fue movida
+        //    a la nueva fecha al reagendar.
+        $cnrPrevio = $this->buscarCnrPorModulo($fechaStr, $espacios, $modRaw, $modNum, $runNorm, $idAsignatura);
+        if ($cnrPrevio && $cnrPrevio->estado === 'no_realizada') {
+            $recOrig = $this->buscarRecuperacionOriginalPorModulo($fechaStr, $espacios, $modRaw, $modNum, $runNorm, $idAsignatura);
+            if ($recOrig && $recOrig->estado !== 'obviada') {
+                return ['tipo' => 'rec_original', 'registro' => $recOrig];
+            }
+        }
+
         // 1. Buscar en clasesNoRealizadasCache por Espacio
         foreach ($espacios as $esp) {
             if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
@@ -1911,6 +1923,60 @@ class TodasClasesService
             }
         }
 
+        return null;
+    }
+
+    /**
+     * Busca una ClaseNoRealizada en caché para la fecha/módulo dados (misma prioridad que resolverCnrORecuperacion).
+     */
+    private function buscarCnrPorModulo(string $fechaStr, array $espacios, string $modRaw, string $modNum, string $runNorm, ?string $idAsignatura)
+    {
+        $claves = [];
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$esp}_{$modNum}_{$runNorm}";
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}";
+            $claves[] = "{$fechaStr}_{$idAsignatura}_{$runNorm}";
+        }
+        if ($runNorm !== '') {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modRaw}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modNum}";
+        }
+        foreach ($claves as $clave) {
+            if (isset($this->clasesNoRealizadasCache[$clave])) {
+                return $this->clasesNoRealizadasCache[$clave];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Busca una recuperación cuya fecha ORIGINAL coincida con la fecha y el MÓDULO específico dados
+     * (sin usar claves genéricas por docente, para no afectar otros bloques del mismo día).
+     */
+    private function buscarRecuperacionOriginalPorModulo(string $fechaStr, array $espacios, string $modRaw, string $modNum, string $runNorm, ?string $idAsignatura)
+    {
+        $claves = [];
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$esp}_{$modNum}_{$runNorm}";
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}";
+        }
+        if ($runNorm !== '') {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modRaw}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modNum}";
+        }
+        foreach ($claves as $clave) {
+            if (isset($this->recuperacionesPorOriginalCache[$clave])) {
+                return $this->recuperacionesPorOriginalCache[$clave];
+            }
+        }
         return null;
     }
 
