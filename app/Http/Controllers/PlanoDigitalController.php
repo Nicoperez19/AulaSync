@@ -1600,7 +1600,7 @@ class PlanoDigitalController extends Controller
                             $nuevaReserva->modulo_inicio = $numModuloActual;
                             $nuevaReserva->modulo_fin = $moduloFin;
                             $nuevaReserva->hora_salida = $moduloFinalObj->hora_termino ?? null;
-                            $nuevaReserva->modulos = $cantidadModulos;
+                            $nuevaReserva->modulos = $cantidadModulos; } elseif ($infoRecForzado = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada($idEspacio, $runNuevo, Carbon::today()->toDateString(), $horaActualStr, 30)) { $nuevaReserva->id_asignatura = $infoRecForzado['id_asignatura']; $nuevaReserva->modulo_inicio = $infoRecForzado['modulo_inicio']; $nuevaReserva->modulo_fin = $infoRecForzado['modulo_fin']; $nuevaReserva->hora_salida = $infoRecForzado['hora_termino']; $nuevaReserva->modulos = $infoRecForzado['cantidad_modulos']; $nuevaReserva->tipo_reserva = 'recuperacion';
                         }
                     }
 
@@ -2215,7 +2215,7 @@ class PlanoDigitalController extends Controller
                     $esReservaAntigua = true;
                 }
 
-                if ($planificacionScanner || $esReservaAntigua) {
+                if ($planificacionScanner || $tieneClaseAhora || $esReservaAntigua) {
                     $puedeForzarCierre = true;
                 } else {
                     // También verificar reservas programadas del scanner (margen de 15 min)

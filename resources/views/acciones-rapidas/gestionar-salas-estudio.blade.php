@@ -459,7 +459,7 @@
         verificarNotificacionesServidor();
     });
 
-    function handleKeyScan(event) {
+    function handleKeyScan(event) { if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
         const activeElem = document.activeElement;
         const isInputForm = activeElem && (activeElem.tagName === 'INPUT' || activeElem.tagName === 'TEXTAREA' || activeElem.tagName === 'SELECT');
         const inputGlobal = document.getElementById('qr-input-global');
@@ -507,7 +507,7 @@
         }
     }
 
-    function mantenerEnfoqueGlobal() {
+    function mantenerEnfoqueGlobal() { if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
         const inputGlobal = document.getElementById('qr-input-global');
         const activeElem = document.activeElement;
         const modalSala = document.getElementById('modal-seleccionar-sala');
@@ -857,7 +857,7 @@
             modalProcesando.classList.add('hidden');
 
             if (res.status === 403 && data.vetado) {
-                alert(data.message);
+                await Swal.fire({ title: 'Acceso Restringido', text: data.message || 'El usuario posee una sanción activa.', icon: 'warning', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
                 return;
             }
 
@@ -896,7 +896,7 @@
         } catch (e) {
             console.error('Error al procesar lectura:', e);
             modalProcesando.classList.add('hidden');
-            alert('Error al verificar la lectura del código escaneado.');
+            await Swal.fire({ title: 'Error de Lectura', text: 'Error al verificar la lectura del código escaneado.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
@@ -933,12 +933,12 @@
 
                 cargarReservas();
             } else {
-                alert(data.message || 'Error al asignar la sala.');
+                await Swal.fire({ title: 'No se pudo asignar', text: data.message || 'Error al asignar la sala.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);
             modalProcesando.classList.add('hidden');
-            alert('Error de comunicación con el servidor.');
+            await Swal.fire({ title: 'Error de Conexión', text: 'Error de comunicación con el servidor.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
@@ -1039,7 +1039,7 @@
         const idEspacio = document.getElementById('manual-select-espacio').value;
 
         if (!run || !idEspacio) {
-            alert('Ingrese RUN y seleccione una sala.');
+            await Swal.fire({ title: 'Datos Incompletos', text: 'Por favor ingrese el RUN y seleccione una sala de estudio.', icon: 'warning', confirmButtonText: 'Entendido' });
             return;
         }
 
@@ -1079,16 +1079,29 @@
                     setTimeout(() => inputSala.focus(), 150);
                 }
             } else {
-                alert(data.message || 'Error al registrar.');
+                await Swal.fire({ title: 'Error al Registrar', text: data.message || 'Error al registrar el solicitante.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (err) {
             console.error('Error al guardar:', err);
-            alert('Error de comunicación.');
+            await Swal.fire({ title: 'Error de Conexión', text: 'Error de comunicación con el servidor.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
     async function devolverSalaDirecta(idEspacio, run) {
-        if (!confirm(`¿Confirmar devolución de la sala ${idEspacio}?`)) return;
+        const confirmResult = await Swal.fire({
+            title: '¿Confirmar devolución?',
+            text: `¿Deseas registrar la devolución y liberar la sala ${idEspacio}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#8D8D8D',
+            confirmButtonText: 'Sí, devolver sala',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!confirmResult.isConfirmed) {
+            mantenerEnfoqueGlobal();
+            return;
+        }
 
         try {
             const res = await fetch("{{ route('quick-actions.api.sala-estudio.procesar-escaneo') }}", {
@@ -1103,7 +1116,7 @@
             if (data.success) {
                 mostrarModalDevolucion(data, idEspacio);
             } else {
-                alert(data.message || 'Error al devolver sala.');
+                await Swal.fire({ title: 'Error', text: data.message || 'Error al devolver sala.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);
@@ -1111,7 +1124,21 @@
     }
 
     async function cambiarEstadoReserva(idReserva, nuevoEstado) {
-        if (!confirm(`¿Desea marcar esta reserva como ${nuevoEstado}?`)) return;
+        const esCancelacion = nuevoEstado === 'cancelada';
+        const confirmResult = await Swal.fire({
+            title: esCancelacion ? '¿Cancelar Reserva?' : '¿Actualizar Estado?',
+            text: esCancelacion ? '¿Estás seguro de cancelar esta reserva? El espacio quedará disponible inmediatamente.' : `¿Deseas marcar esta reserva como ${nuevoEstado}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: esCancelacion ? '#D12420' : '#10B981',
+            cancelButtonColor: '#8D8D8D',
+            confirmButtonText: esCancelacion ? 'Sí, cancelar reserva' : 'Sí, confirmar',
+            cancelButtonText: 'No, mantener'
+        });
+        if (!confirmResult.isConfirmed) {
+            mantenerEnfoqueGlobal();
+            return;
+        }
 
         try {
             const res = await fetch(`{{ url('/quick-actions/api/reserva') }}/${idReserva}/estado`, {
@@ -1126,7 +1153,7 @@
             if (data.success) {
                 cargarReservas();
             } else {
-                alert(data.message || 'Error al actualizar estado.');
+                await Swal.fire({ title: 'Error', text: data.message || 'Error al actualizar estado.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);

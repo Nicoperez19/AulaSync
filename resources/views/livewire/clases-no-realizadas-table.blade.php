@@ -280,7 +280,7 @@
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Detección</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Horario</th>
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[200px]">Acciones</th>
                             </tr>
                         </thead>
@@ -366,9 +366,9 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-3 py-4 text-sm text-gray-500 w-28">
+                                    <td class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap">
                                         <div class="break-words">
-                                            @if(isset($clase['hora_deteccion']))
+                                            @if(!empty($clase['hora_inicio']) && !empty($clase['hora_fin']))<div class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}</div><div class="text-xs text-gray-500">{{ ($clase['id_modulo_raw'] ?? $clase['modulo']) }} ({{ substr($clase['hora_inicio'], 0, 5) }} - {{ substr($clase['hora_fin'], 0, 5) }})</div>@elseif(isset($clase['hora_deteccion']))
                                                 <div>{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('d/m/Y') }}</div>
                                                 <div class="text-xs">{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('H:i') }}</div>
                                             @else

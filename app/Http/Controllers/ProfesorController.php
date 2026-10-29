@@ -158,9 +158,9 @@ class ProfesorController extends Controller
                 $reserva->tipo_reserva = 'recuperacion';
             } elseif ($moduloActual) {
                 $reserva->modulo_inicio = $moduloActual;
-                $reserva->modulo_fin = $moduloActual;
-                $reserva->hora_salida = $horarios[$moduloActual]['fin'];
-                $reserva->modulos = 1;
+                $cantModsSol = max(1, (int) $request->input('modulos', 1)); $modFinCalc = $moduloActual; for ($mS = 1; $mS < $cantModsSol; $mS++) { if (isset($horarios[$moduloActual + $mS])) { $modFinCalc = $moduloActual + $mS; } } $reserva->modulo_fin = $modFinCalc;
+                $reserva->hora_salida = $horarios[$modFinCalc]['fin'] ?? $horarios[$moduloActual]['fin'];
+                $reserva->modulos = ($modFinCalc - $moduloActual) + 1;
                 $reserva->tipo_reserva = 'espontanea';
             } else {
                 $reserva->hora_salida = \Carbon\Carbon::parse($horaActual)->addHour()->format('H:i:s');

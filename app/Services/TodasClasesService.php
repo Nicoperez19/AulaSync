@@ -1080,7 +1080,7 @@ class TodasClasesService
                     'hora_salida'       => $horaSalidaCnr,
                     'motivo'            => $cnr->motivo,
                     'observaciones'     => $obsHist,
-                    'hora_deteccion'    => $cnr->hora_deteccion ?? $fechaCnr,
+                    'hora_deteccion'    => (in_array($cnr->estado, ['pendiente', 'recuperada'], true) || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'reagendad') || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'recupera')) ? (!empty($horaEntradaCnr) ? Carbon::parse($fechaCnrStr . ' ' . $horaEntradaCnr) : $fechaCnr->copy()->setTimeFromTimeString($horaFinMod)) : ($cnr->hora_deteccion ?? $fechaCnr->copy()->setTimeFromTimeString($horaFinMod)),
                     'rol_bloque'        => 'historico',
                 ]);
             }
@@ -1171,8 +1171,8 @@ class TodasClasesService
                     $obsFinalRes = $cnrRes->observaciones ?: $obsFinalRes;
                 }
 
-                $horaDeteccionRes = $cnrRes?->hora_deteccion
-                    ?? ($res->hora ? Carbon::parse($fechaResStr . ' ' . $res->hora) : $fechaRes);
+                $horaDeteccionRes = ($res->hora ? Carbon::parse($fechaResStr . ' ' . $res->hora) : null) ?? $cnrRes?->hora_deteccion ?? $fechaRes;
+
 
                 $clasesData->push([
                     'id'                => $idFinalRes,

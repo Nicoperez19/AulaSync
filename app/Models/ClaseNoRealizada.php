@@ -688,11 +688,42 @@ class ClaseNoRealizada extends Model
                             'estado' => $cnrComa->estado,
                             'hora_deteccion' => $cnrComa->hora_deteccion ?? now(),
                         ]);
+                    } elseif ($cnrComa->estado === 'recuperada' && $existenteIndividual->estado !== 'recuperada') {
+                        $existenteIndividual->estado = 'recuperada';
+                        if (!empty($cnrComa->observaciones)) {
+                            $existenteIndividual->observaciones = $cnrComa->observaciones;
+                        }
+                        $existenteIndividual->save();
                     }
                 }
 
                 // Eliminar el registro combinado redundante ("MI.5,MI.6") para evitar las 3 filas (5-5, 5-6, 6-6)
                 $cnrComa->delete();
+            }
+
+            // Paso 1.5: Deduplicar registros individuales idénticos en clases_no_realizadas para la misma fecha/módulo/asignatura
+            $cnrsRango = static::whereBetween('fecha_clase', [$fIni, $fFin])
+                ->orderByRaw("CASE WHEN estado = 'recuperada' THEN 0 WHEN estado = 'pendiente' THEN 1 ELSE 2 END")
+                ->orderByDesc('id')
+                ->get();
+            $vistosCnr = [];
+            foreach ($cnrsRango as $cnrItem) {
+                $fItem = Carbon::parse($cnrItem->fecha_clase)->toDateString();
+                $rItem = strtoupper(preg_replace('/[^0-9Kk]/', '', (string) $cnrItem->run_profesor));
+                $eItem = strtoupper(str_replace(['-', ' '], '', (string) $cnrItem->id_espacio));
+                $mItem = strtoupper(trim((string) $cnrItem->id_modulo));
+                $aItem = (string) ($cnrItem->id_asignatura ?? '');
+                $uniqKey = "{$fItem}|{$rItem}|{$eItem}|{$mItem}|{$aItem}";
+                if (isset($vistosCnr[$uniqKey])) {
+                    $principal = $vistosCnr[$uniqKey];
+                    if ($cnrItem->estado === 'recuperada' && $principal->estado !== 'recuperada') {
+                        $principal->estado = 'recuperada';
+                        $principal->save();
+                    }
+                    $cnrItem->delete();
+                } else {
+                    $vistosCnr[$uniqKey] = $cnrItem;
+                }
             }
 
             // Paso 2: Recopilar todos los bloques de recuperación en el rango de fechas
@@ -807,6 +838,26 @@ class ClaseNoRealizada extends Model
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                     })
                     ->get();
+
+                // Sincronizar estado entre RecuperacionClase ('realizada') y ClaseNoRealizada ('recuperada')
+                $algunRcRealizada = collect($grupo['rcs'] ?? [])->contains(fn($rc) => $rc->estado === 'realizada');
+                $algunCnrRecuperada = collect($grupo['cnrs'] ?? [])->contains(fn($cnr) => $cnr->estado === 'recuperada');
+
+                if ($algunRcRealizada) {
+                    foreach ($grupo['cnrs'] ?? [] as $cnrSync) {
+                        if ($cnrSync->estado !== 'recuperada') {
+                            $cnrSync->estado = 'recuperada';
+                            $cnrSync->save();
+                        }
+                    }
+                } elseif ($algunCnrRecuperada) {
+                    foreach ($grupo['rcs'] ?? [] as $rcSync) {
+                        if ($rcSync->estado !== 'realizada') {
+                            $rcSync->estado = 'realizada';
+                            $rcSync->save();
+                        }
+                    }
+                }
 
                 if ($reservasDocente->isEmpty()) {
                     continue;

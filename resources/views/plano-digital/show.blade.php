@@ -1,4 +1,4 @@
-﻿<x-show-layout>
+<x-show-layout>
     <style>
         @keyframes parpadeo {
             0% {
@@ -5513,7 +5513,7 @@
                 requestBody = {
                     run_profesor: runParaReserva,
                     id_espacio: espacioParaReserva,
-                    modulo_solicitado: moduloParaReserva
+                    modulo_solicitado: moduloParaReserva, modulos: cantidad
                 };
             } else {
                 requestBody = {

@@ -151,7 +151,7 @@ class ClasesNoRealizadasTable extends Component
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
         $estados = ['', 'no_realizada', 'realizada', 'recuperada', 'impartidas', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
-            $key = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
+            $key = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
                 $this->fecha_inicio,
                 $this->fecha_fin,
                 $this->periodo,
@@ -610,7 +610,7 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
+        $cacheKey = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
