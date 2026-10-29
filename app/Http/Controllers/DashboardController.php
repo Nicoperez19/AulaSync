@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Traits\RunNormalizer;
 use App\Services\OcupacionSemanalService;
+use App\Services\TodasClasesService;
 use App\Exports\OcupacionSemanalExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -638,8 +639,8 @@ class DashboardController extends Controller
         $computeStatusData = function () use (
         $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
     ) {
-        $periodo = SemesterHelper::getCurrentPeriod();
-        $todasClasesService = new \AppServices\TodasClasesService();
+        $periodo = SemesterHelper::resolverPeriodoParaFecha($fechaInicioYmd) ?: SemesterHelper::getCurrentPeriod();
+        $todasClasesService = new TodasClasesService();
         $todasLasClases = $todasClasesService->obtenerTodasLasClases(
             $fechaInicioYmd,
             $fechaFinYmd,
