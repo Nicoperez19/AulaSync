@@ -169,6 +169,10 @@ class TodasClasesService
                     $this->clasesNoRealizadasCache["{$fecha}_{$asigId}_{$modNum}_{$runNorm}"] = $clase;
                     $this->clasesNoRealizadasCache["{$fecha}_{$asigId}_{$runNorm}"] = $clase;
                 }
+                if ($runNorm !== '') {
+                    $this->clasesNoRealizadasCache["{$fecha}_{$runNorm}_{$modTrim}"] = $clase;
+                    $this->clasesNoRealizadasCache["{$fecha}_{$runNorm}_{$modNum}"] = $clase;
+                }
             }
         }
 
@@ -179,13 +183,24 @@ class TodasClasesService
         $recuperacionesUsadasIds = [];
 
         try {
+            $fIniStr = $fechaInicio->toDateString();
+            $fFinStr = $fechaFin->toDateString();
+
             $todasRecuperaciones = RecuperacionClase::with([
                     'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,periodo',
                     'profesor:run_profesor,name,id_carrera,id_area_academica',
                 ])
-                ->where(function ($q) use ($fechaInicio, $fechaFin) {
-                    $q->whereBetween('fecha_reagendada', [$fechaInicio->toDateString(), $fechaFin->toDateString()])
-                      ->orWhereBetween('fecha_clase_original', [$fechaInicio->toDateString(), $fechaFin->toDateString()]);
+                ->where(function ($q) use ($fIniStr, $fFinStr) {
+                    $q->whereBetween('fecha_reagendada', [$fIniStr, $fFinStr])
+                      ->orWhereBetween('fecha_clase_original', [$fIniStr, $fFinStr])
+                      ->orWhere(function($sub) use ($fIniStr, $fFinStr) {
+                          $sub->whereDate('fecha_reagendada', '>=', $fIniStr)
+                              ->whereDate('fecha_reagendada', '<=', $fFinStr);
+                      })
+                      ->orWhere(function($sub) use ($fIniStr, $fFinStr) {
+                          $sub->whereDate('fecha_clase_original', '>=', $fIniStr)
+                              ->whereDate('fecha_clase_original', '<=', $fFinStr);
+                      });
                 })
                 ->get();
 
@@ -198,6 +213,10 @@ class TodasClasesService
                     $fOrig = Carbon::parse($rc->fecha_clase_original)->format('Y-m-d');
                     $modsOrig = array_map('trim', explode(',', (string) $rc->id_modulo_original));
                     $espaciosOrig = EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio);
+                    if ($rc->id_espacio_reagendado) {
+                        $espaciosOrig = array_unique(array_merge($espaciosOrig, EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio_reagendado)));
+                    }
+
                     foreach ($modsOrig as $mOrig) {
                         if ($mOrig === '') continue;
                         $mNum = preg_replace('/^[A-Z]{2}\./', '', $mOrig);
@@ -210,6 +229,13 @@ class TodasClasesService
                             $this->recuperacionesPorOriginalCache["{$fOrig}_{$asigId}_{$mNum}_{$runNorm}"] = $rc;
                             $this->recuperacionesPorOriginalCache["{$fOrig}_{$asigId}_{$runNorm}"] = $rc;
                         }
+                        if ($runNorm !== '') {
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}_{$mOrig}"] = $rc;
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}_{$mNum}"] = $rc;
+                        }
+                    }
+                    if ($runNorm !== '' && empty($this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}"])) {
+                        $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}"] = $rc;
                     }
                 }
 
@@ -219,6 +245,10 @@ class TodasClasesService
                     $espReag = $rc->id_espacio_reagendado ?: $rc->id_espacio;
                     $modsReag = array_map('trim', explode(',', (string) $rc->id_modulo_reagendado));
                     $espaciosReag = EspacioAliasHelper::obtenerEquivalentes($espReag);
+                    if ($rc->id_espacio) {
+                        $espaciosReag = array_unique(array_merge($espaciosReag, EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio)));
+                    }
+
                     foreach ($modsReag as $mReag) {
                         if ($mReag === '') continue;
                         $mNum = preg_replace('/^[A-Z]{2}\./', '', $mReag);
@@ -231,6 +261,13 @@ class TodasClasesService
                             $this->recuperacionesPorReagendadaCache["{$fReag}_{$asigId}_{$mNum}_{$runNorm}"] = $rc;
                             $this->recuperacionesPorReagendadaCache["{$fReag}_{$asigId}_{$runNorm}"] = $rc;
                         }
+                        if ($runNorm !== '') {
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}_{$mReag}"] = $rc;
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}_{$mNum}"] = $rc;
+                        }
+                    }
+                    if ($runNorm !== '' && empty($this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}"])) {
+                        $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}"] = $rc;
                     }
                 }
             }
@@ -830,6 +867,7 @@ class TodasClasesService
         $queryColab->chunk(100, function($planificacionesColab) use (
             &$clasesData,
             &$clasesNoRealizadasUsadasIds,
+            &$recuperacionesUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
             &$asignaturasValidasPeriodo,
@@ -1774,67 +1812,102 @@ class TodasClasesService
         $modRaw = $idModulo ? trim($idModulo) : '';
         $modNum = $numModulo ? (string) $numModulo : preg_replace('/^[A-Z]{2}\./', '', $modRaw);
         $espacios = EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+        $runNorm = $this->normalizeRun($runProfesor);
 
-        // 1. Buscar en clasesNoRealizadasCache
+        // 1. Buscar en clasesNoRealizadasCache por Espacio
         foreach ($espacios as $esp) {
-            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
             }
         }
+        // 1.1 Buscar en clasesNoRealizadasCache por Asignatura
         if ($idAsignatura) {
-            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
             }
-            if (isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"])) {
-                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"]];
+            if (isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 1.2 Buscar en clasesNoRealizadasCache directo por Docente + Módulo
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
             }
         }
 
         // 2. Buscar si la clase fue reagendada originalmente en esta fecha
         foreach ($espacios as $esp) {
-            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
             }
         }
         if ($idAsignatura) {
-            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
             }
-            if (isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"]];
+            if (isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 2.1 DIRECTO por Docente + Módulo (fecha original)
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
+            }
+            if (isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}"]];
             }
         }
 
         // 3. Buscar si esta fecha corresponde a la fecha de realización reagendada
         foreach ($espacios as $esp) {
-            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
             }
         }
         if ($idAsignatura) {
-            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runProfesor}"]];
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
             }
-            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runProfesor}"]];
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
             }
-            if (isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"])) {
-                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runProfesor}"]];
+            if (isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 3.1 DIRECTO por Docente + Módulo (fecha reagendada)
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
+            }
+            if (isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}"]];
             }
         }
 

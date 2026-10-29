@@ -31,12 +31,15 @@ class EspacioAliasHelper
      * Devuelve la lista de identificadores equivalentes para un espacio dado.
      * Permite hacer búsquedas bidireccionales donde cualquiera de los alias sea reconocido.
      *
-     * @param string $espacioId
+     * @param string|null $espacioId
      * @param string|null $sedeId
      * @return array
      */
-    public static function obtenerEquivalentes(string $espacioId, ?string $sedeId = null): array
+    public static function obtenerEquivalentes(?string $espacioId, ?string $sedeId = null): array
     {
+        if (empty($espacioId)) {
+            return [];
+        }
         $espacioUpper = strtoupper(trim($espacioId));
         $sedeUpper    = strtoupper(trim($sedeId ?? ''));
 
