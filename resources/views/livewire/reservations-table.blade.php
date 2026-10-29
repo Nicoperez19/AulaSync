@@ -203,12 +203,9 @@
                                 <span class="font-medium text-[#950101] dark:text-blue-400 text-sm">#{{ $reserva->id_reserva }}</span>
                             </td>
                             <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
-                                <div class="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                <span class="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                     {{ $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '-' }}
-                                </div>
-                                <div class="text-[11px] text-gray-500 font-normal">
-                                    {{ $reserva->fecha_reserva ? ucfirst(\Carbon\Carbon::parse($reserva->fecha_reserva)->locale('es')->isoFormat('ddd')) : '' }}
-                                </div>
+                                </span>
                             </td>
                             <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
@@ -225,12 +222,11 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-3 py-3 text-center align-middle">
-                                <div class="font-medium text-gray-800 dark:text-gray-200 text-sm truncate max-w-xs" title="{{ $reserva->nombre_usuario }}">
-                                    {{ $reserva->nombre_usuario }}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    {{ $reserva->run_profesor ?: ($reserva->run_solicitante ?: 'N/A') }}
+                            <td class="px-4 py-3 text-center align-middle">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="font-medium text-gray-900 dark:text-gray-100 text-sm leading-snug" title="{{ $reserva->nombre_usuario }}">
+                                        {{ $reserva->nombre_usuario }}
+                                    </span>
                                 </div>
                             </td>
                             <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">

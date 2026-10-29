@@ -20,14 +20,14 @@
     @endif
 
     @if(!$esDocentePuro)
-    <!-- Dashboard - Solo Administrador, Supervisor y Director (NO Usuario) -->
-    @role('Administrador|Supervisor|Director')
+    <!-- Dashboard - Administrador, Supervisor, Director, Estudiante en Práctica o con permiso dashboard -->
+    @if(auth()->user()->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Estudiante en Práctica']) || auth()->user()->can('dashboard'))
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">
         <x-slot name="icon">
             <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
-    @endrole
+    @endif
 
     <!-- Monitoreo de Espacios - Todos los roles autorizados -->
     @if(auth()->user()->can('monitoreo de espacios') || auth()->user()->hasRole('Director'))
@@ -123,6 +123,16 @@
             @endcan
         </x-sidebar.dropdown>
     @endcanany
+
+    <!-- Auditorías - Link particular con navpills para todas las auditorías -->
+    @can('reportes')
+        <x-sidebar.link title="Auditorías" href="{{ route('reportes.auditoria-clases.index') }}"
+            :isActive="request()->routeIs('reportes.auditoria-clases.*') || request()->routeIs('reportes.auditoria-reagendamientos.*')">
+            <x-slot name="icon">
+                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-clipboard-user" aria-hidden="true"></i>
+            </x-slot>
+        </x-sidebar.link>
+    @endcan
 
     <!-- Mantenedores - Solo Administrador -->
     @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados', 'mantenedor de configuracion', 'mantenedor de escuelas', 'mantenedor de jefes de carrera', 'mantenedor de asistentes academicos'])

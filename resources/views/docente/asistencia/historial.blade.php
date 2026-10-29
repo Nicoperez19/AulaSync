@@ -38,55 +38,63 @@
     </x-slot>
 
     <div class="space-y-6" x-data="{ modalDetalle: false, sesionSeleccionada: null }">
-        {{-- Tarjetas de Métricas Acumuladas --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="p-4 bg-white dark:bg-dark-eval-1 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-calendar-check"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 font-medium">Sesiones Registradas</div>
-                    <div class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $totalSesiones }}</div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white dark:bg-dark-eval-1 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-chart-line"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 font-medium">% Asistencia Promedio</div>
-                    <div class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $porcentajeGlobal }}%</div>
+        {{-- KPIs / Estadísticas Acumuladas (Estilo Control Docente) --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="stat-card bg-slate-50 border border-[#C0C0C0] rounded-xl p-4 shadow-sm transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-700 text-xs font-semibold uppercase tracking-wider">Sesiones Registradas</p>
+                        <p class="text-3xl font-black text-[#191919] mt-1">{{ number_format($totalSesiones) }}</p>
+                    </div>
+                    <div class="p-3 bg-slate-100 rounded-lg text-[#D12420]">
+                        <i class="fa-solid fa-calendar-check text-xl"></i>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-4 bg-white dark:bg-dark-eval-1 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-user-check"></i>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-400 font-medium">Asistencias Totales</div>
-                    <div class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $totalPresentesAcumulado }} / {{ $totalRegistrosAcumulado }}</div>
+            <div class="stat-card {{ $porcentajeGlobal >= 75 ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200' }} rounded-xl p-4 shadow-sm transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="{{ $porcentajeGlobal >= 75 ? 'text-emerald-700' : 'text-amber-700' }} text-xs font-semibold uppercase tracking-wider">% Asistencia Promedio</p>
+                        <p class="text-3xl font-black {{ $porcentajeGlobal >= 75 ? 'text-emerald-950' : 'text-amber-950' }} mt-1">{{ $porcentajeGlobal }}%</p>
+                    </div>
+                    <div class="p-3 {{ $porcentajeGlobal >= 75 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600' }} rounded-lg">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
                 </div>
             </div>
 
-            <div class="p-4 bg-white dark:bg-dark-eval-1 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm flex items-center gap-3">
-                <div class="w-12 h-12 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center text-xl">
-                    <i class="fa-solid fa-users"></i>
+            <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Asistencias Totales</p>
+                        <p class="text-3xl font-black text-indigo-950 mt-1">{{ number_format($totalPresentesAcumulado) }} <span class="text-base text-gray-500 font-normal">/ {{ number_format($totalRegistrosAcumulado) }}</span></p>
+                    </div>
+                    <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+                        <i class="fa-solid fa-user-check text-xl"></i>
+                    </div>
                 </div>
-                <div>
-                    <div class="text-xs text-gray-400 font-medium">Estudiantes Inscritos</div>
-                    <div class="text-xl font-bold text-gray-800 dark:text-gray-100">{{ $totalInscritos }}</div>
+            </div>
+
+            <div class="stat-card bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm transition">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-700 text-xs font-semibold uppercase tracking-wider">Estudiantes Inscritos</p>
+                        <p class="text-3xl font-black text-[#191919] mt-1">{{ number_format($totalInscritos) }}</p>
+                    </div>
+                    <div class="p-3 bg-slate-100 rounded-lg text-slate-700">
+                        <i class="fa-solid fa-users text-xl"></i>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- Tabla de Sesiones Registradas --}}
-        <div class="bg-white dark:bg-dark-eval-1 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden">
+        {{-- Tabla de Sesiones Registradas (Estilo Control Docente) --}}
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
             <div class="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gray-50/50 dark:bg-dark-eval-2">
                 <div>
-                    <h3 class="text-base font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-light-cloud-blue"></i>
+                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-[#950101]"></i>
                         <span>Registro Histórico de Sesiones</span>
                     </h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Consulta el detalle de presentes y ausentes de cualquier sesión pasada.</p>
@@ -94,7 +102,7 @@
 
                 <div class="flex items-center gap-2">
                     <a href="{{ route('docente.reportes-asistencia.asignatura', $id) }}" 
-                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-dark-eval-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 shadow-xs transition">
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-dark-eval-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 shadow-xs transition">
                         <i class="fa-solid fa-chart-pie text-xs"></i>
                         <span>Ver Reporte Completo</span>
                     </a>
@@ -102,33 +110,31 @@
             </div>
 
             @if($sesiones->isEmpty())
-                <div class="p-12 text-center">
-                    <div class="w-16 h-16 rounded-full bg-blue-50 dark:bg-dark-eval-2 text-light-cloud-blue flex items-center justify-center mx-auto mb-4 text-2xl">
-                        <i class="fa-solid fa-calendar-xmark"></i>
-                    </div>
-                    <h4 class="text-base font-bold text-gray-800 dark:text-gray-100">Aún no hay asistencias registradas</h4>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto mt-1 mb-5">
+                <div class="p-12 text-center text-gray-500 dark:text-gray-400">
+                    <i class="fa-solid fa-calendar-xmark text-4xl mb-3 text-gray-300"></i>
+                    <p class="text-base font-bold text-gray-700 dark:text-gray-200">Aún no hay asistencias registradas</p>
+                    <p class="text-xs text-gray-500 max-w-sm mx-auto mt-1 mb-5">
                         Cuando registres la primera asistencia de esta clase, podrás consultarla y revisarla históricamente aquí.
                     </p>
-                    <x-button href="{{ route('docente.asistencia.show', $id) }}" variant="ucsc" class="shadow-md">
+                    <x-button href="{{ route('docente.asistencia.show', $id) }}" variant="ucsc" class="shadow-sm">
                         <i class="fa-solid fa-clipboard-check mr-2"></i>
                         Tomar Asistencia Hoy
                     </x-button>
                 </div>
             @else
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 dark:bg-dark-eval-2 text-[11px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b border-gray-100 dark:border-gray-700">
-                                <th class="py-3 px-4">Fecha</th>
-                                <th class="py-3 px-4">Espacio / Sala</th>
-                                <th class="py-3 px-4">Actividad / Observación</th>
-                                <th class="py-3 px-4 text-center">Asistencia</th>
-                                <th class="py-3 px-4 text-center">% Cumplimiento</th>
-                                <th class="py-3 px-4 text-right">Acciones</th>
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                            <tr>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Fecha</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Espacio / Sala</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Actividad / Observación</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Asistencia</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">% Cumplimiento</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[180px]">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
+                        <tbody class="bg-white divide-y divide-gray-200 dark:bg-dark-eval-1 dark:divide-gray-700">
                             @foreach($sesiones as $sesion)
                                 @php
                                     $presentes = $sesion->totalPresentes();
@@ -136,55 +142,46 @@
                                     $porcentaje = $sesion->porcentajeAsistencia();
                                     $esHoy = $sesion->fecha->isToday();
                                 @endphp
-                                <tr class="hover:bg-gray-50/80 dark:hover:bg-dark-eval-2 transition">
-                                    <td class="py-3 px-4">
-                                        <div class="font-bold text-gray-800 dark:text-gray-100">
-                                            {{ $sesion->fecha->translatedFormat('d \d\e M, Y') }}
-                                        </div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                                            {{ $sesion->fecha->translatedFormat('l') }}
-                                            @if($esHoy)
-                                                <span class="ml-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.2 rounded">Hoy</span>
-                                            @endif
+                                <tr class="hover:bg-gray-50 dark:hover:bg-dark-eval-2 transition">
+                                    <td class="px-4 py-4 text-center whitespace-nowrap">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <div class="font-bold text-gray-900 dark:text-gray-100">
+                                                {{ $sesion->fecha->translatedFormat('d \d\e M, Y') }}
+                                            </div>
+                                            <div class="text-xs text-gray-500 capitalize">
+                                                {{ $sesion->fecha->translatedFormat('l') }}
+                                                @if($esHoy)
+                                                    <span class="ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded-full border border-emerald-200">Hoy</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </td>
-                                    <td class="py-3 px-4">
-                                        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-200">
-                                            <i class="fa-solid fa-door-open text-gray-400"></i>
+                                    <td class="px-4 py-4 text-center whitespace-nowrap">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200 dark:bg-dark-eval-2 dark:text-gray-200">
                                             {{ $sesion->espacio ? ($sesion->espacio->id_espacio && $sesion->espacio->nombre_espacio && $sesion->espacio->id_espacio !== $sesion->espacio->nombre_espacio ? ($sesion->espacio->id_espacio . ' (' . $sesion->espacio->nombre_espacio . ')') : ($sesion->espacio->nombre_espacio ?? $sesion->espacio->id_espacio)) : 'No asignado' }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 max-w-xs truncate text-xs text-gray-600 dark:text-gray-300">
+                                    <td class="px-4 py-4 text-center max-w-xs truncate text-xs text-gray-700 dark:text-gray-300 font-medium">
                                         {{ $sesion->actividad ?? 'Clase regular sin observaciones adicionales' }}
                                     </td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="font-bold text-gray-800 dark:text-gray-100">{{ $presentes }}</span>
+                                    <td class="px-4 py-4 text-center whitespace-nowrap">
+                                        <span class="font-extrabold text-emerald-600 text-sm">{{ $presentes }}</span>
                                         <span class="text-gray-400 text-xs">/ {{ $total }}</span>
                                     </td>
-                                    <td class="py-3 px-4 text-center">
-                                        @if($porcentaje >= 75)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300">
-                                                {{ $porcentaje }}%
-                                            </span>
-                                        @elseif($porcentaje >= 50)
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                                                {{ $porcentaje }}%
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300">
-                                                {{ $porcentaje }}%
-                                            </span>
-                                        @endif
+                                    <td class="px-4 py-4 text-center whitespace-nowrap">
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $porcentaje >= 75 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : ($porcentaje >= 50 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-rose-100 text-rose-800 border border-rose-200') }}">
+                                            {{ $porcentaje }}%
+                                        </span>
                                     </td>
-                                    <td class="py-3 px-4 text-right">
-                                        <div class="flex items-center justify-end gap-1.5">
+                                    <td class="px-4 py-4 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center gap-2">
                                             <a href="{{ route('docente.asistencia.show', [$id, 'fecha' => $sesion->fecha->format('Y-m-d')]) }}" 
-                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900 dark:text-blue-300 transition">
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 shadow-xs transition dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800">
                                                 <i class="fa-solid fa-pen-to-square text-xs"></i>
                                                 <span>Consultar / Editar</span>
                                             </a>
                                             <a href="{{ route('docente.reportes-asistencia.sesion', $sesion->id) }}" 
-                                               class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-dark-eval-2 dark:hover:bg-dark-eval-3 dark:text-gray-300 transition">
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 shadow-xs transition dark:bg-dark-eval-2 dark:hover:bg-dark-eval-3 dark:text-gray-300 dark:border-gray-600">
                                                 <i class="fa-solid fa-file-lines text-xs"></i>
                                                 <span>Ficha</span>
                                             </a>

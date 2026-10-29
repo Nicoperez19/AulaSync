@@ -40,6 +40,7 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
             'RUN Docente',
             'Nombre Docente',
             'Asignatura',
+            'Sección',
             'Espacio',
             'Módulo',
             'Fecha de la Clase',
@@ -57,6 +58,7 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
         $fechaClase = $row->fecha_clase ? Carbon::parse($row->fecha_clase)->format('d/m/Y') : 'N/A';
         $profesorNombre = $row->profesor ? $row->profesor->name : 'N/A';
         $asignaturaNombre = $row->asignatura ? $row->asignatura->nombre_asignatura : ($row->id_asignatura ?? 'N/A');
+        $seccionAsignatura = $row->asignatura ? ($row->asignatura->seccion ?? 'N/A') : 'N/A';
 
         return [
             $row->id,
@@ -67,6 +69,7 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
             $row->run_profesor ?? 'N/A',
             $profesorNombre,
             $asignaturaNombre,
+            $seccionAsignatura,
             $row->id_espacio ?? 'N/A',
             $row->id_modulo ?? 'N/A',
             $fechaClase,
@@ -83,7 +86,7 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
     {
         $lastRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:Q1')->applyFromArray([
+        $sheet->getStyle('A1:R1')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 10],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E293B']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
@@ -92,7 +95,7 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
         $sheet->getRowDimension(1)->setRowHeight(25);
 
         if ($lastRow > 1) {
-            $sheet->getStyle("A2:Q{$lastRow}")->applyFromArray([
+            $sheet->getStyle("A2:R{$lastRow}")->applyFromArray([
                 'font' => ['size' => 9],
                 'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => 'E2E8F0']]],
@@ -113,15 +116,16 @@ class AuditoriaClasesExport implements FromCollection, WithHeadings, WithMapping
             'F' => 14,
             'G' => 26,
             'H' => 26,
-            'I' => 14,
-            'J' => 12,
-            'K' => 14,
-            'L' => 16,
+            'I' => 12,
+            'J' => 14,
+            'K' => 12,
+            'L' => 14,
             'M' => 16,
-            'N' => 26,
-            'O' => 32,
-            'P' => 16,
-            'Q' => 36,
+            'N' => 16,
+            'O' => 26,
+            'P' => 32,
+            'Q' => 16,
+            'R' => 36,
         ];
     }
 

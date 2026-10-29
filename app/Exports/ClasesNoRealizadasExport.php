@@ -86,6 +86,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             'UA (UNIDAD ACADÉMICA)',
             'Asignatura',
             'Código Asignatura',
+            'Sección',
             'Espacio',
             'Módulo',
             'Hora Inicio',
@@ -129,6 +130,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             $ua,
             $clase->asignatura->nombre_asignatura ?? 'N/A',
             $clase->asignatura->codigo_asignatura ?? 'N/A',
+            $clase->asignatura->seccion ?? 'N/A',
             $clase->id_espacio ?? 'N/A',
             $clase->modulo ? preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo) : $clase->id_modulo,
             $clase->modulo->hora_inicio ?? 'N/A',
@@ -169,7 +171,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:Q' . $lastRow => [
+            'A2:R' . $lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -196,14 +198,15 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             'G' => 25,  // UA (UNIDAD ACADÉMICA)
             'H' => 35,  // Asignatura
             'I' => 18,  // Código Asignatura
-            'J' => 12,  // Espacio
-            'K' => 10,  // Módulo
-            'L' => 12,  // Hora Inicio
-            'M' => 12,  // Hora Fin
-            'N' => 15,  // Estado
-            'O' => 25,  // Motivo
-            'P' => 35,  // Observaciones
-            'Q' => 18,  // Fecha Detección
+            'J' => 12,  // Sección
+            'K' => 12,  // Espacio
+            'L' => 10,  // Módulo
+            'M' => 12,  // Hora Inicio
+            'N' => 12,  // Hora Fin
+            'O' => 15,  // Estado
+            'P' => 25,  // Motivo
+            'Q' => 35,  // Observaciones
+            'R' => 18,  // Fecha Detección
         ];
     }
 

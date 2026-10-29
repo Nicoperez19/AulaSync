@@ -35,7 +35,7 @@
         </div>
     @endif
 
-    <div class="px-4 min-h-[80vh]">
+    <div class="px-4 pb-8 space-y-4">
         <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-4">
             <div class="p-3 bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center">
@@ -91,99 +91,111 @@
                 </div>
             </div>
         </div>
-        <!-- Filtros -->
-        <div class="p-4 mb-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <h3 class="flex items-center gap-2 mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">
-                <i class="fas fa-filter"></i> Filtros de búsqueda
-            </h3>
-            <form method="GET" action="{{ route('reportes.accesos') }}"
-                class="flex flex-wrap items-end w-full gap-x-4 gap-y-4">
-                <!-- Fecha de inicio -->
-                <div class="flex flex-col min-w-[180px] flex-1">
-                    <label for="fecha_inicio" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Fecha de inicio
-                    </label>
-                    <input type="date" id="fecha_inicio" name="fecha_inicio" value="{{ $fechaInicio }}"
-                        placeholder="dd-mm-aaaa"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 h-[37px] px-4 appearance-none py-0">
+        <!-- Sección FILTROS -->
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fas fa-filter text-[#950101]"></i> FILTROS
+                </h3>
+            </div>
+
+            <form method="GET" action="{{ route('reportes.accesos') }}" id="filtroAccesosForm">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <!-- Semestre -->
+                    <div>
+                        <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Semestre</label>
+                        <select name="periodo" 
+                                id="periodo_filtro"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white dark:bg-gray-700 dark:text-white">
+                            @if(!empty($periodosDisponibles))
+                                @foreach($periodosDisponibles as $p)
+                                    <option value="{{ $p->codigo }}" {{ ($periodo ?? '') == $p->codigo ? 'selected' : '' }}>
+                                        {{ $p->display_label }}
+                                    </option>
+                                @endforeach
+                            @endif
+                            <option value="" {{ empty($periodo) ? 'selected' : '' }}>Todos los semestres</option>
+                        </select>
+                    </div>
+
+                    <!-- Buscar -->
+                    <div>
+                        <label for="search" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Buscar</label>
+                        <div class="relative">
+                            <input type="text" 
+                                   name="search" 
+                                   value="{{ $search ?? '' }}"
+                                   id="search"
+                                   class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] dark:bg-gray-700 dark:text-white"
+                                   placeholder="Profesor, asignatura, RUN o espacio...">
+                            <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                        </div>
+                    </div>
+
+                    <!-- Unidad Académica (UA) -->
+                    <div>
+                        <label for="ua_filtro" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Unidad Académica</label>
+                        <select name="ua" 
+                                id="ua_filtro"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white dark:bg-gray-700 dark:text-white">
+                            <option value="">Todas las UAs</option>
+                            @if(isset($unidadesAcademicas) && count($unidadesAcademicas) > 0)
+                                @foreach($unidadesAcademicas as $u)
+                                    <option value="{{ $u->id_carrera }}" {{ ($ua ?? '') == $u->id_carrera ? 'selected' : '' }}>
+                                        {{ $u->id_carrera }} - {{ $u->nombre }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+
+                    <!-- Estado -->
+                    <div>
+                        <label for="estado" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Estado</label>
+                        <select name="estado" 
+                                id="estado"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white dark:bg-gray-700 dark:text-white">
+                            <option value="">Todos</option>
+                            <option value="activa" {{ ($estado ?? '') == 'activa' ? 'selected' : '' }}>En curso (Activa)</option>
+                            <option value="finalizada" {{ ($estado ?? '') == 'finalizada' ? 'selected' : '' }}>Finalizada</option>
+                        </select>
+                    </div>
+
+                    <!-- Desde -->
+                    <div>
+                        <label for="fecha_inicio" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Desde</label>
+                        <input type="date" 
+                               name="fecha_inicio" 
+                               value="{{ $fechaInicio }}"
+                               id="fecha_inicio"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Hasta -->
+                    <div>
+                        <label for="fecha_fin" class="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase mb-1">Hasta</label>
+                        <input type="date" 
+                               name="fecha_fin" 
+                               value="{{ $fechaFin }}"
+                               id="fecha_fin"
+                               class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] dark:bg-gray-700 dark:text-white">
+                    </div>
                 </div>
 
-                <!-- Fecha de fin -->
-                <div class="flex flex-col min-w-[180px] flex-1">
-                    <label for="fecha_fin" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Fecha de fin
-                    </label>
-                    <input type="date" id="fecha_fin" name="fecha_fin" value="{{ $fechaFin }}" placeholder="dd-mm-aaaa"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 h-[37px] px-4 appearance-none py-0">
-                </div>
-
-                <!-- Piso -->
-                <div class="flex flex-col min-w-[180px] flex-1">
-                    <label for="piso" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Piso
-                    </label>
-                    <select id="piso" name="piso"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 h-[37px] px-4 appearance-none py-0">
-                        <option value="">Todos los pisos</option>
-                        @foreach($pisos as $numeroPiso => $nombrePiso)
-                            <option value="{{ $numeroPiso }}" {{ $piso == $numeroPiso ? 'selected' : '' }}>
-                                Piso {{ $nombrePiso }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Tipo de usuario -->
-                <div class="flex flex-col min-w-[180px] flex-1">
-                    <label for="tipo_usuario" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Tipo de usuario
-                    </label>
-                    <select id="tipo_usuario" name="tipo_usuario"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 h-[37px] px-4 appearance-none py-0">
-                        <option value="">Todos los tipos</option>
-                        @foreach($tiposUsuario as $key => $tipo)
-                            <option value="{{ $key }}" {{ $tipoUsuario == $key ? 'selected' : '' }}>
-                                {{ $tipo }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Espacio -->
-                <div class="flex flex-col min-w-[200px] flex-[2]">
-                    <label for="espacio" class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Espacio
-                    </label>
-                    <select id="espacio" name="espacio"
-                        class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 h-[37px] px-4 appearance-none py-0">
-                        <option value="">Todos los espacios</option>
-                        @foreach($espacios as $nombreEspacio => $nombreCompleto)
-                            <option value="{{ $nombreEspacio }}" {{ $espacio == $nombreEspacio ? 'selected' : '' }}>
-                                {{ $nombreCompleto }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Botones -->
-                <div class="flex gap-2 items-end min-w-[200px] mt-6">
-                    <button type="submit"
-                        class="px-4 py-2 bg-[#191919] text-white rounded-lg font-semibold text-sm hover:bg-black transition shadow-xs">
-                        <i class="mr-2 fas fa-filter"></i>Filtrar
+                <!-- Botones de Acción -->
+                <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <a href="{{ route('reportes.accesos.limpiar') }}" 
+                       class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors inline-flex items-center gap-2">
+                        <i class="fas fa-undo text-xs"></i> Limpiar
+                    </a>
+                    <button type="submit" 
+                            class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                        <i class="fas fa-filter text-xs"></i> Aplicar filtros
                     </button>
-
-                    <a href="{{ route('reportes.accesos.limpiar') }}"
-                        class="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition shadow-xs">
-                        <i class="mr-2 fas fa-undo"></i>Limpiar
-                    </a>
-                </div>
-                    </a>
                 </div>
             </form>
         </div>
 
-        <!-- Estadísticas -->
-        
 
         <!-- Tabla de accesos -->
         <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
@@ -197,6 +209,10 @@
                         @csrf
                         <input type="hidden" name="fecha_inicio" value="{{ $fechaInicio }}">
                         <input type="hidden" name="fecha_fin" value="{{ $fechaFin }}">
+                        <input type="hidden" name="periodo" value="{{ $periodo }}">
+                        <input type="hidden" name="search" value="{{ $search }}">
+                        <input type="hidden" name="ua" value="{{ $ua }}">
+                        <input type="hidden" name="estado" value="{{ $estado }}">
                         <input type="hidden" name="piso" value="{{ $piso }}">
                         <input type="hidden" name="tipo_usuario" value="{{ $tipoUsuario }}">
                         <input type="hidden" name="espacio" value="{{ $espacio }}">
@@ -210,6 +226,10 @@
                         @csrf
                         <input type="hidden" name="fecha_inicio" value="{{ $fechaInicio }}">
                         <input type="hidden" name="fecha_fin" value="{{ $fechaFin }}">
+                        <input type="hidden" name="periodo" value="{{ $periodo }}">
+                        <input type="hidden" name="search" value="{{ $search }}">
+                        <input type="hidden" name="ua" value="{{ $ua }}">
+                        <input type="hidden" name="estado" value="{{ $estado }}">
                         <input type="hidden" name="piso" value="{{ $piso }}">
                         <input type="hidden" name="tipo_usuario" value="{{ $tipoUsuario }}">
                         <input type="hidden" name="espacio" value="{{ $espacio }}">
@@ -341,4 +361,24 @@
             @endif
         </div>
     </div>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const periodosLimites = @json($periodosLimites ?? []);
+            const periodoSelect = document.getElementById('periodo_filtro');
+            const fechaInicio = document.getElementById('fecha_inicio');
+            const fechaFin = document.getElementById('fecha_fin');
+
+            if (periodoSelect && fechaInicio && fechaFin) {
+                periodoSelect.addEventListener('change', function () {
+                    const val = this.value;
+                    if (val && periodosLimites[val]) {
+                        fechaInicio.value = periodosLimites[val].inicio;
+                        fechaFin.value = periodosLimites[val].fin;
+                    }
+                });
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>

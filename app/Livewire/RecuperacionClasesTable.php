@@ -83,14 +83,93 @@ class RecuperacionClasesTable extends Component
         $this->validate($this->rulesReagendar());
 
         $recuperacion = RecuperacionClase::findOrFail($this->recuperacionId);
-        $recuperacion->update([
-            'fecha_reagendada' => $this->fecha_reagendada,
-            'id_modulo_reagendado' => $this->id_modulo_reagendado,
-            'id_espacio_reagendado' => $this->id_espacio_reagendado,
-            'notas' => $this->notas,
-            'estado' => 'reagendada',
-            'gestionado_por' => Auth::user()->run,
-        ]);
+        $estadoAnterior = $recuperacion->estado;
+        $valoresAnteriores = [
+            'fecha_clase' => $recuperacion->fecha_clase_original?->format('Y-m-d'),
+            'id_espacio' => $recuperacion->id_espacio,
+            'id_modulo' => $recuperacion->id_modulo_original,
+            'estado' => $recuperacion->estado,
+        ];
+
+        $fechaReagendadaAnterior = $recuperacion->fecha_reagendada?->format('Y-m-d');
+        $moduloReagendadoAnterior = $recuperacion->id_modulo_reagendado;
+        $espacioReagendadoAnterior = $recuperacion->id_espacio_reagendado ?: $recuperacion->id_espacio;
+
+        $recuperacion->getConnection()->transaction(function () use ($recuperacion, $fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
+            $recuperacion->update([
+                'fecha_reagendada' => $this->fecha_reagendada,
+                'id_modulo_reagendado' => $this->id_modulo_reagendado,
+                'id_espacio_reagendado' => $this->id_espacio_reagendado,
+                'notas' => $this->notas,
+                'estado' => 'reagendada',
+                'gestionado_por' => Auth::user()->run,
+            ]);
+
+            $espacioDestino = $this->id_espacio_reagendado ?: $recuperacion->id_espacio;
+            $cnr = $recuperacion->claseNoRealizada;
+
+            if (!$cnr) {
+                $cnr = \App\Models\ClaseNoRealizada::where('run_profesor', $recuperacion->run_profesor)
+                    ->where('id_asignatura', $recuperacion->id_asignatura)
+                    ->where(function ($q) use ($recuperacion, $fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
+                        if ($recuperacion->fecha_clase_original && $recuperacion->id_modulo_original) {
+                            $q->where(function ($sub) use ($recuperacion) {
+                                $sub->whereDate('fecha_clase', $recuperacion->fecha_clase_original->format('Y-m-d'))
+                                    ->where(function ($mq) use ($recuperacion) {
+                                        $mq->where('id_modulo', $recuperacion->id_modulo_original)
+                                           ->orWhere('id_modulo', 'like', '%' . $recuperacion->id_modulo_original . '%');
+                                    });
+                            });
+                        }
+                        if ($fechaReagendadaAnterior && $moduloReagendadoAnterior) {
+                            $q->orWhere(function ($sub) use ($fechaReagendadaAnterior, $moduloReagendadoAnterior, $espacioReagendadoAnterior) {
+                                $sub->whereDate('fecha_clase', $fechaReagendadaAnterior)
+                                    ->where('id_espacio', $espacioReagendadoAnterior)
+                                    ->where('id_modulo', $moduloReagendadoAnterior);
+                            });
+                        }
+                    })
+                    ->first();
+            }
+
+            if ($cnr) {
+                $cnr->update([
+                    'fecha_clase' => $this->fecha_reagendada,
+                    'id_modulo' => $this->id_modulo_reagendado,
+                    'id_espacio' => $espacioDestino,
+                    'estado' => 'pendiente',
+                ]);
+                if ($recuperacion->id_clase_no_realizada !== $cnr->id) {
+                    $recuperacion->update(['id_clase_no_realizada' => $cnr->id]);
+                }
+            }
+        });
+
+        try {
+            $espacioFinal = $this->id_espacio_reagendado ?: $recuperacion->id_espacio;
+            $obsAuditoria = "Reagendada desde " . ($recuperacion->fecha_clase_original ? $recuperacion->fecha_clase_original->format('d/m/Y') : 'N/A')
+                . " ({$recuperacion->id_espacio}, módulo {$recuperacion->id_modulo_original}) a {$this->fecha_reagendada} ({$espacioFinal}, módulo {$this->id_modulo_reagendado})."
+                . ($this->notas ? " Notas: {$this->notas}" : '');
+
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'reagendar',
+                $valoresAnteriores,
+                [
+                    'fecha_clase' => $this->fecha_reagendada,
+                    'id_espacio' => $espacioFinal,
+                    'id_modulo' => $this->id_modulo_reagendado,
+                    'estado' => 'reagendada',
+                ],
+                $this->notas ?: 'Reagendamiento de clase',
+                $obsAuditoria,
+                $estadoAnterior,
+                'reagendada',
+                'web'
+            );
+        } catch (\Throwable $e) {
+            // Silencioso
+        }
 
         // Crear notificación de clase reagendada
         \App\Models\Notificacion::crearNotificacionClaseReagendada($recuperacion);
@@ -142,25 +221,75 @@ class RecuperacionClasesTable extends Component
     public function obviar($id)
     {
         $recuperacion = RecuperacionClase::findOrFail($id);
+        $estadoAnterior = $recuperacion->estado;
         $recuperacion->update([
             'estado' => 'obviada',
             'gestionado_por' => Auth::user()->run,
         ]);
+
+        try {
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'obviar_recuperacion',
+                ['estado' => $estadoAnterior],
+                ['estado' => 'obviada'],
+                'Recuperación obviada',
+                $recuperacion->notas,
+                $estadoAnterior,
+                'obviada',
+                'web'
+            );
+        } catch (\Throwable $e) {}
+
         session()->flash('message', 'Reagendamiento obviado.');
     }
 
     public function marcarRealizada($id)
     {
         $recuperacion = RecuperacionClase::findOrFail($id);
-        $recuperacion->update([
-            'estado' => 'realizada',
-            'gestionado_por' => Auth::user()->run,
-        ]);
+        $estadoAnterior = $recuperacion->estado;
+        $recuperacion->getConnection()->transaction(function () use ($recuperacion) {
+            $recuperacion->update([
+                'estado' => 'realizada',
+                'gestionado_por' => Auth::user()?->run,
+            ]);
+            if ($recuperacion->claseNoRealizada) {
+                $recuperacion->claseNoRealizada->update(['estado' => 'recuperada']);
+            } elseif ($recuperacion->fecha_reagendada && $recuperacion->id_modulo_reagendado) {
+                \App\Models\ClaseNoRealizada::where('run_profesor', $recuperacion->run_profesor)
+                    ->where('id_asignatura', $recuperacion->id_asignatura)
+                    ->whereDate('fecha_clase', $recuperacion->fecha_reagendada->format('Y-m-d'))
+                    ->where(function ($q) use ($recuperacion) {
+                        $q->where('id_modulo', $recuperacion->id_modulo_reagendado)
+                          ->orWhere('id_modulo', 'like', '%' . $recuperacion->id_modulo_reagendado . '%');
+                    })
+                    ->update(['estado' => 'recuperada']);
+            }
+        });
+
+        try {
+            app(\App\Services\AuditoriaService::class)->registrar(
+                $recuperacion->claseNoRealizada ?? $recuperacion,
+                'marcar_recuperada',
+                ['estado' => $estadoAnterior],
+                ['estado' => 'recuperada'],
+                'Clase marcada como recuperada',
+                $recuperacion->notas,
+                $estadoAnterior,
+                'recuperada',
+                'web'
+            );
+        } catch (\Throwable $e) {}
+
         session()->flash('message', 'Clase marcada como realizada.');
     }
 
     public function render()
     {
+        try {
+            \App\Models\ClaseNoRealizada::sincronizarRecuperacionesConReservas();
+        } catch (\Throwable $e) {}
+
         $query = RecuperacionClase::with(['profesor', 'asignatura', 'licencia', 'moduloOriginal', 'espacioReagendado'])
             ->when($this->search, function ($q) {
                 $rawSearch = trim($this->search);

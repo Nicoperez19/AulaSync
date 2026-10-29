@@ -95,6 +95,33 @@ class SalaEstudioController extends Controller
                 }
             }
 
+            // Asegurar que exista también en la tabla solicitantes del tenant (por FK reservas_run_solicitante_foreign)
+            $solicitanteTenant = Solicitante::on('tenant')
+                ->where('run_solicitante', $usuario->run)
+                ->orWhere('run_solicitante', $run)
+                ->orWhere('run_solicitante', $runLimpio)
+                ->first();
+
+            if (!$solicitanteTenant) {
+                $correoSync = $usuario->email ?: ($usuario->run . '@temp.com');
+                if (Solicitante::on('tenant')->where('correo', $correoSync)->where('run_solicitante', '!=', $usuario->run)->exists()) {
+                    $correoSync = $usuario->run . '@temp.com';
+                }
+                $solicitanteTenant = Solicitante::on('tenant')->firstOrCreate(
+                    ['run_solicitante' => (string) $usuario->run],
+                    [
+                        'nombre' => $usuario->name ?: ('Usuario ' . $usuario->run),
+                        'correo' => $correoSync,
+                        'telefono' => $usuario->celular ?: '000000000',
+                        'tipo_solicitante' => 'estudiante',
+                        'activo' => true,
+                        'fecha_registro' => Carbon::now(),
+                    ]
+                );
+            }
+
+            $runSolicitanteFinal = $solicitanteTenant->run_solicitante;
+
             // Verificar que el espacio existe y es sala de estudio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
 
@@ -113,8 +140,14 @@ class SalaEstudioController extends Controller
             }
 
             // Verificar si el alumno ya está registrado hoy (salida / devolución)
+            $runsBusqueda = array_values(array_unique(array_filter([
+                (string) $runSolicitanteFinal,
+                (string) $usuario->run,
+                (string) $run,
+                (string) $runLimpio,
+            ])));
             $reservaExistente = Reserva::where('id_espacio', $idEspacio)
-                ->where('run_solicitante', $usuario->run)
+                ->whereIn('run_solicitante', $runsBusqueda)
                 ->where('estado', 'activa')
                 ->whereDate('fecha_reserva', Carbon::today())
                 ->first();
@@ -188,8 +221,8 @@ class SalaEstudioController extends Controller
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->id_espacio = $idEspacio;
-            $reserva->run_solicitante = $usuario->run;
-            $reserva->fecha_reserva = Carbon::now();
+            $reserva->run_solicitante = $runSolicitanteFinal;
+            $reserva->fecha_reserva = Carbon::now()->toDateString();
             $reserva->hora = Carbon::now()->format('H:i:s');
             $reserva->hora_salida = Carbon::now()->addHours(2)->format('H:i:s'); // 2 horas por defecto
             $reserva->estado = 'activa';

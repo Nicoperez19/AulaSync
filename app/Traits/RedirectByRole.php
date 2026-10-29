@@ -31,7 +31,12 @@ trait RedirectByRole
                 : redirect('/docente');
         }
         
-        if ($user->hasAnyRole(['Usuario', 'Estudiante en Práctica'])) {
+        // Estudiante en Práctica accede al Dashboard
+        if ($user->hasRole('Estudiante en Práctica')) {
+            return redirect(RouteServiceProvider::HOME);
+        }
+
+        if ($user->hasRole('Usuario')) {
             return redirect()->route('espacios.show');
         }
 

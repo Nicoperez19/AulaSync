@@ -264,15 +264,15 @@ function cambiarTabOcupacion(tipo) {
     
     // Resetear todos los botones al estado inactivo
     document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
-        btn.classList.remove('bg-[#D2091E]', 'text-white', 'shadow-sm');
-        btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
+        btn.classList.remove('bg-[#D12420]', 'bg-[#D2091E]', 'text-white', 'shadow-sm');
+        btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D12420]', 'hover:shadow-sm');
     });
     
     // Activar el botón seleccionado
     const selectedBtn = document.getElementById(`tab-ocupacion-${tipo}`);
     if (selectedBtn) {
-        selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
-        selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
+        selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D12420]', 'hover:text-[#D2091E]', 'hover:shadow-sm');
+        selectedBtn.classList.add('bg-[#D12420]', 'text-white', 'shadow-sm');
     }
 
     // Actualizar parámetros de tipo en los botones de exportación

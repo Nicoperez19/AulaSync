@@ -136,7 +136,7 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
 });
 
 // Dashboard - Administrador, Supervisor, Director o permiso dashboard
-Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|dashboard', 'extend.execution:300'])->group(function () {
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|Director|Estudiante en Práctica|dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
@@ -482,6 +482,10 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('auditoria-clases', [AuditoriaClaseController::class, 'index'])->name('reportes.auditoria-clases.index');
     Route::get('auditoria-clases/export/{format}', [AuditoriaClaseController::class, 'export'])->name('reportes.auditoria-clases.export');
     Route::get('auditoria-clases/historial/{claseId}', [AuditoriaClaseController::class, 'historialAjax'])->name('reportes.auditoria-clases.historial');
+
+    // Auditoría de Reagendamientos
+    Route::get('auditoria-reagendamientos', [AuditoriaClaseController::class, 'reagendamientos'])->name('reportes.auditoria-reagendamientos.index');
+    Route::get('auditoria-reagendamientos/export/{format}', [AuditoriaClaseController::class, 'exportReagendamientos'])->name('reportes.auditoria-reagendamientos.export');
 });
 
 require __DIR__ . '/auth.php';

@@ -375,6 +375,8 @@ class EspacioService
     public function limpiarCacheEstados(): void
     {
         try {
+            $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+            Cache::forget("estados_espacios_{$tenantId}");
             Cache::forget('estados_espacios');
             Cache::forget('espacios_disponibles');
             Cache::forget('dashboard_espacios');

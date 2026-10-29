@@ -169,7 +169,7 @@
                         <span style="color: #64748b;">RUN: {{ $item->run_profesor ?? 'N/A' }}</span>
                     </td>
                     <td>
-                        {{ $item->asignatura->nombre_asignatura ?? ($item->id_asignatura ?? 'N/A') }}<br>
+                        {{ $item->asignatura->nombre_asignatura ?? ($item->id_asignatura ?? 'N/A') }}@if(!empty($item->asignatura?->seccion)) <span style="color: #64748b;">(Sec. {{ $item->asignatura->seccion }})</span>@endif<br>
                         <span style="color: #64748b;">Espacio: {{ $item->id_espacio ?? 'N/A' }}</span>
                     </td>
                     <td>

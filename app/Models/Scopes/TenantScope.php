@@ -58,7 +58,7 @@ class TenantScope implements Scope
         // 'sedes', 'universidades': catálogos centrales.
         $tablasGlobales = [
             'modulos', 'periodos_academicos', 'sedes', 'universidades', 'dias_feriados', 'cursos_verano',
-            'sesiones_asistencia', 'asistencia_estudiantes', 'estudiantes', 'inscripciones'
+            'sesiones_asistencia', 'asistencia_estudiantes', 'estudiantes', 'inscripciones', 'auditoria_clases'
         ];
         if (in_array($table, $tablasGlobales)) {
             return;

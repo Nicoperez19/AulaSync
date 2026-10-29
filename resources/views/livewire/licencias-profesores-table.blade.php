@@ -73,20 +73,19 @@
                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
                     @forelse ($licencias as $licencia)
                         <tr wire:key="licencia-row-{{ $licencia->id_licencia }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
-                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 align-middle">
+                            <td class="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 text-center align-middle">
                                 <div class="font-medium">{{ $licencia->profesor->name }}</div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $licencia->run_profesor }}</div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center align-middle whitespace-nowrap">
                                 {{ $licencia->fecha_inicio->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center align-middle whitespace-nowrap">
                                 {{ $licencia->fecha_fin->format('d/m/Y') }}
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 align-middle">
+                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 text-center align-middle">
                                 {{ $licencia->motivo ?? 'Sin especificar' }}
                             </td>
-                            <td class="px-4 py-3 text-sm align-middle whitespace-nowrap">
+                            <td class="px-4 py-3 text-sm text-center align-middle whitespace-nowrap">
                                 @php
                                     $badgeColors = [
                                         'activa' => 'bg-green-100 text-green-800',

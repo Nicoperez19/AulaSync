@@ -278,6 +278,29 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                     'es_temporal' => true,
                     'nombre_asignatura' => $planColaborador->profesorColaborador->nombre_asignatura_temporal ?? null,
                 ];
+            } else {
+                $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $espacio,
+                    $usuario,
+                    $hoyFecha,
+                    $horaActualStr,
+                    60
+                );
+                if ($recProg) {
+                    $tieneProgramacion = true;
+                    $modulosInfo = [
+                        'id_modulo' => $recProg['id_modulo'],
+                        'id_modulo_fin' => $recProg['id_modulo_fin'] ?? $recProg['id_modulo'],
+                        'hora_inicio' => $recProg['hora_inicio'],
+                        'hora_termino' => $recProg['hora_termino'],
+                        'id_asignatura' => $recProg['id_asignatura'],
+                        'es_temporal' => false,
+                        'es_recuperacion' => true,
+                        'tipo' => 'clase_reagendada',
+                        'nombre_asignatura' => $recProg['nombre_asignatura'] ?? 'Recuperación de Clase',
+                        'seccion' => $recProg['seccion'] ?? null,
+                    ];
+                }
             }
         }
 
@@ -326,10 +349,14 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             }
         }
 
+        $esRecuperacion = (bool) ($modulosInfo['es_recuperacion'] ?? false);
+
         return response()->json([
             'success' => true,
             'tieneProgramacion' => $tieneProgramacion,
             'tiene_clase' => $tieneProgramacion,
+            'es_recuperacion' => $esRecuperacion,
+            'tipo' => $esRecuperacion ? 'clase_reagendada' : 'clase_regular',
             'clase_ya_finalizada' => $claseYaFinalizada,
             'reserva_finalizada_info' => $reservaFinalizadaInfo,
             'modulosInfo' => $modulosInfo,
@@ -448,13 +475,16 @@ Route::get('/modulos', function () {
 
 Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function ($fecha, $moduloInicio, $moduloFin) {
     try {
-        $espacios = \App\Models\Espacio::where('estado', 'Disponible')
+        $espacios = \App\Models\Espacio::whereNotIn('estado', ['Mantención', 'Mantenimiento', 'Inactivo', 'Deshabilitado', 'Baja'])
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de estudio%'")
             ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala estudio%'")
-            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%taller%'")
-            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%laboratorio%' OR LOWER(tipo_espacio) LIKE '%laboratorio de computacion%' OR LOWER(tipo_espacio) LIKE '%laboratorio computacion%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de reuniones%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala reuniones%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%oficina%'")
             ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%estudio%'")
-            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%taller%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%reunion%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%oficina%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%bodega%'")
             ->select('id_espacio', 'nombre_espacio', 'tipo_espacio')
             ->orderBy('nombre_espacio')
             ->get();
@@ -473,49 +503,125 @@ Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function 
         ];
         $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
 
-        $modulosAVerificar = range((int)$moduloInicio, (int)$moduloFin);
+        // Extraer los números de inicio y fin (ej: de "MI.7" -> 7, o de "7" -> 7)
+        $inicioNum = (int) (str_contains((string)$moduloInicio, '.') ? explode('.', (string)$moduloInicio)[1] : preg_replace('/[^0-9]/', '', (string)$moduloInicio));
+        $finNum = (int) (str_contains((string)$moduloFin, '.') ? explode('.', (string)$moduloFin)[1] : preg_replace('/[^0-9]/', '', (string)$moduloFin));
+
+        if ($inicioNum <= 0) {
+            $inicioNum = 1;
+        }
+        if ($finNum < $inicioNum) {
+            $finNum = $inicioNum;
+        }
+
+        $modulosAVerificar = range($inicioNum, $finNum);
         $modulosIds = array_map(function($num) use ($prefijoDia) {
             return "{$prefijoDia}.{$num}";
         }, $modulosAVerificar);
 
-        $primerModuloObj = \App\Models\Modulo::find($modulosIds[0]);
-        $ultimoModuloObj = \App\Models\Modulo::find(end($modulosIds));
-        
-        if (!$primerModuloObj || !$ultimoModuloObj) {
-            return response()->json([
-                'error' => 'Módulo no encontrado',
-                'debug' => [
-                    'modulos_construidos' => $modulosIds,
-                ],
-            ], 404);
-        }
+        $primerModuloObj = \App\Models\Modulo::withoutGlobalScopes()->where('id_modulo', $modulosIds[0])->first()
+            ?? \App\Models\Modulo::find($modulosIds[0]);
+        $ultimoModuloObj = \App\Models\Modulo::withoutGlobalScopes()->where('id_modulo', end($modulosIds))->first()
+            ?? \App\Models\Modulo::find(end($modulosIds));
 
-        $horaInicio = substr($primerModuloObj->hora_inicio, 0, 5);
-        $horaFin = substr($ultimoModuloObj->hora_termino, 0, 5);
+        // Horarios base como fallback en caso de que algún módulo no esté en BD
+        $modulosBase = [
+            1 => ['inicio' => '08:10', 'termino' => '09:00'],
+            2 => ['inicio' => '09:10', 'termino' => '10:00'],
+            3 => ['inicio' => '10:10', 'termino' => '11:00'],
+            4 => ['inicio' => '11:10', 'termino' => '12:00'],
+            5 => ['inicio' => '12:10', 'termino' => '13:00'],
+            6 => ['inicio' => '13:10', 'termino' => '14:00'],
+            7 => ['inicio' => '14:10', 'termino' => '15:00'],
+            8 => ['inicio' => '15:10', 'termino' => '16:00'],
+            9 => ['inicio' => '16:10', 'termino' => '17:00'],
+            10 => ['inicio' => '17:10', 'termino' => '18:00'],
+            11 => ['inicio' => '18:10', 'termino' => '19:00'],
+            12 => ['inicio' => '19:10', 'termino' => '20:00'],
+            13 => ['inicio' => '20:10', 'termino' => '21:00'],
+            14 => ['inicio' => '21:10', 'termino' => '22:00'],
+            15 => ['inicio' => '22:10', 'termino' => '23:00'],
+        ];
 
-        $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar) {
+        $horaInicio = $primerModuloObj ? substr($primerModuloObj->hora_inicio, 0, 5) : ($modulosBase[$inicioNum]['inicio'] ?? '08:10');
+        $horaFin = $ultimoModuloObj ? substr($ultimoModuloObj->hora_termino, 0, 5) : ($modulosBase[$finNum]['termino'] ?? '20:00');
+
+        $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar, $prefijoDia) {
+            // 1. Verificar planificaciones normales
             foreach ($modulosIds as $moduloId) {
-                $planificado = Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
-                    ->where('id_modulo', $moduloId)
-                    ->exists();
+                $planificadoQuery = \App\Models\Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
+                    ->where('id_modulo', $moduloId);
 
-                if ($planificado) {
+                if (\App\Models\Planificacion_Asignatura::tieneColumnaVigencia()) {
+                    $planificadoQuery = $planificadoQuery->vigentesEn($fecha);
+                }
+
+                if ($planificadoQuery->exists()) {
                     return false;
                 }
             }
-            
+
+            // 2. Verificar planificaciones de profesores colaboradores
+            try {
+                if (\Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('planificaciones_profesores_colaboradores')) {
+                    foreach ($modulosIds as $moduloId) {
+                        $planificadoColab = \Illuminate\Support\Facades\DB::connection('tenant')->table('planificaciones_profesores_colaboradores as ppc')
+                            ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
+                            ->where('ppc.id_modulo', $moduloId)
+                            ->where('ppc.id_espacio', $espacio->id_espacio)
+                            ->where('pc.estado', 'activo')
+                            ->where('pc.fecha_inicio', '<=', $fecha)
+                            ->where('pc.fecha_termino', '>=', $fecha)
+                            ->exists();
+
+                        if ($planificadoColab) {
+                            return false;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Si la tabla no existe o falla la conexión, continuar
+            }
+
+            // 3. Verificar reservas confirmadas / activas / programadas
             foreach ($modulosAVerificar as $numModulo) {
-                $reservado = Reserva::where('id_espacio', $espacio->id_espacio)
+                $modInicio = $modulosBase[$numModulo]['inicio'] ?? '08:10';
+                $modFin = $modulosBase[$numModulo]['termino'] ?? '20:00';
+                $modInicioTime = strlen($modInicio) === 5 ? "{$modInicio}:00" : $modInicio;
+                $modFinTime = strlen($modFin) === 5 ? "{$modFin}:00" : $modFin;
+
+                $reservado = \App\Models\Reserva::where('id_espacio', $espacio->id_espacio)
                     ->whereDate('fecha_reserva', $fecha)
-                    ->whereRaw('modulos LIKE ?', ["%{$numModulo}%"])
-                    ->whereIn('estado', ['confirmada', 'en_curso', 'activa'])
+                    ->whereIn('estado', ['confirmada', 'en_curso', 'activa', 'programada'])
+                    ->where(function ($query) use ($numModulo, $modInicioTime, $modFinTime) {
+                        // Caso A: Tiene modulo_inicio / modulo_fin definidos
+                        $query->where(function ($sub) use ($numModulo) {
+                            $sub->whereNotNull('modulo_inicio')
+                                ->where('modulo_inicio', '<=', $numModulo)
+                                ->where(function ($sub2) use ($numModulo) {
+                                    $sub2->whereNull('modulo_fin')
+                                         ->where('modulo_inicio', '=', $numModulo)
+                                         ->orWhere('modulo_fin', '>=', $numModulo);
+                                });
+                        })
+                        // Caso B: Si modulo_inicio es null, verificar traslape por horario (hora y hora_salida)
+                        ->orWhere(function ($sub) use ($modInicioTime, $modFinTime) {
+                            $sub->whereNull('modulo_inicio')
+                                ->whereNotNull('hora')
+                                ->where('hora', '<', $modFinTime)
+                                ->where(function ($sub2) use ($modInicioTime) {
+                                    $sub2->whereNull('hora_salida')
+                                         ->orWhere('hora_salida', '>', $modInicioTime);
+                                });
+                        });
+                    })
                     ->exists();
 
                 if ($reservado) {
                     return false;
                 }
             }
-            
+
             return true;
         })->values();
 

@@ -127,6 +127,17 @@ class ApiReservaController extends Controller
                     ->exists();
             }
 
+            if (!$tieneClaseProgramada) {
+                $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $espacioId,
+                    $run,
+                    $hoyFecha,
+                    $ahora->format('H:i:s'),
+                    60
+                );
+                $tieneClaseProgramada = $recProg !== null;
+            }
+
             return response()->json([
                 'estado' => 'disponible',
                 'tieneClaseProgramada' => $tieneClaseProgramada
@@ -190,7 +201,7 @@ class ApiReservaController extends Controller
                 ->where('m.hora_inicio', '<=', $horaMaximaInicio)
                 ->where('m.hora_termino', '>=', $horaActualStr)
                 ->orderBy('m.hora_inicio', 'asc')
-                ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.id_modulo', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
 
             // 1.b. Si no se encontró en planificación regular, verificar si es Profesor Colaborador en este espacio
@@ -221,6 +232,7 @@ class ApiReservaController extends Controller
                     ->select(
                         DB::raw('COALESCE(a.id_asignatura, pc.id_asignatura) as id_asignatura'),
                         DB::raw('COALESCE(a.nombre_asignatura, pc.nombre_asignatura_temporal, "Clase Colaborador") as nombre_asignatura'),
+                        'm.id_modulo',
                         'm.hora_inicio',
                         'm.hora_termino'
                     )
@@ -254,8 +266,30 @@ class ApiReservaController extends Controller
                     ->where('m.hora_inicio', '<=', $horaMaximaInicio)
                     ->where('m.hora_termino', '>=', $horaActualStr)
                     ->orderBy('m.hora_inicio', 'asc')
-                    ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                    ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.id_modulo', 'm.hora_inicio', 'm.hora_termino')
                     ->first();
+            }
+
+            // 1.d. Si aún no se encuentra, verificar si tiene una recuperación de clase reagendada para hoy en este espacio
+            $infoRecuperacionApi = null;
+            if (!$tieneClase) {
+                $infoRecuperacionApi = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                    $request->espacio_id,
+                    $request->run,
+                    $hoyFecha,
+                    $horaActualStr,
+                    60
+                );
+                if ($infoRecuperacionApi) {
+                    $tieneClase = (object) [
+                        'id_asignatura'     => $infoRecuperacionApi['id_asignatura'],
+                        'nombre_asignatura' => $infoRecuperacionApi['nombre_asignatura'] ?? 'Recuperación de clase',
+                        'id_modulo'         => $infoRecuperacionApi['id_modulo'],
+                        'hora_inicio'       => $infoRecuperacionApi['hora_inicio'],
+                        'hora_termino'      => $infoRecuperacionApi['hora_termino'],
+                        'es_recuperacion'   => true,
+                    ];
+                }
             }
 
             $forzado = false;
@@ -373,6 +407,60 @@ class ApiReservaController extends Controller
 
             DB::connection('tenant')->beginTransaction();
             try {
+                // Calcular módulos consecutivos y hora de salida real del bloque
+                $numModuloInicio = null;
+                $numModuloFin = null;
+                $cantidadModulos = 1;
+                $horaSalidaCalculada = $tieneClase->hora_termino ?? null;
+
+                if (!empty($infoRecuperacionApi)) {
+                    $numModuloInicio = $infoRecuperacionApi['modulo_inicio'];
+                    $numModuloFin = $infoRecuperacionApi['modulo_fin'];
+                    $cantidadModulos = $infoRecuperacionApi['cantidad_modulos'];
+                    $horaSalidaCalculada = $infoRecuperacionApi['hora_termino'];
+                } elseif (!empty($tieneClase->id_modulo)) {
+                    $numModuloInicio = \App\Helpers\ModulosHelper::getNumeroModulo($tieneClase->id_modulo);
+                    $numModuloFin = $numModuloInicio;
+
+                    $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                        ->whereIn('id_espacio', $espaciosEquivalentes)
+                        ->where(function ($q) use ($tieneClase, $runLimpio) {
+                            if (!empty($tieneClase->id_asignatura)) {
+                                $q->where('id_asignatura', $tieneClase->id_asignatura);
+                            }
+                            $q->orWhereHas('asignatura', function ($aq) use ($runLimpio) {
+                                $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            });
+                        })
+                        ->whereHas('horario', function ($q) use ($periodoActual) {
+                            $q->where('periodo', $periodoActual);
+                        })
+                        ->whereHas('modulo', function ($q) use ($diasPosibles) {
+                            $q->whereIn('dia', $diasPosibles);
+                        })
+                        ->get();
+
+                    $modulosAsociados = [];
+                    foreach ($planificacionesMismoBloque as $planItem) {
+                        if ($planItem->modulo) {
+                            $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                            $modulosAsociados[$num] = $planItem->modulo;
+                        }
+                    }
+
+                    while ($numModuloFin !== null && isset($modulosAsociados[$numModuloFin + 1])) {
+                        $numModuloFin++;
+                        $cantidadModulos++;
+                    }
+
+                    if ($numModuloFin !== null && isset($modulosAsociados[$numModuloFin])) {
+                        $horaSalidaCalculada = $modulosAsociados[$numModuloFin]->hora_termino;
+                    }
+                } elseif (isset($moduloNum) && $moduloNum) {
+                    $numModuloInicio = $moduloNum;
+                    $numModuloFin = $moduloNum;
+                }
+
                 // Crear la reserva
                 $reserva = new Reserva();
                 $reserva->id_reserva = Reserva::generarIdUnico();
@@ -382,9 +470,14 @@ class ApiReservaController extends Controller
                 $reserva->id_asignatura = $tieneClase->id_asignatura ?? null;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $reserva->hora = $horaActualStr;
-                $reserva->tipo_reserva = $tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase';
+                $reserva->tipo_reserva = !empty($infoRecuperacionApi)
+                    ? 'recuperacion'
+                    : ($tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase');
                 $reserva->estado = 'activa';
-                $reserva->hora_salida = null;
+                $reserva->modulo_inicio = $numModuloInicio;
+                $reserva->modulo_fin = $numModuloFin;
+                $reserva->modulos = $cantidadModulos;
+                $reserva->hora_salida = $horaSalidaCalculada;
                 $reserva->created_at = $horaActual;
                 $reserva->updated_at = $horaActual;
                 $reserva->save();
@@ -487,18 +580,25 @@ class ApiReservaController extends Controller
                 $espacio->save();
             }
 
+            try {
+                $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+                \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+                \Illuminate\Support\Facades\Cache::forget('estados_espacios');
+            } catch (\Throwable $e) {}
+
             // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
             $reservaAutoFinalizada = Reserva::where('id_espacio', $request->espacio_id)
                 ->where('estado', 'finalizada')
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->whereNotNull('observaciones')
-                ->whereNotNull('observaciones')
-                ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
+                ->where(function ($q) {
+                    $q->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
+                      ->orWhere('observaciones', 'LIKE', '%Finalizada automáticamente%');
+                })
                 ->where(function ($query) use ($runNormalizado) {
                     $query->where('run_profesor', $runNormalizado)
                         ->orWhere('run_solicitante', $runNormalizado);
                 })
-
                 ->orderBy('updated_at', 'desc')
                 ->first();
 
@@ -971,9 +1071,19 @@ class ApiReservaController extends Controller
 
                 if ($tieneClaseProgramada && !empty($tieneClaseProgramada->id_modulo)) {
                     $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                    $espacioLimpioLib = str_replace(['-', ' '], '', $request->espacio_id);
+                    $runLimpioLib = preg_replace('/[^0-9kK]/', '', $runNormalizado);
                     $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
-                        ->where('id_espacio', $request->espacio_id)
-                        ->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
+                        ->where(function ($eq) use ($request, $espacioLimpioLib) {
+                            $eq->where('id_espacio', $request->espacio_id)
+                               ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioLib]);
+                        })
+                        ->where(function ($q) use ($tieneClaseProgramada, $runLimpioLib) {
+                            $q->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
+                              ->orWhereHas('asignatura', function ($aq) use ($runLimpioLib) {
+                                  $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpioLib]);
+                              });
+                        })
                         ->whereHas('horario', function ($q) use ($periodo) {
                             $q->where('periodo', $periodo);
                         })

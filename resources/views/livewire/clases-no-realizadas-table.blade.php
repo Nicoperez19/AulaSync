@@ -190,12 +190,12 @@
         </div>
     </div>
 
-    <!-- Botón Exportar y Auditoría -->
+    <!-- Botón Exportar y Auditorías -->
     <div class="flex flex-wrap justify-end gap-2 mb-4">
         <a href="{{ route('reportes.auditoria-clases.index') }}"
            class="inline-flex items-center justify-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
             <i class="fas fa-clipboard-user"></i>
-            <span>Registro de Auditoría</span>
+            <span>Auditorías</span>
         </a>
         <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
            class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
@@ -280,7 +280,7 @@
                                         <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white"></i>
                                     @endif
                                 </th>
-                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Detección</th>
+                                <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider w-28">Horario</th>
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider min-w-[200px]">Acciones</th>
                             </tr>
                         </thead>
@@ -318,7 +318,12 @@
                                     <td class="px-3 py-4 text-sm text-gray-900 w-40">
                                         <div class="break-words">
                                             <div class="font-medium">{{ $clase['asignatura'] ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $clase['codigo_asignatura'] ?? '' }}</div>
+                                            <div class="text-xs text-gray-500">
+                                                {{ $clase['codigo_asignatura'] ?? '' }}
+                                                @if(!empty($clase['seccion']) && $clase['seccion'] !== 'N/A')
+                                                    <span class="text-slate-600 font-medium">&bull; Sec. {{ $clase['seccion'] }}</span>
+                                                @endif
+                                            </div>
                                             @if(!empty($clase['ua']) && $clase['ua'] !== 'N/A')
                                                 <div class="text-xs font-semibold text-gray-700 mt-0.5" title="{{ $clase['carrera'] ?? '' }}">
                                                     UA: {{ $clase['ua'] }}
@@ -329,17 +334,17 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $clase['espacio'] }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $moduloInicio }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                                         {{ $moduloFin }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap">
-                                        <div class="flex flex-col gap-1">
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <div class="flex flex-col gap-1 items-center justify-center">
                                             @if($clase['estado'] === 'No Registrada')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                     No Registrada
@@ -366,9 +371,9 @@
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="px-3 py-4 text-sm text-gray-500 w-28">
-                                        <div class="break-words">
-                                            @if(isset($clase['hora_deteccion']))
+                                    <td class="px-3 py-4 text-sm text-gray-500 whitespace-nowrap text-center">
+                                        <div class="break-words text-center">
+                                            @if(!empty($clase['hora_inicio']) && !empty($clase['hora_fin']))<div class="font-medium text-gray-800">{{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}</div><div class="text-xs text-gray-500">{{ ($clase['id_modulo_raw'] ?? $clase['modulo']) }} ({{ substr($clase['hora_inicio'], 0, 5) }} - {{ substr($clase['hora_fin'], 0, 5) }})</div>@elseif(isset($clase['hora_deteccion']))
                                                 <div>{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('d/m/Y') }}</div>
                                                 <div class="text-xs">{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('H:i') }}</div>
                                             @else
@@ -645,7 +650,7 @@ function initClasesNoRealizadasScripts() {
                 <div class="text-left space-y-4">
                     <div class="bg-gray-50 p-3 rounded-lg mb-4">
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
-                        <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        <p><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio}</p>
@@ -657,12 +662,12 @@ function initClasesNoRealizadasScripts() {
                             <option value="no_realizada" ${clase.estado === 'no_realizada' ? 'selected' : ''}>No registrada</option>
                             <option value="realizada" ${clase.estado === 'realizada' || clase.estado === 'registrada' ? 'selected' : ''}>Registrada (Docente realizó la clase)</option>
                             <option value="pendiente" ${clase.estado === 'pendiente' ? 'selected' : ''}>Pendiente de recuperación</option>
-                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado (sin recuperación)</option>
+                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado</option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
                             <strong>Registrada:</strong> Docente dictó la clase (asistencia regularizada)<br>
                             <strong>Pendiente:</strong> Clase reagendada esperando recuperación<br>
-                            <strong>Justificado:</strong> Clase justificada sin necesidad de recuperación
+                            <strong>Justificado:</strong> Clase justificada
                         </p>
                     </div>
                     
@@ -736,7 +741,7 @@ function initClasesNoRealizadasScripts() {
                     <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg mb-4">
                         <h4 class="font-semibold text-slate-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>
-                        <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                        <p><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                         ${clase.ua && clase.ua !== 'N/A' ? `<p><strong>UA:</strong> ${clase.ua}</p>` : ''}
                         <p><strong>Fecha:</strong> ${clase.fecha_original}</p>
                         <p><strong>Espacio:</strong> ${clase.espacio_original}</p>
@@ -845,8 +850,10 @@ function initClasesNoRealizadasScripts() {
                     // Listener para cambio de fecha
                     dateInput.addEventListener('change', (e) => {
                         filtrarModulosPorDia(e.target.value);
-                        // Limpiar espacio si cambia la fecha
+                        // Limpiar espacio e info si cambia la fecha
                         document.getElementById('swal-nuevo-espacio').innerHTML = '<option value="">Selecciona fecha y módulo primero</option>';
+                        const infoP = document.getElementById('espacios-disponibles-info');
+                        if (infoP) infoP.textContent = '';
                     });
                 } catch (error) {
                     console.error('Error cargando módulos:', error);
@@ -1015,7 +1022,7 @@ function initClasesNoRealizadasScripts() {
             html: `
                 <div class="text-left">
                     <p class="mb-2"><strong>Profesor:</strong> ${clase.profesor}</p>
-                    <p class="mb-2"><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                    <p class="mb-2"><strong>Asignatura:</strong> ${clase.asignatura}${clase.seccion && clase.seccion !== 'N/A' ? ' (Sec. ' + clase.seccion + ')' : ''}</p>
                     <p class="mb-2"><strong>Fecha:</strong> ${clase.fecha}</p>
                     <br>
                     <p class="text-red-600"><strong>Esta acción no se puede deshacer</strong></p>
@@ -1070,7 +1077,7 @@ function initClasesNoRealizadasScripts() {
             <div class="text-left text-xs text-slate-700 max-h-96 overflow-y-auto">
                 <div class="mb-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
                     <p class="font-bold text-slate-900">${payload.profesor}</p>
-                    <p class="text-slate-600">${payload.asignatura}</p>
+                    <p class="text-slate-600">${payload.asignatura}${payload.seccion && payload.seccion !== 'N/A' ? ' (Sec. ' + payload.seccion + ')' : ''}</p>
                     <p class="text-[11px] text-slate-500 mt-0.5">Fecha de la clase: <strong>${payload.fecha}</strong></p>
                 </div>
         `;

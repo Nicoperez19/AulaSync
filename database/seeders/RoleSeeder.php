@@ -81,8 +81,9 @@ class RoleSeeder extends Seeder
             $permission10, $permission12, $permission15, $permission22,
         ]);
 
-        // Estudiante en Práctica: solo visualización y lista de clases registradas y no registradas (Control de Clases)
+        // Estudiante en Práctica: acceso a dashboard, monitoreo, horarios, tablero y reportes
         $roleEstudiantePractica->syncPermissions([
+            $permission1,  // dashboard
             $permission14, // reportes (lista de clases registradas y no registradas)
             $permission15, // monitoreo de espacios
             $permission16, // horarios por espacios

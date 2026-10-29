@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -12,145 +12,139 @@
                 </div>
             </div>
 
-            <div class="flex items-center gap-2.5">
+            <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="abrirModalManualReserva()" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 cursor-pointer">
+                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 cursor-pointer">
                     <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />
                     <span>Nueva Reserva</span>
                 </button>
                 <a href="{{ route('quick-actions.index') }}" 
-                   class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
-                    <svg class="w-4 h-4 shrink-0 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
+                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200">
+                    <i class="fas fa-arrow-left text-xs"></i>
                     <span>Volver</span>
                 </a>
             </div>
         </div>
     </x-slot>
 
+    <div class="space-y-6 pb-8">
 
+        <!-- Input Oculto y Continuo de Lectura QR (Plano Digital Style) -->
+        <input type="text" id="qr-input-global" class="sr-only absolute top-0 left-0 opacity-0 w-1 h-1 pointer-events-none" autofocus autocomplete="off">
 
-    <div class="space-y-6">
+        <!-- Sección FILTROS -->
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
+                    <i class="fas fa-filter text-[#950101]"></i> FILTROS
+                </h3>
+            </div>
 
-    <!-- Input Oculto y Continuo de Lectura QR (Plano Digital Style) -->
-    <input type="text" id="qr-input-global" class="sr-only absolute top-0 left-0 opacity-0 w-1 h-1 pointer-events-none" autofocus autocomplete="off">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Solicitante</label>
+                    <div class="relative">
+                        <input type="text" id="filtro-solicitante" oninput="aplicarFiltrosLocales()" placeholder="Nombre o RUN..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                    </div>
+                </div>
 
-    <!-- Filtros -->
-    <!-- Sección FILTROS -->
-    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6 dark:bg-gray-800 dark:border-gray-700">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2 dark:text-gray-200">
-                <i class="fas fa-filter text-[#950101]"></i> FILTROS
-            </h3>
-        </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
+                    <select id="filtro-estado" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="todos">Todos los estados</option>
+                        <option value="activa">Activas</option>
+                        <option value="finalizada">Finalizadas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Solicitante</label>
-                <div class="relative">
-                    <input type="text" id="filtro-solicitante" oninput="aplicarFiltrosLocales()" placeholder="Nombre o RUN..." class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Espacio</label>
+                    <select id="filtro-espacio" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="todos">Todos los espacios</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Módulo</label>
+                    <select id="filtro-modulo" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="todos">Todos los módulos</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Fecha</label>
+                    <input type="date" id="filtro-fecha" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Ordenar por</label>
+                    <select id="filtro-orden" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="desc">Fecha (más reciente)</option>
+                        <option value="asc">Fecha (más antigua)</option>
+                    </select>
                 </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Estado</label>
-                <select id="filtro-estado" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="todos">Todos los estados</option>
-                    <option value="activa">Activas</option>
-                    <option value="finalizada">Finalizadas</option>
-                    <option value="cancelada">Canceladas</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Espacio</label>
-                <select id="filtro-espacio" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="todos">Todos los espacios</option>
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Módulo</label>
-                <select id="filtro-modulo" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="todos">Todos los módulos</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Fecha</label>
-                <input type="date" id="filtro-fecha" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            </div>
-            
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Ordenar por</label>
-                <select id="filtro-orden" onchange="cargarReservas()" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="desc">Fecha (más reciente)</option>
-                    <option value="asc">Fecha (más antigua)</option>
-                </select>
+            <!-- Botones de Acción separados por línea -->
+            <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="button" 
+                        onclick="limpiarFiltrosSalasEstudio()" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
+                    <i class="fas fa-undo text-xs"></i> Limpiar
+                </button>
+                <button onclick="cargarReservas()" 
+                        class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                    <i class="fas fa-filter text-xs"></i> Aplicar filtros
+                </button>
             </div>
         </div>
 
-        <!-- Botones de Acción separados por línea -->
-        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-            <button type="button" 
-                    onclick="limpiarFiltrosSalasEstudio()" 
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600">
-                <i class="fas fa-undo text-xs"></i> Limpiar
-            </button>
-            <button onclick="cargarReservas()" 
-                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
-                <i class="fas fa-filter text-xs"></i> Aplicar filtros
-            </button>
-        </div>
-    </div>
-    </div>
+        <!-- Tabla de reservas -->
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+            <div class="hidden lg:block overflow-x-auto">
+                <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                        <tr>
+                            <th class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[5%]">
+                                <input type="checkbox" id="select-all-reservas" class="rounded border-gray-300 text-[#D12420] focus:ring-[#950101]">
+                            </th>
+                            <th class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[14%] cursor-pointer hover:text-red-100">
+                                ESTADO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
+                            </th>
+                            <th class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[15%] cursor-pointer hover:text-red-100">
+                                ESPACIO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
+                            </th>
+                            <th class="px-6 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider w-[26%] cursor-pointer hover:text-red-100">
+                                RESPONSABLE <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
+                            </th>
+                            <th class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[14%] cursor-pointer hover:text-red-100">
+                                FECHA / INGRESO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
+                            </th>
+                            <th class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[14%] cursor-pointer hover:text-red-100">
+                                PERMANENCIA (MÁX 2H) <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
+                            </th>
+                            <th class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider w-[12%]">
+                                ACCIONES
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                                    <p>Cargando reservas de salas de estudio...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-    <!-- Tabla de reservas -->
-    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
-                            <tr>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-10">
-                                    <input type="checkbox" id="select-all-reservas" class="rounded">
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-28 cursor-pointer hover:text-red-100">
-                                    ESTADO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-28 cursor-pointer hover:text-red-100">
-                                    ESPACIO <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase cursor-pointer hover:text-red-100">
-                                    RESPONSABLE <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-32 cursor-pointer hover:text-red-100">
-                                    FECHA <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-44 cursor-pointer hover:text-red-100">
-                                    PERMANENCIA (MAX 2H) <i class="fa-solid fa-sort ml-1 text-xs text-white/50"></i>
-                                </th>
-                                <th class="px-2 py-3 text-center text-xs font-semibold text-white uppercase w-32">
-                                    ACCIONES
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
-                            <tr>
-                                <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-gray-500">
-                                    <div class="flex flex-col items-center">
-                                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                                        <p>Cargando reservas de salas de estudio...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-            </table>
-        </div>
-
-        <!-- Versión Mobile (Cards) -->
-            <div id="tabla-reservas-cards" class="lg:hidden space-y-4">
+            <!-- Versión Mobile (Cards) -->
+            <div id="tabla-reservas-cards" class="lg:hidden space-y-4 p-4">
                 <div class="flex flex-col items-center justify-center py-12 text-gray-500">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                     <p>Cargando reservas...</p>
@@ -158,7 +152,7 @@
             </div>
 
             <!-- Controles de Paginación (20 por página) -->
-            <div id="paginacion-salas-estudio" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
+            <div id="paginacion-salas-estudio" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-200 bg-gray-50">
                 <div class="text-sm text-gray-600">
                     Mostrando <span id="paginacion-desde" class="font-semibold text-gray-900">0</span> a <span id="paginacion-hasta" class="font-semibold text-gray-900">0</span> de <span id="paginacion-total" class="font-semibold text-gray-900">0</span> reservas
                 </div>
@@ -174,7 +168,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <!-- ========================================== -->
 <!-- MODALES DEL SISTEMA (Estilo Plano Digital) -->
@@ -466,7 +459,7 @@
         verificarNotificacionesServidor();
     });
 
-    function handleKeyScan(event) {
+    function handleKeyScan(event) { if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
         const activeElem = document.activeElement;
         const isInputForm = activeElem && (activeElem.tagName === 'INPUT' || activeElem.tagName === 'TEXTAREA' || activeElem.tagName === 'SELECT');
         const inputGlobal = document.getElementById('qr-input-global');
@@ -514,7 +507,7 @@
         }
     }
 
-    function mantenerEnfoqueGlobal() {
+    function mantenerEnfoqueGlobal() { if (typeof Swal !== 'undefined' && Swal.isVisible()) return;
         const inputGlobal = document.getElementById('qr-input-global');
         const activeElem = document.activeElement;
         const modalSala = document.getElementById('modal-seleccionar-sala');
@@ -729,54 +722,65 @@
             let badgeEstado = '';
             if (r.estado === 'activa') {
                 if (r.vencida) {
-                    badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800 animate-pulse"><i class="fas fa-exclamation-triangle mr-1"></i> Vencida (2h+)</span>`;
+                    badgeEstado = `<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200 animate-pulse"><i class="fas fa-exclamation-triangle"></i> Vencida (2h+)</span>`;
                 } else if (r.proxima_vencer) {
-                    badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800"><i class="fas fa-clock mr-1"></i> Por Vencer (<15m)</span>`;
+                    badgeEstado = `<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200"><i class="fas fa-clock"></i> Por Vencer (&lt;15m)</span>`;
                 } else {
-                    badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800"><i class="fas fa-check-circle mr-1"></i> Activa</span>`;
+                    badgeEstado = `<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200"><i class="fas fa-check-circle"></i> Activa</span>`;
                 }
             } else if (r.estado === 'finalizada') {
-                badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Finalizada</span>`;
+                badgeEstado = `<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-700 border border-slate-200">Finalizada</span>`;
             } else {
-                badgeEstado = `<span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full bg-red-50 text-red-600">Cancelada</span>`;
+                badgeEstado = `<span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-semibold rounded-full bg-red-50 text-red-600 border border-red-200">Cancelada</span>`;
             }
 
             const minutos = r.minutos_transcurridos || 0;
             const horas = Math.floor(minutos / 60);
             const minsRest = minutos % 60;
             const tiempoTexto = r.estado === 'activa' ? `${horas}h ${minsRest}m / 2h00m` : (r.hora_salida ? `Salida: ${r.hora_salida}` : 'Finalizada');
+            const subtituloEspacio = (r.nombre_espacio && r.nombre_espacio !== r.id_espacio) ? `<div class="text-xs text-gray-500 truncate">${r.nombre_espacio}</div>` : '';
 
             return `
                 <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-2 py-3 text-center"><input type="checkbox" class="rounded border-gray-300"></td>
-                    <td class="px-2 py-3 text-center">${badgeEstado}</td>
-                    <td class="px-2 py-3 text-center text-sm text-gray-900 font-medium">${r.id_espacio}</td>
-                    <td class="px-2 py-3">
-                        <div class="text-sm font-medium text-gray-900">${r.nombre_responsable}</div>
-                        <div class="text-xs text-gray-500">RUN: ${r.run_responsable}</div>
+                    <td class="px-3 py-3.5 text-center">
+                        <input type="checkbox" class="rounded border-gray-300 text-[#D12420] focus:ring-[#950101]">
                     </td>
-                    <td class="px-2 py-3 text-center text-sm text-gray-900">${r.fecha_reserva} <span class="text-xs text-gray-500">${r.hora_inicio ? r.hora_inicio.substring(0, 5) : ''}</span></td>
-                    <td class="px-2 py-3 text-center text-xs text-gray-900 font-medium">
-                        <span class="${r.vencida ? 'text-red-600 font-bold' : (r.proxima_vencer ? 'text-yellow-700 font-bold' : 'text-gray-900')}">
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap">${badgeEstado}</td>
+                    <td class="px-4 py-3.5 text-center">
+                        <div class="text-sm font-bold text-gray-900">${r.id_espacio}</div>
+                        ${subtituloEspacio}
+                    </td>
+                    <td class="px-6 py-3.5">
+                        <div class="text-sm font-semibold text-gray-900 truncate">${r.nombre_responsable}</div>
+                        <div class="text-xs text-gray-500 font-mono">RUN: ${r.run_responsable}</div>
+                    </td>
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">${r.fecha_reserva}</div>
+                        <div class="text-xs text-gray-500 font-mono">${r.hora_inicio ? 'Ingreso: ' + r.hora_inicio.substring(0, 5) : ''}</div>
+                    </td>
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${r.vencida ? 'bg-red-50 text-red-700 border border-red-200 font-bold' : (r.proxima_vencer ? 'bg-amber-50 text-amber-800 border border-amber-200 font-bold' : 'text-gray-800')}">
                             ${tiempoTexto}
                         </span>
                     </td>
-                    <td class="px-2 py-3 text-center">
-                        <div class="flex justify-center items-center gap-1">
+                    <td class="px-4 py-3.5 text-center whitespace-nowrap">
+                        <div class="flex justify-center items-center gap-1.5">
                             ${r.estado === 'activa' ? `
                                 <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" 
-                                        class="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded shadow-sm transition-colors mr-1">
-                                    <i class="fas fa-undo mr-1"></i> Devolver
+                                        class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-150 cursor-pointer"
+                                        title="Registrar devolución y liberar sala">
+                                    <i class="fas fa-undo"></i>
+                                    <span>Devolver</span>
                                 </button>
                             ` : ''}
                             <a href="/reservas/${r.id_reserva}/comprobante" 
                                target="_blank"
-                               class="p-1.5 border border-blue-200 text-xs font-medium rounded text-blue-600 hover:bg-blue-50 transition-colors"
+                               class="inline-flex items-center justify-center w-8 h-8 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 hover:text-[#D12420] text-xs font-semibold rounded-lg shadow-sm transition-all duration-150"
                                title="Descargar Comprobante PDF">
-                                <i class="fa-solid fa-file-pdf"></i>
+                                <i class="fa-solid fa-file-pdf text-red-600"></i>
                             </a>
                             <button onclick="cambiarEstadoReserva('${r.id_reserva}', 'cancelada')" 
-                                    class="p-1.5 border border-gray-200 text-xs font-medium rounded text-gray-400 hover:text-red-600 hover:border-red-300 bg-white transition-colors"
+                                    class="inline-flex items-center justify-center w-8 h-8 border border-gray-300 bg-white hover:bg-red-50 text-gray-500 hover:text-red-600 hover:border-red-300 text-xs font-semibold rounded-lg shadow-sm transition-all duration-150 cursor-pointer"
                                     title="Cancelar reserva">
                                 <i class="fa-solid fa-times"></i>
                             </button>
@@ -853,21 +857,13 @@
             modalProcesando.classList.add('hidden');
 
             if (res.status === 403 && data.vetado) {
-                alert(data.message);
+                await Swal.fire({ title: 'Acceso Restringido', text: data.message || 'El usuario posee una sanción activa.', icon: 'warning', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
                 return;
             }
 
             // CASO 1: DEVOLUCIÓN AUTOMÁTICA
             if (data.success && data.devolucion) {
-                document.getElementById('dev-estudiante').textContent = data.nombre_estudiante || 'Usuario';
-                document.getElementById('dev-sala').textContent = data.id_espacio || 'Sala';
-                document.getElementById('dev-hora').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                document.getElementById('modal-devolucion-exitosa').classList.remove('hidden');
-                
-                if (devolucionTimer) clearTimeout(devolucionTimer);
-                devolucionTimer = setTimeout(cerrarModalDevolucion, 2500);
-
-                cargarReservas();
+                mostrarModalDevolucion(data, data.id_espacio);
                 return;
             }
 
@@ -900,7 +896,7 @@
         } catch (e) {
             console.error('Error al procesar lectura:', e);
             modalProcesando.classList.add('hidden');
-            alert('Error al verificar la lectura del código escaneado.');
+            await Swal.fire({ title: 'Error de Lectura', text: 'Error al verificar la lectura del código escaneado.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
@@ -937,12 +933,12 @@
 
                 cargarReservas();
             } else {
-                alert(data.message || 'Error al asignar la sala.');
+                await Swal.fire({ title: 'No se pudo asignar', text: data.message || 'Error al asignar la sala.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);
             modalProcesando.classList.add('hidden');
-            alert('Error de comunicación con el servidor.');
+            await Swal.fire({ title: 'Error de Conexión', text: 'Error de comunicación con el servidor.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
@@ -1043,7 +1039,7 @@
         const idEspacio = document.getElementById('manual-select-espacio').value;
 
         if (!run || !idEspacio) {
-            alert('Ingrese RUN y seleccione una sala.');
+            await Swal.fire({ title: 'Datos Incompletos', text: 'Por favor ingrese el RUN y seleccione una sala de estudio.', icon: 'warning', confirmButtonText: 'Entendido' });
             return;
         }
 
@@ -1083,16 +1079,29 @@
                     setTimeout(() => inputSala.focus(), 150);
                 }
             } else {
-                alert(data.message || 'Error al registrar.');
+                await Swal.fire({ title: 'Error al Registrar', text: data.message || 'Error al registrar el solicitante.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (err) {
             console.error('Error al guardar:', err);
-            alert('Error de comunicación.');
+            await Swal.fire({ title: 'Error de Conexión', text: 'Error de comunicación con el servidor.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
         }
     }
 
     async function devolverSalaDirecta(idEspacio, run) {
-        if (!confirm(`¿Confirmar devolución de la sala ${idEspacio}?`)) return;
+        const confirmResult = await Swal.fire({
+            title: '¿Confirmar devolución?',
+            text: `¿Deseas registrar la devolución y liberar la sala ${idEspacio}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#10B981',
+            cancelButtonColor: '#8D8D8D',
+            confirmButtonText: 'Sí, devolver sala',
+            cancelButtonText: 'Cancelar'
+        });
+        if (!confirmResult.isConfirmed) {
+            mantenerEnfoqueGlobal();
+            return;
+        }
 
         try {
             const res = await fetch("{{ route('quick-actions.api.sala-estudio.procesar-escaneo') }}", {
@@ -1105,17 +1114,9 @@
             });
             const data = await res.json();
             if (data.success) {
-                document.getElementById('dev-estudiante').textContent = data.nombre_estudiante || 'Usuario';
-                document.getElementById('dev-sala').textContent = idEspacio;
-                document.getElementById('dev-hora').textContent = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                document.getElementById('modal-devolucion-exitosa').classList.remove('hidden');
-                
-                if (devolucionTimer) clearTimeout(devolucionTimer);
-                devolucionTimer = setTimeout(cerrarModalDevolucion, 2500);
-
-                cargarReservas();
+                mostrarModalDevolucion(data, idEspacio);
             } else {
-                alert(data.message || 'Error al devolver sala.');
+                await Swal.fire({ title: 'Error', text: data.message || 'Error al devolver sala.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);
@@ -1123,7 +1124,21 @@
     }
 
     async function cambiarEstadoReserva(idReserva, nuevoEstado) {
-        if (!confirm(`¿Desea marcar esta reserva como ${nuevoEstado}?`)) return;
+        const esCancelacion = nuevoEstado === 'cancelada';
+        const confirmResult = await Swal.fire({
+            title: esCancelacion ? '¿Cancelar Reserva?' : '¿Actualizar Estado?',
+            text: esCancelacion ? '¿Estás seguro de cancelar esta reserva? El espacio quedará disponible inmediatamente.' : `¿Deseas marcar esta reserva como ${nuevoEstado}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: esCancelacion ? '#D12420' : '#10B981',
+            cancelButtonColor: '#8D8D8D',
+            confirmButtonText: esCancelacion ? 'Sí, cancelar reserva' : 'Sí, confirmar',
+            cancelButtonText: 'No, mantener'
+        });
+        if (!confirmResult.isConfirmed) {
+            mantenerEnfoqueGlobal();
+            return;
+        }
 
         try {
             const res = await fetch(`{{ url('/quick-actions/api/reserva') }}/${idReserva}/estado`, {
@@ -1138,7 +1153,7 @@
             if (data.success) {
                 cargarReservas();
             } else {
-                alert(data.message || 'Error al actualizar estado.');
+                await Swal.fire({ title: 'Error', text: data.message || 'Error al actualizar estado.', icon: 'error', confirmButtonText: 'Entendido' }); mantenerEnfoqueGlobal();
             }
         } catch (e) {
             console.error('Error:', e);

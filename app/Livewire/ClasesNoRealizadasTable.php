@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\PeriodoAcademico;
 use App\Models\ClaseNoRealizada;
+use App\Models\RecuperacionClase;
 use App\Models\Asignatura;
 use App\Models\Profesor;
 use App\Models\Carrera;
@@ -150,7 +151,7 @@ class ClasesNoRealizadasTable extends Component
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
         $estados = ['', 'no_realizada', 'realizada', 'recuperada', 'impartidas', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
-            $key = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
+            $key = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
                 $this->fecha_inicio,
                 $this->fecha_fin,
                 $this->periodo,
@@ -609,7 +610,7 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_v5_{$tenantId}_" . md5(json_encode([
+        $cacheKey = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
@@ -705,7 +706,7 @@ class ClasesNoRealizadasTable extends Component
                 }
 
                 // 3. Coincidencia en la asignatura o código: TODAS las palabras deben coincidir
-                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? ''));
+                $asigNorm = $this->normalizarTexto(($item['asignatura'] ?? '') . ' ' . ($item['codigo_asignatura'] ?? '') . ' ' . ($item['seccion'] ?? ''));
                 $todasEnAsignatura = true;
                 foreach ($palabras as $p) {
                     if (!str_contains($asigNorm, $p)) {
@@ -723,6 +724,7 @@ class ClasesNoRealizadasTable extends Component
                     ($item['profesor'] ?? '') . ' ' .
                     ($item['asignatura'] ?? '') . ' ' .
                     ($item['codigo_asignatura'] ?? '') . ' ' .
+                    ($item['seccion'] ?? '') . ' ' .
                     $espacioRaw . ' ' .
                     str_replace('-', '', $espacioRaw) . ' ' .
                     ($item['ua'] ?? '') . ' ' .
@@ -868,13 +870,14 @@ class ClasesNoRealizadasTable extends Component
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
         
-        // Detectar automáticamente cuántos módulos no se realizaron
-        // Contar todos los módulos programados para esta asignatura
-        $totalModulosProgramados = \App\Models\Planificacion_Asignatura::where('id_asignatura', $clase->id_asignatura)
-            ->count();
+        // Detectar automáticamente cuántos módulos corresponden a esta sesión no realizada
+        // Si la clase tiene id_modulo separado por comas (ej: "MI.7,MI.8"), contar cuántos son.
+        // Si es un solo módulo (ej: "MI.7"), corresponde a 1 módulo.
+        $modulosArray = array_filter(array_map('trim', explode(',', (string)$clase->id_modulo)));
+        $totalModulosProgramados = !empty($modulosArray) ? count($modulosArray) : 1;
         
         // Log para debugging
-        Log::info("Clase no realizada: {$clase->id}, Asignatura: {$clase->id_asignatura}, Total módulos programados: {$totalModulosProgramados}");
+        Log::info("Clase no realizada modal reagendar: {$clase->id}, Asignatura: {$clase->id_asignatura}, Módulos de la sesión: {$totalModulosProgramados} ({$clase->id_modulo})");
 
         $this->dispatch('show-reagendar-modal', [
             'id' => $id,
@@ -925,19 +928,14 @@ class ClasesNoRealizadasTable extends Component
                 $moduloBase = (int) $nuevoModulo;
             }
             
-            // Construir el id_modulo completo con todos los módulos seleccionados
-            if ($cantidadModulos > 1) {
-                // Múltiples módulos: construir array LU.1,LU.2,LU.3
-                $modulosNuevos = [];
-                for ($i = 0; $i < $cantidadModulos; $i++) {
-                    $numeroModulo = $moduloBase + $i;
-                    $modulosNuevos[] = "{$prefijoDia}.{$numeroModulo}";
-                }
-                $nuevoModuloId = implode(',', $modulosNuevos);
-            } else {
-                // Un solo módulo
-                $nuevoModuloId = "{$prefijoDia}.{$moduloBase}";
+            // Construir los módulos individuales (un registro por módulo para evitar duplicados MI.5,MI.6 + MI.5 + MI.6)
+            $modulosNuevos = [];
+            for ($i = 0; $i < max(1, (int) $cantidadModulos); $i++) {
+                $numeroModulo = $moduloBase + $i;
+                $modulosNuevos[] = "{$prefijoDia}.{$numeroModulo}";
             }
+            $nuevoModuloId = implode(',', $modulosNuevos);
+            $primerModuloNuevo = $modulosNuevos[0];
             
             // Crear observación completa indicando que debe recuperarse
             $observacionReagendamiento = "⚠️ CLASE PENDIENTE DE RECUPERACIÓN - ";
@@ -949,17 +947,75 @@ class ClasesNoRealizadasTable extends Component
                 $observacionReagendamiento .= " Motivo: {$observaciones}";
             }
 
+            $fechaOriginal = $clase->fecha_clase->toDateString();
+            $espacioOriginal = $clase->id_espacio;
+            $moduloOriginal = trim(explode(',', (string) $clase->id_modulo)[0]);
+            $prefijoOrig = strpos($moduloOriginal, '.') !== false ? explode('.', $moduloOriginal)[0] : $prefijoDia;
+            $numOrigBase = strpos($moduloOriginal, '.') !== false ? (int) explode('.', $moduloOriginal)[1] : 1;
             $valoresAnteriores = $clase->only(['fecha_clase', 'id_espacio', 'id_modulo', 'estado', 'observaciones']);
             $estadoAnterior = $clase->estado;
             
-            // Cambiar estado a PENDIENTE (esperando recuperación)
-            $clase->update([
-                'fecha_clase' => $nuevaFecha,
-                'id_espacio' => $nuevoEspacio,
-                'id_modulo' => $nuevoModuloId,
-                'estado' => 'pendiente', // Estado específico para clases reagendadas
-                'observaciones' => $observacionReagendamiento,
-            ]);
+            // Cambiar estado a PENDIENTE (esperando recuperación) creando/actualizando 1 fila por módulo
+            $clase->getConnection()->transaction(function () use ($clase, $nuevaFecha, $nuevoEspacio, $modulosNuevos, $primerModuloNuevo, $observacionReagendamiento, $fechaOriginal, $espacioOriginal, $prefijoOrig, $numOrigBase) {
+                $clase->update([
+                    'fecha_clase' => $nuevaFecha,
+                    'id_espacio' => $nuevoEspacio,
+                    'id_modulo' => $primerModuloNuevo,
+                    'estado' => 'pendiente',
+                    'observaciones' => $observacionReagendamiento,
+                ]);
+
+                foreach ($modulosNuevos as $idx => $modDestino) {
+                    $modOrigItem = "{$prefijoOrig}." . ($numOrigBase + $idx);
+                    if ($idx === 0) {
+                        $cnrItem = $clase;
+                    } else {
+                        $cnrItem = ClaseNoRealizada::firstOrNew([
+                            'id_asignatura' => $clase->id_asignatura,
+                            'id_espacio'    => $nuevoEspacio,
+                            'id_modulo'     => $modDestino,
+                            'run_profesor'  => $clase->run_profesor,
+                            'fecha_clase'   => $nuevaFecha,
+                        ]);
+                        $cnrItem->periodo = $clase->periodo;
+                        $cnrItem->motivo = $clase->motivo;
+                        $cnrItem->estado = 'pendiente';
+                        $cnrItem->observaciones = $observacionReagendamiento;
+                        $cnrItem->hora_deteccion = $clase->hora_deteccion ?? now();
+                        $cnrItem->save();
+                    }
+
+                    $recuperacion = RecuperacionClase::where('id_clase_no_realizada', $cnrItem->id)->first()
+                        ?? RecuperacionClase::where('run_profesor', $clase->run_profesor)
+                            ->where('id_asignatura', $clase->id_asignatura)
+                            ->where('id_espacio', $espacioOriginal)
+                            ->whereDate('fecha_clase_original', $fechaOriginal)
+                            ->where('id_modulo_original', $modOrigItem)
+                            ->first();
+
+                    if (!$recuperacion) {
+                        $recuperacion = new RecuperacionClase();
+                    }
+
+                    $recuperacion->fill([
+                        'id_clase_no_realizada' => $cnrItem->id,
+                        'run_profesor' => $clase->run_profesor,
+                        'id_asignatura' => $clase->id_asignatura,
+                        'id_espacio' => $espacioOriginal,
+                        'fecha_clase_original' => $fechaOriginal,
+                        'id_modulo_original' => $modOrigItem,
+                        'fecha_reagendada' => $nuevaFecha,
+                        'id_modulo_reagendado' => $modDestino,
+                        'id_espacio_reagendado' => $nuevoEspacio,
+                        'estado' => 'reagendada',
+                        'notificado' => false,
+                        'fecha_notificacion' => null,
+                        'notas' => $observacionReagendamiento,
+                        'gestionado_por' => auth()->user()?->run,
+                    ]);
+                    $recuperacion->save();
+                }
+            });
 
             app(AuditoriaService::class)->registrar(
                 $clase,
@@ -975,11 +1031,11 @@ class ClasesNoRealizadasTable extends Component
             
             Log::info("Clase reagendada exitosamente", [
                 'clase_id' => $id,
-                'fecha_original' => $clase->fecha_clase->format('Y-m-d'),
+                'fecha_original' => $fechaOriginal,
                 'fecha_nueva' => $nuevaFecha,
-                'espacio_original' => $clase->id_espacio,
+                'espacio_original' => $espacioOriginal,
                 'espacio_nuevo' => $nuevoEspacio,
-                'modulo_original' => $clase->id_modulo,
+                'modulo_original' => $moduloOriginal,
                 'modulo_nuevo' => $nuevoModuloId,
                 'estado' => 'pendiente',
             ]);
@@ -1012,11 +1068,22 @@ class ClasesNoRealizadasTable extends Component
                 ? ($observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'))
                 : ("✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i'));
             
-            // Cambiar estado a recuperada
+            // Cambiar estado a recuperada y sincronizar RecuperacionClase
             $clase->update([
                 'estado' => 'recuperada',
                 'observaciones' => $nuevaObservacion,
             ]);
+
+            $modulosClase = array_values(array_filter(array_map('trim', explode(',', (string) $clase->id_modulo))));
+            RecuperacionClase::where(function ($q) use ($clase, $modulosClase) {
+                $q->where('id_clase_no_realizada', $clase->id)
+                  ->orWhere(function ($sub) use ($clase, $modulosClase) {
+                      $sub->where('run_profesor', $clase->run_profesor)
+                          ->where('id_asignatura', $clase->id_asignatura)
+                          ->whereDate('fecha_reagendada', $clase->fecha_clase->format('Y-m-d'))
+                          ->whereIn('id_modulo_reagendado', $modulosClase);
+                  });
+            })->update(['estado' => 'realizada']);
 
             app(AuditoriaService::class)->registrar(
                 $clase,
