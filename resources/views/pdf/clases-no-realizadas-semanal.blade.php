@@ -213,7 +213,7 @@
     <!-- Header -->
     <div class="header">
         <h1>REPORTE SEMANAL DE CLASES NO REGISTRADAS</h1>
-        <div class="subtitle">SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</div>
+        <div class="subtitle">SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</div>
     </div>
 
     <!-- Información del Período -->
@@ -283,7 +283,7 @@
                                 <td>{{ ucfirst($clase['dia_semana']) }}</td>
                                 <td>
                                     <strong>{{ $clase['asignatura'] }}</strong><br>
-                                    <small style="color: #6B7280;">{{ $clase['codigo_asignatura'] }}</small>
+                                    <small style="color: #6B7280;">{{ $clase['codigo_asignatura'] }}@if(!empty($clase['seccion']) && $clase['seccion'] !== 'N/A') - Sec. {{ $clase['seccion'] }}@endif</small>
                                 </td>
                                 <td>{{ $clase['espacio'] }}</td>
                                 <td>{{ $clase['modulo'] }}</td>
@@ -307,7 +307,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el SIA | Sistema de Informaci�n de Aulas</p>
+        <p>Este reporte fue generado automáticamente por el SIA | Sistema de Informaci�n de Aulas</p>
         <p>Documento confidencial - Uso interno exclusivo</p>
     </div>
 </body>

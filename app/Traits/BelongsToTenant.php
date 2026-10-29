@@ -2,134 +2,76 @@
 
 namespace App\Traits;
 
+use App\Models\Scopes\TenantScope;
 use App\Models\Tenant;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Config;
 
 trait BelongsToTenant
 {
     /**
-     * Cache estático de columnas por modelo para evitar llamadas repetitivas a Schema::hasColumn
+     * Cache estático de columnas por tabla y clase para optimizar rendimiento de inserciones.
      */
-    protected static array $columnCache = [];
-    
+    protected static array $tenantColumnCache = [];
+
     /**
-     * Verificar si una columna existe con caché
+     * Verificar si una columna existe en la tabla con caché.
      */
-    protected static function hasColumnCached($model, string $table, string $column): bool
+    protected static function hasTenantColumnCached($model, string $table, string $column): bool
     {
         $cacheKey = get_class($model) . '.' . $column;
-        
-        if (!isset(static::$columnCache[$cacheKey])) {
-            static::$columnCache[$cacheKey] = $model->getConnection()->getSchemaBuilder()->hasColumn($table, $column);
+
+        if (!isset(static::$tenantColumnCache[$cacheKey])) {
+            try {
+                static::$tenantColumnCache[$cacheKey] = $model->getConnection()->getSchemaBuilder()->hasColumn($table, $column);
+            } catch (\Throwable $e) {
+                return false;
+            }
         }
-        
-        return static::$columnCache[$cacheKey];
+
+        return static::$tenantColumnCache[$cacheKey];
     }
-    
+
     /**
      * Boot the trait
-     * 
-     * Optimized: Uses static cache for column checks to avoid expensive Schema::hasColumn() calls
      */
     public static function bootBelongsToTenant()
     {
+        // Registrar el Global Scope formal de Tenant
+        static::addGlobalScope(new TenantScope);
+
         // Cambiar conexión a tenant si hay base de datos separada
         static::creating(function ($model) {
             $model->setTenantConnection();
-        });
-        
-        // Aplicar scope global para filtrar por tenant
-        static::addGlobalScope('tenant', function (Builder $builder) {
-            $tenant = Tenant::current();
-            
-            if (!$tenant) {
-                return;
-            }
-            
-            $model = new static;
-            $table = $model->getTable();
-            
-            // Usar función con caché para verificar columnas
-            $hasColumn = function($column) use ($model, $table) {
-                return static::hasColumnCached($model, $table, $column);
-            };
-            
-            // Filtrar por prefijo de espacio si el modelo tiene id_espacio
-            // Usar LOWER para comparación case-insensitive (prefijo puede estar en minúsculas)
-            if ($hasColumn('id_espacio')) {
-                if ($tenant->prefijo_espacios) {
-                    $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
-                }
-            }
-            // Filtrar por sede directamente si el modelo tiene sede_id o id_sede (pero no id_espacio)
-            elseif ($hasColumn('sede_id') || $hasColumn('id_sede')) {
-                if ($tenant->sede_id) {
-                    $column = $hasColumn('sede_id') ? 'sede_id' : 'id_sede';
-                    $builder->where($table . '.' . $column, $tenant->sede_id);
-                }
-            }
-            // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor (pero no id_espacio o sede_id)
-            elseif (method_exists($model, 'profesor') && $hasColumn('run_profesor')) {
-                if ($tenant->sede_id) {
-                    $builder->whereHas('profesor', function ($query) use ($tenant) {
-                        $query->where('sede_id', $tenant->sede_id);
-                    });
-                }
-            }
-            // Filtrar a través de espacio si el modelo tiene relación con espacio pero no tiene id_espacio directamente
-            elseif (method_exists($model, 'espacio') && !$hasColumn('id_espacio')) {
-                if ($tenant->prefijo_espacios || $tenant->sede_id) {
-                    $builder->whereHas('espacio', function ($query) use ($tenant) {
-                        if ($tenant->prefijo_espacios) {
-                            $query->where('id_espacio', 'like', $tenant->prefijo_espacios . '%');
-                        }
-                    });
-                }
-            }
-            // Filtrar a través de facultad si el modelo tiene relación con facultad
-            elseif (method_exists($model, 'facultad')) {
-                if ($tenant->sede_id) {
-                    $builder->whereHas('facultad', function ($query) use ($tenant) {
-                        $query->where('id_sede', $tenant->sede_id);
-                    });
-                }
-            }
-            // Filtrar a través de piso->facultad si el modelo tiene relación con piso
-            elseif (method_exists($model, 'piso')) {
-                if ($tenant->sede_id) {
-                    $builder->whereHas('piso.facultad', function ($query) use ($tenant) {
-                        $query->where('id_sede', $tenant->sede_id);
-                    });
-                }
-            }
         });
 
         // Al crear un nuevo modelo, asignar automáticamente el tenant
         static::creating(function ($model) {
             $tenant = Tenant::current();
-            
+
             if (!$tenant) {
                 return;
             }
-            
+
             $table = $model->getTable();
-            
-            // Usar función con caché para verificar columnas
-            $hasColumn = function($column) use ($model, $table) {
-                return static::hasColumnCached($model, $table, $column);
-            };
-            
-            // Si el modelo tiene sede_id o id_sede, asignarla
+
+            // Usar helper con caché estático
+            $hasColumn = fn(string $column) => static::hasTenantColumnCached($model, $table, $column);
+
+            // 1. Asignar tenant_id o id_tenant directo si existe
+            if ($hasColumn('tenant_id') && !$model->tenant_id) {
+                $model->tenant_id = $tenant->id;
+            } elseif ($hasColumn('id_tenant') && !$model->id_tenant) {
+                $model->id_tenant = $tenant->id;
+            }
+
+            // 2. Asignar sede_id o id_sede si existe
             if ($hasColumn('sede_id') && !$model->sede_id) {
                 $model->sede_id = $tenant->sede_id;
             } elseif ($hasColumn('id_sede') && !$model->id_sede) {
                 $model->id_sede = $tenant->sede_id;
             }
-            
-            // Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
-            // Comparación case-insensitive para evitar duplicar prefijos (ej: 'th' vs 'TH')
+
+            // 3. Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
             if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
                 if (isset($model->id_espacio) && !str_starts_with(strtolower($model->id_espacio), strtolower($tenant->prefijo_espacios))) {
                     $model->id_espacio = $tenant->prefijo_espacios . $model->id_espacio;
@@ -156,13 +98,12 @@ trait BelongsToTenant
     public function newQuery()
     {
         $query = parent::newQuery();
-        
+
         $tenant = Tenant::current();
         if ($tenant && Config::get('multitenancy.separate_databases', false)) {
-            // Usar la conexión tenant para las consultas
             $query->getModel()->setConnection('tenant');
         }
-        
+
         return $query;
     }
 

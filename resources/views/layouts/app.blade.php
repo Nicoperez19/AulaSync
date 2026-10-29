@@ -8,6 +8,16 @@
 
     <title>{{ config('app.name', 'SIA | Sistema de Información de Aulas') }}</title>
 
+    <!-- Supresión de logs en consola del navegador -->
+    <script>
+        (function() {
+            var noop = function() {};
+            window.console.log = noop;
+            window.console.debug = noop;
+            window.console.info = noop;
+        })();
+    </script>
+
     <!-- Livewire & Fuentes -->
     @livewireStyles
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -42,7 +52,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido Principal -->
-            <div class="flex flex-col min-h-screen pt-16 transition-all duration-300 ease-in-out bg-gray-100 dark:bg-dark-eval-2">
+            <div class="flex flex-col min-h-screen pt-16 bg-[#F1EFF2] dark:bg-[#191919]">
                 @if (isset($header))
                     <header>
                         <div class="p-4 mt-4 sm:p-6">
@@ -51,8 +61,8 @@
                     </header>
                 @endif
 
-                <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6" :class="{
-                        'opacity-75 pointer-events-none': isSidebarOpen || isSidebarHovered,
+                <main class="flex-1 px-4 overflow-x-auto transition-opacity duration-300 ease-out sm:px-6" :class="{
+                        'opacity-60 pointer-events-none select-none': isSidebarOpen || isSidebarHovered,
                         'opacity-100': !(isSidebarOpen || isSidebarHovered)
                     }">
                     {{ $slot }}

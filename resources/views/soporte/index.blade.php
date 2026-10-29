@@ -138,22 +138,21 @@
             @else
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                        <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Título</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">#</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Título</th>
                                 @if($isTecnico)
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Solicitante</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Sede</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Solicitante</th>
                                 @endif
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Prioridad</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Prioridad</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
                                 @if($isTecnico)
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Asignado a</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Asignado a</th>
                                 @endif
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Respuestas</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Respuestas</th>
+                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Fecha</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wide">Acción</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">

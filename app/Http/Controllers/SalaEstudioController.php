@@ -42,13 +42,15 @@ class SalaEstudioController extends Controller
             }
 
             if ($veto) {
+                $hastaTxt = $veto->fecha_fin_veto ? ' hasta el ' . $veto->fecha_fin_veto->format('d/m/Y H:i') : '';
                 return response()->json([
                     'success' => false,
-                    'message' => '🚫 Acceso Denegado: Usuario vetado',
+                    'message' => "🚫 Acceso Denegado: Usuario bloqueado{$hastaTxt}",
                     'vetado' => true,
                     'veto' => [
                         'motivo' => $veto->observacion,
-                        'fecha_veto' => $veto->fecha_veto->format('d/m/Y H:i'),
+                        'fecha_veto' => $veto->fecha_veto ? $veto->fecha_veto->format('d/m/Y H:i') : '',
+                        'fecha_fin_veto' => $veto->fecha_fin_veto ? $veto->fecha_fin_veto->format('d/m/Y H:i') : null,
                         'tipo' => $veto->tipo_veto
                     ]
                 ], 403);
@@ -61,13 +63,11 @@ class SalaEstudioController extends Controller
 
             // Si no existe como usuario, intentar crearlo desde solicitantes
             if (!$usuario) {
-                // Intentar crear desde solicitantes
                 $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                     ->orWhere('run_solicitante', $runLimpio)
                     ->first();
 
                 if ($solicitante) {
-                    // Crear usuario desde solicitante
                     try {
                         $usuario = new User();
                         $usuario->run = $solicitante->run_solicitante;
@@ -76,8 +76,6 @@ class SalaEstudioController extends Controller
                         $usuario->password = Hash::make($solicitante->run_solicitante);
                         $usuario->celular = $solicitante->telefono;
                         $usuario->save();
-
-
                     } catch (\Exception $e) {
                         Log::error('Error al crear usuario desde solicitante', [
                             'error' => $e->getMessage(),
@@ -90,13 +88,39 @@ class SalaEstudioController extends Controller
                         ], 500);
                     }
                 } else {
-                    // No existe en ninguna tabla
                     return response()->json([
                         'success' => false,
                         'mensaje' => 'Usuario no encontrado en el sistema'
                     ], 404);
                 }
             }
+
+            // Asegurar que exista también en la tabla solicitantes del tenant (por FK reservas_run_solicitante_foreign)
+            $solicitanteTenant = Solicitante::on('tenant')
+                ->where('run_solicitante', $usuario->run)
+                ->orWhere('run_solicitante', $run)
+                ->orWhere('run_solicitante', $runLimpio)
+                ->first();
+
+            if (!$solicitanteTenant) {
+                $correoSync = $usuario->email ?: ($usuario->run . '@temp.com');
+                if (Solicitante::on('tenant')->where('correo', $correoSync)->where('run_solicitante', '!=', $usuario->run)->exists()) {
+                    $correoSync = $usuario->run . '@temp.com';
+                }
+                $solicitanteTenant = Solicitante::on('tenant')->firstOrCreate(
+                    ['run_solicitante' => (string) $usuario->run],
+                    [
+                        'nombre' => $usuario->name ?: ('Usuario ' . $usuario->run),
+                        'correo' => $correoSync,
+                        'telefono' => $usuario->celular ?: '000000000',
+                        'tipo_solicitante' => 'estudiante',
+                        'activo' => true,
+                        'fecha_registro' => Carbon::now(),
+                    ]
+                );
+            }
+
+            $runSolicitanteFinal = $solicitanteTenant->run_solicitante;
 
             // Verificar que el espacio existe y es sala de estudio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -115,15 +139,37 @@ class SalaEstudioController extends Controller
                 ], 400);
             }
 
-            // Verificar si el alumno ya está registrado hoy (salida)
+            // Verificar si el alumno ya está registrado hoy (salida / devolución)
+            $runsBusqueda = array_values(array_unique(array_filter([
+                (string) $runSolicitanteFinal,
+                (string) $usuario->run,
+                (string) $run,
+                (string) $runLimpio,
+            ])));
             $reservaExistente = Reserva::where('id_espacio', $idEspacio)
-                ->where('run_solicitante', $usuario->run)
+                ->whereIn('run_solicitante', $runsBusqueda)
                 ->where('estado', 'activa')
                 ->whereDate('fecha_reserva', Carbon::today())
                 ->first();
 
             if ($reservaExistente) {
-                // Si ya está registrado, finalizar su reserva (salida)
+                $inicio = Carbon::parse(($reservaExistente->fecha_reserva instanceof Carbon ? $reservaExistente->fecha_reserva->format('Y-m-d') : $reservaExistente->fecha_reserva) . ' ' . $reservaExistente->hora);
+                $minutosTranscurridos = (int) $inicio->diffInMinutes(Carbon::now(), false);
+
+                $sancionado = false;
+                $fechaFinVetoTxt = null;
+
+                // Si excede los 120 minutos (2 horas), aplicar sanción de 1 semana
+                if ($minutosTranscurridos > 120) {
+                    $sancionado = true;
+                    $veto = VetoSalaEstudio::aplicarVetoPorTiempoExcedido($usuario->run, $reservaExistente->id_reserva, $minutosTranscurridos, 7);
+                    $fechaFinVetoTxt = Carbon::now()->addDays(7)->format('d/m/Y');
+                    $reservaExistente->observaciones = trim(($reservaExistente->observaciones ?? '') . " | Salida con atraso ({$minutosTranscurridos} min) - Sanción 1 semana aplicada");
+                } else {
+                    $reservaExistente->observaciones = trim(($reservaExistente->observaciones ?? '') . ' | Salida a tiempo mediante escaneo');
+                }
+
+                // Finalizar la reserva (salida)
                 $reservaExistente->estado = 'finalizada';
                 $reservaExistente->hora_salida = Carbon::now()->format('H:i:s');
                 $reservaExistente->save();
@@ -140,12 +186,17 @@ class SalaEstudioController extends Controller
                     $espacio->save();
                 }
 
-
+                $mensaje = $sancionado
+                    ? "Salida registrada. ⚠️ SANCIÓN: Superó el límite de 2 horas ({$minutosTranscurridos} min de uso). Usuario bloqueado por 1 semana hasta el {$fechaFinVetoTxt}."
+                    : "Salida registrada exitosamente ({$minutosTranscurridos} min de uso)";
 
                 return response()->json([
                     'success' => true,
                     'accion' => 'salida',
-                    'mensaje' => 'Salida registrada exitosamente',
+                    'mensaje' => $mensaje,
+                    'sancionado' => $sancionado,
+                    'minutos_transcurridos' => $minutosTranscurridos,
+                    'fecha_fin_veto' => $fechaFinVetoTxt,
                     'nombre' => $usuario->name,
                     'run' => $usuario->run,
                     'hora_entrada' => Carbon::parse($reservaExistente->hora)->format('H:i'),
@@ -170,13 +221,13 @@ class SalaEstudioController extends Controller
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->id_espacio = $idEspacio;
-            $reserva->run_solicitante = $usuario->run;
-            $reserva->fecha_reserva = Carbon::now();
+            $reserva->run_solicitante = $runSolicitanteFinal;
+            $reserva->fecha_reserva = Carbon::now()->toDateString();
             $reserva->hora = Carbon::now()->format('H:i:s');
             $reserva->hora_salida = Carbon::now()->addHours(2)->format('H:i:s'); // 2 horas por defecto
             $reserva->estado = 'activa';
             $reserva->tipo_reserva = 'espontanea'; // Tipo de reserva para salas de estudio
-            $reserva->observaciones = 'Sala de Estudio'; // Identificar como sala de estudio
+            $reserva->observaciones = 'Sala de Estudio - Lector QR (2h max)';
             $reserva->save();
 
             // Actualizar estado del espacio si es necesario
@@ -185,12 +236,10 @@ class SalaEstudioController extends Controller
                 $espacio->save();
             }
 
-
-
             return response()->json([
                 'success' => true,
                 'accion' => 'entrada',
-                'mensaje' => 'Acceso registrado exitosamente',
+                'mensaje' => 'Acceso registrado exitosamente (Máximo 2 horas de uso)',
                 'nombre' => $usuario->name,
                 'run' => $usuario->run,
                 'hora_registro' => Carbon::now()->format('H:i')
@@ -223,15 +272,12 @@ class SalaEstudioController extends Controller
                 ->get();
 
             $alumnos = $reservas->map(function ($reserva) {
-                // Intentar obtener nombre del solicitante o del usuario
                 $nombre = 'Usuario desconocido';
                 
                 if ($reserva->run_solicitante) {
-                    // Primero buscar en la tabla solicitantes
                     if ($reserva->solicitante) {
                         $nombre = $reserva->solicitante->nombre;
                     } else {
-                        // Si no está en solicitantes, buscar en users
                         $usuario = User::where('run', $reserva->run_solicitante)->first();
                         if ($usuario) {
                             $nombre = $usuario->name;
@@ -274,7 +320,8 @@ class SalaEstudioController extends Controller
             $request->validate([
                 'run' => 'required|string',
                 'observacion' => 'required|string',
-                'id_reserva' => 'nullable|string'
+                'id_reserva' => 'nullable|string',
+                'dias' => 'nullable|integer|min:1'
             ]);
 
             // Verificar si ya existe un veto activo
@@ -285,6 +332,8 @@ class SalaEstudioController extends Controller
                 ], 400);
             }
 
+            $dias = $request->input('dias', 7);
+
             $veto = VetoSalaEstudio::create([
                 'run_vetado' => $request->run,
                 'tipo_veto' => 'individual',
@@ -292,7 +341,8 @@ class SalaEstudioController extends Controller
                 'observacion' => $request->observacion,
                 'estado' => 'activo',
                 'vetado_por' => Auth::user()->name ?? 'Sistema',
-                'fecha_veto' => now()
+                'fecha_veto' => now(),
+                'fecha_fin_veto' => $dias ? now()->addDays($dias) : null
             ]);
 
             return response()->json([
@@ -321,8 +371,11 @@ class SalaEstudioController extends Controller
         try {
             $request->validate([
                 'id_reserva' => 'required|string',
-                'observacion' => 'required|string'
+                'observacion' => 'required|string',
+                'dias' => 'nullable|integer|min:1'
             ]);
+
+            $dias = $request->input('dias', 7);
 
             // Obtener la reserva origen para obtener datos del grupo
             $reservaOrigen = Reserva::where('id_reserva', $request->id_reserva)->firstOrFail();
@@ -335,7 +388,7 @@ class SalaEstudioController extends Controller
                     Carbon::parse($reservaOrigen->hora)->addMinutes(30)->format('H:i:s')
                 ])
                 ->where('tipo_reserva', 'espontanea')
-                ->where('observaciones', 'Sala de Estudio')
+                ->where('observaciones', 'like', '%Sala de Estudio%')
                 ->get();
 
             $vetados = [];
@@ -343,7 +396,6 @@ class SalaEstudioController extends Controller
 
             foreach ($reservasGrupo as $reserva) {
                 if ($reserva->run_solicitante) {
-                    // Verificar si ya está vetado
                     if (VetoSalaEstudio::estaVetado($reserva->run_solicitante)) {
                         $yaVetados[] = $reserva->run_solicitante;
                         continue;
@@ -356,7 +408,8 @@ class SalaEstudioController extends Controller
                         'observacion' => $request->observacion,
                         'estado' => 'activo',
                         'vetado_por' => Auth::user()->name ?? 'Sistema',
-                        'fecha_veto' => now()
+                        'fecha_veto' => now(),
+                        'fecha_fin_veto' => $dias ? now()->addDays($dias) : null
                     ]);
 
                     $vetados[] = $reserva->run_solicitante;
@@ -474,17 +527,18 @@ class SalaEstudioController extends Controller
                 'estado',
                 'observacion',
                 'fecha_veto',
+                'fecha_fin_veto',
                 'vetado_por',
                 'fecha_liberacion',
                 'liberado_por'
             ])
-            ->with(['solicitante:run_solicitante,nombre']); // Solo cargar campos necesarios
+            ->with(['solicitante:run_solicitante,nombre']);
 
             // Filtrar por estado
             if ($request->has('estado') && $request->estado) {
                 $query->where('estado', $request->estado);
             } elseif (!$request->has('estado')) {
-                $query->where('estado', 'activo'); // Por defecto solo mostrar activos
+                $query->where('estado', 'activo');
             }
 
             // Filtrar por tipo
@@ -493,7 +547,7 @@ class SalaEstudioController extends Controller
             }
 
             $vetos = $query->orderBy('fecha_veto', 'desc')
-                          ->limit(500) // Limitar resultados para evitar sobrecarga
+                          ->limit(500)
                           ->get();
 
             return response()->json([

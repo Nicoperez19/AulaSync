@@ -22,30 +22,31 @@ class LogoComposer
             $sedeActual = $tenant->sede;
             $idSede = $sedeActual->id_sede;
         } else {
-            // Fallback to Talcahuano if no tenant
-            $sedeActual = Sede::where('nombre_sede', 'like', '%Talcahuano%')->first();
-            $idSede = $sedeActual ? $sedeActual->id_sede : 'TH';
+            // Sin tenant activo (ej: pantalla de login): sin sesgo de sede
+            $sedeActual = null;
+            $idSede = null;
         }
 
-        // Cache the logo path for 60 minutes to avoid repeated database queries
-        $logoPath = Cache::remember("logo_institucional_path_{$idSede}", 3600, function () use ($idSede, $sedeActual) {
+        // Usar 'generic' como cache key cuando no hay sede para no contaminar cache por sede
+        $cacheKey = $idSede ? "logo_institucional_path_{$idSede}" : 'logo_institucional_path_generic';
+
+        $logoPath = Cache::remember($cacheKey, 3600, function () use ($idSede, $sedeActual) {
             // First check if sede has logo in its own field
             if ($sedeActual && $sedeActual->logo) {
                 $path = 'sedes/logos/' . $sedeActual->logo;
-                // Verificar si existe en el disco publico
                 if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
                      return asset('storage/' . $path);
                 }
             }
             
-            // Fallback to configuration table
-            $logoInstitucional = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
-            
-            if ($logoInstitucional && $logoInstitucional->valor) {
-                $path = 'images/logo/' . $logoInstitucional->valor;
-                // Verificar si existe en el disco publico
-                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
-                    return asset('storage/' . $path);
+            // Fallback to configuration table (solo si hay sede activa)
+            if ($idSede) {
+                $logoInstitucional = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
+                if ($logoInstitucional && $logoInstitucional->valor) {
+                    $path = 'images/logo/' . $logoInstitucional->valor;
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                        return asset('storage/' . $path);
+                    }
                 }
             }
             

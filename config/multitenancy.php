@@ -15,6 +15,12 @@ return [
      */
     'enabled' => env('MULTITENANCY_ENABLED', true),
 
+    /*
+     * Disable Spatie's default queue tenant-awareness listener since AulaSync
+     * uses its own custom App\Models\Tenant implementation on the 'tenant' connection.
+     */
+    'queues_are_tenant_aware_by_default' => false,
+
     /**
      * Tenant identification method
      * Options: 'subdomain', 'domain', 'header', 'session'
@@ -47,6 +53,24 @@ return [
         \App\Models\Asignatura::class,
         \App\Models\Reserva::class,
         \App\Models\Horario::class,
+        \App\Models\Modulo::class,
+        \App\Models\ClaseNoRealizada::class,
+        \App\Models\LicenciaProfesor::class,
+        \App\Models\RecuperacionClase::class,
+        \App\Models\Asistencia::class,
+        \App\Models\ProfesorAtraso::class,
+        \App\Models\ProfesorColaborador::class,
+        \App\Models\PlanificacionProfesorColaborador::class,
+        \App\Models\AsistenteAcademico::class,
+        \App\Models\JefeCarrera::class,
+        \App\Models\VetoSalaEstudio::class,
+        \App\Models\Visitante::class,
+        \App\Models\Carrera::class,
+        \App\Models\Facultad::class,
+        \App\Models\AreaAcademica::class,
+        \App\Models\Solicitante::class,
+        \App\Models\Notificacion::class,
+        \App\Models\LlaveNoDevuelta::class,
     ],
 
     /**

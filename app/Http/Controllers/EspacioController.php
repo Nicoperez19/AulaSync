@@ -6,13 +6,13 @@ use App\Models\Espacio;
 use App\Models\Facultad;
 use App\Models\Piso;
 use App\Models\Universidad;
-use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Solicitante;
 use App\Models\PlanificacionProfesorColaborador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\QRService;
+use App\Helpers\SemesterHelper;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 use App\Models\Sede;
@@ -24,6 +24,7 @@ use Dompdf\Dompdf;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Helpers\ModulosHelper;
 
 class EspacioController extends Controller
 {
@@ -36,7 +37,7 @@ class EspacioController extends Controller
         $espacios = Espacio::with('piso.facultad')->get();
         $universidades = Universidad::all();
 
-        return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
+        return view('espacios.index', compact('espacios', 'universidades'));
     }
 
     /**
@@ -96,7 +97,7 @@ class EspacioController extends Controller
         $facultades = Facultad::where('id_sede', $espacio->piso->facultad->id_sede)->get();
         $pisos = Piso::where('id_facultad', $espacio->piso->id_facultad)->get();
 
-        return view('layouts.spaces.spaces_edit', compact('espacio', 'universidades', 'sedes', 'facultades', 'pisos'));
+        return view('espacios.edit', compact('espacio', 'universidades', 'sedes', 'facultades', 'pisos'));
     }
 
     /**
@@ -327,7 +328,57 @@ class EspacioController extends Controller
      */
     public function getPisos($facultadId)
     {
-        return Piso::where('id_facultad', $facultadId)->get();
+        // Auto-curación para Los Ángeles: asegurar que los edificios tengan sus nombres oficiales
+        if ($facultadId === 'IT_LA') {
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 1)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 1')->orWhere('nombre_piso', 'LIKE', '%1er%');
+            })->update(['nombre_piso' => 'CAUPOLICÁN 276']);
+
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 2)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 2');
+            })->update(['nombre_piso' => 'VILLAGRÁN 220']);
+
+            Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->where(function($q) {
+                $q->whereNull('nombre_piso')->orWhere('nombre_piso', 'Piso 3')->orWhere('nombre_piso', 'NOT LIKE', '%251%');
+            })->update(['nombre_piso' => 'VILLAGRÁN 251']);
+
+            // Auto-poblar espacios de Villagrán 251 si no existen en la base de datos
+            $piso251 = Piso::where('id_facultad', 'IT_LA')->where('numero_piso', 3)->first();
+            if ($piso251 && Espacio::where('id_espacio', 'LIKE', 'LA-4%')->count() === 0) {
+                $file = database_path('seeders/Data/Espacios/LA.php');
+                if (file_exists($file)) {
+                    $todos = require $file;
+                    foreach ($todos as $e) {
+                        if (!Espacio::where('id_espacio', $e['id_espacio'])->exists()) {
+                            if (str_starts_with($e['id_espacio'], 'LA-4') || in_array($e['piso_id'] ?? null, [12, 13])) {
+                                $e['piso_id'] = $piso251->id;
+                            }
+                            $e['capacidad_maxima'] = $e['capacidad_maxima'] ?? $e['puestos_disponibles'] ?? 0;
+                            $e['created_at'] = now();
+                            $e['updated_at'] = now();
+                            Espacio::insert($e);
+                        }
+                    }
+                }
+            }
+        }
+
+        $pisos = Piso::where('id_facultad', $facultadId)->orderBy('numero_piso')->get();
+
+        if ($facultadId === 'IT_LA') {
+            $pisos->transform(function ($piso) {
+                if ($piso->numero_piso == 1 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 1')) {
+                    $piso->nombre_piso = 'CAUPOLICÁN 276';
+                } elseif ($piso->numero_piso == 2 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 2')) {
+                    $piso->nombre_piso = 'VILLAGRÁN 220';
+                } elseif ($piso->numero_piso == 3 && (empty($piso->nombre_piso) || $piso->nombre_piso === 'Piso 3' || !str_contains($piso->nombre_piso, '251'))) {
+                    $piso->nombre_piso = 'VILLAGRÁN 251';
+                }
+                return $piso;
+            });
+        }
+
+        return response()->json($pisos);
     }
 
     /**
@@ -533,102 +584,7 @@ class EspacioController extends Controller
      */
     private function determinarModuloActual($horaActual, $diaActual)
     {
-        // Log para debugging
-
-
-        // Definir horarios de módulos (mismo formato que en el frontend)
-        $horariosModulos = [
-            'lunes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'martes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'miercoles' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'jueves' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'viernes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ]
-        ];
-
-        $horariosDia = $horariosModulos[$diaActual] ?? null;
-
-        // Log para debugging de horarios del día
-
+        $horariosDia = ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
 
         if (!$horariosDia) {
             Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
@@ -667,95 +623,7 @@ class EspacioController extends Controller
      */
     private function obtenerHorarioModulo($modulo, $diaActual)
     {
-        $horariosModulos = [
-            'lunes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'martes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'miercoles' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'jueves' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'viernes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ]
-        ];
-
-        return $horariosModulos[$diaActual][$modulo] ?? null;
+        return ModulosHelper::getHorarioModulo($diaActual, $modulo);
     }
 
     /**
@@ -1060,11 +928,13 @@ class EspacioController extends Controller
     {
         try {
             $codigoDia = $request->input('codigo_dia', 'LU');
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
-            // Obtener las asignaturas del profesor para el día especificado
+            // Obtener las asignaturas del profesor para el día especificado en el semestre activo
             $asignaturas = Planificacion_Asignatura::with(['asignatura', 'modulo'])
-                ->whereHas('asignatura', function ($query) use ($runProfesor) {
-                    $query->where('run_profesor', $runProfesor);
+                ->whereHas('horario', function ($query) use ($runProfesor, $periodoActual) {
+                    $query->where('run_profesor', $runProfesor)
+                        ->where('periodo', $periodoActual);
                 })
                 ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->get()
@@ -1116,6 +986,7 @@ class EspacioController extends Controller
 
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
             $diaActual = strtolower(now()->format('l'));
             // Convertir a nombres de días en español (como están en la BD)
             $diasEnEspanol = [
@@ -1153,13 +1024,14 @@ class EspacioController extends Controller
             // 2. Planificación actual del día (una query)
             $planActual = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
                     ->where('hora_termino', '>', $horaActual))
                 ->first();
 
             // 2.b. Planificación de colaborador actual
-            $planColaboradorActual = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+            $planColaboradorActual = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
@@ -1172,6 +1044,7 @@ class EspacioController extends Controller
             // 3. Próxima planificación (una query)
             $planProxima = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
                 ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
                 ->orderBy('modulos.hora_inicio', 'asc')
@@ -1179,7 +1052,7 @@ class EspacioController extends Controller
                 ->first();
 
             // 3.b. Próxima planificación de colaborador
-            $planColaboradorProxima = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+            $planColaboradorProxima = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
                 ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
@@ -1219,9 +1092,16 @@ class EspacioController extends Controller
             }
 
             // 4. Planificación anterior (una query)
+            $horaCorteAnterior = $horaActual;
+            $reservaEnCursoParaCorte = $reservaHoy->first(fn($r) => $r->estado === 'activa' && $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual));
+            if ($reservaEnCursoParaCorte && $reservaEnCursoParaCorte->hora) {
+                $horaCorteAnterior = min($horaActual, $reservaEnCursoParaCorte->hora);
+            }
+
             $planAnterior = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
-                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_termino', '<=', $horaActual))
+                ->whereHas('horario', fn($q) => $q->where('periodo', $periodoActual))
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_termino', '<=', $horaCorteAnterior))
                 ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
                 ->orderBy('modulos.hora_termino', 'desc')
                 ->select('planificacion_asignaturas.*')
@@ -1245,6 +1125,7 @@ class EspacioController extends Controller
                 'asignatura' => null,
                 'hora_inicio' => null,
                 'hora_salida' => null,
+                'hora_termino' => null,
                 'tipo_reserva' => null,
                 'detalles' => null,
                 'proxima_clase' => null,
@@ -1278,6 +1159,7 @@ class EspacioController extends Controller
                         'asignatura' => null,
                         'hora_inicio' => $reservaActiva->hora,
                         'hora_salida' => $reservaActiva->hora_salida,
+                        'hora_termino' => $reservaActiva->hora_salida,
                         'run_profesor' => null,
                         'run_solicitante' => null,
                         'id_reserva' => $reservaActiva->id_reserva,
@@ -1307,6 +1189,7 @@ class EspacioController extends Controller
                         'asignatura' => $planActual->asignatura->nombre_asignatura ?? 'Sin asignatura',
                         'hora_inicio' => $planActual->modulo->hora_inicio,
                         'hora_salida' => $planActual->modulo->hora_termino,
+                        'hora_termino' => $planActual->modulo->hora_termino,
                         'tipo_reserva' => 'clase_regular',
                     ];
                 } elseif ($planColaboradorActual) {
@@ -1318,6 +1201,7 @@ class EspacioController extends Controller
                         'asignatura' => $planColaboradorActual->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
                         'hora_inicio' => $planColaboradorActual->modulo->hora_inicio,
                         'hora_salida' => $planColaboradorActual->modulo->hora_termino,
+                        'hora_termino' => $planColaboradorActual->modulo->hora_termino,
                         'tipo_reserva' => 'clase_colaborador',
                     ];
                 }
@@ -1340,6 +1224,7 @@ class EspacioController extends Controller
                             'asignatura' => null,
                             'hora_inicio' => $fallback->hora,
                             'hora_salida' => $fallback->hora_salida,
+                            'hora_termino' => $fallback->hora_salida,
                             'run_profesor' => null,
                             'run_solicitante' => null,
                         ];
@@ -1379,7 +1264,10 @@ class EspacioController extends Controller
             }
 
             // ── Clase anterior ───────────────────────────────────────────────────────
-            if ($reservaAnterior) {
+            $idAsignaturaActual = $response['id_asignatura'] ?? ($reservaActiva->id_asignatura ?? ($planActual->id_asignatura ?? null));
+            $nombreAsignaturaActual = $response['asignatura'] ?? null;
+
+            if ($reservaAnterior && (!$idAsignaturaActual || $reservaAnterior->id_asignatura !== $idAsignaturaActual)) {
                 $esEspontanea = $reservaAnterior->tipo_reserva === 'espontanea';
                 $response['clase_anterior'] = [
                     'asignatura' => $esEspontanea ? 'Reserva espontánea' : ($reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura'),
@@ -1389,13 +1277,22 @@ class EspacioController extends Controller
                     'hora_termino' => $reservaAnterior->hora_salida ?? null,
                 ];
             } elseif ($planAnterior) {
-                $response['clase_anterior'] = [
-                    'asignatura' => $planAnterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                    'profesor' => $planAnterior->horario->profesor->name ?? 'No especificado',
-                    'profesor_run' => $planAnterior->horario->profesor->run_profesor ?? null,
-                    'hora_inicio' => $planAnterior->modulo->hora_inicio ?? null,
-                    'hora_termino' => $planAnterior->modulo->hora_termino ?? null,
-                ];
+                $esMismaClaseEnCurso = false;
+                if ($idAsignaturaActual && $planAnterior->id_asignatura === $idAsignaturaActual) {
+                    $esMismaClaseEnCurso = true;
+                } elseif ($nombreAsignaturaActual && $planAnterior->asignatura?->nombre_asignatura === $nombreAsignaturaActual) {
+                    $esMismaClaseEnCurso = true;
+                }
+
+                if (!$esMismaClaseEnCurso) {
+                    $response['clase_anterior'] = [
+                        'asignatura' => $planAnterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                        'profesor' => $planAnterior->horario->profesor->name ?? 'No especificado',
+                        'profesor_run' => $planAnterior->horario->profesor->run_profesor ?? null,
+                        'hora_inicio' => $planAnterior->modulo->hora_inicio ?? null,
+                        'hora_termino' => $planAnterior->modulo->hora_termino ?? null,
+                    ];
+                }
             }
 
             $this->safeCache($cacheKey, $response, 30);
@@ -1451,8 +1348,10 @@ class EspacioController extends Controller
             'nombre' => $profesorNombre,
             'run_profesor' => $runProfesor,
             'asignatura' => $asignatura,
+            'id_asignatura' => $reserva->id_asignatura ?? null,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
+            'hora_termino' => $reserva->hora_salida,
             'tipo_reserva' => $reserva->tipo_reserva,
         ];
     }
@@ -1478,6 +1377,7 @@ class EspacioController extends Controller
                 'fecha_registro' => $solicitante->fecha_registro ?? null,
                 'hora_inicio' => $reserva->hora,
                 'hora_salida' => $reserva->hora_salida,
+                'hora_termino' => $reserva->hora_salida,
                 'tipo_reserva' => $reserva->tipo_reserva,
             ];
         }
@@ -1497,6 +1397,7 @@ class EspacioController extends Controller
                 'fecha_registro' => $usuario->created_at ?? null,
                 'hora_inicio' => $reserva->hora,
                 'hora_salida' => $reserva->hora_salida,
+                'hora_termino' => $reserva->hora_salida,
                 'tipo_reserva' => $reserva->tipo_reserva,
             ];
         }
@@ -1509,6 +1410,7 @@ class EspacioController extends Controller
             'asignatura' => null,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
+            'hora_termino' => $reserva->hora_salida,
         ];
     }
 
@@ -1582,10 +1484,13 @@ class EspacioController extends Controller
                 ];
                 $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-                // Cargar planificaciones del profesor para el día (usando la relación con horario)
+                $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+
+                // Cargar planificaciones del profesor para el día (usando la relación con horario del semestre activo)
                 $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
-                    ->whereHas('horario', function ($query) use ($runProfesor) {
-                        $query->where('run_profesor', $runProfesor);
+                    ->whereHas('horario', function ($query) use ($runProfesor, $periodoActual) {
+                        $query->where('run_profesor', $runProfesor)
+                            ->where('periodo', $periodoActual);
                     })
                     ->where('id_modulo', 'like', $codigoDia . '.%')
                     ->get();
@@ -1637,10 +1542,14 @@ class EspacioController extends Controller
                 'domingo' => 'DO'
             ];
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+            $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             // [OPTIMIZACIÓN] Buscar directamente la planificación que coincide con la hora actual en SQL
             $planificacion = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', function ($query) use ($periodoActual) {
+                    $query->where('periodo', $periodoActual);
+                })
                 ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                     $query->where('dia', $codigoDia)
                         ->where('hora_inicio', '<=', $horaActual)
@@ -1661,9 +1570,12 @@ class EspacioController extends Controller
                 ];
             }
 
-            // 2. Buscar en Planificaciones de Profesores Colaboradores (SQL filtrado)
+            // 2. Buscar en Planificaciones de Profesores Colaboradores (SQL filtrado por vigencia del semestre activo)
             $planColaborador = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo'])
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('profesorColaborador', function ($query) {
+                    $query->activosYVigentes();
+                })
                 ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                     $query->where('dia', $codigoDia)
                         ->where('hora_inicio', '<=', $horaActual)
@@ -1762,6 +1674,7 @@ class EspacioController extends Controller
     private function obtenerProximaClase($idEspacio, $horaActual)
     {
         $fechaActual = now()->format('Y-m-d');
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
         // PRIMERO: Buscar reservas futuras del día actual.
         // Excluimos reservas espontáneas porque no tienen clase asociada y mostrarían "Reserva sin asignatura".
@@ -1801,6 +1714,9 @@ class EspacioController extends Controller
         // [OPTIMIZACIÓN] Filtrar directamente en SQL para mayor rapidez
         $proxima = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
+            ->whereHas('horario', function ($query) use ($periodoActual) {
+                $query->where('periodo', $periodoActual);
+            })
             ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                 $query->where('dia', $codigoDia)
                     ->where('hora_inicio', '>', $horaActual);
@@ -1826,6 +1742,7 @@ class EspacioController extends Controller
     private function obtenerClaseAnterior($idEspacio, $horaActual)
     {
         $fechaActual = now()->format('Y-m-d');
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
         // PRIMERO: Buscar reservas FINALIZADAS anteriores del día actual.
         // Excluimos reservas activas para no mostrar la reserva actual como "clase anterior".
@@ -1868,6 +1785,9 @@ class EspacioController extends Controller
 
         $anterior = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
+            ->whereHas('horario', function ($query) use ($periodoActual) {
+                $query->where('periodo', $periodoActual);
+            })
             ->whereHas('modulo', function ($query) use ($codigoDia, $horaActual) {
                 $query->where('dia', $codigoDia)
                     ->where('hora_termino', '<=', $horaActual);

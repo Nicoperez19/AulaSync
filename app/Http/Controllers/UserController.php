@@ -23,7 +23,7 @@ class UserController extends Controller
     {
         $years = range(2010, date('Y'));
         $sedes = Sede::all();
-        return view('layouts.user.user_index', compact('years', 'sedes'));
+        return view('usuarios.index', compact('years', 'sedes'));
     }
 
     public function create()
@@ -32,7 +32,7 @@ class UserController extends Controller
         $roles = Role::all();
         $permissions = Permission::all();
         $sedes = Sede::all();
-        return view('layouts.user.user_update', compact('years', 'roles', 'permissions', 'sedes'));
+        return view('usuarios.edit', compact('years', 'roles', 'permissions', 'sedes'));
     }
 
     public function store(Request $request)
@@ -149,7 +149,7 @@ class UserController extends Controller
             $roles = Role::all();
             $permissions = Permission::all();
             $sedes = Sede::all();
-            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions', 'sedes'));
+            return view('usuarios.edit', compact('user', 'years', 'roles', 'permissions', 'sedes'));
         } catch (\Exception $e) {
             Log::error('Error al cargar la vista de edición de usuario: ' . $e->getMessage());
             return redirect()->route('users.index')->withErrors(['error' => 'Hubo un problema al cargar los datos del usuario.']);

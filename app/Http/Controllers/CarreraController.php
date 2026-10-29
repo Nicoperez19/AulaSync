@@ -21,7 +21,7 @@ class CarreraController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
             
-            return view('layouts.career.carrera_index', compact('carreras', 'areasAcademicas', 'facultades', 'universidades'));
+            return view('carreras.index', compact('carreras', 'areasAcademicas', 'facultades', 'universidades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las carreras.'])->withInput();
         }
@@ -74,7 +74,7 @@ class CarreraController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
             
-            return view('layouts.career.carrera_edit', compact('carrera', 'areasAcademicas', 'facultades', 'universidades'));
+            return view('carreras.edit', compact('carrera', 'areasAcademicas', 'facultades', 'universidades'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('careers.index')->withErrors(['error' => 'Carrera no encontrada.']);
         } catch (\Exception $e) {

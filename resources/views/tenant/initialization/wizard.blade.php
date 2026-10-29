@@ -83,50 +83,29 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased bg-gradient-to-br  min-h-screen">
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold text-gray-800 text-base sm:text-lg">SIA</span>
-                        <span class="text-gray-500 text-xs sm:text-sm hidden sm:inline">| Sistema de Información de Aulas</span>
-                    </div>
-                    <div class="flex items-center space-x-3 sm:space-x-4">
-                        <span class="text-xs sm:text-sm text-gray-600">
-                            <span class="font-semibold text-gray-800">{{ $sede->nombre_sede ?? 'Configuración de Sede' }}</span>
-                        </span>
-
-                        <div class="flex items-center space-x-2 border-l border-gray-300 pl-3">
-                            <a href="{{ route('tenant.initialization.cancel') }}" 
-                               class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 transition" 
-                               title="Cancelar y volver a Selección de Sedes">
-                                <i class="fas fa-arrow-left mr-1.5"></i>
-                                <span class="hidden md:inline">Selección de Sedes</span>
-                            </a>
-                            
-                            @auth
-                            <form method="POST" action="{{ route('logout') }}" class="inline">
-                                @csrf
-                                <button type="submit" 
-                                        class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 transition" 
-                                        title="Cerrar sesión">
-                                    <i class="fas fa-sign-out-alt mr-1"></i>
-                                    <span class="hidden md:inline">Cerrar Sesión</span>
-                                </button>
-                            </form>
-                            @endauth
-                        </div>
-                    </div>
-                </div>
+<body class="font-sans antialiased bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col justify-between">
+        <!-- Header (solo color y botón de cerrar sesión) -->
+        <header class="sticky top-0 z-30 bg-[#D2091E] shadow-[0_4px_6px_rgba(255,255,255,0.3)] min-h-[56px]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-end">
+                @auth
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" 
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-black/20 hover:bg-black/35 border border-white/20 transition-all duration-200 shadow-sm cursor-pointer" 
+                            title="Cerrar sesión">
+                        <i class="fas fa-sign-out-alt text-xs"></i>
+                        <span>Cerrar Sesión</span>
+                    </button>
+                </form>
+                @endauth
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 {{ $step === 6 ? '!p-0 !container-none !max-w-full' : '' }}">
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Step Indicators (solo mostrar después del paso 0) -->
-            @if($step > 0 && $step !== 5)
+            @if($step > 0)
             <div class="max-w-4xl mx-auto mb-8">
                 <!-- Fila de círculos y líneas -->
                 <div class="flex items-center justify-between mb-3">
@@ -162,13 +141,13 @@
                 <!-- Fila de textos -->
                 <div class="flex items-center justify-between">
                     @foreach($steps as $stepNum => $stepInfo)
-                        <div class="flex items-center {{ $stepNum < 7 ? 'flex-1' : '' }}">
+                        <div class="flex items-center {{ $stepNum < 6 ? 'flex-1' : '' }}">
                             <div class="w-10 sm:w-14 flex-shrink-0 text-center">
                                 <span class="text-xs sm:text-sm font-medium {{ $step >= $stepNum ? 'text-blue-600' : 'text-gray-500' }} hidden sm:inline-block">
                                     {{ $stepInfo['title'] }}
                                 </span>
                             </div>
-                            @if($stepNum < 7)
+                            @if($stepNum < 6)
                                 <div class="flex-1 mx-1 sm:mx-2"></div>
                             @endif
                         </div>
@@ -214,8 +193,8 @@
             @endif
 
             <!-- Step Content -->
-            <div class="fade-in {{ $step === 5 ? 'h-screen' : 'max-w-2xl mx-auto' }}">
-                <div class="bg-white {{ $step === 5 ? 'h-full flex flex-col' : 'rounded-xl shadow-lg overflow-hidden' }}">
+            <div class="fade-in max-w-2xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     @switch($step)
                         @case(0)
                             @include('tenant.initialization.steps.step0-password')
@@ -245,14 +224,8 @@
             </div>
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-800 text-white py-4">
-            <div class="container mx-auto px-4 text-center">
-                <p class="text-gray-400 text-sm">
-                    &copy; {{ date('Y') }} SIA | Sistema de Información de Aulas - Configuración Inicial de Sede
-                </p>
-            </div>
-        </footer>
+        <!-- Footer Institucional UCSC -->
+        <x-footer class="mt-auto py-4 bg-white/80 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700" />
     </div>
 </body>
 </html>

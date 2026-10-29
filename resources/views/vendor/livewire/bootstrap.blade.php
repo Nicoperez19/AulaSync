@@ -42,13 +42,13 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
             <div class="d-none flex-sm-fill d-sm-flex align-items-sm-center justify-content-sm-between">
                 <div>
                     <p class="small text-muted">
-                        {!! __('Showing') !!}
+                        Mostrando
                         <span class="fw-semibold">{{ $paginator->firstItem() }}</span>
-                        {!! __('to') !!}
+                        a
                         <span class="fw-semibold">{{ $paginator->lastItem() }}</span>
-                        {!! __('of') !!}
+                        de
                         <span class="fw-semibold">{{ $paginator->total() }}</span>
-                        {!! __('results') !!}
+                        resultados
                     </p>
                 </div>
 
@@ -76,7 +76,7 @@ $scrollIntoViewJsSnippet = ($scrollTo !== false)
                             @if (is_array($element))
                                 @foreach ($element as $page => $url)
                                     @if ($page == $paginator->currentPage())
-                                        <li class="page-item active" wire:key="paginator-{{ $paginator->getPageName() }}-page-{{ $page }}" aria-current="page"><span class="page-link">{{ $page }}</span></li>
+                                        <li class="page-item active" wire:key="paginator-{{ $paginator->getPageName() }}-page-{{ $page }}" aria-current="page"><span class="page-link" style="background-color: #D12420 !important; color: #fff !important; border-color: #D12420 !important; font-weight: bold;">{{ $page }}</span></li>
                                     @else
                                         <li class="page-item" wire:key="paginator-{{ $paginator->getPageName() }}-page-{{ $page }}"><button type="button" class="page-link" wire:click="gotoPage({{ $page }}, '{{ $paginator->getPageName() }}')" x-on:click="{{ $scrollIntoViewJsSnippet }}">{{ $page }}</button></li>
                                     @endif

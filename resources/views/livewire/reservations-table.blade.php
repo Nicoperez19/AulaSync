@@ -1,166 +1,337 @@
 <div>
-    <div class="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
-        <div class="relative w-full md:w-1/2">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+    <!-- Título Solicitudes y Reservas -->
+    <div class="mb-4">
+        <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
+            <i class="fas fa-calendar-check text-[#950101] text-xl"></i>
+            <span>Solicitudes y Reservas</span>
+        </span>
+    </div>
+
+    <!-- Navpills / Estadísticas idénticas a Control de Clases -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total reservas -->
+        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total Reservas</p>
+                    <p class="text-3xl font-black text-blue-950 mt-1">{{ number_format($kpis['total'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-lg text-[#950101]">
+                    <i class="fas fa-calendar-check text-xl"></i>
+                </div>
             </div>
-            <input type="text"
-                   wire:model.live.debounce.300ms="search"
-                   placeholder="Buscar por ID, Espacio, Docente/Solicitante o Fecha..."
-                   class="w-full py-2 pl-10 pr-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" />
-            @if(!empty($search))
-                <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            @endif
         </div>
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span>Total: <strong>{{ $reservas->total() }}</strong> reservas</span>
+
+        <!-- Auditorio -->
+        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Auditorio</p>
+                    <p class="text-3xl font-black text-indigo-950 mt-1">{{ number_format($kpis['auditorio'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+                    <i class="fas fa-landmark text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Salas de Estudio -->
+        <div class="stat-card bg-sky-50 border border-sky-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sky-700 text-xs font-semibold uppercase tracking-wider">Salas de Estudio</p>
+                    <p class="text-3xl font-black text-sky-950 mt-1">{{ number_format($kpis['salas_estudio'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-sky-100 rounded-lg text-sky-600">
+                    <i class="fas fa-book-reader text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laboratorios -->
+        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Laboratorios</p>
+                    <p class="text-3xl font-black text-amber-950 mt-1">{{ number_format($kpis['laboratorios'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-amber-100 rounded-lg text-amber-600">
+                    <i class="fas fa-flask text-xl"></i>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="mt-2 mb-4">
-        {{ $reservas->links('vendor.pagination.tailwind') }}
+    <!-- Sección FILTROS idéntica a Control de Clases -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS
+            </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {{-- Tipo de Espacio (sin emojis) --}}
+            <div>
+                <label for="tipo_espacio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo de Espacio</label>
+                <select id="tipo_espacio_filtro" wire:model.live="tipoEspacio"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
+                    <option value="">Todos (Auditorio, Salas de Estudio, Laboratorios)</option>
+                    <option value="Auditorio">Auditorio</option>
+                    <option value="Sala de Estudio">Salas de Estudio</option>
+                    <option value="Laboratorios">Laboratorios</option>
+                </select>
+            </div>
+
+            {{-- Buscar --}}
+            <div>
+                <label for="search_input" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar</label>
+                <div class="relative">
+                    <input type="text"
+                           id="search_input"
+                           wire:model.live.debounce.400ms="search"
+                           placeholder="Profesor, solicitante, RUN o espacio..."
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]" />
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+            </div>
+
+            {{-- Estado --}}
+            <div>
+                <label for="estado_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
+                <select id="estado_filtro" wire:model.live="estado"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
+                    <option value="">Todos</option>
+                    <option value="activa">Activa</option>
+                    <option value="finalizada">Finalizada</option>
+                    <option value="programada">Programada</option>
+                    <option value="cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            {{-- Desde --}}
+            <div>
+                <label for="fecha_inicio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Desde</label>
+                <input type="date"
+                       id="fecha_inicio_filtro"
+                       wire:model.live="fechaInicio"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
+            </div>
+
+            {{-- Hasta --}}
+            <div>
+                <label for="fecha_fin_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Hasta</label>
+                <input type="date"
+                       id="fecha_fin_filtro"
+                       wire:model.live="fechaFin"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]">
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button type="button" wire:click="limpiarFiltros" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+        </div>
     </div>
 
-    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-        <table class="w-full text-sm text-center border-collapse table-auto min-w-max">
-            <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
-                <tr>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('id_reserva')">
-                        ID Reserva
-                        @if($sortField === 'id_reserva')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('fecha_reserva')">
-                        Fecha
-                        @if($sortField === 'fecha_reserva')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3">Horario</th>
-                    <th class="p-3 cursor-pointer select-none" wire:click="sortBy('id_espacio')">
-                        Espacio
-                        @if($sortField === 'id_espacio')
-                            <span>{{ $sortDirection === 'asc' ? '▲' : '▼' }}</span>
-                        @endif
-                    </th>
-                    <th class="p-3">Usuario / Solicitante</th>
-                    <th class="p-3">Estado</th>
-                    <th class="p-3">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($reservas as $index => $reserva)
-                    <tr wire:key="reserva-row-{{ $reserva->id_reserva }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800">
-                        <td class="p-3 font-semibold text-blue-600 border border-white dark:border-gray-700 dark:text-blue-400">
-                            {{ $reserva->id_reserva }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            {{ $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '-' }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            {{ substr($reserva->hora, 0, 5) }} - {{ substr($reserva->hora_salida, 0, 5) }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap font-medium">
-                            {{ $reserva->id_espacio }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            <div class="flex flex-col items-center">
-                                <span class="font-medium text-gray-800 dark:text-gray-200">{{ $reserva->nombre_usuario }}</span>
-                                <span class="text-xs text-gray-500">{{ $reserva->run_profesor ?: $reserva->run_solicitante }}</span>
-                            </div>
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            @if($reserva->estado === 'activa')
-                                <span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200">Activa</span>
-                            @elseif($reserva->estado === 'finalizada')
-                                <span class="px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300">Finalizada</span>
-                            @else
-                                <span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">{{ ucfirst($reserva->estado) }}</span>
-                            @endif
-                        </td>
-                        <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            <div class="flex flex-wrap justify-center gap-1.5">
-                                <x-button variant="view" href="{{ route('reservas.edit', $reserva->id_reserva) }}"
-                                    class="inline-flex items-center px-3 py-1.5">
-                                    <x-icons.edit class="w-4 h-4" aria-hidden="true" />
-                                </x-button>
-                                <a href="{{ route('reservas.comprobante', $reserva->id_reserva) }}"
-                                   target="_blank"
-                                   title="Descargar Comprobante PDF"
-                                   class="inline-flex items-center px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded border border-blue-300 transition dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    </svg>
-                                    PDF
-                                </a>
-                                <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button variant="danger" type="submit" class="px-3 py-1.5 text-white bg-red-500 rounded dark:bg-red-700 btn-delete-reserva" data-espacio="{{ $reserva->id_espacio }}">
-                                        <x-icons.delete class="w-4 h-4" aria-hidden="true" />
-                                    </x-button>
-                                </form>
-
-                                {{-- Botones Admin: solo para reservas de hoy que están programadas o activas --}}
-                                @php
-                                    $esHoy = $reserva->fecha_reserva && \Carbon\Carbon::parse($reserva->fecha_reserva)->isToday();
-                                    $docente = $reserva->nombre_usuario;
-                                    $sala = $reserva->id_espacio;
-                                    $fecha = $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '—';
-                                    $horario = substr($reserva->hora, 0, 5) . ' - ' . substr($reserva->hora_salida ?? '', 0, 5);
-                                @endphp
-
-                                @if($esHoy && $reserva->estado === 'programada')
-                                    <button type="button"
-                                            onclick="abrirModalAdmin('entrada', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
-                                            title="Registrar entrada administrativamente"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg border border-emerald-300 transition dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
-                                        </svg>
-                                        Entrada
-                                    </button>
-                                @endif
-
-                                @if($esHoy && $reserva->estado === 'activa')
-                                    <button type="button"
-                                            onclick="abrirModalAdmin('salida', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
-                                            title="Registrar salida administrativamente"
-                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg border border-rose-300 transition dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                        </svg>
-                                        Salida
-                                    </button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr wire:key="empty-reservas-row">
-                        <td colspan="7" class="p-6 text-center text-gray-500 dark:text-gray-400">
-                            No se encontraron reservas que coincidan con la búsqueda "{{ $search }}".
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+    <!-- Botón Exportar al estilo Control de Clases -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
+            <i class="fas fa-file-excel"></i>
+            <span>Exportar todas las reservas</span>
+        </a>
     </div>
 
-    <div class="mt-4">
-        {{ $reservas->links('vendor.pagination.tailwind') }}
+    <!-- Card Tabla de Reservas Universal -->
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                    <tr>
+                        <th scope="col" class="w-24 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('id_reserva')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                ID Reserva
+                                @if($sortField === 'id_reserva')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_reserva')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                Fecha
+                                @if($sortField === 'fecha_reserva')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                            Horario
+                        </th>
+                        <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('id_espacio')">
+                            <span class="inline-flex items-center gap-1 justify-center">
+                                Espacio
+                                @if($sortField === 'id_espacio')
+                                    <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                @else
+                                    <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                @endif
+                            </span>
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                            Usuario / Solicitante
+                        </th>
+                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                            Estado
+                        </th>
+                        <th scope="col" class="min-w-[220px] px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                            Acciones
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                    @forelse ($reservas as $reserva)
+                        <tr wire:key="reserva-row-{{ $reserva->id_reserva }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
+                            <td class="w-24 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="font-medium text-[#950101] dark:text-blue-400 text-sm">#{{ $reserva->id_reserva }}</span>
+                            </td>
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="font-medium text-gray-800 dark:text-gray-200 text-sm">
+                                    {{ $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '-' }}
+                                </span>
+                            </td>
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
+                                    {{ substr($reserva->hora, 0, 5) }} - {{ substr($reserva->hora_salida, 0, 5) }}
+                                </span>
+                            </td>
+                            <td class="w-36 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="font-semibold text-gray-800 dark:text-white text-sm">
+                                    {{ $reserva->espacio->nombre_espacio ?? $reserva->id_espacio }}
+                                </div>
+                                @if($reserva->espacio && $reserva->espacio->tipo_espacio)
+                                    <span class="text-[11px] text-gray-500 truncate block">
+                                        {{ $reserva->espacio->tipo_espacio }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-center align-middle">
+                                <div class="flex flex-col items-center justify-center">
+                                    <span class="font-medium text-gray-900 dark:text-gray-100 text-sm leading-snug" title="{{ $reserva->nombre_usuario }}">
+                                        {{ $reserva->nombre_usuario }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                                @if($reserva->estado === 'activa')
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
+                                        Activa
+                                    </span>
+                                @elseif($reserva->estado === 'programada')
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800">
+                                        Programada
+                                    </span>
+                                @elseif($reserva->estado === 'finalizada')
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-gray-100 text-gray-700 border border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600">
+                                        Finalizada
+                                    </span>
+                                @else
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
+                                        {{ ucfirst($reserva->estado) }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="min-w-[220px] px-3 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                    <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                       title="Editar reserva">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
+                                    </a>
+                                    <a href="{{ route('reservas.comprobante', $reserva->id_reserva) }}"
+                                       target="_blank"
+                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 transition-colors shadow-xs"
+                                       title="Descargar Comprobante PDF">
+                                        <i class="fa-solid fa-file-pdf text-xs"></i>
+                                        <span>PDF</span>
+                                    </a>
+                                    <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" title="Cancelar reserva"
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs btn-delete-reserva"
+                                                data-espacio="{{ $reserva->id_espacio }}">
+                                            <i class="fa-solid fa-trash text-xs"></i>
+                                            <span>Cancelar</span>
+                                        </button>
+                                    </form>
+
+                                    @php
+                                        $esHoy = $reserva->fecha_reserva && \Carbon\Carbon::parse($reserva->fecha_reserva)->isToday();
+                                        $docente = $reserva->nombre_usuario;
+                                        $sala = $reserva->id_espacio;
+                                        $fecha = $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '—';
+                                        $horario = substr($reserva->hora, 0, 5) . ' - ' . substr($reserva->hora_salida ?? '', 0, 5);
+                                    @endphp
+
+                                    @if($esHoy && $reserva->estado === 'programada')
+                                        <button type="button"
+                                                onclick="abrirModalAdmin('entrada', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
+                                                title="Registrar entrada administrativamente"
+                                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-300 transition-colors shadow-xs dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700">
+                                            <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                                            Entrada
+                                        </button>
+                                    @endif
+
+                                    @if($esHoy && $reserva->estado === 'activa')
+                                        <button type="button"
+                                                onclick="abrirModalAdmin('salida', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
+                                                title="Registrar salida administrativamente"
+                                                class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-md border border-rose-300 transition-colors shadow-xs dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700">
+                                            <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
+                                            Salida
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr wire:key="empty-reservas-row">
+                            <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <div class="flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-calendar-xmark text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron reservas con los filtros seleccionados.</p>
+                                    @if(!empty($search) || !empty($tipoEspacio) || !empty($fechaInicio) || !empty($fechaFin) || !empty($estado))
+                                        <button type="button" wire:click="limpiarFiltros" class="mt-2 text-xs text-[#950101] hover:text-blue-800 underline font-medium">
+                                            Restablecer todos los filtros
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Footer de paginación integrado --}}
+        <div class="px-6 py-4 bg-gray-50/70 border-t border-gray-200 dark:bg-gray-900/40 dark:border-gray-700">
+            {{ $reservas->links('vendor.pagination.tailwind') }}
+        </div>
     </div>
 </div>
 
 <script>
-    // Interceptar clicks en botones de eliminar reservas para notificar otras pestañas
+    // Interceptar clicks en botones de eliminar reservas para confirmación SweetAlert y notificar otras pestañas
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.btn-delete-reserva').forEach(btn => {
             btn.addEventListener('click', function (e) {
@@ -169,11 +340,30 @@
                 const form = this.closest('form');
                 if (!form) return;
 
-                // Guardar en localStorage para notificar otras pestañas
-                localStorage.setItem('reserva_eliminada', JSON.stringify({ id_espacio: espacioId, ts: Date.now() }));
-
-                // Enviar el formulario para eliminar en esta pestaña
-                form.submit();
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: '¿Cancelar reserva?',
+                        text: '¿Estás seguro de cancelar y eliminar definitivamente esta reserva? Esta acción liberará el espacio.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#D12420',
+                        cancelButtonColor: '#8D8D8D',
+                        confirmButtonText: 'Sí, cancelar reserva',
+                        cancelButtonText: 'No, mantener'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            localStorage.setItem('reserva_eliminada', JSON.stringify({ id_espacio: espacioId, ts: Date.now() }));
+                            localStorage.setItem('reserva_cambiada', Date.now());
+                            form.submit();
+                        }
+                    });
+                } else {
+                    if (confirm('¿Estás seguro de cancelar esta reserva?')) {
+                        localStorage.setItem('reserva_eliminada', JSON.stringify({ id_espacio: espacioId, ts: Date.now() }));
+                        localStorage.setItem('reserva_cambiada', Date.now());
+                        form.submit();
+                    }
+                }
             });
         });
     });

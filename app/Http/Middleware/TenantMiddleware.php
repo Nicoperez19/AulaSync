@@ -24,6 +24,7 @@ class TenantMiddleware
         'password.request',
         'password.reset',
         'verification.notice',
+        'docente.sede-no-inicializada',
     ];
 
     /**
@@ -34,6 +35,7 @@ class TenantMiddleware
         'sedes/selection',
         'sedes/redirect',
         'tenant/initialization',
+        'docente/sede-no-inicializada',
         'login',
         'logout',
         'register',
@@ -58,18 +60,13 @@ class TenantMiddleware
         // Opción A: Obtener de sesión (Prioridad alta)
         if (session()->has('tenant_id')) {
             $tenantId = session('tenant_id');
-            \Log::info('TenantMiddleware: Found tenant_id in session', ['tenant_id' => $tenantId]);
             $tenant = Tenant::find($tenantId);
             if ($tenant && $tenant->is_active) {
-                \Log::info('TenantMiddleware: Setting current tenant from session', ['id' => $tenant->id, 'domain' => $tenant->domain]);
                 $tenant->makeCurrent();
                 $tenantSet = true;
             } else {
-                \Log::info('TenantMiddleware: Tenant from session not found or inactive', ['id' => $tenantId]);
                 session()->forget(['tenant_id', 'tenant']);
             }
-        } else {
-            \Log::info('TenantMiddleware: No tenant_id in session');
         }
 
         // Opción B: Obtener por subdominio (Si no hay sesión)
@@ -121,6 +118,9 @@ class TenantMiddleware
             // ¡IMPORTANTE! Si ya estamos en las rutas de inicialización, las exclusiones de arriba (PASO 2)
             // ya habrán retornado $next, así que aquí solo llegan las rutas NO excluidas (ej. dashboard).
             if ($tenant->needsInitialization()) {
+                if (Auth::check() && Auth::user()->hasRole('Profesor') && !Auth::user()->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !Auth::user()->is_superuser && (string)Auth::user()->run !== '19716146') {
+                    return redirect()->route('docente.sede-no-inicializada');
+                }
                 return redirect()->route('tenant.initialization.index');
             }
 

@@ -10,7 +10,7 @@ return [
         'puestos_disponibles' => 38,
     ],
     [
-        'id_espacio' => 'TH-LA8',
+        'id_espacio' => 'TH-L08',
         'nombre_espacio' => 'Taller de Construcción',
         'piso_id' => 1,
         'tipo_espacio' => 'Taller',

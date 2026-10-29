@@ -13,7 +13,7 @@ class VisitanteController extends Controller
      */
     public function index()
     {
-        return view('layouts.visitantes.visitantes_index');
+        return view('visitantes.index');
     }
 
     /**

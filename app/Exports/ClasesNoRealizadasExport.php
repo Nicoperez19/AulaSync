@@ -32,7 +32,14 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
 
     public function collection()
     {
-        $query = ClaseNoRealizada::with(['profesor', 'asignatura', 'espacio', 'modulo'])
+        $query = ClaseNoRealizada::with([
+                'profesor.carrera', 
+                'profesor.areaAcademica', 
+                'asignatura.carrera', 
+                'asignatura.carrera.areaAcademica', 
+                'espacio', 
+                'modulo'
+            ])
             ->orderBy('fecha_clase', 'desc')
             ->orderBy('id_modulo', 'asc');
 
@@ -76,8 +83,10 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             'Período',
             'Profesor',
             'RUN Profesor',
+            'UA (UNIDAD ACADÉMICA)',
             'Asignatura',
             'Código Asignatura',
+            'Sección',
             'Espacio',
             'Módulo',
             'Hora Inicio',
@@ -94,10 +103,22 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
         $estadoTexto = match($clase->estado) {
             'no_realizada' => 'No Realizada',
             'justificado' => 'Justificada',
+            'realizada', 'registrada' => 'Registrada',
             'recuperada' => 'Recuperada',
             'pendiente' => 'Pendiente de Recuperación',
             default => ucfirst($clase->estado),
         };
+
+        $ua = 'N/A';
+        if ($clase->asignatura && !empty($clase->asignatura->id_carrera)) {
+            $ua = (string) $clase->asignatura->id_carrera;
+        } elseif ($clase->profesor && !empty($clase->profesor->id_carrera)) {
+            $ua = (string) $clase->profesor->id_carrera;
+        } elseif ($clase->asignatura && $clase->asignatura->carrera && !empty($clase->asignatura->carrera->id_carrera)) {
+            $ua = (string) $clase->asignatura->carrera->id_carrera;
+        } elseif ($clase->profesor && $clase->profesor->carrera && !empty($clase->profesor->carrera->id_carrera)) {
+            $ua = (string) $clase->profesor->carrera->id_carrera;
+        }
 
         return [
             $clase->id,
@@ -106,8 +127,10 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             $clase->periodo ?? 'N/A',
             $clase->profesor->name ?? 'N/A',
             $clase->run_profesor ?? 'N/A',
+            $ua,
             $clase->asignatura->nombre_asignatura ?? 'N/A',
             $clase->asignatura->codigo_asignatura ?? 'N/A',
+            $clase->asignatura->seccion ?? 'N/A',
             $clase->id_espacio ?? 'N/A',
             $clase->modulo ? preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo) : $clase->id_modulo,
             $clase->modulo->hora_inicio ?? 'N/A',
@@ -148,7 +171,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
                 ],
             ],
             // Estilo para las filas de datos
-            'A2:P' . $lastRow => [
+            'A2:R' . $lastRow => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
                     'wrapText' => true,
@@ -172,16 +195,18 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             'D' => 12,  // Período
             'E' => 30,  // Profesor
             'F' => 12,  // RUN Profesor
-            'G' => 35,  // Asignatura
-            'H' => 18,  // Código Asignatura
-            'I' => 12,  // Espacio
-            'J' => 10,  // Módulo
-            'K' => 12,  // Hora Inicio
-            'L' => 12,  // Hora Fin
-            'M' => 15,  // Estado
-            'N' => 25,  // Motivo
-            'O' => 35,  // Observaciones
-            'P' => 18,  // Fecha Detección
+            'G' => 25,  // UA (UNIDAD ACADÉMICA)
+            'H' => 35,  // Asignatura
+            'I' => 18,  // Código Asignatura
+            'J' => 12,  // Sección
+            'K' => 12,  // Espacio
+            'L' => 10,  // Módulo
+            'M' => 12,  // Hora Inicio
+            'N' => 12,  // Hora Fin
+            'O' => 15,  // Estado
+            'P' => 25,  // Motivo
+            'Q' => 35,  // Observaciones
+            'R' => 18,  // Fecha Detección
         ];
     }
 
@@ -190,7 +215,9 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
         $titulo = 'Clases No Realizadas';
         
         if ($this->fechaInicio && $this->fechaFin) {
-            $titulo .= ' ' . $this->fechaInicio->format('d-m-Y') . ' a ' . $this->fechaFin->format('d-m-Y');
+            $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
+            $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
+            $titulo .= ' ' . $inicio->format('d-m-Y') . ' a ' . $fin->format('d-m-Y');
         } elseif ($this->periodo) {
             $titulo .= ' Periodo ' . $this->periodo;
         }

@@ -13,8 +13,12 @@
             </div>
 
             <div class="flex gap-2">
+                <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => 'Sala de Estudio', 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin])) }}"
+                   class="btn btn-excel px-4 py-2 text-sm font-semibold">
+                    <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
+                </a>
                 <a href="{{ route('reportes.salas-estudio.export', ['format' => 'pdf']) }}?fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}{{ $salaId ? '&sala_id=' . $salaId : '' }}"
-                   class="px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                   class="btn btn-pdf px-4 py-2 text-sm font-semibold">
                     <i class="mr-2 fas fa-file-pdf"></i> Exportar PDF
                 </a>
             </div>
@@ -130,116 +134,123 @@
 
                 <div class="flex gap-2">
                     <button type="submit"
-                            class="px-4 py-2 text-white transition-colors bg-light-cloud-blue rounded-lg hover:bg-[#b10718]">
-                        <i class="mr-2 fas fa-search"></i> Filtrar
+                            class="px-4 py-2 text-white transition-colors bg-[#191919] rounded-lg hover:bg-black font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-filter"></i> Filtrar
                     </button>
                     <a href="{{ route('reportes.salas-estudio') }}"
-                       class="px-4 py-2 text-white transition-colors bg-gray-500 rounded-lg hover:bg-gray-600">
-                        <i class="mr-2 fas fa-times"></i> Limpiar
+                       class="px-4 py-2 text-gray-700 transition-colors bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 font-semibold text-sm shadow-xs">
+                        <i class="mr-2 fas fa-undo"></i> Limpiar
                     </a>
                 </div>
             </form>
         </div>
-        <!-- Datos agrupados por sala -->
-        @if(count($gruposPorSala) > 0)
-            @foreach($gruposPorSala as $idSala => $data)
-                <div class="mb-6 overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800">
-                    <div class="p-4 text-gray-800 bg-gray-200 dark:bg-gray-700 dark:text-gray-200">
-                        <h3 class="flex items-center gap-2 text-lg font-semibold">
-                            <i class="fas fa-door-open"></i>
-                            {{ $data['sala']->nombre_espacio }}
-                            <span class="ml-auto text-sm font-normal">
-                                Capacidad: {{ $data['sala']->capacidad_maxima }} personas
-                            </span>
-                        </h3>
-                    </div>
-
-                    <div class="p-4">
-                        @foreach($data['grupos'] as $index => $grupo)
-                            <div class="p-4 mb-4 bg-gray-50 rounded-lg dark:bg-gray-700">
-                                <div class="flex items-center justify-between mb-3">
-                                    <h4 class="text-base font-semibold text-gray-800 dark:text-gray-200">
-                                        Grupo #{{ $index + 1 }} - {{ $grupo['fecha']->format('d/m/Y') }}
-                                    </h4>
-                                    <div class="flex items-center gap-2">
-                                        <button onclick="vetarGrupo('{{ $grupo['reservas'][0]->id_reserva }}', '{{ $data['sala']->nombre_espacio }}', {{ $index + 1 }})"
-                                                class="px-3 py-1 text-xs text-white transition-colors bg-red-600 rounded hover:bg-red-700">
-                                            <i class="mr-1 fas fa-ban"></i> Vetar Grupo
-                                        </button>
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                                            <i class="mr-1 fas fa-clock"></i>
-                                            {{ $grupo['hora_inicio']->format('H:i') }} - {{ $grupo['hora_fin']->format('H:i') }}
-                                            <span class="ml-2 text-xs text-gray-500">
-                                                ({{ round($grupo['hora_inicio']->diffInMinutes($grupo['hora_fin']) / 60, 1) }} hrs)
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full text-sm">
-                                        <thead class="bg-gray-200 dark:bg-gray-600">
-                                            <tr>
-                                                <th class="px-3 py-2 text-left">#</th>
-                                                <th class="px-3 py-2 text-left">RUN</th>
-                                                <th class="px-3 py-2 text-left">Nombre</th>
-                                                <th class="px-3 py-2 text-left">Entrada</th>
-                                                <th class="px-3 py-2 text-left">Salida</th>
-                                                <th class="px-3 py-2 text-left">Tiempo</th>
-                                                <th class="px-3 py-2 text-left">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-200 dark:divide-gray-600">
-                                            @foreach($grupo['reservas'] as $i => $reserva)
-                                                <tr class="hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                    <td class="px-3 py-2">{{ $i + 1 }}</td>
-                                                    <td class="px-3 py-2">{{ $reserva->run_solicitante }}</td>
-                                                    <td class="px-3 py-2 font-medium">
-                                                        {{ $reserva->solicitante->nombre ?? 'N/A' }}
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        {{ \Carbon\Carbon::parse($reserva->hora)->format('H:i') }}
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        @if($reserva->hora_salida)
-                                                            {{ \Carbon\Carbon::parse($reserva->hora_salida)->format('H:i') }}
-                                                        @else
-                                                            <span class="text-gray-400">--:--</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="px-3 py-2 text-gray-600 dark:text-gray-400">
-                                                        @if($reserva->hora_salida)
-                                                            {{ round(\Carbon\Carbon::parse($reserva->hora)->diffInMinutes(\Carbon\Carbon::parse($reserva->hora_salida)) / 60, 1) }} hrs
-                                                        @else
-                                                            <span class="text-gray-400">--</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="px-3 py-2">
-                                                        <button onclick="vetarIndividual('{{ $reserva->run_solicitante }}', '{{ $reserva->solicitante->nombre ?? 'N/A' }}', '{{ $reserva->id_reserva }}')"
-                                                                class="px-2 py-1 text-xs text-white transition-colors bg-red-600 rounded hover:bg-red-700">
-                                                            <i class="fas fa-ban"></i> Vetar
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-
-                                <div class="mt-2 text-xs text-gray-500">
-                                    {{ count($grupo['reservas']) }} personas en este grupo
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endforeach
-        @else
-            <div class="p-8 text-center bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <i class="mb-3 text-5xl text-gray-400 fas fa-inbox"></i>
-                <p class="text-lg text-gray-600 dark:text-gray-400">No hay registros para el período seleccionado</p>
+        <!-- Tabla única de registros -->
+        <div class="overflow-hidden bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <h3 class="flex items-center gap-2 text-base font-semibold text-gray-800 dark:text-gray-200">
+                    <i class="fas fa-list text-[#950101]"></i>
+                    Registros de Accesos a Salas de Estudio
+                </h3>
+                <span class="text-xs font-semibold px-2.5 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full w-fit">
+                    Total: {{ count($reservas ?? []) }} accesos
+                </span>
             </div>
-        @endif
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs bg-white rounded-lg dark:bg-gray-800 table-auto">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                        <tr>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">#</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Sala</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">RUN</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-left uppercase tracking-wider text-white">Estudiante / Usuario</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Fecha</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Entrada</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Salida</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Duración</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-left uppercase tracking-wider text-white">Observaciones</th>
+                            <th class="px-3 py-3 text-xs font-semibold text-center uppercase tracking-wider text-white">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        @forelse(($reservas ?? []) as $index => $reserva)
+                            @php
+                                $nombreEspacio = $reserva->espacio->nombre_espacio ?? 'Sala ' . $reserva->id_espacio;
+                                $run = $reserva->run_solicitante ?: ($reserva->run_profesor ?? 'N/A');
+                                $nombreUsuario = $reserva->solicitante->nombre ?? $reserva->profesor->name ?? 'N/A';
+                                $fechaObj = $reserva->fecha_reserva instanceof \Carbon\Carbon
+                                    ? $reserva->fecha_reserva
+                                    : \Carbon\Carbon::parse($reserva->fecha_reserva);
+                                $horaEntrada = \Carbon\Carbon::parse($reserva->hora)->format('H:i');
+                                $horaSalida = $reserva->hora_salida ? \Carbon\Carbon::parse($reserva->hora_salida)->format('H:i') : null;
+                                
+                                $duracion = null;
+                                if ($reserva->hora_salida) {
+                                    $diffMins = \Carbon\Carbon::parse($reserva->hora)->diffInMinutes(\Carbon\Carbon::parse($reserva->hora_salida));
+                                    $duracion = round($diffMins / 60, 1) . ' hrs';
+                                }
+                            @endphp
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                <td class="px-3 py-2.5 text-center font-medium text-gray-500 dark:text-gray-400">
+                                    {{ $index + 1 }}
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-800 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
+                                        <i class="mr-1 fas fa-door-open"></i> {{ $nombreEspacio }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2.5 text-center font-mono whitespace-nowrap text-gray-800 dark:text-gray-200">
+                                    {{ $run }}
+                                </td>
+                                <td class="px-3 py-2.5 font-medium text-gray-900 dark:text-white">
+                                    {{ $nombreUsuario }}
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap text-gray-700 dark:text-gray-300">
+                                    {{ $fechaObj->format('d/m/Y') }}
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
+                                    {{ $horaEntrada }}
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                    @if($horaSalida)
+                                        <span class="font-medium text-gray-800 dark:text-gray-200">{{ $horaSalida }}</span>
+                                    @else
+                                        <span class="text-gray-400 dark:text-gray-500">--:--</span>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                    @if($duracion)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                            <i class="mr-1 fas fa-clock text-gray-400"></i> {{ $duracion }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                            <i class="mr-1 fas fa-spinner fa-spin"></i> En curso
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-3 py-2.5 text-left text-gray-600 dark:text-gray-400 max-w-xs truncate" title="{{ $reserva->observaciones }}">
+                                    {{ $reserva->observaciones ?: '-' }}
+                                </td>
+                                <td class="px-3 py-2.5 text-center whitespace-nowrap">
+                                    <button onclick="vetarIndividual('{{ $run }}', '{{ addslashes($nombreUsuario) }}', '{{ $reserva->id_reserva }}')"
+                                            class="px-2.5 py-1 text-xs text-white transition-colors bg-[#D12420] rounded hover:bg-[#950101] shadow-xs inline-flex items-center gap-1">
+                                        <i class="fas fa-ban"></i> Vetar
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                    <i class="mb-3 text-4xl text-gray-400 fas fa-inbox block"></i>
+                                    <p class="text-base font-medium">No hay registros de salas de estudio para el período seleccionado</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
         </div>
 
         <!-- Vista Usuarios Vetados -->
@@ -252,11 +263,11 @@
                     </h3>
                     <div class="flex gap-2">
                         <button onclick="exportarVetados()" id="btn-exportar-vetados"
-                                class="px-4 py-2 text-sm text-white transition-colors bg-green-600 rounded-lg hover:bg-green-700">
+                                class="btn btn-excel px-4 py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-excel"></i> Exportar Excel
                         </button>
                         <button onclick="filtrarVetados('activo')" id="filter-activo"
-                                class="filter-button active px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700">
+                                class="filter-button active px-4 py-2 text-sm text-white bg-[#D12420] rounded-lg hover:bg-[#950101]">
                             Activos
                         </button>
                         <button onclick="filtrarVetados('liberado')" id="filter-liberado"
@@ -305,7 +316,7 @@
 
             <div class="flex gap-2">
                 <button onclick="confirmarVetoIndividual()" 
-                        class="flex-1 px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                        class="flex-1 px-4 py-2 text-white transition-colors bg-[#D12420] rounded-lg hover:bg-[#950101]">
                     <i class="mr-2 fas fa-check"></i> Confirmar Veto
                 </button>
                 <button onclick="cerrarModalVetar()" 
@@ -345,7 +356,7 @@
 
             <div class="flex gap-2">
                 <button onclick="confirmarVetoGrupo()" 
-                        class="flex-1 px-4 py-2 text-white transition-colors bg-red-600 rounded-lg hover:bg-red-700">
+                        class="flex-1 px-4 py-2 text-white transition-colors bg-[#D12420] rounded-lg hover:bg-[#950101]">
                     <i class="mr-2 fas fa-check"></i> Confirmar Veto Grupal
                 </button>
                 <button onclick="cerrarModalVetarGrupo()" 
@@ -417,7 +428,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar el motivo del veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -443,7 +454,7 @@
                         icon: 'success',
                         title: 'Veto aplicado',
                         text: 'Usuario vetado correctamente',
-                        confirmButtonColor: '#10b981'
+                        confirmButtonColor: '#10B981'
                     });
                     cerrarModalVetar();
                     location.reload();
@@ -452,7 +463,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -461,7 +472,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al aplicar el veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -488,7 +499,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar el motivo del veto grupal',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -514,7 +525,7 @@
                         icon: 'success',
                         title: 'Veto grupal aplicado',
                         html: mensaje,
-                        confirmButtonColor: '#10b981'
+                        confirmButtonColor: '#10B981'
                     });
                     cerrarModalVetarGrupo();
                     location.reload();
@@ -523,7 +534,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -532,7 +543,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al aplicar el veto grupal',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -629,7 +640,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al cargar la lista de vetados',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -643,8 +654,8 @@
                 showCancelButton: true,
                 confirmButtonText: 'Sí, liberar',
                 cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#6b7280'
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#8D8D8D'
             });
 
             if (!result.isConfirmed) {
@@ -667,7 +678,7 @@
                         icon: 'success',
                         title: 'Veto liberado',
                         text: 'Veto liberado correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                     await cargarVetados('activo', 'listaVetados');
@@ -676,7 +687,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -685,7 +696,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al liberar el veto',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -712,7 +723,7 @@
                     icon: 'warning',
                     title: 'Campo requerido',
                     text: 'Debe ingresar una observación',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
                 return;
             }
@@ -736,7 +747,7 @@
                         icon: 'success',
                         title: 'Actualizado',
                         text: 'Observación actualizada correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                     cerrarModalEditar();
@@ -746,7 +757,7 @@
                         icon: 'error',
                         title: 'Error',
                         text: data.message,
-                        confirmButtonColor: '#dc2626'
+                        confirmButtonColor: '#D12420'
                     });
                 }
             } catch (error) {
@@ -755,7 +766,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al actualizar la observación',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }
@@ -816,7 +827,7 @@
                         icon: 'success',
                         title: 'Exportado',
                         text: 'El archivo se ha descargado correctamente',
-                        confirmButtonColor: '#10b981',
+                        confirmButtonColor: '#10B981',
                         timer: 2000
                     });
                 } else {
@@ -828,7 +839,7 @@
                     icon: 'error',
                     title: 'Error',
                     text: 'Error al exportar el reporte',
-                    confirmButtonColor: '#dc2626'
+                    confirmButtonColor: '#D12420'
                 });
             }
         }

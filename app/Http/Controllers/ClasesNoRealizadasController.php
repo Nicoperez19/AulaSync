@@ -14,17 +14,19 @@ class ClasesNoRealizadasController extends Controller
     public function index()
     {
         $periodo = SemesterHelper::getCurrentPeriod();
+        $user = auth()->user();
+        $isSuperAdmin = $user && $user->isSuperAdmin();
         
         // Verificar si el periodo académico ha iniciado
         $periodoActual = SemesterHelper::getPeriodoActual();
         $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
         
-        // Si el periodo no ha iniciado, las estadísticas son 0
-        if ($periodoNoIniciado) {
+        // Si el periodo no ha iniciado o el usuario no es superadmin, no se calculan atrasos
+        if ($periodoNoIniciado || !$isSuperAdmin) {
             $totalAtrasos = 0;
             $promedioMinutosAtraso = 0;
         } else {
-            // Obtener estadísticas de atrasos (simplificado)
+            // Obtener estadísticas de atrasos (solo para superadmin)
             $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
             $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
                 ->avg('minutos_atraso') ?? 0;
@@ -33,7 +35,8 @@ class ClasesNoRealizadasController extends Controller
         return view('admin.clases-no-realizadas', compact(
             'totalAtrasos',
             'promedioMinutosAtraso',
-            'periodo'
+            'periodo',
+            'isSuperAdmin'
         ));
     }
 
@@ -50,10 +53,11 @@ class ClasesNoRealizadasController extends Controller
         
         $request->validate([
             'search' => 'nullable|string|max:255',
-            'estado' => 'nullable|in:no_realizada,justificado,recuperada,pendiente',
+            'estado' => 'nullable|in:no_realizada,realizada,registrada,justificado,recuperada,pendiente',
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
+            'ua' => 'nullable|string|max:100',
         ]);
 
         $search = $request->input('search');
@@ -61,23 +65,30 @@ class ClasesNoRealizadasController extends Controller
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $periodo = $request->input('periodo');
+        $ua = $request->input('ua');
 
         // Generar nombre de archivo descriptivo
-        $nombreArchivo = 'Todas_Las_Clases';
+        $nombreArchivo = 'Control_De_Clases';
         
+        if ($periodo) {
+            $nombreArchivo .= '_Semestre_' . str_replace('/', '-', $periodo);
+        }
+
+        if ($ua) {
+            $nombreArchivo .= '_UA_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $ua);
+        }
+
         if ($fechaInicio && $fechaFin) {
             $nombreArchivo .= '_' . Carbon::parse($fechaInicio)->format('d-m-Y');
             $nombreArchivo .= '_a_' . Carbon::parse($fechaFin)->format('d-m-Y');
-        } elseif ($periodo) {
-            $nombreArchivo .= '_Periodo_' . str_replace('/', '-', $periodo);
-        } else {
+        } elseif (!$periodo) {
             $nombreArchivo .= '_' . Carbon::now()->format('d-m-Y');
         }
         
         $nombreArchivo .= '.xlsx';
 
         return Excel::download(
-            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado),
+            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado, $ua),
             $nombreArchivo
         );
     }

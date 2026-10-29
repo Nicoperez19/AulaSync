@@ -152,13 +152,40 @@ class Reserva extends Model
     {
         $fecha = $fecha ?? now()->toDateString();
         $hora = $hora ?? now()->format('H:i:s');
+        // Margen de 10 minutos para no liberar el espacio antes de que el docente marque su salida al finalizar el módulo
+        $horaConMargen = \Carbon\Carbon::parse($fecha . ' ' . $hora)->subMinutes(10)->format('H:i:s');
 
         return $query->where('estado', 'activa')
                      ->where('fecha_reserva', $fecha)
-                     ->where(function($q) use ($hora) {
+                     ->where(function($q) use ($hora, $horaConMargen) {
                          $q->where('hora', '<=', $hora)
-                           ->where('hora_salida', '>', $hora);
+                           ->where(function($inner) use ($horaConMargen) {
+                               $inner->whereNull('hora_salida')
+                                     ->orWhere('hora_salida', '>', $horaConMargen)
+                                     ->orWhere('observaciones', 'like', '%Sala de Estudio%');
+                           });
                      });
+    }
+
+    /**
+     * Determinar si la reserva corresponde a una sala de estudio
+     */
+    public function esSalaEstudio(): bool
+    {
+        if (str_contains(strtolower($this->observaciones ?? ''), 'sala de estudio')) {
+            return true;
+        }
+        $espacio = $this->relationLoaded('espacio')
+            ? $this->espacio
+            : Espacio::withoutGlobalScopes()->find($this->id_espacio);
+        if ($espacio) {
+            $tipo = strtolower($espacio->tipo_espacio ?? '');
+            $nombre = strtolower($espacio->nombre_espacio ?? '');
+            if (str_contains($tipo, 'estudio') || str_contains($nombre, 'estudio')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -185,6 +212,59 @@ class Reserva extends Model
 
         return $query->where('estado', 'programada')
                      ->where('fecha_reserva', $fecha);
+    }
+
+    /**
+     * Scope: reservas activas de un docente específico en un espacio dado.
+     *
+     * Uso: Reserva::activasProfesor($run, $idEspacio)->orderBy('created_at', 'desc')->first()
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $runProfesor  RUN normalizado del docente.
+     * @param string|null $idEspacio  ID del espacio (opcional; si se omite filtra en todos los espacios).
+     */
+    public function scopeActivasProfesor($query, string $runProfesor, ?string $idEspacio = null)
+    {
+        $query->where('estado', 'activa')
+              ->where(function ($q) use ($runProfesor) {
+                  $q->where('run_profesor', $runProfesor)
+                    ->orWhere('run_solicitante', $runProfesor);
+              });
+
+        if ($idEspacio !== null) {
+            $query->where('id_espacio', $idEspacio);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Scope: reservas activas en un espacio que NO pertenecen al docente indicado.
+     * Útil para detectar si otro usuario ocupa el espacio antes de liberarlo.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param string $runProfesor  RUN normalizado del docente que NO debe aparecer.
+     * @param string $idEspacio    ID del espacio a verificar.
+     */
+    public function scopeActivasOtrosDocentes($query, string $runProfesor, string $idEspacio)
+    {
+        return $query->where('id_espacio', $idEspacio)
+                     ->where('estado', 'activa')
+                     ->where(function ($q) use ($runProfesor) {
+                         $q->where('run_profesor', '!=', $runProfesor)
+                           ->orWhereNull('run_profesor');
+                     });
+    }
+
+    /**
+     * Verifica si el RUN proporcionado es el dueño de esta reserva.
+     *
+     * @param string $run  RUN normalizado a comparar.
+     * @return bool
+     */
+    public function esDueño(string $run): bool
+    {
+        return $this->run_profesor === $run || $this->run_solicitante === $run;
     }
 
     /**

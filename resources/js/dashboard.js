@@ -23,9 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarStatusClases('hoy');
 
     setInterval(function() {
+        if (document.hidden) return;
         cargarHorarioActual();
         cargarOcupacionGrid(activeTabOcupacion, true);
-    }, 3000);
+    }, 20000);
 
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
@@ -40,14 +41,14 @@ function switchMainDashboardTab(tabName) {
     if (activeMainTab === tabName) return;
 
     document.querySelectorAll('.main-dashboard-tab-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-xs');
+        btn.classList.remove('bg-[#D12420]', 'text-white', 'shadow-xs');
         btn.classList.add('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
     });
 
     const activeBtn = document.getElementById(`main-tab-btn-${tabName}`);
     if (activeBtn) {
         activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
-        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
+        activeBtn.classList.add('bg-[#D12420]', 'text-white', 'shadow-xs');
     }
 
     document.querySelectorAll('.main-dashboard-tab-content').forEach(content => {
@@ -62,7 +63,7 @@ function switchMainDashboardTab(tabName) {
     activeMainTab = tabName;
 
     if (tabName === 'status-clases') {
-        cargarStatusClases('semana');
+        cargarStatusClases('hoy');
     }
 }
 
@@ -133,9 +134,9 @@ function updateCarouselState(container, current, total) {
         const ind = document.getElementById(`indicator-${i}`);
         if (ind) {
             if (i === current) {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-[#D12420] w-6';
             } else {
-                ind.className = 'h-2 rounded-full transition-all duration-200 bg-gray-300 w-2 hover:bg-gray-400';
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-slate-200 w-2 hover:bg-slate-300';
             }
         }
     }
@@ -148,6 +149,9 @@ function obtenerDiaActual() {
 
 function obtenerModuloActual(hora = null) {
     const diaActual = obtenerDiaActual();
+    if (diaActual === 'domingo') {
+        return null;
+    }
     const horaAhora = hora || new Date().toTimeString().slice(0, 8);
 
     if (!window.horariosModulos || !window.horariosModulos[diaActual]) {
@@ -260,15 +264,33 @@ function cambiarTabOcupacion(tipo) {
 
     // Resetear todos los botones al estado inactivo
     document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
-        btn.classList.remove('bg-[#D2091E]', 'text-white', 'shadow-sm');
-        btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
+        btn.classList.remove('bg-[#D12420]', 'bg-[#D2091E]', 'text-white', 'shadow-sm');
+        btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D12420]', 'hover:shadow-sm');
     });
 
     // Activar el botón seleccionado
     const selectedBtn = document.getElementById(`tab-ocupacion-${tipo}`);
     if (selectedBtn) {
-        selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
-        selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
+        selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D12420]', 'hover:text-[#D2091E]', 'hover:shadow-sm');
+        selectedBtn.classList.add('bg-[#D12420]', 'text-white', 'shadow-sm');
+    }
+
+    // Actualizar parámetros de tipo en los botones de exportación
+    const excelBtn = document.getElementById('btn-export-ocupacion-excel');
+    if (excelBtn) {
+        try {
+            const url = new URL(excelBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            excelBtn.href = url.toString();
+        } catch (e) {}
+    }
+    const pdfBtn = document.getElementById('btn-export-ocupacion-pdf');
+    if (pdfBtn) {
+        try {
+            const url = new URL(pdfBtn.href, window.location.origin);
+            url.searchParams.set('tipo', tipo);
+            pdfBtn.href = url.toString();
+        } catch (e) {}
     }
 
     activeTabOcupacion = tipo;
@@ -282,7 +304,7 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     if (!silencioso) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 text-gray-400">
-                <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
                 <p class="text-sm">Cargando datos...</p>
             </div>
         `;
@@ -293,13 +315,16 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
 
     fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar ocupación');
-            }
-            return response.text();
-        })
-        .then(html => {
-            container.innerHTML = html;
+            return response.text().then(text => {
+                if (!response.ok) {
+                    if (text && text.includes('Error al calcular')) {
+                        container.innerHTML = text;
+                        return;
+                    }
+                    throw new Error(text || 'Error al cargar ocupación');
+                }
+                container.innerHTML = text;
+            });
         })
         .catch(error => {
             console.error('Error:', error);
@@ -315,9 +340,30 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
         });
 }
 
+let statusClasesAbortController = null;
+
 function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
     const container = document.getElementById('status-clases-container');
     if (!container) return;
+
+    if (statusClasesAbortController) {
+        statusClasesAbortController.abort();
+    }
+    statusClasesAbortController = new AbortController();
+
+    // Actualización visual inmediata de los botones para respuesta instantánea (0ms)
+    const btnHoy = document.getElementById('btn-status-hoy');
+    const btnSemana = document.getElementById('btn-status-semana');
+    const btnMes = document.getElementById('btn-status-mes');
+    const activeClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs bg-[#D12420] text-white shadow-xs border-[#D12420]';
+    const inactiveClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100';
+
+    if (btnHoy) btnHoy.className = (rango === 'hoy') ? activeClasses : inactiveClasses;
+    if (btnSemana) btnSemana.className = (rango === 'semana') ? activeClasses : inactiveClasses;
+    if (btnMes) btnMes.className = (rango === 'mes') ? activeClasses : inactiveClasses;
+
+    container.style.opacity = '0.6';
+    container.style.pointerEvents = 'none';
 
     let route = window.DashboardConfig ? window.DashboardConfig.statusClasesRoute : '/dashboard/status-clases';
     let url = `${route}?rango=${rango}`;
@@ -325,15 +371,20 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
     }
 
-    fetch(url)
+    fetch(url, { signal: statusClasesAbortController.signal })
         .then(response => response.text())
         .then(html => {
             container.innerHTML = html;
             setTimeout(initStatusClasesChart, 50);
         })
         .catch(err => {
+            if (err.name === 'AbortError') return;
             console.error('Error cargando status clases:', err);
             container.innerHTML = `<div class="text-center py-8 text-rose-500">Error al cargar el status de clases.</div>`;
+        })
+        .finally(() => {
+            container.style.opacity = '1';
+            container.style.pointerEvents = 'auto';
         });
 }
 
@@ -372,8 +423,8 @@ function initStatusClasesChart() {
     const ctx = canvas.getContext('2d');
 
     const chartData = totalClases === 0 ? [1] : [impartidasTotal, noRegistradas];
-    const chartColors = totalClases === 0 ? ['#e2e8f0'] : ['#10b981', '#ef4444'];
-    const chartHoverColors = totalClases === 0 ? ['#cbd5e1'] : ['#059669', '#dc2626'];
+    const chartColors = totalClases === 0 ? ['#e2e8f0'] : ['#10B981', '#D12420'];
+    const chartHoverColors = totalClases === 0 ? ['#cbd5e1'] : ['#059669', '#950101'];
 
     statusClasesChartInstance = new Chart(ctx, {
         type: 'doughnut',
@@ -399,7 +450,7 @@ function initStatusClasesChart() {
                     const idx = activeElements[0].index;
                     if (idx === 0) {
                         centerValor.textContent = `${impartidasTotal}`;
-                        centerValor.className = 'text-3xl font-black text-emerald-600 tracking-tight leading-none';
+                        centerValor.className = 'text-3xl font-black text-[#10B981] tracking-tight leading-none';
                         centerSub.textContent = `Impartidas (${pctImpartidas}%)`;
                         centerSub.className = 'text-[11px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
                         if (centerDetail) {
@@ -408,9 +459,9 @@ function initStatusClasesChart() {
                         }
                     } else {
                         centerValor.textContent = `${noRegistradas}`;
-                        centerValor.className = 'text-3xl font-black text-rose-600 tracking-tight leading-none';
+                        centerValor.className = 'text-3xl font-black text-[#D12420] tracking-tight leading-none';
                         centerSub.textContent = `Sin Registro (${pctNoRegistradas}%)`;
-                        centerSub.className = 'text-[11px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
+                        centerSub.className = 'text-[11px] font-extrabold text-[#950101] uppercase tracking-wide mt-1';
                         if (centerDetail) {
                             centerDetail.textContent = `de ${totalClases} clases totales`;
                             centerDetail.classList.remove('hidden');
@@ -420,7 +471,7 @@ function initStatusClasesChart() {
                     centerValor.textContent = `${pctImpartidas}%`;
                     centerValor.className = 'text-3xl font-black text-slate-800 tracking-tight leading-none';
                     centerSub.textContent = 'Cumplimiento';
-                    centerSub.className = 'text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
+                    centerSub.className = 'text-[11px] font-extrabold text-[#10B981] uppercase tracking-wide mt-1';
                     if (centerDetail) {
                         centerDetail.classList.add('hidden');
                         centerDetail.textContent = '';
