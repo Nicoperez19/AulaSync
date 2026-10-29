@@ -41,22 +41,22 @@
     </x-slot>
 
     <div class="space-y-6 pb-8">
-        <!-- Navpills para separar las Auditorías en un mismo lugar -->
-        <div class="flex flex-wrap items-center gap-1.5 bg-gray-100 p-1.5 rounded-xl border border-gray-200 w-full sm:w-fit">
+        <!-- Tabs de navegación (Navpills al estilo Control de Clases) -->
+        <div class="flex flex-wrap sm:inline-flex items-center gap-2 bg-gray-200/80 p-1.5 rounded-2xl border border-gray-300/70 shadow-sm">
             <a href="{{ route('reportes.auditoria-clases.index', array_filter(['tab' => 'justificaciones', 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'search' => $search])) }}"
-               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 {{ !$esReagendamientos ? 'bg-[#D12420] text-white shadow-sm' : 'text-gray-600 hover:bg-white hover:text-[#D12420]' }}">
-                <i class="fa-solid fa-shield-halved"></i>
+               class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer {{ !$esReagendamientos ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium' }}">
+                <i class="fa-solid fa-shield-halved text-xl {{ !$esReagendamientos ? 'text-[#950101]' : 'text-gray-400' }}"></i>
                 <span>Clases y Justificaciones</span>
-                <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ !$esReagendamientos ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700' }}">
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm {{ !$esReagendamientos ? 'bg-[#950101] text-white' : 'bg-gray-300/80 text-gray-700' }}">
                     {{ $totalJustificaciones ?? 0 }}
                 </span>
             </a>
 
             <a href="{{ route('reportes.auditoria-clases.index', array_filter(['tab' => 'reagendamientos', 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'search' => $search])) }}"
-               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 {{ $esReagendamientos ? 'bg-[#D12420] text-white shadow-sm' : 'text-gray-600 hover:bg-white hover:text-[#D12420]' }}">
-                <i class="fa-solid fa-calendar-days"></i>
+               class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer {{ $esReagendamientos ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium' }}">
+                <i class="fa-solid fa-calendar-days text-xl {{ $esReagendamientos ? 'text-[#950101]' : 'text-gray-400' }}"></i>
                 <span>Reagendamientos y Recuperación</span>
-                <span class="px-2 py-0.5 text-xs font-bold rounded-full {{ $esReagendamientos ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700' }}">
+                <span class="text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm {{ $esReagendamientos ? 'bg-[#950101] text-white' : 'bg-gray-300/80 text-gray-700' }}">
                     {{ $totalReagendamientos ?? 0 }}
                 </span>
             </a>

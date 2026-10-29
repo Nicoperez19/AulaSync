@@ -17,16 +17,6 @@
                     @else
                         <h2 class="text-2xl font-bold leading-tight">CONTROL DE CLASES</h2>
                     @endif
-                    @php
-                        $partesPeriodo = explode('-', $periodo ?? '');
-                        $periodoFormateado = (count($partesPeriodo) === 2)
-                            ? $partesPeriodo[1] . '° Semestre ' . $partesPeriodo[0]
-                            : (\App\Helpers\SemesterHelper::getCurrentSemester() . '° Semestre ' . \App\Helpers\SemesterHelper::getCurrentAcademicYear());
-                    @endphp
-                    <div class="flex items-center gap-1.5 text-sm font-bold text-red-700 mt-1">
-                        <i class="fa-solid fa-calendar-days text-red-600"></i>
-                        <span>Período: {{ $periodoFormateado }}</span>
-                    </div>
                 </div>
             </div>
         </div>
