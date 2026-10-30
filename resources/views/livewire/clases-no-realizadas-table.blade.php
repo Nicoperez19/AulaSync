@@ -292,7 +292,7 @@
                                     $moduloInicio = preg_replace('/^[A-Z]{2}\./', '', $modulos[0]);
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
-                                <tr class="table-row hover:bg-gray-50 {{ $clase['estado'] === 'Pendiente de Recuperación' ? 'bg-yellow-50' : '' }}">
+                                <tr class="table-row hover:bg-gray-50">
                                     <td class="px-3 py-4 text-center w-10">
                                         @if($clase['estado'] === 'No Registrada')
                                             <input type="checkbox" 
@@ -306,10 +306,6 @@
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1 justify-center">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
-                                            @if($clase['estado'] === 'Pendiente de Recuperación')
-                                                <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
-                                                   title="Clase reagendada - Pendiente de recuperación"></i>
-                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 w-32">
