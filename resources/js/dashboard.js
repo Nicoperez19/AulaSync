@@ -585,7 +585,10 @@ function initEscuelasChart() {
                     data: dataImpartidas,
                     backgroundColor: '#10B981',
                     hoverBackgroundColor: '#059669',
-                    borderRadius: 6,
+                    borderRadius: 5,
+                    maxBarThickness: 24,
+                    categoryPercentage: 0.65,
+                    barPercentage: 0.85,
                     borderSkipped: false,
                 },
                 {
@@ -593,7 +596,10 @@ function initEscuelasChart() {
                     data: dataNoRegistradas,
                     backgroundColor: '#D12420',
                     hoverBackgroundColor: '#950101',
-                    borderRadius: 6,
+                    borderRadius: 5,
+                    maxBarThickness: 24,
+                    categoryPercentage: 0.65,
+                    barPercentage: 0.85,
                     borderSkipped: false,
                 }
             ]
