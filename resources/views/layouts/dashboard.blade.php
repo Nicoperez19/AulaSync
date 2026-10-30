@@ -130,154 +130,145 @@
             </div>
         </div>
 
-        <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
-            <!-- Widget Izquierda: Estado de Clases (Control de Registro) -->
-            <div class="{{ auth()->user()->can('reportes') ? 'lg:col-span-7' : 'lg:col-span-12' }} flex flex-col">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
-                    <i class="fas fa-chart-pie mr-2 text-[#950101]"></i>
-                    Estado de Clases (Control de Registro)
-                </h3>
-                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1">
-                    <div id="status-clases-container">
-                        <div class="flex flex-col items-center justify-center py-16 text-slate-400">
-                            <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p class="text-sm">Cargando estado de clases...</p>
+        <!-- Sección: Estado y Cumplimiento de Clases (Fila con 2 Gráficos en DIVs separados) -->
+        <div class="mb-8">
+            <div id="status-clases-container">
+                <div class="flex flex-col items-center justify-center py-16 text-slate-400 bg-white rounded-2xl shadow-md border border-gray-100">
+                    <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-sm font-medium">Cargando estado y cumplimiento de clases...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección: Reportes de Uso de Espacios -->
+        @can('reportes')
+        <div class="mb-8">
+            <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-chart-bar mr-2 text-[#950101]"></i>
+                Reportes del Sistema y Uso de Espacios
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Accesos registrados (QR) -->
+                <a href="{{ route('reportes.accesos') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-qrcode text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Accesos registrados (QR)</h4>
+                            <p class="text-xs text-gray-500 truncate">Escaneados por código QR</p>
                         </div>
                     </div>
-                </div>
+                    <div class="text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>    
+
+                <!-- Control de Clases -->
+                <a href="{{ route('clases-no-realizadas.index') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-[#EDB9B9]/50 rounded-xl flex items-center justify-center text-[#D12420] group-hover:bg-[#D12420] group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-clipboard-check text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Control de Clases</h4>
+                            <p class="text-xs text-gray-500 truncate">Asistencia y recuperaciones</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-[#D12420] group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- Cumplimiento por Escuelas -->
+                <a href="{{ route('reportes.cumplimiento-escuelas') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-graduation-cap text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Cumplimiento por Escuela</h4>
+                            <p class="text-xs text-gray-500 truncate">Clases impartidas vs sin registro</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- Salas de Estudio -->
+                <a href="{{ route('reportes.salas-estudio') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-book text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Salas de Estudio</h4>
+                            <p class="text-xs text-gray-500 truncate">Uso y reservas de salas</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- Uso del Auditorio -->
+                <a href="{{ route('reportes.uso-auditorio') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-landmark text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Uso del Auditorio</h4>
+                            <p class="text-xs text-gray-500 truncate">Historial de ocupación</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- Histórico de Ocupación Semanal -->
+                <a href="{{ route('reportes.ocupacion-semanal.index') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-[#D12420] group-hover:bg-[#D12420] group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-chart-line text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Histórico de Ocupación</h4>
+                            <p class="text-xs text-gray-500 truncate">Semanas en Excel y PDF</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-[#D12420] group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
+
+                <!-- Auditoría de Clases y Justificaciones -->
+                <a href="{{ route('reportes.auditoria-clases.index') }}"
+                   class="flex items-center justify-between p-4 bg-white hover:bg-slate-50/90 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition duration-200 group">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        <div class="w-10 h-10 bg-slate-200 rounded-xl flex items-center justify-center text-slate-700 group-hover:bg-slate-800 group-hover:text-white transition duration-200 shrink-0">
+                            <i class="fas fa-clipboard-user text-lg"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm truncate">Auditoría de Clases</h4>
+                            <p class="text-xs text-gray-500 truncate">Justificaciones registradas</p>
+                        </div>
+                    </div>
+                    <div class="text-gray-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
+                        <i class="fas fa-chevron-right text-xs"></i>
+                    </div>
+                </a>
             </div>
-
-            <!-- Widget Derecha: Reportes de Uso de Espacios -->
-            @can('reportes')
-            <div class="lg:col-span-5 flex flex-col">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
-                    <i class="fas fa-chart-bar mr-2 text-[#950101]"></i>
-                    Reportes de Uso de Espacios
-                </h3>
-                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1 flex flex-col justify-between gap-4">
-                    <!-- Accesos registrados (QR) -->
-                    <a href="{{ route('reportes.accesos') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-qrcode text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Accesos registrados (QR)</h4>
-                                <p class="text-xs text-gray-500">Registros de acceso escaneados por código QR</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-purple-600 transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>    
-
-                    <!-- Control de Clases -->
-                    <a href="{{ route('clases-no-realizadas.index') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-[#EDB9B9]/50 rounded-lg flex items-center justify-center text-[#D12420] group-hover:bg-[#D12420] group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-clipboard-check text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Control de Clases</h4>
-                                <p class="text-xs text-gray-500">Asistencia, ausencias y recuperación de clases</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-[#D12420] transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-
-                    <!-- Cumplimiento por Escuelas -->
-                    <a href="{{ route('reportes.cumplimiento-escuelas') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-graduation-cap text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Cumplimiento por Escuela</h4>
-                                <p class="text-xs text-gray-500">Clases impartidas vs no registradas de la sede</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-blue-600 transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-
-                    <!-- Salas de Estudio -->
-                    <a href="{{ route('reportes.salas-estudio') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-book text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Salas de Estudio</h4>
-                                <p class="text-xs text-gray-500">Uso y reservas de las salas de estudio</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-emerald-600 transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-
-                    <!-- Uso del Auditorio -->
-                    <a href="{{ route('reportes.uso-auditorio') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-landmark text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Uso del Auditorio</h4>
-                                <p class="text-xs text-gray-500">Historial y estadísticas de uso del auditorio</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-amber-600 transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-
-                    <!-- Histórico de Ocupación Semanal -->
-                    <a href="{{ route('reportes.ocupacion-semanal.index') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-[#D12420] group-hover:bg-[#D12420] group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-chart-line text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Histórico de Ocupación</h4>
-                                <p class="text-xs text-gray-500">Semanas almacenadas y descargas en Excel y PDF</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-[#D12420] transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-
-                    <!-- Auditoría de Clases y Justificaciones -->
-                    <a href="{{ route('reportes.auditoria-clases.index') }}"
-                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-slate-700 group-hover:bg-slate-800 group-hover:text-white transition duration-200 shrink-0">
-                                <i class="fas fa-clipboard-user text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Auditoría de Clases</h4>
-                                <p class="text-xs text-gray-500">Registro inmutable de justificaciones y regularizaciones</p>
-                            </div>
-                        </div>
-                        <div class="text-gray-400 group-hover:text-slate-800 transition duration-200 ml-2">
-                            <i class="fas fa-chevron-right text-sm"></i>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            @endcan
         </div>
+        @endcan
 
         <!-- Sección: Horarios del día actual - Módulos actuales -->
         <div class="mb-8">

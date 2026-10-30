@@ -8,7 +8,7 @@
                 <div>
                     <h2 class="text-2xl font-bold leading-tight text-gray-900">Cumplimiento por Escuela de la Sede</h2>
                     <p class="text-xs sm:text-sm text-gray-500">
-                        Análisis comparativo de clases impartidas (efectivas) vs no registradas por área académica
+                        Análisis comparativo de clases impartidas (efectivas) vs no registradas por escuela de la sede
                     </p>
                 </div>
             </div>
@@ -67,7 +67,7 @@
                            class="w-full text-xs sm:text-sm rounded-xl border border-gray-300 bg-white py-2 px-3 focus:border-[#D12420] focus:ring-2 focus:ring-[#D12420]/20">
                 </div>
 
-                <!-- Escuela / Área Académica -->
+                <!-- Escuela -->
                 <div>
                     <label for="escuela" class="block text-xs font-bold text-gray-700 uppercase mb-1">Escuela</label>
                     <select name="escuela" id="escuela" class="w-full text-xs sm:text-sm rounded-xl border border-gray-300 bg-white py-2 px-3 focus:border-[#D12420] focus:ring-2 focus:ring-[#D12420]/20">
@@ -178,7 +178,7 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-100 text-gray-700 uppercase text-xs font-bold border-b border-gray-200">
                         <tr>
-                            <th class="px-5 py-3.5">Escuela / Área Académica</th>
+                            <th class="px-5 py-3.5">Escuela</th>
                             <th class="px-4 py-3.5 text-center">Total Clases</th>
                             <th class="px-4 py-3.5 text-center text-emerald-800">Impartidas (Efectivas)</th>
                             <th class="px-3 py-3.5 text-center text-gray-600">Realizadas Norm.</th>

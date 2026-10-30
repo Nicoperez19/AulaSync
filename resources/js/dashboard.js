@@ -558,11 +558,17 @@ function initEscuelasChart() {
         escuelasChartInstance.destroy();
     }
 
-    const labels = escuelas.map(e => {
-        const n = e.nombre || 'Sin Escuela';
-        return n.length > 25 ? n.substring(0, 23) + '...' : n;
-    });
     const fullNames = escuelas.map(e => e.nombre || 'Sin Escuela');
+    const labels = escuelas.map(e => {
+        let n = e.nombre || 'Sin Escuela';
+        const nombreCorto = n.replace(/^Escuela de\s+/i, '');
+        if (nombreCorto.length > 18) {
+            const words = nombreCorto.split(' ');
+            const mid = Math.ceil(words.length / 2);
+            return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+        }
+        return nombreCorto;
+    });
     const dataImpartidas = escuelas.map(e => e.impartidas || 0);
     const dataNoRegistradas = escuelas.map(e => e.no_registradas || 0);
     const dataPcts = escuelas.map(e => e.pct || 0);

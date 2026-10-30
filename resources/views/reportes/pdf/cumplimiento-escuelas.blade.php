@@ -110,7 +110,7 @@
 <body>
     <div class="header">
         <h1>AULASYNC - CONTROL DE GESTIÓN ACADÉMICA</h1>
-        <p><strong>Reporte de Cumplimiento de Clases por Escuela / Área Académica</strong></p>
+        <p><strong>Reporte de Cumplimiento de Clases por Escuela</strong></p>
         <p>Período: <strong>{{ $periodo }}</strong> | Desde: <strong>{{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}</strong> Hasta: <strong>{{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}</strong> | Generado: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
     </div>
 
@@ -153,7 +153,7 @@
     <table class="data-table">
         <thead>
             <tr>
-                <th style="width: 32%;">Escuela / Área Académica</th>
+                <th style="width: 32%;">Escuela</th>
                 <th style="width: 10%; text-align: center;">Total Clases</th>
                 <th style="width: 10%; text-align: center;">Impartidas</th>
                 <th style="width: 10%; text-align: center;">Realizadas Norm.</th>

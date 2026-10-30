@@ -111,7 +111,7 @@ class HojaResumenEscuelas implements FromCollection, WithHeadings, WithStyles, W
     public function headings(): array
     {
         return [
-            'Escuela / Área Académica',
+            'Escuela',
             'Total Clases Planificadas',
             'Clases Impartidas (Efectivas)',
             'Realizadas Normales',
@@ -216,7 +216,7 @@ class HojaDetalleClasesEscuelas implements FromCollection, WithHeadings, WithSty
         return [
             'Fecha',
             'Día',
-            'Escuela / Área Académica',
+            'Escuela',
             'Carrera',
             'UA',
             'Asignatura',

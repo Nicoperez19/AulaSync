@@ -2319,37 +2319,134 @@ class TodasClasesService
      * Resolver el nombre de la Unidad Académica / Carrera
      */
     /**
-     * Resolver la Escuela / Área Académica
+     * Resolver la Escuela (entidad académica real, no la etiqueta genérica de Área Académica)
      */
     public function resolverEscuela($asignatura, $profesor = null): string
     {
-        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
-            return (string) $asignatura->carrera->areaAcademica->nombre_area_academica;
-        }
-        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->nombre_area_academica)) {
-            return (string) $profesor->areaAcademica->nombre_area_academica;
-        }
-        if ($profesor && $profesor->carrera && $profesor->carrera->areaAcademica && !empty($profesor->carrera->areaAcademica->nombre_area_academica)) {
-            return (string) $profesor->carrera->areaAcademica->nombre_area_academica;
-        }
-        return 'Sin Escuela Asignada';
+        $info = $this->resolverDatosEscuela($asignatura, $profesor);
+        return $info['nombre'];
     }
 
     /**
-     * Resolver el ID de la Escuela / Área Académica
+     * Resolver el ID de la Escuela
      */
     public function resolverIdEscuela($asignatura, $profesor = null): string
     {
-        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->id_area_academica)) {
-            return (string) $asignatura->carrera->areaAcademica->id_area_academica;
+        $info = $this->resolverDatosEscuela($asignatura, $profesor);
+        return $info['id'];
+    }
+
+    /**
+     * Resuelve los datos de la Escuela (nombre e identificador)
+     */
+    protected function resolverDatosEscuela($asignatura, $profesor = null): array
+    {
+        // 1. Mapeo oficial de Carreras a Escuelas del Instituto Tecnológico
+        static $carrerasMap = [
+            1200 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1201 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1205 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1207 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1227 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1237 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1243 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1266 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1274 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1284 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1287 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1297 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1318 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1321 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1352 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2200 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2207 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            2219 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            2228 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2266 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2297 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+        ];
+
+        // Obtener la carrera de la asignatura o del profesor
+        $carrera = ($asignatura && $asignatura->carrera) ? $asignatura->carrera : (($profesor && $profesor->carrera) ? $profesor->carrera : null);
+        $idCarrera = $carrera ? (int) $carrera->id_carrera : ($asignatura && !empty($asignatura->id_carrera) ? (int) $asignatura->id_carrera : null);
+
+        if ($idCarrera && isset($carrerasMap[$idCarrera])) {
+            return $carrerasMap[$idCarrera];
         }
-        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->id_area_academica)) {
-            return (string) $profesor->areaAcademica->id_area_academica;
+
+        // 2. Si la carrera o el profesor están asociados directamente a un Área Académica que sea una Escuela real
+        $area = ($carrera && $carrera->areaAcademica) 
+            ? $carrera->areaAcademica 
+            : (($profesor && $profesor->areaAcademica) ? $profesor->areaAcademica : null);
+
+        if ($area && !empty($area->nombre_area_academica)) {
+            $nombreArea = trim($area->nombre_area_academica);
+            $esGenerica = preg_match('/^Área Académica/iu', $nombreArea) 
+                || preg_match('/^Area Academica/iu', $nombreArea) 
+                || stripos($nombreArea, 'Instituto Tecnológico') !== false;
+
+            if (!$esGenerica) {
+                return [
+                    'id'     => (string) ($area->id_area_academica ?: 'ESC_GEN'),
+                    'nombre' => $nombreArea,
+                ];
+            }
         }
-        if ($profesor && $profesor->carrera && $profesor->carrera->areaAcademica && !empty($profesor->carrera->areaAcademica->id_area_academica)) {
-            return (string) $profesor->carrera->areaAcademica->id_area_academica;
+
+        // 3. Resolución semántica por palabras clave en el nombre de la Carrera
+        $nombreCarrera = $carrera->nombre ?? '';
+        if (!empty($nombreCarrera)) {
+            $ncLower = mb_strtolower($nombreCarrera, 'UTF-8');
+            // Escuela de Educación y Salud
+            if (preg_match('/(salud|educaci[oó]n|p[aá]rvulo|alimento|enfermer[ií]a|nutrici[oó]n|kinesiolog[ií]a|qu[ií]mica|biolog[ií]a|pedagog[ií]a|deporte|social)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_EDUSAL',
+                    'nombre' => 'Escuela de Educación y Salud',
+                ];
+            }
+            // Escuela de Administración y Servicios
+            if (preg_match('/(administra|log[ií]stic|servicio|comercial|finanza|contador|auditor|gesti[oó]n|p[uú]blica|recursos humanos|negocio|empresa)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_ADMSERV',
+                    'nombre' => 'Escuela de Administración y Servicios',
+                ];
+            }
+            // Escuela de Ingeniería, Procesos Industriales y Medio Ambiente
+            if (preg_match('/(ingenier|industrial|construcci|prevenci|riesgo|electromec|refrigera|climatiza|electrici|inform[aá]tic|automatiza|mec[aá]nic|obra|computac|redes)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_INGPRO',
+                    'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente',
+                ];
+            }
         }
-        return 'SIN_ESCUELA';
+
+        // 4. Si la asignatura tiene nombre, intentar por su nombre
+        $nombreAsig = $asignatura->nombre_asignatura ?? '';
+        if (!empty($nombreAsig)) {
+            $naLower = mb_strtolower($nombreAsig, 'UTF-8');
+            if (preg_match('/(salud|p[aá]rvulo|alimento|enfermer|nutrici|pedagog)/iu', $naLower)) {
+                return ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'];
+            }
+            if (preg_match('/(administra|log[ií]stic|finanza|contab|gesti[oó]n|empresa)/iu', $naLower)) {
+                return ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'];
+            }
+            if (preg_match('/(ingenier|industrial|construcci|prevenci|electric|inform[aá]tic|mec[aá]nic)/iu', $naLower)) {
+                return ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'];
+            }
+        }
+
+        // 5. Si tiene área asignada pero ninguna regla anterior coincidió, usar el área
+        if ($area && !empty($area->nombre_area_academica)) {
+            return [
+                'id'     => (string) $area->id_area_academica,
+                'nombre' => (string) $area->nombre_area_academica,
+            ];
+        }
+
+        return [
+            'id'     => 'SIN_ESCUELA',
+            'nombre' => 'Sin Escuela Asignada',
+        ];
     }
 
     private function resolverNombreUa($asignatura, $profesor = null): string
