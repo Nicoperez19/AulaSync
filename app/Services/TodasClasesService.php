@@ -581,6 +581,8 @@ class TodasClasesService
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
                                 'carrera'           => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
+                                'escuela'           => $this->resolverEscuela($planificacion->asignatura, $planificacion->horario->profesor),
+                                'id_escuela'        => $this->resolverIdEscuela($planificacion->asignatura, $planificacion->horario->profesor),
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                                 'seccion'           => $planificacion->asignatura->seccion ?? 'N/A',
@@ -773,6 +775,8 @@ class TodasClasesService
                             'run_profesor' => $runProfesor,
                             'ua' => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
                             'carrera' => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
+                            'escuela' => $this->resolverEscuela($planificacion->asignatura, $planificacion->horario->profesor),
+                            'id_escuela' => $this->resolverIdEscuela($planificacion->asignatura, $planificacion->horario->profesor),
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                             'seccion' => $planificacion->asignatura->seccion ?? 'N/A',
@@ -1009,6 +1013,8 @@ class TodasClasesService
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
                                 'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
+                                'escuela'           => $this->resolverEscuela($colab->asignatura, $profesorModel),
+                                'id_escuela'        => $this->resolverIdEscuela($colab->asignatura, $profesorModel),
                                 'asignatura'        => $asignaturaNombre,
                                 'codigo_asignatura' => $asignaturaCodigo,
                                 'seccion'           => $asignaturaSeccion,
@@ -1205,6 +1211,8 @@ class TodasClasesService
                             'run_profesor'      => $runProfesor,
                             'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
                             'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
+                                'escuela'           => $this->resolverEscuela($colab->asignatura, $profesorModel),
+                                'id_escuela'        => $this->resolverIdEscuela($colab->asignatura, $profesorModel),
                             'asignatura'        => $asignaturaNombre,
                             'codigo_asignatura' => $asignaturaCodigo,
                             'seccion'           => $asignaturaSeccion,
@@ -1327,6 +1335,8 @@ class TodasClasesService
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($cnr->asignatura, $cnr->profesor),
                     'carrera'           => $this->resolverNombreUa($cnr->asignatura, $cnr->profesor),
+                    'escuela'           => $this->resolverEscuela($cnr->asignatura, $cnr->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($cnr->asignatura, $cnr->profesor),
                     'asignatura'        => $cnr->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $cnr->asignatura->codigo_asignatura ?? 'N/A',
                     'seccion'           => $cnr->asignatura->seccion ?? 'N/A',
@@ -1428,6 +1438,8 @@ class TodasClasesService
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($rc->asignatura, $rc->profesor),
                     'carrera'           => $this->resolverNombreUa($rc->asignatura, $rc->profesor),
+                    'escuela'           => $this->resolverEscuela($rc->asignatura, $rc->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($rc->asignatura, $rc->profesor),
                     'asignatura'        => $rc->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $rc->asignatura->codigo_asignatura ?? 'N/A',
                     'seccion'           => $rc->asignatura->seccion ?? 'N/A',
@@ -1546,6 +1558,8 @@ class TodasClasesService
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($res->asignatura, $res->profesor),
                     'carrera'           => $this->resolverNombreUa($res->asignatura, $res->profesor),
+                    'escuela'           => $this->resolverEscuela($res->asignatura, $res->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($res->asignatura, $res->profesor),
                     'asignatura'        => $nombreAsig,
                     'codigo_asignatura' => $codigoAsig,
                     'seccion'           => $seccionAsig,
@@ -2304,9 +2318,42 @@ class TodasClasesService
     /**
      * Resolver el nombre de la Unidad Académica / Carrera
      */
-    private function resolverNombreUa($asignatura, $profesor = null): string
+    /**
+     * Resolver la Escuela / Área Académica
+     */
+    public function resolverEscuela($asignatura, $profesor = null): string
     {
-        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
+        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->nombre_area_academica)) {
+            return (string) $asignatura->carrera->areaAcademica->nombre_area_academica;
+        }
+        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->nombre_area_academica)) {
+            return (string) $profesor->areaAcademica->nombre_area_academica;
+        }
+        if ($profesor && $profesor->carrera && $profesor->carrera->areaAcademica && !empty($profesor->carrera->areaAcademica->nombre_area_academica)) {
+            return (string) $profesor->carrera->areaAcademica->nombre_area_academica;
+        }
+        return 'Sin Escuela Asignada';
+    }
+
+    /**
+     * Resolver el ID de la Escuela / Área Académica
+     */
+    public function resolverIdEscuela($asignatura, $profesor = null): string
+    {
+        if ($asignatura && $asignatura->carrera && $asignatura->carrera->areaAcademica && !empty($asignatura->carrera->areaAcademica->id_area_academica)) {
+            return (string) $asignatura->carrera->areaAcademica->id_area_academica;
+        }
+        if ($profesor && $profesor->areaAcademica && !empty($profesor->areaAcademica->id_area_academica)) {
+            return (string) $profesor->areaAcademica->id_area_academica;
+        }
+        if ($profesor && $profesor->carrera && $profesor->carrera->areaAcademica && !empty($profesor->carrera->areaAcademica->id_area_academica)) {
+            return (string) $profesor->carrera->areaAcademica->id_area_academica;
+        }
+        return 'SIN_ESCUELA';
+    }
+
+    private function resolverNombreUa($asignatura, $profesor = null): string
+    {        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
             return (string) $asignatura->carrera->nombre;
         }
         if ($profesor && $profesor->carrera && !empty($profesor->carrera->nombre)) {

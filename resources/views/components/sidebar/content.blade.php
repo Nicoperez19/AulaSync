@@ -104,7 +104,7 @@
 
     <!-- Control Docente - Dropdown con sublinks -->
     @canany(['gestionar licencias profesores', 'gestionar recuperacion clases', 'reportes'])
-        <x-sidebar.dropdown title="Control Docente" :active="request()->routeIs('control-docente.*') || request()->routeIs('clases-no-realizadas.*') || request()->routeIs('clases-temporales.*')">
+        <x-sidebar.dropdown title="Control Docente" :active="request()->routeIs('control-docente.*') || request()->routeIs('clases-no-realizadas.*') || request()->routeIs('clases-temporales.*') || request()->routeIs('reportes.cumplimiento-escuelas')">
             <x-slot name="icon">
                 <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-clipboard-check" aria-hidden="true"></i>
             </x-slot>
@@ -120,6 +120,8 @@
             @can('reportes')
                 <x-sidebar.sublink title="Control de Clases" href="{{ route('clases-no-realizadas.index') }}"
                     :isActive="request()->routeIs('clases-no-realizadas.*')" />
+                <x-sidebar.sublink title="Cumplimiento por Escuela" href="{{ route('reportes.cumplimiento-escuelas') }}"
+                    :isActive="request()->routeIs('reportes.cumplimiento-escuelas')" />
             @endcan
         </x-sidebar.dropdown>
     @endcanany

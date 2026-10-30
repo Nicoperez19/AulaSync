@@ -2,6 +2,8 @@
 namespace App\Http\Controllers;
 
 use App\Exports\AccesosExport;
+use App\Exports\CumplimientoEscuelasExport;
+use App\Services\TodasClasesService;
 use App\Helpers\SemesterHelper;
 use App\Models\AreaAcademica;
 use App\Models\Asignatura;
@@ -2934,5 +2936,277 @@ class ReportController extends Controller
             'historico' => $historico,
             'reservasRaw' => $reservasRaw
         ];
+    }
+
+    /**
+     * Reporte de Cumplimiento de Clases Impartidas vs No Registradas por Escuela
+     */
+    public function cumplimientoEscuelas(Request $request)
+    {
+        $periodo = $request->get('periodo', SemesterHelper::getCurrentPeriod());
+        $limites = SemesterHelper::getLimitesPeriodo($periodo);
+
+        $defaultInicio = $limites['inicio']->format('Y-m-d');
+        $defaultFin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
+
+        $fechaInicio = $request->get('fecha_inicio', $defaultInicio);
+        $fechaFin = $request->get('fecha_fin', $defaultFin);
+        $escuelaFiltro = $request->get('escuela', '');
+
+        $servicio = new TodasClasesService();
+        $todasLasClases = $servicio->obtenerTodasLasClases(
+            $fechaInicio,
+            $fechaFin,
+            $periodo
+        );
+
+        $clasesAgrupadas = collect($todasLasClases)->groupBy(function ($item) {
+            $fecha = ($item['fecha'] instanceof Carbon)
+                ? $item['fecha']->format('Y-m-d')
+                : Carbon::parse($item['fecha'])->format('Y-m-d');
+            return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+        });
+
+        $escuelasData = [];
+        $totalGeneral = 0;
+        $impartidasGeneral = 0;
+        $noRegistradasGeneral = 0;
+        $realizadasGeneral = 0;
+        $recuperadasGeneral = 0;
+        $justificadasGeneral = 0;
+
+        $clasesFiltradasDetalle = collect();
+
+        foreach ($clasesAgrupadas as $bloqueItems) {
+            $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+            $primerItem = $bloqueItems->first();
+            $escuelaNombre = !empty($primerItem['escuela']) ? $primerItem['escuela'] : 'Sin Escuela Asignada';
+            $idEscuela = !empty($primerItem['id_escuela']) ? $primerItem['id_escuela'] : 'SIN_ESCUELA';
+
+            if (!isset($escuelasData[$escuelaNombre])) {
+                $escuelasData[$escuelaNombre] = [
+                    'id_escuela'     => $idEscuela,
+                    'nombre'         => $escuelaNombre,
+                    'impartidas'     => 0,
+                    'realizadas'     => 0,
+                    'recuperadas'    => 0,
+                    'justificadas'   => 0,
+                    'no_registradas' => 0,
+                    'total'          => 0,
+                    'pct'            => 0,
+                ];
+            }
+
+            if (in_array('No Registrada', $estados, true)) {
+                $estadoBloque = 'No Registrada';
+                $noRegistradasGeneral++;
+                $escuelasData[$escuelaNombre]['no_registradas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
+                $estadoBloque = 'Recuperada';
+                $recuperadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['recuperadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Justificada', $estados, true) || in_array('Feriado/Justificado', $estados, true)) {
+                $estadoBloque = 'Justificada';
+                $justificadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['justificadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Planificada', $estados, true)) {
+                continue;
+            } else {
+                $estadoBloque = 'Realizada';
+                $realizadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['realizadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            }
+
+            $totalGeneral++;
+
+            if (empty($escuelaFiltro) || $escuelaNombre === $escuelaFiltro || $idEscuela === $escuelaFiltro) {
+                $primerItem['estado_bloque'] = $estadoBloque;
+                $clasesFiltradasDetalle->push($primerItem);
+            }
+        }
+
+        foreach ($escuelasData as &$esc) {
+            $esc['pct'] = $esc['total'] > 0 ? round(($esc['impartidas'] / $esc['total']) * 100, 1) : 0;
+        }
+        unset($esc);
+
+        uasort($escuelasData, function ($a, $b) {
+            return $b['total'] <=> $a['total'];
+        });
+
+        $pctGeneral = $totalGeneral > 0 ? round(($impartidasGeneral / $totalGeneral) * 100, 1) : 0;
+        $escuelasDisponibles = array_keys($escuelasData);
+        sort($escuelasDisponibles);
+
+        $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
+
+        return view('reportes.cumplimiento-escuelas', compact(
+            'escuelasData',
+            'clasesFiltradasDetalle',
+            'totalGeneral',
+            'impartidasGeneral',
+            'noRegistradasGeneral',
+            'realizadasGeneral',
+            'recuperadasGeneral',
+            'justificadasGeneral',
+            'pctGeneral',
+            'fechaInicio',
+            'fechaFin',
+            'periodo',
+            'escuelaFiltro',
+            'escuelasDisponibles',
+            'periodosDisponibles'
+        ));
+    }
+
+    /**
+     * Exportación de Cumplimiento de Escuelas (Excel y PDF)
+     */
+    public function exportCumplimientoEscuelas(Request $request, $format)
+    {
+        $periodo = $request->get('periodo', SemesterHelper::getCurrentPeriod());
+        $limites = SemesterHelper::getLimitesPeriodo($periodo);
+
+        $defaultInicio = $limites['inicio']->format('Y-m-d');
+        $defaultFin = $limites['fin']->gt(Carbon::today())
+            ? Carbon::today()->format('Y-m-d')
+            : $limites['fin']->format('Y-m-d');
+
+        $fechaInicio = $request->get('fecha_inicio', $defaultInicio);
+        $fechaFin = $request->get('fecha_fin', $defaultFin);
+        $escuelaFiltro = $request->get('escuela', '');
+
+        $servicio = new TodasClasesService();
+        $todasLasClases = $servicio->obtenerTodasLasClases(
+            $fechaInicio,
+            $fechaFin,
+            $periodo
+        );
+
+        $clasesAgrupadas = collect($todasLasClases)->groupBy(function ($item) {
+            $fecha = ($item['fecha'] instanceof Carbon)
+                ? $item['fecha']->format('Y-m-d')
+                : Carbon::parse($item['fecha'])->format('Y-m-d');
+            return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+        });
+
+        $escuelasData = [];
+        $totalGeneral = 0;
+        $impartidasGeneral = 0;
+        $noRegistradasGeneral = 0;
+        $realizadasGeneral = 0;
+        $recuperadasGeneral = 0;
+        $justificadasGeneral = 0;
+
+        $clasesFiltradasDetalle = collect();
+
+        foreach ($clasesAgrupadas as $bloqueItems) {
+            $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+            $primerItem = $bloqueItems->first();
+            $escuelaNombre = !empty($primerItem['escuela']) ? $primerItem['escuela'] : 'Sin Escuela Asignada';
+            $idEscuela = !empty($primerItem['id_escuela']) ? $primerItem['id_escuela'] : 'SIN_ESCUELA';
+
+            if (!isset($escuelasData[$escuelaNombre])) {
+                $escuelasData[$escuelaNombre] = [
+                    'id_escuela'     => $idEscuela,
+                    'nombre'         => $escuelaNombre,
+                    'impartidas'     => 0,
+                    'realizadas'     => 0,
+                    'recuperadas'    => 0,
+                    'justificadas'   => 0,
+                    'no_registradas' => 0,
+                    'total'          => 0,
+                    'pct'            => 0,
+                ];
+            }
+
+            if (in_array('No Registrada', $estados, true)) {
+                $estadoBloque = 'No Registrada';
+                $noRegistradasGeneral++;
+                $escuelasData[$escuelaNombre]['no_registradas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
+                $estadoBloque = 'Recuperada';
+                $recuperadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['recuperadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Justificada', $estados, true) || in_array('Feriado/Justificado', $estados, true)) {
+                $estadoBloque = 'Justificada';
+                $justificadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['justificadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            } elseif (in_array('Planificada', $estados, true)) {
+                continue;
+            } else {
+                $estadoBloque = 'Realizada';
+                $realizadasGeneral++;
+                $impartidasGeneral++;
+                $escuelasData[$escuelaNombre]['realizadas']++;
+                $escuelasData[$escuelaNombre]['impartidas']++;
+                $escuelasData[$escuelaNombre]['total']++;
+            }
+
+            $totalGeneral++;
+
+            if (empty($escuelaFiltro) || $escuelaNombre === $escuelaFiltro || $idEscuela === $escuelaFiltro) {
+                $primerItem['estado_bloque'] = $estadoBloque;
+                $clasesFiltradasDetalle->push($primerItem);
+            }
+        }
+
+        foreach ($escuelasData as &$esc) {
+            $esc['pct'] = $esc['total'] > 0 ? round(($esc['impartidas'] / $esc['total']) * 100, 1) : 0;
+        }
+        unset($esc);
+
+        uasort($escuelasData, function ($a, $b) {
+            return $b['total'] <=> $a['total'];
+        });
+
+        $pctGeneral = $totalGeneral > 0 ? round(($impartidasGeneral / $totalGeneral) * 100, 1) : 0;
+        $nombreArchivo = 'cumplimiento_escuelas_' . $fechaInicio . '_' . $fechaFin;
+
+        if ($format === 'excel' || $format === 'xlsx') {
+            return Excel::download(
+                new CumplimientoEscuelasExport($escuelasData, $clasesFiltradasDetalle, $fechaInicio, $fechaFin, $periodo),
+                $nombreArchivo . '.xlsx'
+            );
+        }
+
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('reportes.pdf.cumplimiento-escuelas', compact(
+                'escuelasData',
+                'totalGeneral',
+                'impartidasGeneral',
+                'noRegistradasGeneral',
+                'realizadasGeneral',
+                'recuperadasGeneral',
+                'justificadasGeneral',
+                'pctGeneral',
+                'fechaInicio',
+                'fechaFin',
+                'periodo'
+            ))->setPaper('a4', 'landscape');
+
+            return $pdf->download($nombreArchivo . '.pdf');
+        }
+
+        return redirect()->back()->with('error', 'Formato de exportación no soportado.');
     }
 }

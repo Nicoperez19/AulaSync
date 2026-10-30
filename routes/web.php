@@ -477,6 +477,10 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     // Auditoría de Reagendamientos
     Route::get('auditoria-reagendamientos', [AuditoriaClaseController::class, 'reagendamientos'])->name('reportes.auditoria-reagendamientos.index');
     Route::get('auditoria-reagendamientos/export/{format}', [AuditoriaClaseController::class, 'exportReagendamientos'])->name('reportes.auditoria-reagendamientos.export');
+
+    // Reporte de Cumplimiento de Clases por Escuela / Área Académica
+    Route::get('cumplimiento-escuelas', [ReportController::class, 'cumplimientoEscuelas'])->name('reportes.cumplimiento-escuelas');
+    Route::get('cumplimiento-escuelas/export/{format}', [ReportController::class, 'exportCumplimientoEscuelas'])->name('reportes.cumplimiento-escuelas.export');
 });
 
 require __DIR__ . '/auth.php';

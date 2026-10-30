@@ -190,6 +190,23 @@
                         </div>
                     </a>
 
+                    <!-- Cumplimiento por Escuelas -->
+                    <a href="{{ route('reportes.cumplimiento-escuelas') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-graduation-cap text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Cumplimiento por Escuela</h4>
+                                <p class="text-xs text-gray-500">Clases impartidas vs no registradas de la sede</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-blue-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
+
                     <!-- Salas de Estudio -->
                     <a href="{{ route('reportes.salas-estudio') }}"
                        class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">

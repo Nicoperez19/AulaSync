@@ -661,22 +661,60 @@ class DashboardController extends Controller
         $justificadas = 0;
         $noRegistradas = 0;
         $futurasPendientes = 0;
+        $escuelasStats = [];
 
         foreach ($clasesAgrupadas as $bloqueItems) {
             $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+            $primerItem = $bloqueItems->first();
+            $escuelaNombre = !empty($primerItem['escuela']) ? $primerItem['escuela'] : 'Sin Escuela Asignada';
+            $idEscuela = !empty($primerItem['id_escuela']) ? $primerItem['id_escuela'] : 'SIN_ESCUELA';
+
+            if (!isset($escuelasStats[$escuelaNombre])) {
+                $escuelasStats[$escuelaNombre] = [
+                    'id_escuela'     => $idEscuela,
+                    'nombre'         => $escuelaNombre,
+                    'impartidas'     => 0,
+                    'realizadas'     => 0,
+                    'recuperadas'    => 0,
+                    'justificadas'   => 0,
+                    'no_registradas' => 0,
+                    'total'          => 0,
+                    'pct'            => 0,
+                ];
+            }
 
             if (in_array('No Registrada', $estados, true)) {
                 $noRegistradas++;
+                $escuelasStats[$escuelaNombre]['no_registradas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
             } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
                 $recuperadas++;
+                $escuelasStats[$escuelaNombre]['recuperadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
             } elseif (in_array('Justificada', $estados, true) || in_array('Feriado/Justificado', $estados, true)) {
                 $justificadas++;
+                $escuelasStats[$escuelaNombre]['justificadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
             } elseif (in_array('Planificada', $estados, true)) {
                 $futurasPendientes++;
             } else {
                 $realizadas++;
+                $escuelasStats[$escuelaNombre]['realizadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
             }
         }
+
+        foreach ($escuelasStats as &$esc) {
+            $esc['pct'] = $esc['total'] > 0 ? round(($esc['impartidas'] / $esc['total']) * 100, 1) : 0;
+        }
+        unset($esc);
+
+        uasort($escuelasStats, function ($a, $b) {
+            return $b['total'] <=> $a['total'];
+        });
 
         $totalImpartidas = $realizadas + $recuperadas + $justificadas;
         $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
@@ -703,6 +741,7 @@ class DashboardController extends Controller
             'pct_recuperadas'    => $pctRecuperadas,
             'pct_justificadas'   => $pctJustificadas,
             'pct_no_registradas' => $pctNoRegistradas,
+            'escuelas_stats'     => array_values($escuelasStats),
         ];
     };
 

@@ -1,6 +1,7 @@
 let activeTabOcupacion = 'todos';
 let activeMainTab = 'ocupacion';
 let statusClasesChartInstance = null;
+let escuelasChartInstance = null;
 window.carouselAutoplayInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -377,6 +378,7 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         .then(html => {
             container.innerHTML = html;
             setTimeout(initStatusClasesChart, 50);
+            setTimeout(initEscuelasChart, 60);
         })
         .catch(err => {
             if (err.name === 'AbortError') return;
@@ -526,5 +528,146 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+function irAControlDocenteConBusqueda(search, estado = '') {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+}
+
+function initEscuelasChart() {
+    const canvas = document.getElementById('chart-escuelas-canvas');
+    if (!canvas || !window.Chart) return;
+
+    let escuelas = [];
+    try {
+        escuelas = JSON.parse(canvas.dataset.escuelas || '[]');
+    } catch (e) {
+        escuelas = [];
+    }
+
+    if (!Array.isArray(escuelas) || escuelas.length === 0) return;
+
+    if (escuelasChartInstance) {
+        escuelasChartInstance.destroy();
+    }
+
+    const labels = escuelas.map(e => {
+        const n = e.nombre || 'Sin Escuela';
+        return n.length > 25 ? n.substring(0, 23) + '...' : n;
+    });
+    const fullNames = escuelas.map(e => e.nombre || 'Sin Escuela');
+    const dataImpartidas = escuelas.map(e => e.impartidas || 0);
+    const dataNoRegistradas = escuelas.map(e => e.no_registradas || 0);
+    const dataPcts = escuelas.map(e => e.pct || 0);
+
+    const ctx = canvas.getContext('2d');
+
+    escuelasChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Impartidas / Efectivas',
+                    data: dataImpartidas,
+                    backgroundColor: '#10B981',
+                    hoverBackgroundColor: '#059669',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                },
+                {
+                    label: 'No Registradas',
+                    data: dataNoRegistradas,
+                    backgroundColor: '#D12420',
+                    hoverBackgroundColor: '#950101',
+                    borderRadius: 6,
+                    borderSkipped: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            onClick: (event, activeElements) => {
+                if (activeElements && activeElements.length > 0) {
+                    const idx = activeElements[0].index;
+                    const escName = fullNames[idx];
+                    const datasetIdx = activeElements[0].datasetIndex;
+                    const estado = datasetIdx === 1 ? 'no_realizada' : 'impartidas';
+                    irAControlDocenteConBusqueda(escName, estado);
+                }
+            },
+            onHover: (event, activeElements) => {
+                if (canvas) {
+                    canvas.style.cursor = (activeElements && activeElements.length > 0) ? 'pointer' : 'default';
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        useBorderRadius: true,
+                        borderRadius: 3,
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleFont: { weight: 'bold', size: 12 },
+                    bodyFont: { size: 11 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: function(context) {
+                            const idx = context[0].dataIndex;
+                            return fullNames[idx];
+                        },
+                        afterBody: function(context) {
+                            const idx = context[0].dataIndex;
+                            return `Cumplimiento: ${dataPcts[idx]}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, weight: '600' },
+                        color: '#475569',
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        precision: 0,
+                        font: { size: 10 },
+                        color: '#64748b',
+                    }
+                }
+            }
+        }
+    });
+}
+
 window.toggleModalReloj = toggleModalReloj;
 window.irAControlDocente = irAControlDocente;
+window.irAControlDocenteConBusqueda = irAControlDocenteConBusqueda;
+window.initEscuelasChart = initEscuelasChart;
