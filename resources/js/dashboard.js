@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
             horariosActualRoute: configEl.dataset.horariosActualRoute,
             ocupacionDatosRoute: configEl.dataset.ocupacionDatosRoute,
             statusClasesRoute: configEl.dataset.statusClasesRoute,
+            controlDocenteRoute: configEl.dataset.controlDocenteRoute || '/clases-no-realizadas',
             horariosModulos: JSON.parse(configEl.dataset.horariosModulos)
         };
     }
@@ -388,6 +389,18 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         });
 }
 
+function irAControlDocente(estado) {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+}
+
 function filtrarStatusClases(rango) {
     cargarStatusClases(rango);
 }
@@ -444,7 +457,20 @@ function initStatusClasesChart() {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '74%',
+            onClick: (event, activeElements) => {
+                if (activeElements && activeElements.length > 0 && totalClases > 0) {
+                    const idx = activeElements[0].index;
+                    if (idx === 0) {
+                        irAControlDocente('impartidas');
+                    } else if (idx === 1) {
+                        irAControlDocente('no_realizada');
+                    }
+                }
+            },
             onHover: (event, activeElements) => {
+                if (canvas) {
+                    canvas.style.cursor = (activeElements && activeElements.length > 0 && totalClases > 0) ? 'pointer' : 'default';
+                }
                 if (!centerValor || !centerSub) return;
                 const centerDetail = document.getElementById('center-label-detail');
 
@@ -501,3 +527,4 @@ window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
 window.toggleModalReloj = toggleModalReloj;
+window.irAControlDocente = irAControlDocente;

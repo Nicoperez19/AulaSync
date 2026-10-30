@@ -287,6 +287,7 @@
          data-horarios-actual-route="{{ route('dashboard.horarios-actual') }}"
          data-ocupacion-datos-route="{{ route('dashboard.ocupacion-datos') }}"
          data-status-clases-route="{{ route('dashboard.status-clases') }}"
+         data-control-docente-route="{{ route('clases-no-realizadas.index') }}"
          data-horarios-modulos="{{ json_encode(\App\Helpers\ModulosHelper::getHorariosModulos()) }}"
          class="hidden">
     </div>

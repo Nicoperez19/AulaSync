@@ -59,46 +59,94 @@
     <!-- Tarjetas Informativas -->
     <div class="flex-1 flex flex-col gap-3 justify-center min-w-0">
         <!-- Grupo 1: Impartidas / Efectivas -->
-        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 transition duration-150 hover:shadow-sm">
-            <div class="flex items-start justify-between mb-2 gap-2">
+        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 transition duration-150 shadow-xs">
+            <button type="button"
+                    onclick="irAControlDocente('impartidas')"
+                    title="Ver todas las clases impartidas en Control Docente"
+                    class="w-full text-left flex items-start justify-between mb-2 gap-2 p-1.5 -m-1.5 rounded-xl hover:bg-emerald-100/70 active:bg-emerald-200/60 transition-all duration-150 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
                 <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
-                    <span class="font-extrabold text-sm text-emerald-950 leading-tight">Clases Impartidas / Efectivas</span>
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 shrink-0 group-hover:scale-110 transition-transform"></span>
+                    <span class="font-extrabold text-sm text-emerald-950 leading-tight group-hover:text-emerald-800 transition-colors">Clases Impartidas / Efectivas</span>
                 </div>
-                <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 whitespace-nowrap shrink-0">{{ $total_impartidas }} ({{ $pct_impartidas }}%)</span>
-            </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 whitespace-nowrap group-hover:bg-emerald-300 transition-colors">{{ $total_impartidas }} ({{ $pct_impartidas }}%)</span>
+                    <svg class="w-4 h-4 text-emerald-600/70 group-hover:text-emerald-900 group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
+            </button>
 
-            <!-- Detalle interno -->
+            <!-- Detalle interno: Botones para Realizadas Normales, Recuperadas y Justificadas -->
             <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-emerald-200/60 text-xs">
-                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                    <span class="text-slate-500 font-bold block text-[11px]">Realizadas Normales</span>
-                    <span class="text-sm font-black text-emerald-800">{{ $realizadas }}</span>
-                    <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_realizadas }}%)</span>
-                </div>
-                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                    <span class="text-slate-500 font-bold block text-[11px]">Recuperadas</span>
-                    <span class="text-sm font-black text-amber-700">{{ $recuperadas }}</span>
-                    <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_recuperadas }}%)</span>
-                </div>
-                <div class="bg-white/80 p-2.5 rounded-xl border border-emerald-100">
-                    <span class="text-slate-500 font-bold block text-[11px]">Justificadas</span>
-                    <span class="text-sm font-black text-slate-700">{{ $justificadas }}</span>
-                    <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_justificadas ?? 0 }}%)</span>
-                </div>
+                <button type="button"
+                        onclick="irAControlDocente('realizada')"
+                        title="Ver clases realizadas normales en Control Docente"
+                        class="text-left bg-white/80 hover:bg-white p-2.5 rounded-xl border border-emerald-100 hover:border-emerald-300 hover:shadow-xs active:bg-emerald-50/50 transition-all duration-150 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-emerald-500/30">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-slate-500 group-hover:text-emerald-900 font-bold block text-[11px] truncate">Realizadas Normales</span>
+                        <svg class="w-3 h-3 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-sm font-black text-emerald-800">{{ $realizadas }}</span>
+                        <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_realizadas }}%)</span>
+                    </div>
+                </button>
+
+                <button type="button"
+                        onclick="irAControlDocente('recuperada')"
+                        title="Ver clases recuperadas en Control Docente"
+                        class="text-left bg-white/80 hover:bg-white p-2.5 rounded-xl border border-emerald-100 hover:border-amber-300 hover:shadow-xs active:bg-amber-50/50 transition-all duration-150 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-amber-500/30">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-slate-500 group-hover:text-amber-900 font-bold block text-[11px] truncate">Recuperadas</span>
+                        <svg class="w-3 h-3 text-slate-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-sm font-black text-amber-700">{{ $recuperadas }}</span>
+                        <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_recuperadas }}%)</span>
+                    </div>
+                </button>
+
+                <button type="button"
+                        onclick="irAControlDocente('justificado')"
+                        title="Ver clases justificadas en Control Docente"
+                        class="text-left bg-white/80 hover:bg-white p-2.5 rounded-xl border border-emerald-100 hover:border-slate-300 hover:shadow-xs active:bg-slate-50 transition-all duration-150 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-slate-500/30">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-slate-500 group-hover:text-slate-900 font-bold block text-[11px] truncate">Justificadas</span>
+                        <svg class="w-3 h-3 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <span class="text-sm font-black text-slate-700">{{ $justificadas }}</span>
+                        <span class="text-[11px] font-bold text-slate-400"> ({{ $pct_justificadas ?? 0 }}%)</span>
+                    </div>
+                </button>
             </div>
         </div>
 
         <!-- Grupo 2: No Registradas / No Realizadas -->
-        <div class="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 transition duration-150 hover:shadow-sm">
+        <button type="button"
+                onclick="irAControlDocente('no_realizada')"
+                title="Ver clases no registradas en Control Docente"
+                class="w-full text-left p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 hover:bg-rose-100/70 hover:border-rose-300 hover:shadow-xs active:bg-rose-200/60 transition-all duration-150 cursor-pointer group focus:outline-none focus:ring-2 focus:ring-rose-500/30">
             <div class="flex items-start justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0">
-                    <span class="w-3 h-3 rounded-full bg-rose-500 shrink-0"></span>
-                    <span class="font-extrabold text-sm text-rose-950 leading-tight">No Registradas / No Realizadas</span>
+                    <span class="w-3 h-3 rounded-full bg-rose-500 shrink-0 group-hover:scale-110 transition-transform"></span>
+                    <span class="font-extrabold text-sm text-rose-950 leading-tight group-hover:text-rose-900 transition-colors">No Registradas / No Realizadas</span>
                 </div>
-                <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 whitespace-nowrap shrink-0">{{ $no_registradas }} ({{ $pct_no_registradas }}%)</span>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 whitespace-nowrap group-hover:bg-rose-300 transition-colors">{{ $no_registradas }} ({{ $pct_no_registradas }}%)</span>
+                    <svg class="w-4 h-4 text-rose-600/70 group-hover:text-rose-900 group-hover:translate-x-0.5 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+                    </svg>
+                </div>
             </div>
             <p class="text-[11px] text-rose-700/90 font-medium mt-2">Clases del horario oficial sin marca de registro o notificadas como ausentes.</p>
-        </div>
+        </button>
 
         @if(!empty($futuras_pendientes) && $futuras_pendientes > 0)
             <div class="px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200/80 text-[11px] text-slate-600 font-medium flex items-center justify-between gap-2">
@@ -113,3 +161,19 @@
         @endif
     </div>
 </div>
+
+<script>
+    if (typeof window.irAControlDocente !== 'function') {
+        window.irAControlDocente = function(estado) {
+            const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+            const fin = document.getElementById('status-fecha-fin')?.value || '';
+            const baseUrl = "{{ route('clases-no-realizadas.index') }}";
+            const params = new URLSearchParams();
+            if (estado) params.set('estado', estado);
+            if (inicio) params.set('fecha_inicio', inicio);
+            if (fin) params.set('fecha_fin', fin);
+            const query = params.toString();
+            window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+        };
+    }
+</script>
