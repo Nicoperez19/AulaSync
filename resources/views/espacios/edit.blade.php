@@ -142,12 +142,19 @@
                             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#D12420] focus:border-[#D12420] sm:text-m"
                             required>
                             @foreach (['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'] as $estado)
+                                {{-- Mantenimiento solo se asigna reportando una incidencia (trazabilidad) --}}
                                 <option value="{{ $estado }}"
-                                    {{ old('estado', $espacio->estado) == $estado ? 'selected' : '' }}>
-                                    {{ $estado }}
+                                    {{ old('estado', $espacio->estado) == $estado ? 'selected' : '' }}
+                                    {{ $estado === 'Mantenimiento' && $espacio->estado !== 'Mantenimiento' ? 'disabled' : '' }}>
+                                    {{ $estado }}{{ $estado === 'Mantenimiento' && $espacio->estado !== 'Mantenimiento' ? ' (reportar incidencia)' : '' }}
                                 </option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Para poner el espacio en Mantenimiento, regístralo desde
+                            <a href="{{ route('quick-actions.incidencias.index') }}" class="underline">Incidencias</a>
+                            indicando la falla.
+                        </p>
                     </div>
                 </div>
 

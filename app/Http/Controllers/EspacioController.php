@@ -50,6 +50,12 @@ class EspacioController extends Controller
         try {
             $validated = $this->validarDatosEspacio($request);
 
+            if ($validated['estado'] === 'Mantenimiento') {
+                throw ValidationException::withMessages([
+                    'estado' => 'Para poner un espacio en Mantenimiento reporta una incidencia (Acciones Rápidas > Incidencias).',
+                ]);
+            }
+
             $capacidad = $validated['capacidad_maxima'] ?? $validated['puestos_disponibles'] ?? 0;
 
             $espacio = Espacio::create([
@@ -111,6 +117,17 @@ class EspacioController extends Controller
 
             $validated = $this->validarDatosEspacio($request, $id_espacio);
 
+            $estadoAnterior = $espacio->estado;
+            $incidencias = app(\App\Services\IncidenciaEspacioService::class);
+
+            // Mantenimiento solo se asigna reportando una incidencia (así siempre queda el motivo registrado).
+            if ($validated['estado'] === 'Mantenimiento' && $estadoAnterior !== 'Mantenimiento'
+                && !$incidencias->tieneBloqueanteAbierta($id_espacio)) {
+                throw ValidationException::withMessages([
+                    'estado' => 'Para poner un espacio en Mantenimiento reporta una incidencia (Acciones Rápidas > Incidencias).',
+                ]);
+            }
+
             $capacidad = $validated['capacidad_maxima'] ?? $validated['puestos_disponibles'] ?? $espacio->capacidad_maxima ?? 0;
 
             $espacio->update([
@@ -121,6 +138,11 @@ class EspacioController extends Controller
                 'puestos_disponibles' => $validated['puestos_disponibles'] ?? $capacidad,
                 'capacidad_maxima' => $capacidad,
             ]);
+
+            // Si se saca de Mantenimiento desde este formulario, se cierran las incidencias bloqueantes abiertas.
+            if ($estadoAnterior === 'Mantenimiento' && $validated['estado'] !== 'Mantenimiento') {
+                $incidencias->cerrarBloqueantesAlLiberar($id_espacio, 'Liberado desde el mantenedor de espacios.');
+            }
 
             return redirect()
                 ->route('spaces_index')

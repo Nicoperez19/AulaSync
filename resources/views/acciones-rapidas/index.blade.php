@@ -156,6 +156,26 @@
             </div>
         </div>
 
+        <!-- Fallas e Incidencias -->
+        <div class="rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
+            <div class="p-6 text-white">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-triangle-exclamation text-2xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-xl font-semibold text-center mb-2">Fallas e Incidencias</h3>
+                <p class="text-sm text-center mb-4" style="color:#ffe4e6">
+                    Reportar fallas y ver por qué una sala está en mantenimiento
+                </p>
+                <a href="{{ route('quick-actions.incidencias.index') }}"
+                   class="w-full inline-flex items-center justify-center px-4 py-3 bg-white rounded-lg hover:bg-gray-50 transition-colors font-medium" style="color:#e11d48">
+                    <i class="fas fa-clipboard-list mr-2" style="color:#e11d48"></i>
+                    Ver incidencias
+                </a>
+            </div>
+        </div>
+
         <!-- Gestionar Reservas de Salas de Estudio -->
         <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div class="p-6 text-white">

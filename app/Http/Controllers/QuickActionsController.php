@@ -8,6 +8,7 @@ use App\Http\Requests\ProcesarEscaneoSalaRequest;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Services\EspacioService;
+use App\Services\IncidenciaEspacioService;
 use App\Services\ReservaService;
 use App\Services\SalaEstudioService;
 use Illuminate\Http\JsonResponse;
@@ -19,16 +20,19 @@ class QuickActionsController extends Controller
     protected ReservaService $reservaService;
     protected EspacioService $espacioService;
     protected SalaEstudioService $salaEstudioService;
+    protected IncidenciaEspacioService $incidenciaService;
 
     public function __construct(
         ReservaService $reservaService,
         EspacioService $espacioService,
-        SalaEstudioService $salaEstudioService
+        SalaEstudioService $salaEstudioService,
+        IncidenciaEspacioService $incidenciaService
     ) {
         $this->middleware('can:acciones rapidas');
         $this->reservaService = $reservaService;
         $this->espacioService = $espacioService;
         $this->salaEstudioService = $salaEstudioService;
+        $this->incidenciaService = $incidenciaService;
     }
 
     /**
@@ -182,7 +186,15 @@ class QuickActionsController extends Controller
     public function cambiarEstadoEspacio(CambiarEstadoEspacioRequest $request, $codigo): JsonResponse
     {
         try {
-            $resultado = $this->espacioService->cambiarEstado($codigo, $request->estado);
+            // Mantenimiento solo se alcanza reportando el motivo (queda registrada una incidencia).
+            $resultado = $request->estado === 'Mantenimiento'
+                ? $this->incidenciaService->reportar($codigo, [
+                    'categoria' => $request->categoria,
+                    'severidad' => $request->severidad ?? 'media',
+                    'descripcion' => $request->descripcion,
+                    'bloquea_uso' => true,
+                ])
+                : $this->espacioService->cambiarEstado($codigo, $request->estado, $request->nota);
 
             return response()->json($resultado, $resultado['status'] ?? 200);
         } catch (\Exception $e) {
