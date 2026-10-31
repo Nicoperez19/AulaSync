@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // La columna ya existe en algunas bases (creada antes de registrar la migración)
+        if (Schema::hasColumn('reservas', 'es_reemplazo')) {
+            return;
+        }
+
         Schema::table('reservas', function (Blueprint $table) {
             $table->boolean('es_reemplazo')->default(false)->after('run_profesor');
         });
@@ -21,6 +26,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (! Schema::hasColumn('reservas', 'es_reemplazo')) {
+            return;
+        }
+
         Schema::table('reservas', function (Blueprint $table) {
             $table->dropColumn('es_reemplazo');
         });

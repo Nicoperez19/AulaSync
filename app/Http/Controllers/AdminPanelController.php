@@ -386,6 +386,14 @@ class AdminPanelController extends Controller
                 'estado' => 'required|in:Disponible,Ocupado,Mantenimiento'
             ]);
 
+            // Mantenimiento exige motivo: se debe usar el flujo de incidencias (quick-actions).
+            if ($request->estado === 'Mantenimiento') {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Para poner un espacio en Mantenimiento reporta una incidencia con el motivo.'
+                ], 422);
+            }
+
             $espacio = Espacio::where('codigo', $codigoEspacio)->firstOrFail();
             $espacio->estado = $request->estado;
             $espacio->save();

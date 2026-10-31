@@ -30,6 +30,7 @@ use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QrPersonalController;
 use App\Http\Controllers\QuickActionsController;
+use App\Http\Controllers\IncidenciaEspacioController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\RoleController;
@@ -502,6 +503,13 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
     Route::post('/api/espacios/liberacion-masiva', [QuickActionsController::class, 'liberacionMasiva'])->name('api.espacios.liberacion-masiva');
+
+    // Fallas e incidencias en espacios (trazabilidad de Mantenimiento)
+    Route::get('/incidencias', [IncidenciaEspacioController::class, 'index'])->name('incidencias.index');
+    Route::post('/api/incidencias', [IncidenciaEspacioController::class, 'store'])->name('api.incidencias.store');
+    Route::get('/api/incidencias/{id}', [IncidenciaEspacioController::class, 'show'])->whereNumber('id')->name('api.incidencias.show');
+    Route::put('/api/incidencias/{id}/estado', [IncidenciaEspacioController::class, 'cambiarEstado'])->whereNumber('id')->name('api.incidencias.estado');
+    Route::post('/api/incidencias/{id}/comentarios', [IncidenciaEspacioController::class, 'comentar'])->whereNumber('id')->name('api.incidencias.comentar');
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
 
     // API para buscar personas por RUN (autocompletado)

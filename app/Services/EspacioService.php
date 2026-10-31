@@ -56,7 +56,7 @@ class EspacioService
     /**
      * Cambiar el estado operativo de un espacio.
      */
-    public function cambiarEstado(string $codigo, string $nuevoEstado): array
+    public function cambiarEstado(string $codigo, string $nuevoEstado, ?string $nota = null): array
     {
         $espacio = Espacio::where('id_espacio', $codigo)->first();
 
@@ -85,6 +85,18 @@ class EspacioService
             ];
         }
 
+        // Trazabilidad: no se permite poner un espacio en Mantenimiento sin una incidencia que lo justifique.
+        // El camino correcto es IncidenciaEspacioService::reportar(), que crea la incidencia y luego llama aquí.
+        if ($nuevoEstado === IncidenciaEspacioService::ESTADO_MANTENIMIENTO
+            && !app(IncidenciaEspacioService::class)->tieneBloqueanteAbierta($codigo)) {
+            return [
+                'success' => false,
+                'status' => 422,
+                'mensaje' => 'Para poner un espacio en Mantenimiento debes reportar el motivo (categoría y descripción de la falla).',
+                'requiere_motivo' => true,
+            ];
+        }
+
         if (Schema::connection('tenant')->hasColumn('espacios', 'estado_espacio')) {
             $espacio->estado_espacio = $nuevoEstado;
         }
@@ -101,12 +113,22 @@ class EspacioService
 
         $this->limpiarCacheEstados();
 
+        // Al salir de Mantenimiento se cierran las incidencias bloqueantes abiertas, dejando constancia.
+        $incidenciasCerradas = 0;
+        if ($estadoAnterior === IncidenciaEspacioService::ESTADO_MANTENIMIENTO
+            && $nuevoEstado !== IncidenciaEspacioService::ESTADO_MANTENIMIENTO) {
+            $incidenciasCerradas = app(IncidenciaEspacioService::class)->cerrarBloqueantesAlLiberar($codigo, $nota);
+        }
+
         $reservasFinalizadas = [];
         if ($nuevoEstado === 'Disponible' && in_array($estadoAnterior, ['Ocupado', 'Reservado'])) {
             $reservasFinalizadas = $this->finalizarReservasActivasActuales($codigo);
         }
 
         $mensaje = "Estado del espacio {$codigo} cambiado de {$estadoAnterior} a {$nuevoEstado}";
+        if ($incidenciasCerradas > 0) {
+            $mensaje .= ". Se cerraron {$incidenciasCerradas} incidencia(s) abierta(s) asociadas al mantenimiento";
+        }
         if (!empty($reservasFinalizadas)) {
             $cantidadReservas = count($reservasFinalizadas);
             $mensaje .= ". Se finalizaron automáticamente {$cantidadReservas} reserva(s) activa(s): " . implode(', ', $reservasFinalizadas);

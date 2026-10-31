@@ -74,6 +74,17 @@ class Espacio extends Model
         return $this->hasMany(Reserva::class, 'id_espacio', 'id_espacio');
     }
 
+    public function incidencias()
+    {
+        return $this->hasMany(IncidenciaEspacio::class, 'id_espacio', 'id_espacio');
+    }
+
+    /** Incidencias abiertas que mantienen el espacio fuera de servicio. */
+    public function incidenciasBloqueantesAbiertas()
+    {
+        return $this->incidencias()->abiertas()->bloqueantes();
+    }
+
     public function piso()
     {
         return $this->belongsTo(Piso::class, 'piso_id');

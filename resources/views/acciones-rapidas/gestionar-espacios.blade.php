@@ -13,6 +13,11 @@
             </div>
 
             <div class="flex items-center gap-2.5">
+                <a href="{{ route('quick-actions.incidencias.index') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Incidencias</span>
+                </a>
                 <a href="{{ route('quick-actions.index') }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
                     <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -389,20 +394,83 @@ function filtrarEspacios() {
 }
 
 // Cambiar estado de espacio
+const CATEGORIAS_FALLA = @json(collect(\App\Models\IncidenciaEspacio::CATEGORIAS)->map(fn ($c) => $c['label']));
+const SEVERIDADES_FALLA = @json(\App\Models\IncidenciaEspacio::SEVERIDADES);
+
+function escapeHtml(t) {
+    return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Pide el motivo (obligatorio) al poner un espacio en Mantenimiento
+async function pedirMotivoMantenimiento(codigoEspacio) {
+    const optCat = Object.entries(CATEGORIAS_FALLA)
+        .map(([k, v]) => `<option value="${k}">${escapeHtml(v)}</option>`).join('');
+    const optSev = Object.entries(SEVERIDADES_FALLA)
+        .map(([k, v]) => `<option value="${k}" ${k === 'media' ? 'selected' : ''}>${escapeHtml(v)}</option>`).join('');
+
+    const { value } = await Swal.fire({
+        title: `Mantenimiento de ${escapeHtml(codigoEspacio)}`,
+        html: `
+            <div class="text-left space-y-3">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">¿Qué falla tiene?</label>
+                    <select id="mant-categoria" class="swal2-select" style="width:100%;margin:0">
+                        <option value="">Selecciona un tipo de falla...</option>${optCat}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Severidad</label>
+                    <select id="mant-severidad" class="swal2-select" style="width:100%;margin:0">${optSev}</select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Descripción</label>
+                    <textarea id="mant-descripcion" class="swal2-textarea" style="width:100%;margin:0"
+                        placeholder="Ej: El proyector no enciende, se probó otro cable HDMI."></textarea>
+                </div>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonColor: '#D97706',
+        confirmButtonText: 'Registrar y poner en mantenimiento',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const categoria = document.getElementById('mant-categoria').value;
+            const descripcion = document.getElementById('mant-descripcion').value.trim();
+            if (!categoria) { Swal.showValidationMessage('Selecciona el tipo de falla'); return false; }
+            if (descripcion.length < 5) { Swal.showValidationMessage('Describe la falla (mínimo 5 caracteres)'); return false; }
+            return { categoria, descripcion, severidad: document.getElementById('mant-severidad').value };
+        }
+    });
+    return value || null;
+}
+
 async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
     try {
-        const result = await Swal.fire({
-            title: '¿Confirmar cambio?',
-            text: `¿Deseas cambiar el estado del espacio ${codigoEspacio} a ${nuevoEstado}?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#10B981',
-            cancelButtonColor: '#8D8D8D',
-            confirmButtonText: 'Sí, cambiar',
-            cancelButtonText: 'Cancelar'
-        });
+        let extra = {};
 
-        if (result.isConfirmed) {
+        if (nuevoEstado === 'Mantenimiento') {
+            const motivo = await pedirMotivoMantenimiento(codigoEspacio);
+            if (!motivo) return;
+            extra = motivo;
+        } else {
+            const result = await Swal.fire({
+                title: '¿Confirmar cambio?',
+                text: `¿Deseas cambiar el estado del espacio ${codigoEspacio} a ${nuevoEstado}?`,
+                icon: 'question',
+                input: 'textarea',
+                inputLabel: 'Nota (opcional): ¿qué se hizo / cómo quedó resuelto?',
+                inputAttributes: { maxlength: 1000 },
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                cancelButtonColor: '#8D8D8D',
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar'
+            });
+            if (!result.isConfirmed) return;
+            extra = { nota: (result.value || '').trim() || null };
+        }
+
+        {
             const response = await fetch(`{{ url('quick-actions/api/espacio') }}/${codigoEspacio}/estado`, {
                 method: 'PUT',
                 headers: {
@@ -410,7 +478,8 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
                 body: JSON.stringify({
-                    estado: nuevoEstado
+                    estado: nuevoEstado,
+                    ...extra
                 })
             });
 
@@ -430,7 +499,7 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
             } else {
                 Swal.fire({
                     title: 'Error',
-                    text: data.mensaje || 'Error al cambiar el estado del espacio',
+                    text: data.mensaje || (data.errors ? Object.values(data.errors).flat().join(' ') : 'Error al cambiar el estado del espacio'),
                     icon: 'error'
                 });
             }
@@ -497,19 +566,13 @@ async function liberarTodosLosEspacios() {
 }
 
 async function ponerEnMantenimiento() {
-    const { value: espaciosSeleccionados } = await Swal.fire({
-        title: 'Seleccionar espacios',
-        text: 'Seleccione los espacios para poner en mantenimiento',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Continuar',
-        cancelButtonText: 'Cancelar'
+    // Cada espacio en mantenimiento necesita su propio motivo: se registra de a uno.
+    Swal.fire({
+        title: 'Mantenimiento con motivo',
+        text: 'Para dejar trazabilidad, cada espacio se pone en mantenimiento indicando su falla. Usa el botón "Mantenimiento" de la fila correspondiente.',
+        icon: 'info',
+        confirmButtonText: 'Entendido'
     });
-
-    if (espaciosSeleccionados) {
-        Swal.fire('¡Actualizado!', 'Espacios puestos en mantenimiento', 'success');
-        cargarEspacios();
-    }
 }
 </script>
 @endpush
