@@ -192,7 +192,7 @@
                 @endif
                 <div class="title">
                     <h1>Horario del Espacio</h1>
-                    <p>SIA | Sistema de Informaci髇 de Aulas - Instituto Tecnol贸gico</p>
+                    <p>SIA (Sistema de Informaci贸n de Aulas) - Instituto Tecnol贸gico</p>
                 </div>
             </div>
             <div class="meta">
@@ -321,7 +321,7 @@
         </div>
 
         <div class="footer">
-            <div>Este reporte fue generado autom谩ticamente por el SIA | Sistema de Informaci髇 de Aulas</div>
+            <div>Este reporte fue generado autom谩ticamente por el SIA (Sistema de Informaci贸n de Aulas)</div>
             <div>P谩gina 1 de 1</div>
         </div>
     </div>

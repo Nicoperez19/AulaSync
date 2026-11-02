@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer ContraseÃ±a - SIA | Sistema de Información de Aulas</title>
+    <title>Restablecer ContraseÃ±a - SIA (Sistema de Información de Aulas)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -73,14 +73,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">SIA | Sistema de Información de Aulas</div>
+            <div class="logo">SIA (Sistema de Información de Aulas)</div>
             <h2>Restablecer ContraseÃ±a</h2>
         </div>
 
         <div class="content">
             <p>Hola,</p>
             
-            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseÃ±a para tu cuenta en SIA | Sistema de Información de Aulas.</p>
+            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseÃ±a para tu cuenta en SIA (Sistema de Información de Aulas).</p>
             
             <p>Para restablecer tu contraseÃ±a, haz clic en el botÃ³n de abajo:</p>
             
@@ -103,7 +103,7 @@
 
         <div class="footer">
             <p>Este es un correo automÃ¡tico, por favor no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} SIA | Sistema de Información de Aulas. Todos los derechos reservados.</p>
+            <p>&copy; {{ date('Y') }} SIA (Sistema de Información de Aulas). Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

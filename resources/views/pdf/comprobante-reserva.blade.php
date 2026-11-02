@@ -303,7 +303,7 @@
                                 </td>
                                 @endif
                                 <td style="vertical-align: middle;">
-                                    <div class="system-name">SIA &nbsp;| &nbsp;Sistema de Información de Aulas</div>
+                                    <div class="system-name">SIA (Sistema de Información de Aulas)</div>
                                     <div class="system-inst">{{ $institucion }}</div>
                                 </td>
                             </tr>

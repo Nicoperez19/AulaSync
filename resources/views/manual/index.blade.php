@@ -40,7 +40,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-bold leading-tight text-gray-800">Manual de Usuario</h1>
-                    <p class="text-sm text-gray-500">SIA | Sistema de Información de Aulas</p>
+                    <p class="text-sm text-gray-500">SIA (Sistema de Información de Aulas)</p>
                 </div>
             </div>
             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between lg:justify-end">
@@ -87,7 +87,7 @@
 
             <!-- Footer sidebar -->
             <div class="border-t border-gray-200 bg-gray-50 px-4 py-3">
-                <span class="text-xs text-gray-500">SIA | Sistema de Información de Aulas</span>
+                <span class="text-xs text-gray-500">SIA (Sistema de Información de Aulas)</span>
             </div>
         </aside>
 

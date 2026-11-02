@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -134,13 +134,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>SIA | Sistema de Información de Aulas</h1>
+            <h1>SIA (Sistema de Información de Aulas)</h1>
             <p>Plataforma de GestiÃ³n AcadÃ©mica</p>
         </div>
         <div class="content">
             <div class="greeting">Â¡Hola, {{ $user->name }}!</div>
             <p class="intro-text">
-                Se ha creado tu cuenta exitosamente en <strong>SIA | Sistema de Información de Aulas</strong>. A continuaciÃ³n, te compartimos tus datos y credenciales para acceder a la plataforma:
+                Se ha creado tu cuenta exitosamente en <strong>SIA (Sistema de Información de Aulas)</strong>. A continuaciÃ³n, te compartimos tus datos y credenciales para acceder a la plataforma:
             </p>
 
             <div class="card">
@@ -182,8 +182,8 @@
             </div>
         </div>
         <div class="footer">
-            <p>Este es un correo automÃ¡tico enviado por el sistema SIA | Sistema de Información de Aulas. Por favor, no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} SIA | Sistema de Información de Aulas. Todos los derechos reservados.</p>
+            <p>Este es un correo automÃ¡tico enviado por el sistema SIA (Sistema de Información de Aulas). Por favor, no respondas a este mensaje.</p>
+            <p>&copy; {{ date('Y') }} SIA (Sistema de Información de Aulas). Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

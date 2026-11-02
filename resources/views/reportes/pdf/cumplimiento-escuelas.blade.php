@@ -109,7 +109,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>AULASYNC - CONTROL DE GESTIÓN ACADÉMICA</h1>
+        <h1>SIA (SISTEMA DE INFORMACIÓN DE AULAS) - CONTROL DE GESTIÓN ACADÉMICA</h1>
         <p><strong>Reporte de Cumplimiento de Clases por Escuela</strong></p>
         <p>Período: <strong>{{ $periodo }}</strong> | Desde: <strong>{{ \Carbon\Carbon::parse($fechaInicio)->format('d/m/Y') }}</strong> Hasta: <strong>{{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}</strong> | Generado: <strong>{{ now()->format('d/m/Y H:i') }}</strong></p>
     </div>
@@ -196,7 +196,7 @@
     </table>
 
     <div class="footer">
-        AulaSync - Sistema Integral de Control Docente y Gestión de Espacios | Documento Oficial de Reporte Académico
+        SIA (Sistema de Información de Aulas) - Sistema Integral de Control Docente y Gestión de Espacios | Documento Oficial de Reporte Académico
     </div>
 </body>
 </html>

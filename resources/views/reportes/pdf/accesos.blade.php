@@ -111,7 +111,7 @@
 <body>
     <div class=header>
         <h1>Reporte de Accesos Registrados</h1>
-        <p>SIA | Sistema de Información de Aulas</p>
+        <p>SIA (Sistema de Información de Aulas)</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
