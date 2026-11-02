@@ -173,7 +173,7 @@
                 </div>
 
                 <!-- Tarjetas interactivas de las escuelas más pequeñas y compactas -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div class="grid grid-cols-1 sm:grid-cols-{{ min(3, max(1, count($escuelas_stats))) }} gap-2">
                     @foreach($escuelas_stats as $escuela)
                         @php
                             $pct = $escuela['pct'] ?? 0;
@@ -196,13 +196,13 @@
                                 </div>
                                 <div class="flex items-center justify-between text-[10px]">
                                     <button type="button"
-                                            onclick="irAControlDocenteConBusqueda('{{ addslashes($escuela['nombre']) }}', 'impartidas')"
+                                            onclick="irAControlDocentePorEscuela('{{ addslashes($escuela['nombre']) }}', 'impartidas')"
                                             title="Ver clases impartidas"
                                             class="font-bold text-emerald-700 hover:text-emerald-900 hover:underline cursor-pointer">
                                         {{ $escuela['impartidas'] }} Imp.
                                     </button>
                                     <button type="button"
-                                            onclick="irAControlDocenteConBusqueda('{{ addslashes($escuela['nombre']) }}', 'no_realizada')"
+                                            onclick="irAControlDocentePorEscuela('{{ addslashes($escuela['nombre']) }}', 'no_realizada')"
                                             title="Ver clases no registradas"
                                             class="font-bold text-rose-700 hover:text-rose-900 hover:underline cursor-pointer">
                                         {{ $escuela['no_registradas'] }} Sin Reg.
@@ -211,7 +211,7 @@
                             </div>
 
                             <button type="button"
-                                    onclick="irAControlDocenteConBusqueda('{{ addslashes($escuela['nombre']) }}')"
+                                    onclick="irAControlDocentePorEscuela('{{ addslashes($escuela['nombre']) }}')"
                                     class="w-full text-center py-1 px-1.5 rounded-md bg-white hover:bg-[#D12420] text-slate-700 hover:text-white border border-slate-200/90 hover:border-[#D12420] text-[9px] font-bold shadow-2xs hover:-translate-y-0.5 active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer group">
                                 <span>Control Docente</span>
                                 <i class="fas fa-chevron-right text-[7px] text-slate-400 group-hover:text-white"></i>
@@ -235,6 +235,21 @@
             const fin = document.getElementById('status-fecha-fin')?.value || '';
             const baseUrl = "{{ route('clases-no-realizadas.index') }}";
             const params = new URLSearchParams();
+            if (estado) params.set('estado', estado);
+            if (inicio) params.set('fecha_inicio', inicio);
+            if (fin) params.set('fecha_fin', fin);
+            const query = params.toString();
+            window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+        };
+    }
+
+    if (typeof window.irAControlDocentePorEscuela !== 'function') {
+        window.irAControlDocentePorEscuela = function(escuela, estado = '') {
+            const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+            const fin = document.getElementById('status-fecha-fin')?.value || '';
+            const baseUrl = "{{ route('clases-no-realizadas.index') }}";
+            const params = new URLSearchParams();
+            if (escuela) params.set('escuela', escuela);
             if (estado) params.set('estado', estado);
             if (inicio) params.set('fecha_inicio', inicio);
             if (fin) params.set('fecha_fin', fin);

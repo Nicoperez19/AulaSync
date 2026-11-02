@@ -2987,12 +2987,12 @@ class ReportController extends Controller
                 ];
             }
 
-            if (in_array('No Registrada', $estados, true)) {
-                $estadoBloque = 'No Registrada';
+            if (in_array('No Registrada', $estados, true) || in_array('Pendiente de Recuperación', $estados, true)) {
+                $estadoBloque = in_array('Pendiente de Recuperación', $estados, true) ? 'Pendiente de Recuperación' : 'No Registrada';
                 $noRegistradasGeneral++;
                 $escuelasData[$escuelaNombre]['no_registradas']++;
                 $escuelasData[$escuelaNombre]['total']++;
-            } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
+            } elseif (in_array('Recuperada', $estados, true)) {
                 $estadoBloque = 'Recuperada';
                 $recuperadasGeneral++;
                 $impartidasGeneral++;
@@ -3120,12 +3120,12 @@ class ReportController extends Controller
                 ];
             }
 
-            if (in_array('No Registrada', $estados, true)) {
-                $estadoBloque = 'No Registrada';
+            if (in_array('No Registrada', $estados, true) || in_array('Pendiente de Recuperación', $estados, true)) {
+                $estadoBloque = in_array('Pendiente de Recuperación', $estados, true) ? 'Pendiente de Recuperación' : 'No Registrada';
                 $noRegistradasGeneral++;
                 $escuelasData[$escuelaNombre]['no_registradas']++;
                 $escuelasData[$escuelaNombre]['total']++;
-            } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
+            } elseif (in_array('Recuperada', $estados, true)) {
                 $estadoBloque = 'Recuperada';
                 $recuperadasGeneral++;
                 $impartidasGeneral++;

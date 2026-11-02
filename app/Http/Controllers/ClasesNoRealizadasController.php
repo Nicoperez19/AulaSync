@@ -58,6 +58,7 @@ class ClasesNoRealizadasController extends Controller
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
             'ua' => 'nullable|string|max:100',
+            'escuela' => 'nullable|string|max:255',
         ]);
 
         $search = $request->input('search');
@@ -66,12 +67,17 @@ class ClasesNoRealizadasController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $periodo = $request->input('periodo');
         $ua = $request->input('ua');
+        $escuela = $request->input('escuela');
 
         // Generar nombre de archivo descriptivo
         $nombreArchivo = 'Control_De_Clases';
         
         if ($periodo) {
             $nombreArchivo .= '_Semestre_' . str_replace('/', '-', $periodo);
+        }
+
+        if ($escuela) {
+            $nombreArchivo .= '_Escuela_' . preg_replace('/[^A-Za-z0-9_\-]/', '', $escuela);
         }
 
         if ($ua) {
@@ -88,7 +94,7 @@ class ClasesNoRealizadasController extends Controller
         $nombreArchivo .= '.xlsx';
 
         return Excel::download(
-            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado, $ua),
+            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado, $ua, $escuela),
             $nombreArchivo
         );
     }

@@ -26,6 +26,7 @@ class ClasesNoRealizadasTable extends Component
     public $search = '';
     public $estado = '';
     public $ua = '';
+    public $escuela = '';
     public $fecha_inicio = '';
     public $fecha_fin = '';
     public $periodo = '';
@@ -48,6 +49,7 @@ class ClasesNoRealizadasTable extends Component
         'search' => ['except' => ''],
         'estado' => ['except' => ''],
         'ua' => ['except' => ''],
+        'escuela' => ['except' => ''],
         'fecha_inicio' => ['except' => ''],
         'fecha_fin' => ['except' => ''],
         'periodo' => ['except' => ''],
@@ -76,6 +78,8 @@ class ClasesNoRealizadasTable extends Component
         $this->fecha_fin = request()->query('fecha_fin', $this->fecha_fin ?: $defaultFin);
         $this->estado = request()->query('estado', $this->estado);
         $this->search = request()->query('search', $this->search);
+        $this->ua = request()->query('ua', $this->ua);
+        $this->escuela = request()->query('escuela', $this->escuela);
         
         // Si viene un reagendar_id desde URL, abrir modal automáticamente
         if ($this->reagendar_id) {
@@ -98,6 +102,13 @@ class ClasesNoRealizadasTable extends Component
     }
 
     public function updatingUa()
+    {
+        $this->limpiarCacheFiltradas();
+        $this->limpiarSeleccion();
+        $this->resetPage();
+    }
+
+    public function updatingEscuela()
     {
         $this->limpiarCacheFiltradas();
         $this->limpiarSeleccion();
@@ -151,14 +162,24 @@ class ClasesNoRealizadasTable extends Component
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
         $estados = ['', 'no_realizada', 'realizada', 'recuperada', 'impartidas', 'justificado', 'pendiente'];
         foreach ($estados as $est) {
-            $key = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
+            $key = "clases_no_realizadas_coll_v8_{$tenantId}_" . md5(json_encode([
+                $this->fecha_inicio,
+                $this->fecha_fin,
+                $this->periodo,
+                $this->ua,
+                $this->escuela,
+                $est,
+            ]));
+            \Illuminate\Support\Facades\Cache::forget($key);
+
+            $keyOld = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
                 $this->fecha_inicio,
                 $this->fecha_fin,
                 $this->periodo,
                 $this->ua,
                 $est,
             ]));
-            \Illuminate\Support\Facades\Cache::forget($key);
+            \Illuminate\Support\Facades\Cache::forget($keyOld);
         }
     }
 
@@ -203,6 +224,7 @@ class ClasesNoRealizadasTable extends Component
         $this->search = '';
         $this->estado = '';
         $this->ua = '';
+        $this->escuela = '';
         $this->periodo = SemesterHelper::getCurrentPeriod();
         $limites = SemesterHelper::getLimitesPeriodo($this->periodo);
         $this->fecha_inicio = $limites['inicio']->format('Y-m-d');
@@ -610,11 +632,12 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $tenantId = class_exists(\App\Models\Tenant::class) ? (\App\Models\Tenant::current()->id ?? 'default') : 'default';
-        $cacheKey = "clases_no_realizadas_coll_v7_{$tenantId}_" . md5(json_encode([
+        $cacheKey = "clases_no_realizadas_coll_v8_{$tenantId}_" . md5(json_encode([
             $this->fecha_inicio,
             $this->fecha_fin,
             $this->periodo,
             $this->ua,
+            $this->escuela,
             $this->estado,
         ]));
 
@@ -642,6 +665,16 @@ class ClasesNoRealizadasTable extends Component
                     $carreraId = mb_strtolower(trim((string)($item['ua'] ?? '')), 'UTF-8');
                     $carreraNombre = mb_strtolower(trim((string)($item['carrera'] ?? '')), 'UTF-8');
                     return $carreraId === $uaNorm || str_contains($carreraNombre, $uaNorm);
+                })->values();
+            }
+
+            // Aplicar filtro de Escuela en memoria si está establecido
+            if (!empty($this->escuela)) {
+                $escNorm = $this->normalizarTexto($this->escuela);
+                $clases = $clases->filter(function($item) use ($escNorm) {
+                    $itemEsc = $this->normalizarTexto((string)($item['escuela'] ?? ''));
+                    $itemIdEsc = $this->normalizarTexto((string)($item['id_escuela'] ?? ''));
+                    return $itemEsc === $escNorm || $itemIdEsc === $escNorm || str_contains($itemEsc, $escNorm) || str_contains($escNorm, $itemEsc);
                 })->values();
             }
 
@@ -720,7 +753,7 @@ class ClasesNoRealizadasTable extends Component
                     return true;
                 }
 
-                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, carrera, profesor, asignatura)
+                // 4. Coincidencia combinada en toda la información de la clase (espacio, ua, carrera, escuela, profesor, asignatura)
                 $espacioRaw = $item['espacio'] ?? '';
                 $textoFila = $this->normalizarTexto(
                     ($item['profesor'] ?? '') . ' ' .
@@ -731,6 +764,7 @@ class ClasesNoRealizadasTable extends Component
                     str_replace('-', '', $espacioRaw) . ' ' .
                     ($item['ua'] ?? '') . ' ' .
                     ($item['carrera'] ?? '') . ' ' .
+                    ($item['escuela'] ?? '') . ' ' .
                     ($item['run_profesor'] ?? '')
                 );
                 foreach ($palabras as $p) {
@@ -770,6 +804,7 @@ class ClasesNoRealizadasTable extends Component
         return !empty(trim($this->search ?? ''))
             || !empty($this->estado)
             || !empty($this->ua)
+            || !empty($this->escuela)
             || ($this->fecha_inicio && $this->fecha_inicio !== $fechaInicioDefecto)
             || ($this->fecha_fin && $this->fecha_fin !== $fechaFinDefecto);
     }
@@ -1198,6 +1233,30 @@ class ClasesNoRealizadasTable extends Component
     {        
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
+        $escuelasDisponibles = collect();
+        try {
+            $tenant = \App\Models\Tenant::current();
+            $carrerasSede = DB::connection('tenant')->table('carreras')
+                ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
+                ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
+                ->when($tenant && $tenant->sede_id, fn ($query) => $query->where('f.id_sede', $tenant->sede_id))
+                ->select('carreras.id_carrera', 'carreras.nombre', 'aa.nombre_area_academica')
+                ->get();
+            $todasClasesServ = new \App\Services\TodasClasesService();
+            foreach ($carrerasSede as $carr) {
+                $objCarrera = (object) [
+                    'id_carrera' => $carr->id_carrera,
+                    'nombre' => $carr->nombre,
+                    'areaAcademica' => (object) ['nombre_area_academica' => $carr->nombre_area_academica, 'id_area_academica' => null]
+                ];
+                $escInfo = $todasClasesServ->resolverDatosEscuela((object) ['carrera' => $objCarrera, 'id_carrera' => $carr->id_carrera]);
+                if (!empty($escInfo['nombre'])) {
+                    $escuelasDisponibles->push($escInfo['nombre']);
+                }
+            }
+        } catch (\Throwable $e) {}
+        $escuelasDisponibles = $escuelasDisponibles->unique()->sort()->values();
+
         try {
             $tenant = \App\Models\Tenant::current();
             $unidadesAcademicas = DB::connection('tenant')->table('carreras')
@@ -1240,12 +1299,16 @@ class ClasesNoRealizadasTable extends Component
                 'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
                 'periodosDisponibles' => $periodosDisponibles,
                 'unidadesAcademicas' => $unidadesAcademicas,
+                'escuelasDisponibles' => $escuelasDisponibles,
                 'totalNoRealizadasFiltradas' => 0,
                 'currentPageNoRealizadasKeys' => [],
             ]);
         }
         
         $todasLasClases = $this->getClasesFiltradasCollection();
+        if ($todasLasClases->isNotEmpty()) {
+            $escuelasDisponibles = $escuelasDisponibles->merge($todasLasClases->pluck('escuela')->filter())->unique()->sort()->values();
+        }
 
         if ($this->cachedEstadisticas === null) {
             // Agrupar por bloque de clase (fecha + espacio + run_profesor + asignatura) para
@@ -1322,6 +1385,7 @@ class ClasesNoRealizadasTable extends Component
             'nombrePeriodo' => '',
             'periodosDisponibles' => $periodosDisponibles,
             'unidadesAcademicas' => $unidadesAcademicas,
+            'escuelasDisponibles' => $escuelasDisponibles,
             'totalNoRealizadasFiltradas' => $totalNoRealizadasFiltradas,
             'currentPageNoRealizadasKeys' => $currentPageNoRealizadasKeys,
         ]);

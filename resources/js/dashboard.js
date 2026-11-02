@@ -528,6 +528,19 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+function irAControlDocentePorEscuela(escuela, estado = '') {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (escuela) params.set('escuela', escuela);
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+}
+
 function irAControlDocenteConBusqueda(search, estado = '') {
     const inicio = document.getElementById('status-fecha-inicio')?.value || '';
     const fin = document.getElementById('status-fecha-fin')?.value || '';
@@ -552,7 +565,13 @@ function initEscuelasChart() {
         escuelas = [];
     }
 
-    if (!Array.isArray(escuelas) || escuelas.length === 0) return;
+    if (!Array.isArray(escuelas) || escuelas.length === 0) {
+        if (escuelasChartInstance) {
+            escuelasChartInstance.destroy();
+            escuelasChartInstance = null;
+        }
+        return;
+    }
 
     if (escuelasChartInstance) {
         escuelasChartInstance.destroy();
@@ -617,7 +636,7 @@ function initEscuelasChart() {
                     const escName = fullNames[idx];
                     const datasetIdx = activeElements[0].datasetIndex;
                     const estado = datasetIdx === 1 ? 'no_realizada' : 'impartidas';
-                    irAControlDocenteConBusqueda(escName, estado);
+                    irAControlDocentePorEscuela(escName, estado);
                 }
             },
             onHover: (event, activeElements) => {
@@ -667,6 +686,7 @@ function initEscuelasChart() {
                 },
                 y: {
                     beginAtZero: true,
+                    suggestedMax: 10,
                     grid: { color: '#f1f5f9' },
                     ticks: {
                         precision: 0,
@@ -681,5 +701,6 @@ function initEscuelasChart() {
 
 window.toggleModalReloj = toggleModalReloj;
 window.irAControlDocente = irAControlDocente;
+window.irAControlDocentePorEscuela = irAControlDocentePorEscuela;
 window.irAControlDocenteConBusqueda = irAControlDocenteConBusqueda;
 window.initEscuelasChart = initEscuelasChart;

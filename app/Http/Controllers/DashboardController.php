@@ -669,6 +669,16 @@ class DashboardController extends Controller
             $escuelaNombre = !empty($primerItem['escuela']) ? $primerItem['escuela'] : 'Sin Escuela Asignada';
             $idEscuela = !empty($primerItem['id_escuela']) ? $primerItem['id_escuela'] : 'SIN_ESCUELA';
 
+            $fechaItem = ($primerItem['fecha'] instanceof \Carbon\Carbon)
+                ? $primerItem['fecha']
+                : \Carbon\Carbon::parse($primerItem['fecha']);
+            $fechaItemYmd = $fechaItem->format('Y-m-d');
+            $ahora = \Carbon\Carbon::now();
+            $horaFinStr = $primerItem['hora_fin'] ?? '23:59:59';
+            $fechaHoraFinBloque = \Carbon\Carbon::parse($fechaItemYmd . ' ' . $horaFinStr);
+
+            $esFutura = ($fechaHoraFinBloque >= $ahora);
+
             if (!isset($escuelasStats[$escuelaNombre])) {
                 $escuelasStats[$escuelaNombre] = [
                     'id_escuela'     => $idEscuela,
@@ -684,12 +694,11 @@ class DashboardController extends Controller
             }
 
             // Prioridad para determinar el estado de cumplimiento del bloque de clase:
-            // 1. Si al menos un módulo fue impartido en sala (Realizada), la clase fue impartida.
-            // 2. Si fue recuperada, cuenta como recuperada.
+            // 1. Si al menos un módulo fue impartido en sala (Realizada), cuenta como realizada.
+            // 2. Si fue recuperada efectivamente con asistencia o confirmación, cuenta como recuperada.
             // 3. Si fue justificada o feriado, cuenta como justificada.
-            // 4. Si está pendiente de recuperación, cuenta en recuperadas (proceso de recuperación).
-            // 5. Si ningún módulo fue realizado/justificado y está marcada como no registrada, cuenta como no registrada.
-            // 6. Si es futura, queda en futuras pendientes.
+            // 4. Si la clase es futura/en curso hoy (planificada o reagendada sin asistencia cuyo horario aún no termina), queda pendiente.
+            // 5. Si está marcada como no registrada o pendiente de recuperación ya vencida, cuenta como no registrada.
             if (in_array('Realizada', $estados, true)) {
                 $realizadas++;
                 $escuelasStats[$escuelaNombre]['realizadas']++;
@@ -705,22 +714,56 @@ class DashboardController extends Controller
                 $escuelasStats[$escuelaNombre]['justificadas']++;
                 $escuelasStats[$escuelaNombre]['impartidas']++;
                 $escuelasStats[$escuelaNombre]['total']++;
-            } elseif (in_array('Pendiente de Recuperación', $estados, true)) {
-                $recuperadas++;
-                $escuelasStats[$escuelaNombre]['recuperadas']++;
-                $escuelasStats[$escuelaNombre]['impartidas']++;
-                $escuelasStats[$escuelaNombre]['total']++;
-            } elseif (in_array('No Registrada', $estados, true)) {
+            } elseif (in_array('Planificada', $estados, true) || ($esFutura && in_array('Pendiente de Recuperación', $estados, true))) {
+                $futurasPendientes++;
+            } elseif (in_array('No Registrada', $estados, true) || in_array('Pendiente de Recuperación', $estados, true)) {
                 $noRegistradas++;
                 $escuelasStats[$escuelaNombre]['no_registradas']++;
                 $escuelasStats[$escuelaNombre]['total']++;
-            } elseif (in_array('Planificada', $estados, true)) {
-                $futurasPendientes++;
             } else {
                 $realizadas++;
                 $escuelasStats[$escuelaNombre]['realizadas']++;
                 $escuelasStats[$escuelaNombre]['impartidas']++;
                 $escuelasStats[$escuelaNombre]['total']++;
+            }
+        }
+
+        // Si no hubo clases evaluadas o $escuelasStats quedó vacío, poblar con las escuelas relativas a la sede del tenant
+        if (empty($escuelasStats)) {
+            try {
+                $tenant = class_exists(\App\Models\Tenant::class) ? \App\Models\Tenant::current() : null;
+                $carrerasSede = \Illuminate\Support\Facades\DB::connection('tenant')->table('carreras')
+                    ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
+                    ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
+                    ->when($tenant && $tenant->sede_id, fn ($q) => $q->where('f.id_sede', $tenant->sede_id))
+                    ->select('carreras.id_carrera', 'carreras.nombre', 'aa.nombre_area_academica')
+                    ->get();
+
+                $todasClasesServ = new TodasClasesService();
+                foreach ($carrerasSede as $carr) {
+                    $objCarrera = (object) [
+                        'id_carrera' => $carr->id_carrera,
+                        'nombre' => $carr->nombre,
+                        'areaAcademica' => (object) ['nombre_area_academica' => $carr->nombre_area_academica, 'id_area_academica' => null]
+                    ];
+                    $objAsig = (object) ['carrera' => $objCarrera, 'id_carrera' => $carr->id_carrera];
+                    $escInfo = $todasClasesServ->resolverDatosEscuela($objAsig);
+                    if (!empty($escInfo['nombre']) && !isset($escuelasStats[$escInfo['nombre']])) {
+                        $escuelasStats[$escInfo['nombre']] = [
+                            'id_escuela'     => $escInfo['id'] ?? 'ESC',
+                            'nombre'         => $escInfo['nombre'],
+                            'impartidas'     => 0,
+                            'realizadas'     => 0,
+                            'recuperadas'    => 0,
+                            'justificadas'   => 0,
+                            'no_registradas' => 0,
+                            'total'          => 0,
+                            'pct'            => 0,
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silencioso si falla
             }
         }
 
@@ -730,7 +773,10 @@ class DashboardController extends Controller
         unset($esc);
 
         uasort($escuelasStats, function ($a, $b) {
-            return $b['total'] <=> $a['total'];
+            if ($b['total'] !== $a['total']) {
+                return $b['total'] <=> $a['total'];
+            }
+            return strcmp($a['nombre'], $b['nombre']);
         });
 
         $totalImpartidas = $realizadas + $recuperadas + $justificadas;

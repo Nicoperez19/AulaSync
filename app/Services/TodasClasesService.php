@@ -2368,7 +2368,7 @@ class TodasClasesService
     /**
      * Resuelve los datos de la Escuela (nombre e identificador)
      */
-    protected function resolverDatosEscuela($asignatura, $profesor = null): array
+    public function resolverDatosEscuela($asignatura, $profesor = null): array
     {
         // 1. Mapeo oficial de Carreras a Escuelas del Instituto Tecnológico
         static $carrerasMap = [
