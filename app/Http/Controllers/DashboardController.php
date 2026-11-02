@@ -683,11 +683,19 @@ class DashboardController extends Controller
                 ];
             }
 
-            if (in_array('No Registrada', $estados, true)) {
-                $noRegistradas++;
-                $escuelasStats[$escuelaNombre]['no_registradas']++;
+            // Prioridad para determinar el estado de cumplimiento del bloque de clase:
+            // 1. Si al menos un módulo fue impartido en sala (Realizada), la clase fue impartida.
+            // 2. Si fue recuperada, cuenta como recuperada.
+            // 3. Si fue justificada o feriado, cuenta como justificada.
+            // 4. Si está pendiente de recuperación, cuenta en recuperadas (proceso de recuperación).
+            // 5. Si ningún módulo fue realizado/justificado y está marcada como no registrada, cuenta como no registrada.
+            // 6. Si es futura, queda en futuras pendientes.
+            if (in_array('Realizada', $estados, true)) {
+                $realizadas++;
+                $escuelasStats[$escuelaNombre]['realizadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
                 $escuelasStats[$escuelaNombre]['total']++;
-            } elseif (in_array('Pendiente de Recuperación', $estados, true) || in_array('Recuperada', $estados, true)) {
+            } elseif (in_array('Recuperada', $estados, true)) {
                 $recuperadas++;
                 $escuelasStats[$escuelaNombre]['recuperadas']++;
                 $escuelasStats[$escuelaNombre]['impartidas']++;
@@ -696,6 +704,15 @@ class DashboardController extends Controller
                 $justificadas++;
                 $escuelasStats[$escuelaNombre]['justificadas']++;
                 $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } elseif (in_array('Pendiente de Recuperación', $estados, true)) {
+                $recuperadas++;
+                $escuelasStats[$escuelaNombre]['recuperadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } elseif (in_array('No Registrada', $estados, true)) {
+                $noRegistradas++;
+                $escuelasStats[$escuelaNombre]['no_registradas']++;
                 $escuelasStats[$escuelaNombre]['total']++;
             } elseif (in_array('Planificada', $estados, true)) {
                 $futurasPendientes++;

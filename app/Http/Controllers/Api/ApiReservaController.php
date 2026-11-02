@@ -541,8 +541,62 @@ class ApiReservaController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->first();
 
-            // Si no hay reserva del propio docente, verificar si el espacio tiene reserva de otro usuario
+            // Si no hay reserva activa del propio docente, verificar primero si la reserva fue auto-finalizada
+            // previamente (por margen de tiempo o expiración) y el docente está devolviendo la llave tardíamente.
             if (!$reserva) {
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($request->espacio_id);
+
+                $reservaAutoFinalizada = Reserva::whereIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'finalizada')
+                    ->where('fecha_reserva', Carbon::now()->toDateString())
+                    ->where(function ($query) use ($runNormalizado) {
+                        $query->where('run_profesor', $runNormalizado)
+                            ->orWhere('run_solicitante', $runNormalizado)
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runNormalizado)])
+                            ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runNormalizado)]);
+                    })
+                    ->whereNotNull('observaciones')
+                    ->where(function ($q) {
+                        $q->where('observaciones', 'LIKE', '%Finalizada automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%finalizó automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%Llave no devuelta%')
+                          ->orWhere('observaciones', 'LIKE', '%tiempo límite excedido%');
+                    })
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+
+                if ($reservaAutoFinalizada) {
+                    $horaDevolucion = Carbon::now()->format('H:i:s');
+                    $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
+                    if (!str_contains($observacionActual, 'Devolución de llave registrada') && !str_contains($observacionActual, 'devolvió llave de acceso')) {
+                        $nuevaObservacion = "\nDevolución de llave registrada por el docente a las {$horaDevolucion} (devolución tardía tras auto-cierre).";
+                        $reservaAutoFinalizada->observaciones = trim($observacionActual . $nuevaObservacion);
+                        $reservaAutoFinalizada->save();
+                    }
+
+                    // Asegurar que el espacio esté Disponible
+                    $espacio = Espacio::find($request->espacio_id);
+                    if ($espacio && $espacio->estado !== 'Disponible') {
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    }
+
+                    try {
+                        $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+                        \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+                        \Illuminate\Support\Facades\Cache::forget('estados_espacios');
+                    } catch (\Throwable $e) {}
+
+                    DB::connection('tenant')->commit();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Devolución de llave registrada correctamente (devolución tardía tras auto-cierre)',
+                        'tardia' => true,
+                        'hora_salida' => $horaDevolucion
+                    ]);
+                }
+
                 $reservaAjena = Reserva::activasOtrosDocentes($runNormalizado, $request->espacio_id)
                     ->first();
 
@@ -567,7 +621,7 @@ class ApiReservaController extends Controller
                 ], 404);
             }
 
-            // Actualizar la reserva
+            // Actualizar la reserva activa
             $reserva->estado = 'finalizada';
             $reserva->hora_salida = Carbon::now()->format('H:i:s');
             $reserva->updated_at = Carbon::now();
@@ -585,31 +639,6 @@ class ApiReservaController extends Controller
                 \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
                 \Illuminate\Support\Facades\Cache::forget('estados_espacios');
             } catch (\Throwable $e) {}
-
-            // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
-            $reservaAutoFinalizada = Reserva::where('id_espacio', $request->espacio_id)
-                ->where('estado', 'finalizada')
-                ->where('fecha_reserva', Carbon::now()->toDateString())
-                ->whereNotNull('observaciones')
-                ->where(function ($q) {
-                    $q->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
-                      ->orWhere('observaciones', 'LIKE', '%Finalizada automáticamente%');
-                })
-                ->where(function ($query) use ($runNormalizado) {
-                    $query->where('run_profesor', $runNormalizado)
-                        ->orWhere('run_solicitante', $runNormalizado);
-                })
-                ->orderBy('updated_at', 'desc')
-                ->first();
-
-            if ($reservaAutoFinalizada) {
-                // El profesor está devolviendo la llave después de que la reserva fue auto-finalizada
-                $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
-                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . Carbon::now()->format('H:i:s') . '.';
-                $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
-                $reservaAutoFinalizada->save();
-
-            }
 
             DB::connection('tenant')->commit();
 

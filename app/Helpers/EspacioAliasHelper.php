@@ -40,32 +40,41 @@ class EspacioAliasHelper
         if (empty($espacioId)) {
             return [];
         }
-        $espacioUpper = strtoupper(trim($espacioId));
+        $espacioId = trim($espacioId);
+        $espacioUpper = strtoupper($espacioId);
         $sedeUpper    = strtoupper(trim($sedeId ?? ''));
 
-        // ── Aliases para Talcahuano (TH) ────────────────────────────────────
+        $equivalentes = [$espacioId, $espacioUpper];
+
+        // ── Aliases específicos para Talcahuano (TH) ────────────────────────
         // TH-30 (nombre en programación académica) ↔ TH-L09 (id en AulaSync)
-        if ($sedeUpper === 'TH' || str_starts_with($espacioUpper, 'TH-')) {
-            if (in_array($espacioUpper, ['TH-30', 'TH30', 'TH-L09', 'L09', 'TH-LAB09', 'TH-LAB9'])) {
-                return ['TH-L09', 'TH-30'];
+        if ($sedeUpper === 'TH' || str_starts_with($espacioUpper, 'TH-') || str_starts_with($espacioUpper, 'TH')) {
+            if (in_array($espacioUpper, ['TH-30', '30', 'TH30', 'TH-L09', 'L09', 'TH-LAB09', 'TH-LAB9'])) {
+                $equivalentes = array_merge($equivalentes, ['TH-L09', 'TH-30', 'TH30', 'TH-LAB09', 'TH-LAB9']);
             }
         }
 
-        // ── Aliases para Chillán (CH) ─────────────────────────────────────
-        // Agregar aquí equivalencias propias de CH cuando se conozcan.
-        // Ejemplo futuro:
-        // if ($sedeUpper === 'CH' || str_starts_with($espacioUpper, 'CH-')) {
-        //     if (in_array($espacioUpper, ['CH-GIMN', 'CH-GYM'])) return ['CH-GIM'];
-        // }
+        // ── Equivalencias genéricas de formato y ceros a la izquierda para todas las sedes (LA, CT, CH, TH, CCP, etc.) ──
+        // Resuelve inconsistencias como LA-1 ↔ LA-01, CT-02 ↔ CT-2, TH-L09 ↔ TH-L9
+        if (preg_match('/^([A-Z]+)[-_]?([A-Z]*)0*(\d+)([A-Z]*)$/', $espacioUpper, $matches)) {
+            $prefijoSede = $matches[1];
+            $prefijoTipo = $matches[2]; // Ej: 'L' para laboratorio
+            $numero = (int)$matches[3];
+            $sufijo = $matches[4];
 
-        // ── Aliases para Los Ángeles (LA) ────────────────────────────────────
-        // Agregar aquí equivalencias propias de LA cuando se conozcan.
+            $numSinCero = (string)$numero;
+            $numConCero = sprintf('%02d', $numero);
 
-        // ── Aliases para Cañete (CT) ─────────────────────────────────────────
-        // Agregar aquí equivalencias propias de CT cuando se conozcan.
+            $formas = [
+                "{$prefijoSede}-{$prefijoTipo}{$numSinCero}{$sufijo}",
+                "{$prefijoSede}-{$prefijoTipo}{$numConCero}{$sufijo}",
+                "{$prefijoSede}{$prefijoTipo}{$numSinCero}{$sufijo}",
+                "{$prefijoSede}{$prefijoTipo}{$numConCero}{$sufijo}",
+            ];
+            $equivalentes = array_merge($equivalentes, $formas);
+        }
 
-        // Sin alias: retornar el espacio tal como viene
-        return [$espacioId];
+        return array_values(array_unique(array_filter($equivalentes)));
     }
 
     /**

@@ -323,10 +323,12 @@ class ProfesorController extends Controller
             $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
             $horaConAnticipacion = now()->copy()->addMinutes(30)->format('H:i:s');
             $espacioLimpio = str_replace(['-', ' '], '', $espacio->id_espacio);
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
 
             $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
-                ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
+                       ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($qPrincipal) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -367,8 +369,9 @@ class ProfesorController extends Controller
                 // Buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
                 $hoyFecha = $fechaActual;
                 $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->whereHas('profesorColaborador', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv, $hoyFecha) {
@@ -433,8 +436,9 @@ class ProfesorController extends Controller
 
             $reservaFinalizadaHoy = Reserva::where('fecha_reserva', $fechaActual)
                 ->where('estado', 'finalizada')
-                ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
+                       ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -476,8 +480,9 @@ class ProfesorController extends Controller
 
             if (!$esTemporal && $programacion) {
                 $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->where(function ($qPrincipal) use ($programacion, $profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -535,8 +540,9 @@ class ProfesorController extends Controller
                 // Clases temporales (colaborador)
                 $idColab = $planColaborador->id_profesor_colaborador;
                 $planificacionesMismoBloque = \App\Models\PlanificacionProfesorColaborador::with('modulo')
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->where(function ($q) use ($idColab, $profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {

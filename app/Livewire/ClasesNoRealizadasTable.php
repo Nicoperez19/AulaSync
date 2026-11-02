@@ -648,19 +648,21 @@ class ClasesNoRealizadasTable extends Component
             // Aplicar filtro de estado en memoria
             if ($this->estado) {
                 if ($this->estado === 'impartidas') {
-                    $clases = $clases->whereIn('estado', ['Realizada', 'Registrada', 'Recuperada', 'Justificada']);
+                    $clases = $clases->whereIn('estado', ['Realizada', 'Registrada', 'Recuperada', 'Justificada', 'Feriado/Justificado']);
                 } else {
                     $estadoStr = match($this->estado) {
                         'no_realizada' => 'No Registrada',
                         'realizada', 'registrada' => 'Realizada',
                         'recuperada' => 'Recuperada',
-                        'justificado' => 'Justificada',
+                        'justificado', 'justificada' => 'Justificada',
                         'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                         default => null
                     };
                     if ($estadoStr) {
                         if ($estadoStr === 'Realizada') {
                             $clases = $clases->whereIn('estado', ['Realizada', 'Registrada']);
+                        } elseif ($estadoStr === 'Justificada') {
+                            $clases = $clases->whereIn('estado', ['Justificada', 'Feriado/Justificado']);
                         } else {
                             $clases = $clases->where('estado', $estadoStr);
                         }
@@ -1266,12 +1268,13 @@ class ClasesNoRealizadasTable extends Component
                 $totalClases++;
                 $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
 
-                if (in_array('No Registrada', $estados)) {
-                    $totalNoRealizadas++;
+                if (in_array('Realizada', $estados) || in_array('Recuperada', $estados) || in_array('Justificada', $estados) || in_array('Feriado/Justificado', $estados)) {
+                    $totalRealizadas++;
                 } elseif (in_array('Pendiente de Recuperación', $estados)) {
                     $totalPendientes++;
+                } elseif (in_array('No Registrada', $estados)) {
+                    $totalNoRealizadas++;
                 } else {
-                    // Justificada, Realizada, Recuperada, Feriado → todas cuentan como realizadas
                     $totalRealizadas++;
                 }
             }
@@ -1281,7 +1284,7 @@ class ClasesNoRealizadasTable extends Component
                 'total'        => $totalClases,
                 'no_realizadas' => $totalNoRealizadas,
                 'pendientes'   => $totalPendientes,
-                'justificados' => $todasLasClases->where('estado', 'Justificada')->count(), // para la tarjeta KPI individual
+                'justificados' => $todasLasClases->whereIn('estado', ['Justificada', 'Feriado/Justificado'])->count(), // para la tarjeta KPI individual
                 'realizadas'   => $totalRealizadas,
             ];
         }

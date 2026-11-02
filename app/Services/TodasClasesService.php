@@ -375,8 +375,9 @@ class TodasClasesService
                 ->whereNotNull('h.periodo')
                 ->select('pa.id_asignatura', 'h.periodo', 'pa.fecha_fin_vigencia')
                 ->get();
+            $fIniStrCheck = $fechaInicio ? $fechaInicio->toDateString() : null;
             foreach ($asigPeriodosRows as $apr) {
-                if ($apr->periodo === $periodoActualReal && $apr->fecha_fin_vigencia !== null) {
+                if ($apr->periodo === $periodoActualReal && $apr->fecha_fin_vigencia !== null && $fIniStrCheck && $apr->fecha_fin_vigencia < $fIniStrCheck) {
                     continue;
                 }
                 $periodosPorAsignatura[$apr->id_asignatura][$apr->periodo] = true;
@@ -413,7 +414,17 @@ class TodasClasesService
             ->whereHas('horario.profesor');
 
         if ($periodo) {
-            if ($periodo === $periodoActualReal && $tieneVigenciaPlan) {
+            if ($tieneVigenciaPlan && $fechaInicio && $fechaFin) {
+                $fIniStr = $fechaInicio->toDateString();
+                $fFinStr = $fechaFin->toDateString();
+                $query->where(function ($vq) use ($fIniStr) {
+                    $vq->whereNull('fecha_fin_vigencia')
+                       ->orWhere('fecha_fin_vigencia', '>=', $fIniStr);
+                })->where(function ($vq) use ($fFinStr) {
+                    $vq->whereNull('fecha_inicio_vigencia')
+                       ->orWhere('fecha_inicio_vigencia', '<=', $fFinStr);
+                });
+            } elseif ($periodo === $periodoActualReal && $tieneVigenciaPlan) {
                 $query->whereNull('fecha_fin_vigencia');
             }
             $query->whereHas('horario', function($q) use ($periodo) {
@@ -505,7 +516,7 @@ class TodasClasesService
                     $limPlan = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodoPlan, $periodosModels);
                     $iniSemPlan = $limPlan['inicio']->format('Y-m-d');
                     $finSemPlan = $limPlan['fin']->format('Y-m-d');
-                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan || empty($planificacion->fecha_fin_vigencia)) {
+                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan) {
                         $inicioVigencia = $iniSemPlan;
                     }
                     if (!$finVigencia || $finVigencia > $finSemPlan) {
@@ -557,7 +568,7 @@ class TodasClasesService
                                 $claseId = $claseNoRealizada->id;
                                 $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
                                 $estadoStr = match($claseNoRealizada->estado) {
-                                    'no_realizada' => 'No Registrada',
+                                    'no_realizada' => 'Feriado/Justificado',
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
@@ -829,8 +840,20 @@ class TodasClasesService
             ->whereHas('modulo')
             ->whereHas('profesorColaborador.profesor');
 
-        if ($periodo && $periodo === $periodoActualReal && $tieneVigenciaColab) {
-            $queryColab->whereNull('fecha_fin_vigencia');
+        if ($periodo) {
+            if ($tieneVigenciaColab && $fechaInicio && $fechaFin) {
+                $fIniStr = $fechaInicio->toDateString();
+                $fFinStr = $fechaFin->toDateString();
+                $queryColab->where(function ($vq) use ($fIniStr) {
+                    $vq->whereNull('fecha_fin_vigencia')
+                       ->orWhere('fecha_fin_vigencia', '>=', $fIniStr);
+                })->where(function ($vq) use ($fFinStr) {
+                    $vq->whereNull('fecha_inicio_vigencia')
+                       ->orWhere('fecha_inicio_vigencia', '<=', $fFinStr);
+                });
+            } elseif ($periodo === $periodoActualReal && $tieneVigenciaColab) {
+                $queryColab->whereNull('fecha_fin_vigencia');
+            }
         }
 
         if ($search) {
@@ -922,11 +945,14 @@ class TodasClasesService
                     if (!$inicioColab || $inicioColab < $limColabIni) {
                         $inicioColab = $limColabIni;
                     }
-                    if (empty($planificacion->fecha_fin_vigencia)) {
+                    if (!$inicioPlan || $inicioPlan < $limColabIni) {
                         $inicioPlan = $limColabIni;
                     }
                     if (!$finColab || $finColab > $limColabFin) {
                         $finColab = $limColabFin;
+                    }
+                    if (!$finPlan || $finPlan > $limColabFin) {
+                        $finPlan = $limColabFin;
                     }
                 }
 
@@ -989,7 +1015,7 @@ class TodasClasesService
                                 $claseId = $claseNoRealizada->id;
                                 $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
                                 $estadoStr = match($claseNoRealizada->estado) {
-                                    'no_realizada' => 'No Registrada',
+                                    'no_realizada' => 'Feriado/Justificado',
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
@@ -2119,10 +2145,13 @@ class TodasClasesService
             $finEfectivo = $horaSalidaTemp;
             if (!$finEfectivo || $finEfectivo->lte($horaAcceso)) {
                 $cantModulos = max(1, (int) ($r->modulos ?? 1));
-                $finEfectivo = $horaAcceso->copy()->addMinutes($cantModulos * 55);
+                // Si la reserva no tiene modulos especificados pero cubre un bloque habitual de clases (ej. 2 módulos),
+                // estimar al menos 110 minutos para no cortar el segundo módulo del bloque
+                $minutosEstimados = max(110, $cantModulos * 55);
+                $finEfectivo = $horaAcceso->copy()->addMinutes($minutosEstimados);
             }
 
-            $ingresoPrevio = ($horaAcceso < $margenInicio) && ($finEfectivo > $horaInicioModulo);
+            $ingresoPrevio = ($horaAcceso < $margenInicio) && ($finEfectivo >= $horaInicioModulo);
 
             if ($ingresoDirecto || $ingresoPrevio || $cubrePorModulo) {
                 $mismaAsignatura = ($idAsignatura && $r->id_asignatura == $idAsignatura);

@@ -232,7 +232,8 @@ class Reserva extends Model
               });
 
         if ($idEspacio !== null) {
-            $query->where('id_espacio', $idEspacio);
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+            $query->whereIn('id_espacio', $espaciosEquiv);
         }
 
         return $query;
@@ -248,7 +249,8 @@ class Reserva extends Model
      */
     public function scopeActivasOtrosDocentes($query, string $runProfesor, string $idEspacio)
     {
-        return $query->where('id_espacio', $idEspacio)
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+        return $query->whereIn('id_espacio', $espaciosEquiv)
                      ->where('estado', 'activa')
                      ->where(function ($q) use ($runProfesor) {
                          $q->where('run_profesor', '!=', $runProfesor)
