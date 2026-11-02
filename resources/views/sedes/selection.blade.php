@@ -81,25 +81,43 @@
             @if($sedes->count() > 0)
                 <div class="max-w-2xl mx-auto space-y-3.5">
                     @foreach($sedes as $sede)
+                        @php
+                            $isConcepcion = (strtoupper($sede->id_sede) === 'CCP' || str_contains(mb_strtolower($sede->nombre_sede), 'concepc'));
+                        @endphp
                         <a href="{{ route('sedes.redirect', $sede->id_sede) }}"
                             class="group relative flex items-center justify-between p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-lg hover:border-[#950101] hover:-translate-y-0.5 transition-all duration-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-red-500 cursor-pointer">
                             <div class="flex items-center gap-4">
                                 <!-- Icono institucional sede -->
-                                <div class="w-12 h-12 rounded-xl bg-red-50 group-hover:bg-[#950101] flex items-center justify-center text-[#950101] group-hover:text-white transition-all duration-200 shrink-0 shadow-2xs dark:bg-gray-700 dark:text-red-400 dark:group-hover:bg-[#950101] dark:group-hover:text-white">
+                                <div class="w-12 h-12 rounded-xl {{ $isConcepcion ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 group-hover:bg-[#950101] group-hover:text-white' : 'bg-red-50 text-[#950101] dark:bg-gray-700 dark:text-red-400 group-hover:bg-[#950101] group-hover:text-white' }} flex items-center justify-center transition-all duration-200 shrink-0 shadow-2xs">
                                     <i class="fas fa-university text-lg"></i>
                                 </div>
                                 
                                 <div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center flex-wrap gap-2">
                                         <h2 class="text-base sm:text-lg font-bold text-gray-900 group-hover:text-[#950101] transition-colors dark:text-white dark:group-hover:text-red-400">
                                             {{ $sede->nombre_sede }}
                                         </h2>
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-600 group-hover:bg-red-100 group-hover:text-red-800 transition-colors dark:bg-gray-700 dark:text-gray-300 dark:group-hover:bg-red-900/50 dark:group-hover:text-red-300">
                                             {{ $sede->id_sede }}
                                         </span>
+
+                                        @if($isConcepcion)
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                                <i class="fas fa-landmark text-[10px]"></i>
+                                                Campus Central
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                                <i class="fas fa-lock text-[10px]"></i>
+                                                Solo Super Admin
+                                            </span>
+                                        @endif
                                     </div>
 
-                                    @if($sede->universidad)
+                                    @if($isConcepcion)
+                                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 font-medium mt-0.5">
+                                            Universidad Católica de la Santísima Concepción
+                                        </p>
+                                    @elseif($sede->universidad)
                                         <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                                             Instituto Tecnológico {{ $sede->universidad->nombre_universidad }}
                                         </p>

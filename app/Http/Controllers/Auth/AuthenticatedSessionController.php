@@ -69,6 +69,13 @@ class AuthenticatedSessionController extends Controller
             ]);
 
             if ($user->id_sede) {
+                if (strtoupper($user->id_sede) === 'CCP' && !$user->isSuperAdmin()) {
+                    Log::warning('❌ Control Docente asignado a Concepción (inactiva)', ['run' => $user->run]);
+                    Auth::logout();
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                    return redirect()->route('login')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema. Por favor, contacta al administrador.');
+                }
                 return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
             }
 
@@ -93,6 +100,14 @@ class AuthenticatedSessionController extends Controller
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
                 return redirect()->route('login')->with('error', 'Tu cuenta de docente no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
+            }
+
+            if (strtoupper($user->id_sede) === 'CCP' && !$user->isSuperAdmin()) {
+                Log::warning('❌ Docente asignado a Concepción (inactiva)', ['run' => $user->run]);
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema. Por favor, contacta al administrador.');
             }
 
             $tenantService = app(\App\Services\TenantSessionService::class);
@@ -122,6 +137,13 @@ class AuthenticatedSessionController extends Controller
 
         // Si el usuario tiene una sede específica asignada y NO es superusuario global, redirigir directamente a su sede
         if ($user->id_sede && !$user->isSuperAdmin()) {
+            if (strtoupper($user->id_sede) === 'CCP') {
+                Log::warning('❌ Usuario asignado a Concepción (inactiva)', ['run' => $user->run]);
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema. Por favor, contacta al administrador.');
+            }
             Log::info('✅ Usuario con sede asignada detectado, redirigiendo automáticamente a su sede', [
                 'run' => $user->run,
                 'id_sede' => $user->id_sede,

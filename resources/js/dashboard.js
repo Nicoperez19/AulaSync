@@ -528,6 +528,7 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+
 function irAControlDocentePorEscuela(escuela, estado = '') {
     const inicio = document.getElementById('status-fecha-inicio')?.value || '';
     const fin = document.getElementById('status-fecha-fin')?.value || '';
@@ -540,6 +541,7 @@ function irAControlDocentePorEscuela(escuela, estado = '') {
     const query = params.toString();
     window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
 }
+window.irAControlDocentePorEscuela = irAControlDocentePorEscuela;
 
 function irAControlDocenteConBusqueda(search, estado = '') {
     const inicio = document.getElementById('status-fecha-inicio')?.value || '';
@@ -553,6 +555,7 @@ function irAControlDocenteConBusqueda(search, estado = '') {
     const query = params.toString();
     window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
 }
+window.irAControlDocenteConBusqueda = irAControlDocenteConBusqueda;
 
 function initEscuelasChart() {
     const canvas = document.getElementById('chart-escuelas-canvas');

@@ -15,10 +15,10 @@
             </div>
 
             <!-- Controles de Filtros por Período y Rango de Fechas (en la parte superior de la tarjeta izquierda) -->
-            <div class="mb-4 rounded-xl border border-slate-200/80 bg-slate-50 p-2 shadow-xs">
-                <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="mb-4 rounded-xl border border-slate-200/80 bg-slate-50 p-2 sm:p-2.5 shadow-xs">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <!-- Botones rápidos de período -->
-                    <div class="flex items-center gap-1.5 overflow-x-auto">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0">
                         <span class="shrink-0 text-[10px] font-black uppercase tracking-wider text-slate-500">Período:</span>
                         <button type="button" onclick="filtrarStatusClases('hoy')" id="btn-status-hoy" class="shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-extrabold transition {{ ($rango ?? 'hoy') === 'hoy' ? 'bg-[#D12420] text-white shadow-xs border-[#D12420]' : 'border-[#C0C0C0] bg-white text-slate-700 hover:bg-slate-100' }}">
                             Hoy
@@ -32,12 +32,15 @@
                     </div>
 
                     <!-- Rango de fechas libre -->
-                    <div class="flex items-center gap-1.5 text-xs">
-                        <input type="date" id="status-fecha-inicio" value="{{ $fecha_inicio ?: now()->format('Y-m-d') }}" class="h-7 w-[110px] rounded-lg border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-1 focus:ring-[#D12420]">
-                        <span class="text-[10px] text-slate-400 font-bold">-</span>
-                        <input type="date" id="status-fecha-fin" value="{{ $fecha_fin ?: now()->format('Y-m-d') }}" class="h-7 w-[110px] rounded-lg border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-1 focus:ring-[#D12420]">
-                        <button type="button" onclick="filtrarStatusClasesPersonalizado()" class="shrink-0 rounded-lg bg-[#191919] px-2 py-1 text-[10px] font-bold text-white transition hover:bg-[#950101] cursor-pointer">
-                            Filtrar
+                    <div class="flex items-center gap-1.5 text-xs w-full sm:w-auto">
+                        <div class="flex items-center gap-1 flex-1 sm:flex-none">
+                            <input type="date" id="status-fecha-inicio" value="{{ $fecha_inicio ?: now()->format('Y-m-d') }}" class="h-7 w-full sm:w-[115px] min-w-0 rounded-lg border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-1 focus:ring-[#D12420]">
+                            <span class="text-[10px] text-slate-400 font-bold shrink-0">-</span>
+                            <input type="date" id="status-fecha-fin" value="{{ $fecha_fin ?: now()->format('Y-m-d') }}" class="h-7 w-full sm:w-[115px] min-w-0 rounded-lg border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 focus:border-[#D12420] focus:ring-1 focus:ring-[#D12420]">
+                        </div>
+                        <button type="button" onclick="filtrarStatusClasesPersonalizado()" class="shrink-0 h-7 rounded-lg bg-[#191919] px-3 py-0.5 text-[10px] font-bold text-white transition hover:bg-[#950101] cursor-pointer flex items-center justify-center gap-1 shadow-xs">
+                            <i class="fas fa-filter text-[8px]"></i>
+                            <span>Filtrar</span>
                         </button>
                     </div>
                 </div>

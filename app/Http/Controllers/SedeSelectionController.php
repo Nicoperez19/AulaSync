@@ -23,6 +23,12 @@ class SedeSelectionController extends Controller
 
         // Si el usuario tiene una sede específica asignada y NO es superadministrador, redirigir directamente
         if ($user->id_sede && !$user->isSuperAdmin()) {
+            if ($user->id_sede === 'CCP') {
+                Auth::logout();
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema. Por favor, contacta al administrador.');
+            }
             return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
         }
         
@@ -30,10 +36,15 @@ class SedeSelectionController extends Controller
             $query->where('is_active', true);
         })
         ->with(['tenant', 'universidad', 'comuna']);
+
+        // Concepción aún no está activa: ocultarla para todos excepto el Super Admin
+        if (!$user->isSuperAdmin()) {
+            $query->where('id_sede', '!=', 'CCP');
+        }
         
         // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
         if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
-            // No aplicar filtros - ver todas las sedes activas
+            // No aplicar filtros adicionales de asignación de usuario
         }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
         elseif ($user->id_sede) {
@@ -60,6 +71,12 @@ class SedeSelectionController extends Controller
     public function redirect(Request $request, $sedeId)
     {
         $user = Auth::user();
+
+        // Si intenta acceder a Concepción y no es superadministrador, bloquear acceso
+        if (strtoupper($sedeId) === 'CCP' && !$user->isSuperAdmin()) {
+            return redirect()->route('sedes.selection')
+                ->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema.');
+        }
 
         // Si el usuario tiene una sede específica asignada y NO es superadministrador, bloquear acceso a otras sedes
         if ($user->id_sede && !$user->isSuperAdmin() && $sedeId !== $user->id_sede) {

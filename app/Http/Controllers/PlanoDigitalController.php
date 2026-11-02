@@ -1847,14 +1847,12 @@ class PlanoDigitalController extends Controller
                     ->where('fecha_reserva', Carbon::today()->toDateString())
                     ->where('estado', 'finalizada')
                     ->where(function ($q) use ($idAsignaturaClase, $numModuloClase) {
+                        if ($numModuloClase !== null) {
+                            $q->where('modulo_inicio', '<=', $numModuloClase)
+                              ->where('modulo_fin', '>=', $numModuloClase);
+                        }
                         if (!empty($idAsignaturaClase)) {
                             $q->where('id_asignatura', $idAsignaturaClase);
-                        }
-                        if ($numModuloClase !== null) {
-                            $q->orWhere(function ($sub) use ($numModuloClase) {
-                                $sub->where('modulo_inicio', '<=', $numModuloClase)
-                                    ->where('modulo_fin', '>=', $numModuloClase);
-                            });
                         }
                     })
                     ->latest('updated_at')
@@ -2589,6 +2587,12 @@ class PlanoDigitalController extends Controller
                       ->orWhere('run_profesor', $runSinDv)
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    if ($runSinDv) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                    }
+                    if ($runLimpio) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                    }
                 })
                 ->get();
 
@@ -2635,6 +2639,12 @@ class PlanoDigitalController extends Controller
                       ->orWhere('run_profesor', $runSinDv)
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    if ($runSinDv) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                    }
+                    if ($runLimpio) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                    }
                 })
                 ->get();
             foreach ($cnrsHoy as $cnrItem) {
