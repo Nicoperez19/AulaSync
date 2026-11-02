@@ -15,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Traits\RunNormalizer;
 use App\Services\OcupacionSemanalService;
+use App\Services\TodasClasesService;
 use App\Exports\OcupacionSemanalExport;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -636,288 +637,147 @@ class DashboardController extends Controller
         $cacheKey = "dash_status_{$tenantId}_{$rango}_{$fechaInicioYmd}_{$fechaFinYmd}_{$ultimaActualizacionCnr}";
 
         $computeStatusData = function () use (
-            $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
-        ) {
-            $ahora = Carbon::now();
-            $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $rango, $fechaInicio, $fechaFin, $fechaInicioYmd, $fechaFinYmd, $tenantId
+    ) {
+        $periodo = SemesterHelper::resolverPeriodoParaFecha($fechaInicioYmd) ?: SemesterHelper::getCurrentPeriod();
+        $todasClasesService = new TodasClasesService();
+        $todasLasClases = $todasClasesService->obtenerTodasLasClases(
+            $fechaInicioYmd,
+            $fechaFinYmd,
+            $periodo
+        );
 
-            // 1. Pre-cargar feriados en el rango (protegido por si la tabla no existe aún en el tenant)
-            $fechasFeriado = [];
-            try {
-                $feriadosEnRango = DiaFeriado::activos()
-                    ->enRango($fechaInicioYmd, $fechaFinYmd)
-                    ->get();
-                foreach ($feriadosEnRango as $feriado) {
-                    $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
-                    $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
-                    while ($cursor <= $fin) {
-                        $fechasFeriado[$cursor->format('Y-m-d')] = true;
-                        $cursor->addDay();
-                    }
-                }
-            } catch (\Throwable $e) {
-                $fechasFeriado = [];
-            }
-
-            // 2. Pre-cargar clases no realizadas en mapa por módulo individual
-            $clasesNoRealizadas = collect();
-            $clasesNoRealizadasCache = [];
-            try {
-                $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
-                foreach ($clasesNoRealizadas as $cnr) {
-                    $fecha = Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
-                    $modulos = explode(',', (string) $cnr->id_modulo);
-                    foreach ($modulos as $mod) {
-                        $modTrim = trim($mod);
-                        $clasesNoRealizadasCache["{$fecha}_{$cnr->id_espacio}_{$modTrim}"] = $cnr;
-                        $clasesNoRealizadasCache["{$fecha}_{$cnr->id_asignatura}_{$modTrim}"] = $cnr;
-                    }
-                }
-            } catch (\Throwable $e) {
-                $clasesNoRealizadas = collect();
-                $clasesNoRealizadasCache = [];
-            }
-
-            // 3. Pre-cargar reservas efectivas de clase en el rango
-            try {
-                $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
-                    ->whereIn('estado', ['activa', 'finalizada'])
-                    ->where(function ($q) {
-                        $q->whereNull('hubo_asistentes')
-                          ->orWhere('hubo_asistentes', true);
-                    })
-                    ->where(function ($q) {
-                        $q->whereNotNull('run_profesor')
-                          ->orWhereNotNull('run_solicitante');
-                    })
-                    ->get()
-                    ->groupBy(function ($reserva) {
-                        try {
-                            return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . $reserva->id_espacio;
-                        } catch (\Throwable $e) {
-                            return '';
-                        }
-                    });
-            } catch (\Throwable $e) {
-                $reservasCache = collect();
-            }
-
-            // 4. Pre-cargar planificaciones vigentes (cacheadas por período con fallback si falla permisos de caché)
-            $periodo = SemesterHelper::getCurrentPeriod();
-            $fetchPlanificaciones = function () use ($periodo) {
-                return Planificacion_Asignatura::with([
-                        'modulo:id_modulo,dia,hora_inicio,hora_termino',
-                        'horario:id_horario,run_profesor,periodo',
-                        'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,run_profesor'
-                    ])
-                    ->whereHas('modulo')
-                    ->whereHas('horario', function ($hq) use ($periodo) {
-                        if ($periodo) {
-                            $hq->where('periodo', $periodo);
-                        }
-                    })
-                    ->get();
-            };
-
-            try {
-                $planificaciones = \Illuminate\Support\Facades\Cache::remember(
-                    "dash_planif_{$tenantId}_{$periodo}",
-                    300,
-                    $fetchPlanificaciones
-                );
-            } catch (\Throwable $e) {
-                $planificaciones = $fetchPlanificaciones();
-            }
-
-            // 5. Generar lista de días válidos (lunes a sábado) dentro del rango
-            $fechasAEvaluar = [];
-            $currentDate = $fechaInicio->copy();
-            while ($currentDate <= $fechaFin) {
-                if ($currentDate->dayOfWeek >= 1 && $currentDate->dayOfWeek <= 6) {
-                    $fechasAEvaluar[] = $currentDate->copy();
-                }
-                $currentDate->addDay();
-            }
+        // Agrupar por bloque de clase (fecha + espacio + run_profesor + asignatura)
+        // Exactamente como hace Control de Clases en ClasesNoRealizadasTable para garantizar concordancia matematica
+        $clasesAgrupadas = collect($todasLasClases)->groupBy(function ($item) {
+            $fecha = ($item['fecha'] instanceof Carbon)
+                ? $item['fecha']->format('Y-m-d')
+                : Carbon::parse($item['fecha'])->format('Y-m-d');
+            return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
+        });
 
         $realizadas = 0;
         $recuperadas = 0;
         $justificadas = 0;
         $noRegistradas = 0;
         $futurasPendientes = 0;
+        $escuelasStats = [];
 
-        foreach ($fechasAEvaluar as $fechaObj) {
-            $fechaYmd = $fechaObj->format('Y-m-d');
-            $diaNombre = $diasSemana[$fechaObj->dayOfWeek];
+        foreach ($clasesAgrupadas as $bloqueItems) {
+            $estados = $bloqueItems->pluck('estado')->unique()->values()->toArray();
+            $primerItem = $bloqueItems->first();
+            $escuelaNombre = !empty($primerItem['escuela']) ? $primerItem['escuela'] : 'Sin Escuela Asignada';
+            $idEscuela = !empty($primerItem['id_escuela']) ? $primerItem['id_escuela'] : 'SIN_ESCUELA';
 
-            // Si es día feriado o receso con horario flexible:
-            // no exigir la planificación teórica ni contar no_realizadas, pero sí sumar las clases efectivamente realizadas (Reserva) ese día
-            if (isset($fechasFeriado[$fechaYmd])) {
-                foreach ($reservasCache as $claveRes => $listaRes) {
-                    if (str_starts_with($claveRes, $fechaYmd . '_')) {
-                        $realizadas += $listaRes->count();
-                    }
-                }
-                continue;
+            $fechaItem = ($primerItem['fecha'] instanceof \Carbon\Carbon)
+                ? $primerItem['fecha']
+                : \Carbon\Carbon::parse($primerItem['fecha']);
+            $fechaItemYmd = $fechaItem->format('Y-m-d');
+            $ahora = \Carbon\Carbon::now();
+            $horaFinStr = $primerItem['hora_fin'] ?? '23:59:59';
+            $fechaHoraFinBloque = \Carbon\Carbon::parse($fechaItemYmd . ' ' . $horaFinStr);
+
+            $esFutura = ($fechaHoraFinBloque >= $ahora);
+
+            if (!isset($escuelasStats[$escuelaNombre])) {
+                $escuelasStats[$escuelaNombre] = [
+                    'id_escuela'     => $idEscuela,
+                    'nombre'         => $escuelaNombre,
+                    'impartidas'     => 0,
+                    'realizadas'     => 0,
+                    'recuperadas'    => 0,
+                    'justificadas'   => 0,
+                    'no_registradas' => 0,
+                    'total'          => 0,
+                    'pct'            => 0,
+                ];
             }
 
-            // Filtrar planificaciones del día
-            $planificacionesDelDia = $planificaciones->filter(function ($plan) use ($diaNombre) {
-                return $plan->modulo && ModulosHelper::normalizarDia($plan->modulo->dia) === $diaNombre;
-            });
-
-            // Agrupar por Espacio y Asignatura (1 clase = 1 bloque docente consecutivo)
-            $clasesAgrupadas = $planificacionesDelDia->groupBy(function ($plan) {
-                return $plan->id_espacio . '_' . $plan->id_asignatura;
-            });
-
-            foreach ($clasesAgrupadas as $grupoKey => $modulosClase) {
-                $primerModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_inicio ?? '')->first();
-                $ultimoModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_termino ?? '')->last();
-
-                if (!$primerModulo || !$primerModulo->modulo || !$ultimoModulo || !$ultimoModulo->modulo) {
-                    continue;
-                }
-                if (empty($primerModulo->modulo->hora_inicio) || empty($ultimoModulo->modulo->hora_termino)) {
-                    continue;
-                }
-
-                try {
-                    $horaInicioClase = Carbon::parse($primerModulo->modulo->hora_inicio);
-                    $horaFinClase    = Carbon::parse($ultimoModulo->modulo->hora_termino);
-                    $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFinClase->format('H:i:s'));
-                } catch (\Throwable $e) {
-                    continue;
-                }
-
-                // 1. Verificar primero si hubo reserva / escaneo en el espacio (o equivalentes) para este bloque
-                // Si hubo reserva (el docente llegó a tiempo o con atraso), la clase SÍ se realizó.
-                $reservaEncontrada = null;
-                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
-                $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
-                $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
-
-                foreach ($espaciosClaseEquiv as $espIdEq) {
-                    $claveReserva = "{$fechaYmd}_{$espIdEq}";
-                    if (isset($reservasCache[$claveReserva])) {
-                        $reservasDelDia = $reservasCache[$claveReserva];
-
-                        // Coincidencia por asignatura
-                        foreach ($reservasDelDia as $r) {
-                            if ($r->id_asignatura == $primerModulo->id_asignatura) {
-                                $reservaEncontrada = $r;
-                                break 2;
-                            }
-                        }
-
-                        // Coincidencia por horario
-                        foreach ($reservasDelDia as $r) {
-                            if (empty($r->hora)) {
-                                continue;
-                            }
-                            try {
-                                $horaAcceso = Carbon::parse($r->hora);
-                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
-                                    $reservaEncontrada = $r;
-                                    break 2;
-                                }
-                            } catch (\Throwable $e) {
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                if ($reservaEncontrada) {
-                    $realizadas++;
-                    continue;
-                }
-
-                // 2. Si no hubo reserva, verificar si esta clase está oficialmente registrada en ClaseNoRealizada
-                $registroCNR = null;
-                foreach ($modulosClase as $mItem) {
-                    foreach ($espaciosClaseEquiv as $espIdEq) {
-                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
-                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
-                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
-                            break 2;
-                        }
-                    }
-                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
-                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
-                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
-                        break;
-                    }
-                }
-
-                if ($registroCNR) {
-                    if ($registroCNR->estado === 'recuperada') {
-                        $recuperadas++;
-                    } elseif ($registroCNR->estado === 'justificado') {
-                        $justificadas++;
-                    } elseif (in_array($registroCNR->estado, ['realizada', 'registrada'], true)) {
-                        $realizadas++;
-                    } else {
-                        $noRegistradas++;
-                    }
-                    continue;
-                }
-
-                if (false) {
-                    $realizadas++;
-                } else {
-                    // Si aún no termina el horario de la clase, queda pendiente
-                    if ($fechaHoraFinClase >= $ahora) {
-                        $futurasPendientes++;
-                    } else {
-                        // Concluyó y no tiene inasistencia oficial registrada en Control de Clases
-                        $realizadas++;
-                    }
-                }
+            // Prioridad para determinar el estado de cumplimiento del bloque de clase:
+            // 1. Si al menos un módulo fue impartido en sala (Realizada), cuenta como realizada.
+            // 2. Si fue recuperada efectivamente con asistencia o confirmación, cuenta como recuperada.
+            // 3. Si fue justificada o feriado, cuenta como justificada.
+            // 4. Si la clase es futura/en curso hoy (planificada o reagendada sin asistencia cuyo horario aún no termina), queda pendiente.
+            // 5. Si está marcada como no registrada o pendiente de recuperación ya vencida, cuenta como no registrada.
+            if (in_array('Realizada', $estados, true)) {
+                $realizadas++;
+                $escuelasStats[$escuelaNombre]['realizadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } elseif (in_array('Recuperada', $estados, true)) {
+                $recuperadas++;
+                $escuelasStats[$escuelaNombre]['recuperadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } elseif (in_array('Justificada', $estados, true) || in_array('Feriado/Justificado', $estados, true)) {
+                $justificadas++;
+                $escuelasStats[$escuelaNombre]['justificadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } elseif (in_array('Planificada', $estados, true) || ($esFutura && in_array('Pendiente de Recuperación', $estados, true))) {
+                $futurasPendientes++;
+            } elseif (in_array('No Registrada', $estados, true) || in_array('Pendiente de Recuperación', $estados, true)) {
+                $noRegistradas++;
+                $escuelasStats[$escuelaNombre]['no_registradas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
+            } else {
+                $realizadas++;
+                $escuelasStats[$escuelaNombre]['realizadas']++;
+                $escuelasStats[$escuelaNombre]['impartidas']++;
+                $escuelasStats[$escuelaNombre]['total']++;
             }
         }
 
-        // 6. Asegurar concordancia total con Control de Clases:
-        // Reusar $clasesNoRealizadas ya precargadas en el paso 2 para no repetir la consulta
-        $cnrsTotales = $clasesNoRealizadas;
-        // Agrupar por fecha, espacio y asignatura para contar 1 por bloque (igual que en Control de Clases)
-        $cnrsBloques = $cnrsTotales->groupBy(function($c) {
-            $fecha = Carbon::parse($c->fecha_clase)->format('Y-m-d');
-            return "{$fecha}_{$c->id_espacio}_{$c->id_asignatura}";
+        // Si no hubo clases evaluadas o $escuelasStats quedó vacío, poblar con las escuelas relativas a la sede del tenant
+        if (empty($escuelasStats)) {
+            try {
+                $tenant = class_exists(\App\Models\Tenant::class) ? \App\Models\Tenant::current() : null;
+                $carrerasSede = \Illuminate\Support\Facades\DB::connection('tenant')->table('carreras')
+                    ->join('area_academicas as aa', 'carreras.id_area_academica', '=', 'aa.id_area_academica')
+                    ->join('facultades as f', 'aa.id_facultad', '=', 'f.id_facultad')
+                    ->when($tenant && $tenant->sede_id, fn ($q) => $q->where('f.id_sede', $tenant->sede_id))
+                    ->select('carreras.id_carrera', 'carreras.nombre', 'aa.nombre_area_academica')
+                    ->get();
+
+                $todasClasesServ = new TodasClasesService();
+                foreach ($carrerasSede as $carr) {
+                    $objCarrera = (object) [
+                        'id_carrera' => $carr->id_carrera,
+                        'nombre' => $carr->nombre,
+                        'areaAcademica' => (object) ['nombre_area_academica' => $carr->nombre_area_academica, 'id_area_academica' => null]
+                    ];
+                    $objAsig = (object) ['carrera' => $objCarrera, 'id_carrera' => $carr->id_carrera];
+                    $escInfo = $todasClasesServ->resolverDatosEscuela($objAsig);
+                    if (!empty($escInfo['nombre']) && !isset($escuelasStats[$escInfo['nombre']])) {
+                        $escuelasStats[$escInfo['nombre']] = [
+                            'id_escuela'     => $escInfo['id'] ?? 'ESC',
+                            'nombre'         => $escInfo['nombre'],
+                            'impartidas'     => 0,
+                            'realizadas'     => 0,
+                            'recuperadas'    => 0,
+                            'justificadas'   => 0,
+                            'no_registradas' => 0,
+                            'total'          => 0,
+                            'pct'            => 0,
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Silencioso si falla
+            }
+        }
+
+        foreach ($escuelasStats as &$esc) {
+            $esc['pct'] = $esc['total'] > 0 ? round(($esc['impartidas'] / $esc['total']) * 100, 1) : 0;
+        }
+        unset($esc);
+
+        uasort($escuelasStats, function ($a, $b) {
+            if ($b['total'] !== $a['total']) {
+                return $b['total'] <=> $a['total'];
+            }
+            return strcmp($a['nombre'], $b['nombre']);
         });
-
-        $cnrBloquesNoRegistradas = 0;
-        $cnrBloquesRecuperadas = 0;
-        $cnrBloquesJustificadas = 0;
-        $cnrBloquesRealizadas = 0;
-
-        foreach ($cnrsBloques as $bloqueKey => $items) {
-            $primerItem = $items->first();
-            $fechaItemYmd = Carbon::parse($primerItem->fecha_clase)->format('Y-m-d');
-            if ($primerItem->estado === 'recuperada') {
-                $cnrBloquesRecuperadas++;
-            } elseif ($primerItem->estado === 'justificado') {
-                $cnrBloquesJustificadas++;
-            } elseif (in_array($primerItem->estado, ['realizada', 'registrada'], true)) {
-                $cnrBloquesRealizadas++;
-            } elseif (!isset($fechasFeriado[$fechaItemYmd])) {
-                $cnrBloquesNoRegistradas++;
-            }
-        }
-
-        // Si el total registrado en Control de Clases es mayor que lo capturado en el loop de planificaciones,
-        // actualizar con el valor oficial del Control de Clases para garantizar coincidencia exacta.
-        if ($cnrBloquesNoRegistradas > $noRegistradas) {
-            $noRegistradas = $cnrBloquesNoRegistradas;
-        }
-        if ($cnrBloquesRecuperadas > $recuperadas) {
-            $recuperadas = $cnrBloquesRecuperadas;
-        }
-        if ($cnrBloquesJustificadas > $justificadas) {
-            $justificadas = $cnrBloquesJustificadas;
-        }
-        if ($cnrBloquesRealizadas > $realizadas) {
-            $realizadas = $cnrBloquesRealizadas;
-        }
 
         $totalImpartidas = $realizadas + $recuperadas + $justificadas;
         $totalClasesEvaluadas = $totalImpartidas + $noRegistradas;
@@ -944,8 +804,9 @@ class DashboardController extends Controller
             'pct_recuperadas'    => $pctRecuperadas,
             'pct_justificadas'   => $pctJustificadas,
             'pct_no_registradas' => $pctNoRegistradas,
+            'escuelas_stats'     => array_values($escuelasStats),
         ];
-        };
+    };
 
         try {
             $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, $computeStatusData);

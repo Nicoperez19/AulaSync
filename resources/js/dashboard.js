@@ -1,6 +1,7 @@
 let activeTabOcupacion = 'todos';
 let activeMainTab = 'ocupacion';
 let statusClasesChartInstance = null;
+let escuelasChartInstance = null;
 window.carouselAutoplayInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
             horariosActualRoute: configEl.dataset.horariosActualRoute,
             ocupacionDatosRoute: configEl.dataset.ocupacionDatosRoute,
             statusClasesRoute: configEl.dataset.statusClasesRoute,
+            controlDocenteRoute: configEl.dataset.controlDocenteRoute || '/clases-no-realizadas',
             horariosModulos: JSON.parse(configEl.dataset.horariosModulos)
         };
     }
@@ -376,6 +378,7 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         .then(html => {
             container.innerHTML = html;
             setTimeout(initStatusClasesChart, 50);
+            setTimeout(initEscuelasChart, 60);
         })
         .catch(err => {
             if (err.name === 'AbortError') return;
@@ -386,6 +389,18 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
             container.style.opacity = '1';
             container.style.pointerEvents = 'auto';
         });
+}
+
+function irAControlDocente(estado) {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
 }
 
 function filtrarStatusClases(rango) {
@@ -406,12 +421,14 @@ function initStatusClasesChart() {
 
     const realizadas = parseInt(canvas.dataset.realizadas || '0');
     const recuperadas = parseInt(canvas.dataset.recuperadas || '0');
+    const justificadas = parseInt(canvas.dataset.justificadas || '0');
+    const totalImpartidasDataset = parseInt(canvas.dataset.totalImpartidas || '0');
     const noRegistradas = parseInt(canvas.dataset.noRegistradas || '0');
     const pctImpartidas = parseFloat(canvas.dataset.pctImpartidas || '0');
     const pctNoRegistradas = parseFloat(canvas.dataset.pctNoRegistradas || '0');
     const totalClases = parseInt(canvas.dataset.totalClases || '0');
 
-    const impartidasTotal = realizadas + recuperadas;
+    const impartidasTotal = totalImpartidasDataset > 0 ? totalImpartidasDataset : (realizadas + recuperadas + justificadas);
 
     const centerValor = document.getElementById('center-label-valor');
     const centerSub = document.getElementById('center-label-sub');
@@ -442,7 +459,20 @@ function initStatusClasesChart() {
             responsive: true,
             maintainAspectRatio: false,
             cutout: '74%',
+            onClick: (event, activeElements) => {
+                if (activeElements && activeElements.length > 0 && totalClases > 0) {
+                    const idx = activeElements[0].index;
+                    if (idx === 0) {
+                        irAControlDocente('impartidas');
+                    } else if (idx === 1) {
+                        irAControlDocente('no_realizada');
+                    }
+                }
+            },
             onHover: (event, activeElements) => {
+                if (canvas) {
+                    canvas.style.cursor = (activeElements && activeElements.length > 0 && totalClases > 0) ? 'pointer' : 'default';
+                }
                 if (!centerValor || !centerSub) return;
                 const centerDetail = document.getElementById('center-label-detail');
 
@@ -498,4 +528,182 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+
+function irAControlDocentePorEscuela(escuela, estado = '') {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (escuela) params.set('escuela', escuela);
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+}
+window.irAControlDocentePorEscuela = irAControlDocentePorEscuela;
+
+function irAControlDocenteConBusqueda(search, estado = '') {
+    const inicio = document.getElementById('status-fecha-inicio')?.value || '';
+    const fin = document.getElementById('status-fecha-fin')?.value || '';
+    const baseUrl = window.DashboardConfig?.controlDocenteRoute || '/clases-no-realizadas';
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (estado) params.set('estado', estado);
+    if (inicio) params.set('fecha_inicio', inicio);
+    if (fin) params.set('fecha_fin', fin);
+    const query = params.toString();
+    window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
+}
+window.irAControlDocenteConBusqueda = irAControlDocenteConBusqueda;
+
+function initEscuelasChart() {
+    const canvas = document.getElementById('chart-escuelas-canvas');
+    if (!canvas || !window.Chart) return;
+
+    let escuelas = [];
+    try {
+        escuelas = JSON.parse(canvas.dataset.escuelas || '[]');
+    } catch (e) {
+        escuelas = [];
+    }
+
+    if (!Array.isArray(escuelas) || escuelas.length === 0) {
+        if (escuelasChartInstance) {
+            escuelasChartInstance.destroy();
+            escuelasChartInstance = null;
+        }
+        return;
+    }
+
+    if (escuelasChartInstance) {
+        escuelasChartInstance.destroy();
+    }
+
+    const fullNames = escuelas.map(e => e.nombre || 'Sin Escuela');
+    const labels = escuelas.map(e => {
+        let n = e.nombre || 'Sin Escuela';
+        const nombreCorto = n.replace(/^Escuela de\s+/i, '');
+        if (nombreCorto.length > 18) {
+            const words = nombreCorto.split(' ');
+            const mid = Math.ceil(words.length / 2);
+            return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')];
+        }
+        return nombreCorto;
+    });
+    const dataImpartidas = escuelas.map(e => e.impartidas || 0);
+    const dataNoRegistradas = escuelas.map(e => e.no_registradas || 0);
+    const dataPcts = escuelas.map(e => e.pct || 0);
+
+    const ctx = canvas.getContext('2d');
+
+    escuelasChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Impartidas / Efectivas',
+                    data: dataImpartidas,
+                    backgroundColor: '#10B981',
+                    hoverBackgroundColor: '#059669',
+                    borderRadius: 5,
+                    maxBarThickness: 24,
+                    categoryPercentage: 0.65,
+                    barPercentage: 0.85,
+                    borderSkipped: false,
+                },
+                {
+                    label: 'No Registradas',
+                    data: dataNoRegistradas,
+                    backgroundColor: '#D12420',
+                    hoverBackgroundColor: '#950101',
+                    borderRadius: 5,
+                    maxBarThickness: 24,
+                    categoryPercentage: 0.65,
+                    barPercentage: 0.85,
+                    borderSkipped: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            onClick: (event, activeElements) => {
+                if (activeElements && activeElements.length > 0) {
+                    const idx = activeElements[0].index;
+                    const escName = fullNames[idx];
+                    const datasetIdx = activeElements[0].datasetIndex;
+                    const estado = datasetIdx === 1 ? 'no_realizada' : 'impartidas';
+                    irAControlDocentePorEscuela(escName, estado);
+                }
+            },
+            onHover: (event, activeElements) => {
+                if (canvas) {
+                    canvas.style.cursor = (activeElements && activeElements.length > 0) ? 'pointer' : 'default';
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        boxHeight: 12,
+                        useBorderRadius: true,
+                        borderRadius: 3,
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleFont: { weight: 'bold', size: 12 },
+                    bodyFont: { size: 11 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: function(context) {
+                            const idx = context[0].dataIndex;
+                            return fullNames[idx];
+                        },
+                        afterBody: function(context) {
+                            const idx = context[0].dataIndex;
+                            return `Cumplimiento: ${dataPcts[idx]}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 10, weight: '600' },
+                        color: '#475569',
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    suggestedMax: 10,
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        precision: 0,
+                        font: { size: 10 },
+                        color: '#64748b',
+                    }
+                }
+            }
+        }
+    });
+}
+
 window.toggleModalReloj = toggleModalReloj;
+window.irAControlDocente = irAControlDocente;
+window.irAControlDocentePorEscuela = irAControlDocentePorEscuela;
+window.irAControlDocenteConBusqueda = irAControlDocenteConBusqueda;
+window.initEscuelasChart = initEscuelasChart;

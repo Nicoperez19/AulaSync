@@ -26,8 +26,9 @@ class TodasClasesExport implements WithMultipleSheets
     protected $search;
     protected $estado;
     protected $ua;
+    protected $escuela;
 
-    public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null)
+    public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null, $ua = null, $escuela = null)
     {
         $this->fechaInicio = $fechaInicio ? Carbon::parse($fechaInicio) : null;
         $this->fechaFin = $fechaFin ? Carbon::parse($fechaFin) : null;
@@ -35,6 +36,7 @@ class TodasClasesExport implements WithMultipleSheets
         $this->search = $search;
         $this->estado = $estado;
         $this->ua = $ua;
+        $this->escuela = $escuela;
     }
 
     public function sheets(): array
@@ -48,6 +50,15 @@ class TodasClasesExport implements WithMultipleSheets
             $this->estado,
             $this->ua
         );
+
+        if (!empty($this->escuela)) {
+            $escNorm = mb_strtolower(trim($this->escuela), 'UTF-8');
+            $clases = $clases->filter(function($item) use ($escNorm) {
+                $itemEsc = mb_strtolower(trim((string)($item['escuela'] ?? '')), 'UTF-8');
+                $itemIdEsc = mb_strtolower(trim((string)($item['id_escuela'] ?? '')), 'UTF-8');
+                return $itemEsc === $escNorm || $itemIdEsc === $escNorm || str_contains($itemEsc, $escNorm) || str_contains($escNorm, $itemEsc);
+            })->values();
+        }
 
         // Si se solicitó un semestre específico, generar la hoja exclusiva de ese semestre
         if (!empty($this->periodo)) {

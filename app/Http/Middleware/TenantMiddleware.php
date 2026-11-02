@@ -114,6 +114,12 @@ class TenantMiddleware
         if ($tenantSet) {
             $tenant = Tenant::current();
 
+            // Si la sede es Concepción y el usuario no es Super Admin, bloquear acceso
+            if ($tenant && strtoupper($tenant->sede_id ?? '') === 'CCP' && Auth::check() && !Auth::user()->isSuperAdmin()) {
+                session()->forget(['tenant_id', 'tenant']);
+                return redirect()->route('sedes.selection')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema.');
+            }
+
             // Verificar si necesita inicialización
             // ¡IMPORTANTE! Si ya estamos en las rutas de inicialización, las exclusiones de arriba (PASO 2)
             // ya habrán retornado $next, así que aquí solo llegan las rutas NO excluidas (ej. dashboard).

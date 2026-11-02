@@ -1047,27 +1047,75 @@ class PlanoDigitalController extends Controller
             // Verificar si el usuario tiene una reserva activa en este espacio
             $reservaActiva = null;
 
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+
             // Si el run_usuario indica desocupación forzosa por falta de info (empieza con FORCE_)
             if (strpos($runUsuario, 'FORCE_') === 0) {
                 // Buscar cualquier reserva activa en este espacio
-                $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+                $reservaActiva = Reserva::whereIn('id_espacio', $espaciosEquiv)
                     ->where('estado', 'activa')
                     ->first();
-
-
             } else {
-                // Búsqueda normal por RUN de usuario
+                // Búsqueda normal por RUN de usuario (soportando alias y ceros a la izquierda)
                 $reservaActiva = Reserva::where(function ($query) use ($runUsuario) {
                     $query
                         ->where('run_profesor', $runUsuario)
-                        ->orWhere('run_solicitante', $runUsuario);
+                        ->orWhere('run_solicitante', $runUsuario)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)])
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)]);
                 })
-                    ->where('id_espacio', $idEspacio)
+                    ->whereIn('id_espacio', $espaciosEquiv)
                     ->where('estado', 'activa')
                     ->first();
             }
 
             if (!$reservaActiva) {
+                // Verificar si es una devolución tardía de una reserva auto-finalizada por el sistema
+                $reservaAutoFinalizada = Reserva::where(function ($query) use ($runUsuario) {
+                    $query
+                        ->where('run_profesor', $runUsuario)
+                        ->orWhere('run_solicitante', $runUsuario)
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)])
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)]);
+                })
+                    ->whereIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'finalizada')
+                    ->where('fecha_reserva', now()->toDateString())
+                    ->whereNotNull('observaciones')
+                    ->where(function ($q) {
+                        $q->where('observaciones', 'LIKE', '%finalizó automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%Finalizada automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%Llave no devuelta%')
+                          ->orWhere('observaciones', 'LIKE', '%tiempo límite excedido%');
+                    })
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+
+                if ($reservaAutoFinalizada) {
+                    $horaActualSalida = now()->format('H:i:s');
+                    $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
+                    if (!str_contains($observacionActual, 'Devolución de llave registrada') && !str_contains($observacionActual, 'devolvió llave de acceso')) {
+                        $nuevaObservacion = "\nDevolución de llave registrada por el docente a las {$horaActualSalida} (devolución tardía tras auto-cierre).";
+                        $reservaAutoFinalizada->observaciones = trim($observacionActual . $nuevaObservacion);
+                        $reservaAutoFinalizada->save();
+                    }
+
+                    // Asegurar que el espacio esté disponible
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+
+                    return response()->json([
+                        'success' => true,
+                        'mensaje' => 'Devolución de llave registrada exitosamente (devolución tardía tras auto-cierre)',
+                        'tardia' => true,
+                        'espacio' => [
+                            'id' => $espacio->id_espacio,
+                            'nombre' => $espacio->nombre_espacio,
+                            'estado' => $espacio->estado
+                        ]
+                    ]);
+                }
+
                 // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
                 if ($espacio->estado === 'Disponible') {
                     return response()->json([
@@ -1217,31 +1265,6 @@ class PlanoDigitalController extends Controller
 
                 // Enviar correo de confirmación de devolución
                 $this->enviarCorreoDevolucion($reservaActiva);
-            }
-
-
-            // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
-            $reservaAutoFinalizada = Reserva::where(function ($query) use ($runUsuario) {
-                $query
-                    ->where('run_profesor', $runUsuario)
-                    ->orWhere('run_solicitante', $runUsuario);
-            })
-                ->where('id_espacio', $idEspacio)
-                ->where('estado', 'finalizada')
-                ->where('fecha_reserva', now()->toDateString())
-                ->whereNotNull('observaciones')
-                ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
-                ->orderBy('updated_at', 'desc')
-                ->first();
-
-            if ($reservaAutoFinalizada) {
-                // El profesor está devolviendo la llave después de que la reserva fue auto-finalizada
-                $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
-                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . now()->format('H:i:s') . '.';
-                $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
-                $reservaAutoFinalizada->save();
-
-
             }
 
             // Cambiar el estado del espacio a disponible
@@ -1702,12 +1725,13 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en este espacio
-            // Usamos una comparación más robusta para el RUN por si existen puntos o guiones en la BD
+            // Usamos una comparación robusta para el RUN y equivalentes de espacio (LA-1 vs LA-01)
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
             $reservaActiva = Reserva::where(function ($query) use ($runUsuario) {
                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
             })
-                ->where('id_espacio', $idEspacio)
+                ->whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
                 ->first();
 
@@ -1823,29 +1847,50 @@ class PlanoDigitalController extends Controller
                     ->where('fecha_reserva', Carbon::today()->toDateString())
                     ->where('estado', 'finalizada')
                     ->where(function ($q) use ($idAsignaturaClase, $numModuloClase) {
+                        if ($numModuloClase !== null) {
+                            $q->where('modulo_inicio', '<=', $numModuloClase)
+                              ->where('modulo_fin', '>=', $numModuloClase);
+                        }
                         if (!empty($idAsignaturaClase)) {
                             $q->where('id_asignatura', $idAsignaturaClase);
-                        }
-                        if ($numModuloClase !== null) {
-                            $q->orWhere(function ($sub) use ($numModuloClase) {
-                                $sub->where('modulo_inicio', '<=', $numModuloClase)
-                                    ->where('modulo_fin', '>=', $numModuloClase);
-                            });
                         }
                     })
                     ->latest('updated_at')
                     ->first();
 
                 if ($reservaFinalizadaHoy) {
-                    if (
-                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Finalizada automáticamente') &&
-                        !str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Devolución de llave registrada')
-                    ) {
-                        $reservaFinalizadaHoy->observaciones = trim(
-                            ($reservaFinalizadaHoy->observaciones ?? '') .
-                            "\nDevolución de llave registrada por el docente a las {$horaActualStr}."
-                        );
-                        $reservaFinalizadaHoy->save();
+                    $esAutoFinalizada = (
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Finalizada automáticamente') ||
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'finalizó automáticamente') ||
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Llave no devuelta') ||
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'tiempo límite excedido')
+                    );
+
+                    if ($esAutoFinalizada) {
+                        if (!str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Devolución de llave registrada') && !str_contains($reservaFinalizadaHoy->observaciones ?? '', 'devolvió llave de acceso')) {
+                            $reservaFinalizadaHoy->observaciones = trim(
+                                ($reservaFinalizadaHoy->observaciones ?? '') .
+                                "\nDevolución de llave registrada por el docente a las {$horaActualStr} (devolución tardía tras auto-cierre)."
+                            );
+                            $reservaFinalizadaHoy->save();
+                        }
+
+                        // Asegurar que el espacio esté disponible
+                        if ($espacio->estado !== 'Disponible') {
+                            $espacio->estado = 'Disponible';
+                            $espacio->save();
+                        }
+
+                        return response()->json([
+                            'tipo' => 'clase_ya_finalizada',
+                            'mensaje' => 'Devolución de llave registrada exitosamente a las ' . substr($horaActualStr, 0, 5) . '. (La sala había sido cerrada automáticamente por el sistema al término del módulo).',
+                            'espacio_disponible' => true,
+                            'reserva' => [
+                                'id_reserva' => $reservaFinalizadaHoy->id_reserva,
+                                'hora_salida' => $horaActualStr,
+                                'espacio' => $espacio->nombre_espacio
+                            ]
+                        ]);
                     }
 
                     return response()->json([
@@ -1861,43 +1906,49 @@ class PlanoDigitalController extends Controller
                 }
             } else {
                 // Si el docente no tiene un nuevo bloque iniciando ahora pero viene a devolver la llave
-                // pocos minutos después de que el sistema auto-finalizara su reserva (tras los 10 min de margen),
+                // después de que el sistema auto-finalizara su reserva previa hoy,
                 // registrar su salida tardía en lugar de abrir una reserva espontánea falsa.
                 $reservaAutoCerradaReciente = Reserva::where(function ($query) use ($runUsuario) {
                     $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
                 })
-                    ->where('id_espacio', $idEspacio)
+                    ->whereIn('id_espacio', $espaciosEquiv)
                     ->where('fecha_reserva', Carbon::today()->toDateString())
                     ->where('estado', 'finalizada')
-                    ->where('observaciones', 'LIKE', '%Finalizada automáticamente%')
+                    ->where(function ($q) {
+                        $q->where('observaciones', 'LIKE', '%Finalizada automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%finalizó automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%Llave no devuelta%')
+                          ->orWhere('observaciones', 'LIKE', '%tiempo límite excedido%');
+                    })
                     ->latest('updated_at')
                     ->first();
 
-                if ($reservaAutoCerradaReciente && !empty($reservaAutoCerradaReciente->hora_salida)) {
-                    $minutosDesdeSalida = Carbon::parse(Carbon::today()->toDateString() . ' ' . $reservaAutoCerradaReciente->hora_salida)
-                        ->diffInMinutes($ahora, false);
-
-                    if ($minutosDesdeSalida >= 0 && $minutosDesdeSalida <= 25) {
-                        if (!str_contains($reservaAutoCerradaReciente->observaciones ?? '', 'Devolución de llave registrada')) {
-                            $reservaAutoCerradaReciente->observaciones = trim(
-                                ($reservaAutoCerradaReciente->observaciones ?? '') .
-                                "\nDevolución de llave registrada por el docente a las {$horaActualStr}."
-                            );
-                            $reservaAutoCerradaReciente->save();
-                        }
-
-                        return response()->json([
-                            'tipo' => 'clase_ya_finalizada',
-                            'mensaje' => 'Salida registrada a las ' . substr($horaActualStr, 0, 5) . '. La reserva ya había finalizado al término del bloque (' . substr($reservaAutoCerradaReciente->hora_salida, 0, 5) . ').',
-                            'espacio_disponible' => false,
-                            'reserva' => [
-                                'id_reserva' => $reservaAutoCerradaReciente->id_reserva,
-                                'hora_salida' => $horaActualStr,
-                                'espacio' => $espacio->nombre_espacio
-                            ]
-                        ]);
+                if ($reservaAutoCerradaReciente) {
+                    if (!str_contains($reservaAutoCerradaReciente->observaciones ?? '', 'Devolución de llave registrada') && !str_contains($reservaAutoCerradaReciente->observaciones ?? '', 'devolvió llave de acceso')) {
+                        $reservaAutoCerradaReciente->observaciones = trim(
+                            ($reservaAutoCerradaReciente->observaciones ?? '') .
+                            "\nDevolución de llave registrada por el docente a las {$horaActualStr} (devolución tardía tras auto-cierre)."
+                        );
+                        $reservaAutoCerradaReciente->save();
                     }
+
+                    // Asegurar que el espacio esté disponible
+                    if ($espacio->estado !== 'Disponible') {
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    }
+
+                    return response()->json([
+                        'tipo' => 'clase_ya_finalizada',
+                        'mensaje' => 'Devolución de llave registrada exitosamente a las ' . substr($horaActualStr, 0, 5) . '. (La sala había sido cerrada automáticamente por el sistema).',
+                        'espacio_disponible' => true,
+                        'reserva' => [
+                            'id_reserva' => $reservaAutoCerradaReciente->id_reserva,
+                            'hora_salida' => $horaActualStr,
+                            'espacio' => $espacio->nombre_espacio
+                        ]
+                    ]);
                 }
             }
 
@@ -2536,6 +2587,12 @@ class PlanoDigitalController extends Controller
                       ->orWhere('run_profesor', $runSinDv)
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    if ($runSinDv) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                    }
+                    if ($runLimpio) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                    }
                 })
                 ->get();
 
@@ -2582,6 +2639,12 @@ class PlanoDigitalController extends Controller
                       ->orWhere('run_profesor', $runSinDv)
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    if ($runSinDv) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                    }
+                    if ($runLimpio) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                    }
                 })
                 ->get();
             foreach ($cnrsHoy as $cnrItem) {

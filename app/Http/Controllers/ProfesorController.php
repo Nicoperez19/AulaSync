@@ -69,8 +69,13 @@ class ProfesorController extends Controller
                 }
             }
 
-            // Verificar que el espacio existe
-            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
+            $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+            $espacio = Espacio::where('id_espacio', $idEspacio)
+                ->orWhereIn('id_espacio', $espaciosEquiv)
+                ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+                ->first();
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -251,8 +256,13 @@ class ProfesorController extends Controller
             $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runProfesor));
             $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
-            // Verificar que el espacio existe
-            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
+            $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+            $espacio = Espacio::where('id_espacio', $idEspacio)
+                ->orWhereIn('id_espacio', $espaciosEquiv)
+                ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+                ->first();
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -323,10 +333,12 @@ class ProfesorController extends Controller
             $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
             $horaConAnticipacion = now()->copy()->addMinutes(30)->format('H:i:s');
             $espacioLimpio = str_replace(['-', ' '], '', $espacio->id_espacio);
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
 
             $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
-                ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
+                       ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($qPrincipal) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -367,8 +379,9 @@ class ProfesorController extends Controller
                 // Buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
                 $hoyFecha = $fechaActual;
                 $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->whereHas('profesorColaborador', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv, $hoyFecha) {
@@ -433,8 +446,9 @@ class ProfesorController extends Controller
 
             $reservaFinalizadaHoy = Reserva::where('fecha_reserva', $fechaActual)
                 ->where('estado', 'finalizada')
-                ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
+                       ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -446,14 +460,12 @@ class ProfesorController extends Controller
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 })
                 ->where(function ($q) use ($idAsignaturaCheck, $numModuloActualCheck) {
+                    if ($numModuloActualCheck !== null) {
+                        $q->where('modulo_inicio', '<=', $numModuloActualCheck)
+                          ->where('modulo_fin', '>=', $numModuloActualCheck);
+                    }
                     if (!empty($idAsignaturaCheck)) {
                         $q->where('id_asignatura', $idAsignaturaCheck);
-                    }
-                    if ($numModuloActualCheck !== null) {
-                        $q->orWhere(function ($sub) use ($numModuloActualCheck) {
-                            $sub->where('modulo_inicio', '<=', $numModuloActualCheck)
-                                ->where('modulo_fin', '>=', $numModuloActualCheck);
-                        });
                     }
                 })
                 ->latest('updated_at')
@@ -476,8 +488,9 @@ class ProfesorController extends Controller
 
             if (!$esTemporal && $programacion) {
                 $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->where(function ($qPrincipal) use ($programacion, $profesor, $runProfesor, $runLimpio, $runSinDv) {
@@ -535,8 +548,9 @@ class ProfesorController extends Controller
                 // Clases temporales (colaborador)
                 $idColab = $planColaborador->id_profesor_colaborador;
                 $planificacionesMismoBloque = \App\Models\PlanificacionProfesorColaborador::with('modulo')
-                    ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
                     ->where(function ($q) use ($idColab, $profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {
@@ -643,11 +657,69 @@ class ProfesorController extends Controller
             // Enviar correo de confirmación de uso de sala
             app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
 
-            // Limpiar registros incorrectos de clases no realizadas
+            // Si es una recuperación de clase, actualizar de inmediato los registros correspondientes
+            if ($infoRecuperacion) {
+                try {
+                    $modulosRec = $infoRecuperacion['modulos_ids'] ?? [$infoRecuperacion['id_modulo']];
+                    \App\Models\RecuperacionClase::whereDate('fecha_reagendada', $fechaActual)
+                        ->where(function ($q) use ($profesor, $runProfesor, $runLimpio) {
+                            $q->where('run_profesor', $profesor->run_profesor)
+                              ->orWhere('run_profesor', $runProfesor)
+                              ->orWhere('run_profesor', $runLimpio);
+                        })
+                        ->where(function ($q) use ($modulosRec, $idAsignatura) {
+                            if (!empty($idAsignatura)) {
+                                $q->where('id_asignatura', $idAsignatura);
+                            }
+                            $q->where(function ($sq) use ($modulosRec) {
+                                foreach ($modulosRec as $mRec) {
+                                    $sq->orWhere('id_modulo_reagendado', $mRec)
+                                       ->orWhere('id_modulo_reagendado', 'LIKE', "%{$mRec}%");
+                                }
+                            });
+                        })
+                        ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada'])
+                        ->update(['estado' => 'realizada']);
+
+                    \App\Models\ClaseNoRealizada::whereDate('fecha_clase', $fechaActual)
+                        ->where(function ($q) use ($profesor, $runProfesor, $runLimpio) {
+                            $q->where('run_profesor', $profesor->run_profesor)
+                              ->orWhere('run_profesor', $runProfesor)
+                              ->orWhere('run_profesor', $runLimpio)
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        })
+                        ->where(function ($q) use ($modulosRec, $idAsignatura) {
+                            if (!empty($idAsignatura)) {
+                                $q->where('id_asignatura', $idAsignatura);
+                            }
+                            $q->where(function ($sq) use ($modulosRec) {
+                                foreach ($modulosRec as $mRec) {
+                                    $sq->orWhere('id_modulo', $mRec)
+                                       ->orWhere('id_modulo', 'LIKE', "%{$mRec}%");
+                                }
+                            });
+                        })
+                        ->whereIn('estado', ['pendiente', 'programada'])
+                        ->get()
+                        ->each(function ($cnrItem) {
+                            $horaScan = now()->format('H:i:s');
+                            $obs = $cnrItem->observaciones ?? '';
+                            $nota = "✓ CLASE RECUPERADA - Docente inició clase por código QR a las {$horaScan}";
+                            $cnrItem->update([
+                                'estado' => 'recuperada',
+                                'observaciones' => !empty($obs) && !str_contains($obs, 'CLASE RECUPERADA') ? "{$obs} | {$nota}" : ($obs ?: $nota),
+                            ]);
+                        });
+                } catch (\Throwable $e) {
+                    Log::warning('Error actualizando estados de recuperación en crearReservaProfesorAutomatica: ' . $e->getMessage());
+                }
+            }
+
+            // Limpiar registros incorrectos de clases no realizadas con hora real de ingreso
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
-                $moduloInicioObj->hora_inicio ?? null,
+                now()->format('H:i:s'),
                 $profesor->run_profesor
             );
 

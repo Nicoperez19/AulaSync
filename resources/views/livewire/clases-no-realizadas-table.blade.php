@@ -96,7 +96,7 @@
             </h3>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
             <!-- Semestre -->
             <div>
                 <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Semestre</label>
@@ -123,6 +123,26 @@
                            placeholder="Profesor, asignatura, RUN o espacio...">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
+            </div>
+
+            <!-- Escuela -->
+            <div>
+                <label for="escuela_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Escuela</label>
+                <select wire:model.live="escuela" 
+                        id="escuela_filtro"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
+                    <option value="">Todas las Escuelas</option>
+                    @if(isset($escuelasDisponibles) && count($escuelasDisponibles) > 0)
+                        @foreach($escuelasDisponibles as $esc)
+                            @php
+                                $escNombreCorto = preg_replace('/^Escuela de\s+/i', '', $esc);
+                            @endphp
+                            <option value="{{ $esc }}" title="{{ $esc }}">
+                                {{ $escNombreCorto }}
+                            </option>
+                        @endforeach
+                    @endif
+                </select>
             </div>
 
             <!-- Unidad Académica (UA) -->
@@ -153,7 +173,7 @@
                     <option value="impartidas">Todas las impartidas / efectivas</option>
                     <option value="realizada">Registrada (Clase realizada)</option>
                     <option value="recuperada">Recuperada</option>
-                    <option value="pendiente">Pendiente de recuperación</option>
+                    <option value="pendiente">Pendiente de recuperación (Reagendada)</option>
                     <option value="justificado">Justificado</option>
                 </select>
             </div>
@@ -197,7 +217,7 @@
             <i class="fas fa-clipboard-user"></i>
             <span>Auditorías</span>
         </a>
-        <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua])) }}"
+        <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search, 'ua' => $ua, 'escuela' => $escuela])) }}"
            class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las clases</span>
@@ -292,7 +312,7 @@
                                     $moduloInicio = preg_replace('/^[A-Z]{2}\./', '', $modulos[0]);
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
-                                <tr class="table-row hover:bg-gray-50 {{ $clase['estado'] === 'Pendiente de Recuperación' ? 'bg-yellow-50' : '' }}">
+                                <tr class="table-row hover:bg-gray-50">
                                     <td class="px-3 py-4 text-center w-10">
                                         @if($clase['estado'] === 'No Registrada')
                                             <input type="checkbox" 
@@ -306,10 +326,6 @@
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1 justify-center">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
-                                            @if($clase['estado'] === 'Pendiente de Recuperación')
-                                                <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
-                                                   title="Clase reagendada - Pendiente de recuperación"></i>
-                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 w-32">

@@ -249,10 +249,20 @@ class ClaseNoRealizada extends Model
         $query = static::whereDate('fecha_clase', $fechaReserva);
 
         if ($runProfesor) {
-            $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
-            $query->where(function($q) use ($runProfesor, $runLimpio) {
-                $q->where('run_profesor', $runProfesor)
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+            $runLimpio = strtoupper(preg_replace('/[^0-9kK]/', '', $runProfesor));
+            $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
+            $posibles = array_unique(array_filter([$runProfesor, $runLimpio, $runSinDv]));
+
+            $query->where(function($q) use ($posibles, $runLimpio, $runSinDv) {
+                $q->whereIn('run_profesor', $posibles)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                if ($runSinDv) {
+                    $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                }
+                if ($runLimpio) {
+                    $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                }
             });
         } else {
             $query->where('id_espacio', $idEspacio);
@@ -266,10 +276,20 @@ class ClaseNoRealizada extends Model
             $rcQuery = \App\Models\RecuperacionClase::whereDate('fecha_reagendada', $fechaReserva)
                 ->whereIn('estado', ['reagendada', 'realizada']);
             if ($runProfesor) {
-                $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
-                $rcQuery->where(function($q) use ($runProfesor, $runLimpio) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                $runLimpio = strtoupper(preg_replace('/[^0-9kK]/', '', $runProfesor));
+                $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
+                $posibles = array_unique(array_filter([$runProfesor, $runLimpio, $runSinDv]));
+
+                $rcQuery->where(function($q) use ($posibles, $runLimpio, $runSinDv) {
+                    $q->whereIn('run_profesor', $posibles)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    if ($runSinDv) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                    }
+                    if ($runLimpio) {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                    }
                 });
             }
             foreach ($rcQuery->get() as $rc) {
@@ -478,6 +498,7 @@ class ClaseNoRealizada extends Model
 
         $runLimpio = $runProfesor ? strtoupper(preg_replace('/[^0-9Kk]/', '', $runProfesor)) : null;
         $runSinDv = ($runLimpio && strlen($runLimpio) > 1) ? substr($runLimpio, 0, -1) : $runLimpio;
+        $posiblesRuns = array_unique(array_filter([$runProfesor, $runLimpio, $runSinDv]));
 
         // Candidatos de espacio para comparación flexible (alias y prefijos de sede)
         $candidatosEspacio = [];
@@ -513,32 +534,57 @@ class ClaseNoRealizada extends Model
             $targetClean = strtoupper(str_replace(['-', ' '], '', (string) $espTarget));
             $targetSinPref = strtoupper(preg_replace('/^[A-Z]{2,3}[\-_]?/', '', (string) $espTarget));
 
-            return in_array($targetUpper, $candidatosEspacio)
+            if (in_array($targetUpper, $candidatosEspacio)
                 || in_array($targetClean, $candidatosEspacio)
-                || ($targetSinPref !== '' && in_array($targetSinPref, $candidatosEspacio));
+                || ($targetSinPref !== '' && in_array($targetSinPref, $candidatosEspacio))) {
+                return true;
+            }
+
+            try {
+                $targetEquivs = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes((string) $espTarget);
+                foreach ($targetEquivs as $te) {
+                    $teUpper = strtoupper(trim($te));
+                    $teClean = strtoupper(str_replace(['-', ' '], '', $te));
+                    if (in_array($teUpper, $candidatosEspacio) || in_array($teClean, $candidatosEspacio)) {
+                        return true;
+                    }
+                }
+            } catch (\Throwable $e) {}
+
+            return false;
+        };
+
+        // Filtro flexible de RUN que soporta con/sin DV, formateado o sin formato
+        $filtroRun = function ($q) use ($posiblesRuns, $runLimpio, $runSinDv) {
+            $q->where(function ($sub) use ($posiblesRuns, $runLimpio, $runSinDv) {
+                $sub->whereIn('run_profesor', $posiblesRuns)
+                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                    ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+
+                if ($runSinDv) {
+                    $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runSinDv . '%']);
+                }
+                if ($runLimpio) {
+                    $sub->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') LIKE ?", [$runLimpio . '%']);
+                }
+            });
         };
 
         $itemsPorAsignatura = [];
 
         // 1. Consultar RecuperacionClase para esa fecha_reagendada
         try {
-            $rcQuery = \App\Models\RecuperacionClase::with(['asignatura', 'moduloReagendado'])
+            $rcQuery = \App\Models\RecuperacionClase::with(['asignatura', 'moduloReagendado', 'espacioReagendado', 'espacio'])
                 ->whereDate('fecha_reagendada', $fechaStr)
                 ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada']);
 
             if ($runLimpio) {
-                $rcQuery->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                });
+                $rcQuery->where($filtroRun);
             }
 
             foreach ($rcQuery->get() as $rc) {
                 $espRc = $rc->id_espacio_reagendado ?: $rc->id_espacio;
-                if (!$espacioCoincide($espRc)) {
+                if (!$espacioCoincide($espRc) && !$espacioCoincide($rc->espacioReagendado?->id_espacio) && !$espacioCoincide($rc->espacio?->id_espacio)) {
                     continue;
                 }
                 $idAsig = $rc->id_asignatura ?: 'RECUPERACION';
@@ -569,7 +615,7 @@ class ClaseNoRealizada extends Model
 
         // 2. Consultar ClaseNoRealizada en estado pendiente / recuperada para esa fecha
         try {
-            $cnrQuery = static::with(['asignatura', 'modulo'])
+            $cnrQuery = static::with(['asignatura', 'modulo', 'espacio'])
                 ->whereDate('fecha_clase', $fechaStr)
                 ->where(function ($q) {
                     $q->whereIn('estado', ['pendiente', 'recuperada', 'programada'])
@@ -577,17 +623,11 @@ class ClaseNoRealizada extends Model
                 });
 
             if ($runLimpio) {
-                $cnrQuery->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                });
+                $cnrQuery->where($filtroRun);
             }
 
             foreach ($cnrQuery->get() as $cnr) {
-                if (!$espacioCoincide($cnr->id_espacio)) {
+                if (!$espacioCoincide($cnr->id_espacio) && !$espacioCoincide($cnr->espacio?->id_espacio)) {
                     continue;
                 }
                 $idAsig = $cnr->id_asignatura ?: 'RECUPERACION';
@@ -645,8 +685,20 @@ class ClaseNoRealizada extends Model
                 $nums = array_keys($sec);
                 $modIni = reset($nums);
                 $modFin = end($nums);
-                $hIni = $horariosDia[$modIni]['inicio'] ?? '08:10:00';
-                $hFin = $horariosDia[$modFin]['fin'] ?? '09:00:00';
+
+                // Intentar obtener horarios exactos de la base de datos (tabla modulos)
+                $hIni = null;
+                $hFin = null;
+                try {
+                    $modulosDb = \App\Models\Modulo::whereIn('id_modulo', array_values($sec))->get();
+                    if ($modulosDb->isNotEmpty()) {
+                        $hIni = $modulosDb->sortBy('hora_inicio')->first()?->hora_inicio;
+                        $hFin = $modulosDb->sortByDesc('hora_termino')->first()?->hora_termino;
+                    }
+                } catch (\Throwable $e) {}
+
+                $hIni = $hIni ?: ($horariosDia[$modIni]['inicio'] ?? '08:10:00');
+                $hFin = $hFin ?: ($horariosDia[$modFin]['fin'] ?? '09:00:00');
 
                 if ($horaActual !== null) {
                     $horaLimpia = strlen($horaActual) <= 8 ? ($fechaStr . ' ' . $horaActual) : $horaActual;
@@ -654,8 +706,9 @@ class ClaseNoRealizada extends Model
                     $hIniCarbon = Carbon::parse($fechaStr . ' ' . $hIni);
                     $hIniConMargen = $hIniCarbon->copy()->subMinutes($minutosAnticipacion);
                     $hFinCarbon = Carbon::parse($fechaStr . ' ' . $hFin);
+                    $hFinConMargen = $hFinCarbon->copy()->addMinutes(30);
 
-                    if ($hActualCarbon->lt($hIniConMargen) || $hActualCarbon->gt($hFinCarbon)) {
+                    if ($hActualCarbon->lt($hIniConMargen) || $hActualCarbon->gt($hFinConMargen)) {
                         continue;
                     }
                 }
@@ -681,6 +734,17 @@ class ClaseNoRealizada extends Model
                     'tipo' => 'clase_reagendada',
                 ];
             }
+        }
+
+        if (count($bloquesCandidatos) > 1 && $horaActual !== null) {
+            $horaLimpia = strlen($horaActual) <= 8 ? ($fechaStr . ' ' . $horaActual) : $horaActual;
+            $hActualCarbon = Carbon::parse($horaLimpia);
+            // Ordenar candidatos por proximidad al inicio
+            usort($bloquesCandidatos, function ($a, $b) use ($fechaStr, $hActualCarbon) {
+                $diffA = abs($hActualCarbon->diffInMinutes(Carbon::parse($fechaStr . ' ' . $a['hora_inicio']), false));
+                $diffB = abs($hActualCarbon->diffInMinutes(Carbon::parse($fechaStr . ' ' . $b['hora_inicio']), false));
+                return $diffA <=> $diffB;
+            });
         }
 
         return $bloquesCandidatos[0] ?? null;

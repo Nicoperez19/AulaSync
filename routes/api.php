@@ -169,6 +169,17 @@ Route::get('/keep-alive', function () {
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
+        $tenantId = tenant_id() ?? session('tenant_id') ?? null;
+        if (!$tenantId) {
+            $host = request()->getHost();
+            $t = \App\Models\Tenant::where('domain', $host)
+                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->first();
+            if ($t) {
+                $t->makeCurrent();
+            }
+        }
+
         if (!empty($espacio)) {
             $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
             $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
@@ -194,9 +205,11 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
         $espacioLimpio = str_replace(['-', ' '], '', $espacio);
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio);
         $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
-            ->where(function ($eq) use ($espacio, $espacioLimpio) {
+            ->where(function ($eq) use ($espacio, $espacioLimpio, $espaciosEquiv) {
                 $eq->where('id_espacio', $espacio)
+                   ->orWhereIn('id_espacio', $espaciosEquiv)
                    ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
             })
             ->where(function ($qPrincipal) use ($usuario, $runLimpio, $runSinDv) {
@@ -314,8 +327,9 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
 
             $reservaFinalizada = \App\Models\Reserva::where('fecha_reserva', $hoyFecha)
                 ->where('estado', 'finalizada')
-                ->where(function ($q) use ($espacio, $espacioLimpio) {
+                ->where(function ($q) use ($espacio, $espacioLimpio, $espaciosEquiv) {
                     $q->where('id_espacio', $espacio)
+                      ->orWhereIn('id_espacio', $espaciosEquiv)
                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                 })
                 ->where(function ($q) use ($usuario, $runLimpio, $runSinDv) {
@@ -326,14 +340,12 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 })
                 ->where(function ($q) use ($modulosInfo, $numModulo) {
+                    if ($numModulo !== null) {
+                        $q->where('modulo_inicio', '<=', $numModulo)
+                          ->where('modulo_fin', '>=', $numModulo);
+                    }
                     if (!empty($modulosInfo['id_asignatura'])) {
                         $q->where('id_asignatura', $modulosInfo['id_asignatura']);
-                    }
-                    if ($numModulo !== null) {
-                        $q->orWhere(function ($sub) use ($numModulo) {
-                            $sub->where('modulo_inicio', '<=', $numModulo)
-                                ->where('modulo_fin', '>=', $numModulo);
-                        });
                     }
                 })
                 ->latest('updated_at')

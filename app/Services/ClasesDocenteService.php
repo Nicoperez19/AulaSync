@@ -9,6 +9,7 @@ use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\ProfesorColaborador;
 use App\Models\Reserva;
+use App\Models\RecuperacionClase;
 use App\Models\SesionAsistencia;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -125,13 +126,23 @@ class ClasesDocenteService
             return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
         });
 
+        // Si hoy no tiene planificación habitual, verificar si tiene una clase reagendada para hoy
+        $recuperacionHoy = null;
+        if (!$planHoy) {
+            $recuperacionHoy = RecuperacionClase::whereDate('fecha_reagendada', $hoy->format('Y-m-d'))
+                ->where('id_asignatura', $asig->id_asignatura)
+                ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada'])
+                ->with(['espacioReagendado', 'espacio', 'moduloReagendado'])
+                ->first();
+        }
+
         // Si hoy no tiene planificación, obtener el espacio habitual asignado al curso
         $planHabitual = $asig->planificaciones->first(function ($p) {
             return $p->espacio !== null;
         });
 
-        $espacioPlanificado = $planHoy?->espacio ?? $planHabitual?->espacio;
-        $moduloPlanificado = $planHoy?->modulo;
+        $espacioPlanificado = $planHoy?->espacio ?? ($recuperacionHoy?->espacioReagendado ?: ($recuperacionHoy?->espacio ?? $planHabitual?->espacio));
+        $moduloPlanificado = $planHoy?->modulo ?? $recuperacionHoy?->moduloReagendado;
 
         // Verificar si el docente está en la sala (reserva activa para este espacio o asignatura)
         $reservaActiva = $reservasActivas->first(function ($r) use ($asig, $espacioPlanificado) {
@@ -166,10 +177,10 @@ class ClasesDocenteService
             'id_carrera' => $asig->id_carrera,
             'area_academica' => $asig->carrera?->id_area_academica,
             'total_inscritos' => $tieneTablas && $asig->relationLoaded('estudiantes') ? $asig->estudiantes->count() : 0,
-            'tiene_clase_hoy' => $planHoy !== null,
+            'tiene_clase_hoy' => ($planHoy !== null) || ($recuperacionHoy !== null),
             'espacio_planificado' => $this->obtenerEspacioFormateado($espacioPlanificado),
             'espacio_id' => $espacioPlanificado?->id_espacio,
-            'modulo_planificado' => $moduloPlanificado ? "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})" : null,
+            'modulo_planificado' => $moduloPlanificado ? ((!$planHoy && $recuperacionHoy ? "Reagendada - " : "") . "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})") : ((!$planHoy && $recuperacionHoy) ? "Clase Reagendada" : null),
             'en_sala' => $reservaActiva !== null,
             'reserva_activa' => $reservaActiva,
             'espacio_actual' => $this->obtenerEspacioFormateado($reservaActiva?->espacio),
@@ -188,12 +199,21 @@ class ClasesDocenteService
             return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
         });
 
+        $recuperacionHoyColab = null;
+        if (!$planHoy && $colab->id_asignatura) {
+            $recuperacionHoyColab = RecuperacionClase::whereDate('fecha_reagendada', $hoy->format('Y-m-d'))
+                ->where('id_asignatura', $colab->id_asignatura)
+                ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada'])
+                ->with(['espacioReagendado', 'espacio', 'moduloReagendado'])
+                ->first();
+        }
+
         $planHabitual = $colab->planificaciones->first(function ($p) {
             return $p->espacio !== null;
         });
 
-        $espacioPlanificado = $planHoy?->espacio ?? $planHabitual?->espacio;
-        $moduloPlanificado = $planHoy?->modulo;
+        $espacioPlanificado = $planHoy?->espacio ?? ($recuperacionHoyColab?->espacioReagendado ?: ($recuperacionHoyColab?->espacio ?? $planHabitual?->espacio));
+        $moduloPlanificado = $planHoy?->modulo ?? $recuperacionHoyColab?->moduloReagendado;
 
         $reservaActiva = $reservasActivas->first(function ($r) use ($colab, $espacioPlanificado) {
             if ($colab->id_asignatura && $r->id_asignatura === $colab->id_asignatura) {
@@ -231,10 +251,10 @@ class ClasesDocenteService
             'id_carrera' => $colab->asignatura?->id_carrera,
             'area_academica' => $colab->asignatura?->carrera?->id_area_academica,
             'total_inscritos' => $totalInscritos,
-            'tiene_clase_hoy' => $planHoy !== null,
+            'tiene_clase_hoy' => ($planHoy !== null) || ($recuperacionHoyColab !== null),
             'espacio_planificado' => $this->obtenerEspacioFormateado($espacioPlanificado),
             'espacio_id' => $espacioPlanificado?->id_espacio,
-            'modulo_planificado' => $moduloPlanificado ? "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})" : null,
+            'modulo_planificado' => $moduloPlanificado ? ((!$planHoy && $recuperacionHoyColab ? "Reagendada - " : "") . "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})") : ((!$planHoy && $recuperacionHoyColab) ? "Clase Reagendada" : null),
             'en_sala' => $reservaActiva !== null,
             'reserva_activa' => $reservaActiva,
             'espacio_actual' => $this->obtenerEspacioFormateado($reservaActiva?->espacio),

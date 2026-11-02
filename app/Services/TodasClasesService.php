@@ -6,7 +6,9 @@ use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ProfesorColaborador;
 use App\Models\ClaseNoRealizada;
+use App\Models\RecuperacionClase;
 use App\Models\Reserva;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\DiaFeriado;
 use App\Models\Modulo;
 use App\Models\SesionAsistencia;
@@ -22,6 +24,8 @@ class TodasClasesService
     protected $reservasCache = [];
     protected $reservasPorFechaCache = [];
     protected $sesionesAsistenciaCache = [];
+    protected $recuperacionesPorOriginalCache = [];
+    protected $recuperacionesPorReagendadaCache = [];
 
     /**
      * Obtener todas las clases (planificadas, realizadas y no realizadas)
@@ -147,12 +151,128 @@ class TodasClasesService
         foreach ($todasClasesNoRealizadas as $clase) {
             $fecha = Carbon::parse($clase->fecha_clase)->format('Y-m-d');
             $runNorm = $this->normalizeRun($clase->run_profesor);
-            $modulos = explode(',', $clase->id_modulo);
+            $modulos = explode(',', (string) $clase->id_modulo);
+            $espaciosEq = EspacioAliasHelper::obtenerEquivalentes($clase->id_espacio);
+            $asigId = (string) ($clase->id_asignatura ?? '');
+
             foreach ($modulos as $mod) {
                 $modTrim = trim($mod);
-                $key = "{$fecha}_{$clase->id_espacio}_{$modTrim}_{$runNorm}";
-                $this->clasesNoRealizadasCache[$key] = $clase;
+                if ($modTrim === '') continue;
+                $modNum = preg_replace('/^[A-Z]{2}\./', '', $modTrim);
+
+                foreach ($espaciosEq as $espEq) {
+                    $this->clasesNoRealizadasCache["{$fecha}_{$espEq}_{$modTrim}_{$runNorm}"] = $clase;
+                    $this->clasesNoRealizadasCache["{$fecha}_{$espEq}_{$modNum}_{$runNorm}"] = $clase;
+                }
+                if ($asigId !== '') {
+                    $this->clasesNoRealizadasCache["{$fecha}_{$asigId}_{$modTrim}_{$runNorm}"] = $clase;
+                    $this->clasesNoRealizadasCache["{$fecha}_{$asigId}_{$modNum}_{$runNorm}"] = $clase;
+                    $this->clasesNoRealizadasCache["{$fecha}_{$asigId}_{$runNorm}"] = $clase;
+                }
+                if ($runNorm !== '') {
+                    $this->clasesNoRealizadasCache["{$fecha}_{$runNorm}_{$modTrim}"] = $clase;
+                    $this->clasesNoRealizadasCache["{$fecha}_{$runNorm}_{$modNum}"] = $clase;
+                }
             }
+        }
+
+        // ── 1.1 CACHE DE RECUPERACIONES / CLASES REAGENDADAS ──
+        $todasRecuperaciones = collect();
+        $this->recuperacionesPorOriginalCache = [];
+        $this->recuperacionesPorReagendadaCache = [];
+        $recuperacionesUsadasIds = [];
+
+        try {
+            $fIniStr = $fechaInicio->toDateString();
+            $fFinStr = $fechaFin->toDateString();
+
+            $todasRecuperaciones = RecuperacionClase::with([
+                    'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,seccion,id_carrera,periodo',
+                    'profesor:run_profesor,name,id_carrera,id_area_academica',
+                ])
+                ->where(function ($q) use ($fIniStr, $fFinStr) {
+                    $q->whereBetween('fecha_reagendada', [$fIniStr, $fFinStr])
+                      ->orWhereBetween('fecha_clase_original', [$fIniStr, $fFinStr])
+                      ->orWhere(function($sub) use ($fIniStr, $fFinStr) {
+                          $sub->whereDate('fecha_reagendada', '>=', $fIniStr)
+                              ->whereDate('fecha_reagendada', '<=', $fFinStr);
+                      })
+                      ->orWhere(function($sub) use ($fIniStr, $fFinStr) {
+                          $sub->whereDate('fecha_clase_original', '>=', $fIniStr)
+                              ->whereDate('fecha_clase_original', '<=', $fFinStr);
+                      });
+                })
+                ->get();
+
+            foreach ($todasRecuperaciones as $rc) {
+                $runNorm = $this->normalizeRun($rc->run_profesor);
+                $asigId = (string) ($rc->id_asignatura ?? '');
+
+                // Indexar por fecha original (la clase fue movida a otra fecha)
+                if ($rc->fecha_clase_original) {
+                    $fOrig = Carbon::parse($rc->fecha_clase_original)->format('Y-m-d');
+                    $modsOrig = array_map('trim', explode(',', (string) $rc->id_modulo_original));
+                    $espaciosOrig = EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio);
+                    if ($rc->id_espacio_reagendado) {
+                        $espaciosOrig = array_unique(array_merge($espaciosOrig, EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio_reagendado)));
+                    }
+
+                    foreach ($modsOrig as $mOrig) {
+                        if ($mOrig === '') continue;
+                        $mNum = preg_replace('/^[A-Z]{2}\./', '', $mOrig);
+                        foreach ($espaciosOrig as $espO) {
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$espO}_{$mOrig}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$espO}_{$mNum}_{$runNorm}"] = $rc;
+                        }
+                        if ($asigId !== '') {
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$asigId}_{$mOrig}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$asigId}_{$mNum}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$asigId}_{$runNorm}"] = $rc;
+                        }
+                        if ($runNorm !== '') {
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}_{$mOrig}"] = $rc;
+                            $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}_{$mNum}"] = $rc;
+                        }
+                    }
+                    if ($runNorm !== '' && empty($this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}"])) {
+                        $this->recuperacionesPorOriginalCache["{$fOrig}_{$runNorm}"] = $rc;
+                    }
+                }
+
+                // Indexar por fecha reagendada (la nueva fecha programada)
+                if ($rc->fecha_reagendada) {
+                    $fReag = Carbon::parse($rc->fecha_reagendada)->format('Y-m-d');
+                    $espReag = $rc->id_espacio_reagendado ?: $rc->id_espacio;
+                    $modsReag = array_map('trim', explode(',', (string) $rc->id_modulo_reagendado));
+                    $espaciosReag = EspacioAliasHelper::obtenerEquivalentes($espReag);
+                    if ($rc->id_espacio) {
+                        $espaciosReag = array_unique(array_merge($espaciosReag, EspacioAliasHelper::obtenerEquivalentes($rc->id_espacio)));
+                    }
+
+                    foreach ($modsReag as $mReag) {
+                        if ($mReag === '') continue;
+                        $mNum = preg_replace('/^[A-Z]{2}\./', '', $mReag);
+                        foreach ($espaciosReag as $espR) {
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$espR}_{$mReag}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$espR}_{$mNum}_{$runNorm}"] = $rc;
+                        }
+                        if ($asigId !== '') {
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$asigId}_{$mReag}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$asigId}_{$mNum}_{$runNorm}"] = $rc;
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$asigId}_{$runNorm}"] = $rc;
+                        }
+                        if ($runNorm !== '') {
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}_{$mReag}"] = $rc;
+                            $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}_{$mNum}"] = $rc;
+                        }
+                    }
+                    if ($runNorm !== '' && empty($this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}"])) {
+                        $this->recuperacionesPorReagendadaCache["{$fReag}_{$runNorm}"] = $rc;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Continuar si hay error o tabla ausente
         }
 
         // ── 2. CACHE DE RESERVAS (POR FECHA+ESPACIO Y POR FECHA PARA SALAS PARALELAS / CAMBIOS DE SALA / ESPONTÁNEAS) ──
@@ -255,8 +375,9 @@ class TodasClasesService
                 ->whereNotNull('h.periodo')
                 ->select('pa.id_asignatura', 'h.periodo', 'pa.fecha_fin_vigencia')
                 ->get();
+            $fIniStrCheck = $fechaInicio ? $fechaInicio->toDateString() : null;
             foreach ($asigPeriodosRows as $apr) {
-                if ($apr->periodo === $periodoActualReal && $apr->fecha_fin_vigencia !== null) {
+                if ($apr->periodo === $periodoActualReal && $apr->fecha_fin_vigencia !== null && $fIniStrCheck && $apr->fecha_fin_vigencia < $fIniStrCheck) {
                     continue;
                 }
                 $periodosPorAsignatura[$apr->id_asignatura][$apr->periodo] = true;
@@ -293,7 +414,17 @@ class TodasClasesService
             ->whereHas('horario.profesor');
 
         if ($periodo) {
-            if ($periodo === $periodoActualReal && $tieneVigenciaPlan) {
+            if ($tieneVigenciaPlan && $fechaInicio && $fechaFin) {
+                $fIniStr = $fechaInicio->toDateString();
+                $fFinStr = $fechaFin->toDateString();
+                $query->where(function ($vq) use ($fIniStr) {
+                    $vq->whereNull('fecha_fin_vigencia')
+                       ->orWhere('fecha_fin_vigencia', '>=', $fIniStr);
+                })->where(function ($vq) use ($fFinStr) {
+                    $vq->whereNull('fecha_inicio_vigencia')
+                       ->orWhere('fecha_inicio_vigencia', '<=', $fFinStr);
+                });
+            } elseif ($periodo === $periodoActualReal && $tieneVigenciaPlan) {
                 $query->whereNull('fecha_fin_vigencia');
             }
             $query->whereHas('horario', function($q) use ($periodo) {
@@ -336,6 +467,7 @@ class TodasClasesService
         $query->chunk(100, function($planificaciones) use (
             &$clasesData,
             &$clasesNoRealizadasUsadasIds,
+            &$recuperacionesUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
             &$asignaturasValidasPeriodo,
@@ -384,7 +516,7 @@ class TodasClasesService
                     $limPlan = \App\Helpers\SemesterHelper::getLimitesPeriodo($periodoPlan, $periodosModels);
                     $iniSemPlan = $limPlan['inicio']->format('Y-m-d');
                     $finSemPlan = $limPlan['fin']->format('Y-m-d');
-                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan || empty($planificacion->fecha_fin_vigencia)) {
+                    if (!$inicioVigencia || $inicioVigencia < $iniSemPlan) {
                         $inicioVigencia = $iniSemPlan;
                     }
                     if (!$finVigencia || $finVigencia > $finSemPlan) {
@@ -436,11 +568,11 @@ class TodasClasesService
                                 $claseId = $claseNoRealizada->id;
                                 $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
                                 $estadoStr = match($claseNoRealizada->estado) {
-                                    'no_realizada' => 'No Registrada',
+                                    'no_realizada' => 'Feriado/Justificado',
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
-                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                                     default        => 'Feriado/Justificado',
                                 };
                                 $motivo = $claseNoRealizada->motivo ?: $motivo;
@@ -460,6 +592,8 @@ class TodasClasesService
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
                                 'carrera'           => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
+                                'escuela'           => $this->resolverEscuela($planificacion->asignatura, $planificacion->horario->profesor),
+                                'id_escuela'        => $this->resolverIdEscuela($planificacion->asignatura, $planificacion->horario->profesor),
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                                 'seccion'           => $planificacion->asignatura->seccion ?? 'N/A',
@@ -528,26 +662,90 @@ class TodasClasesService
                                 }
                             }
 
-                            if (isset($this->clasesNoRealizadasCache[$claveClase])) {
-                                $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
-                                $claseId = $claseNoRealizada->id;
-                                $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                            $infoCnrMatch = $this->resolverCnrORecuperacion(
+                                $fechaStr,
+                                $planificacion->id_espacio,
+                                $planificacion->id_modulo,
+                                $runProfesor,
+                                $planificacion->id_asignatura,
+                                $numModulo
+                            );
+                            if ($infoCnrMatch) {
+                                if ($infoCnrMatch['tipo'] === 'cnr') {
+                                    $claseId = $infoCnrMatch['registro']->id;
+                                    $clasesNoRealizadasUsadasIds[$claseId] = true;
+                                } else {
+                                    $recuperacionesUsadasIds[$infoCnrMatch['registro']->id_recuperacion] = true;
+                                    if (!empty($infoCnrMatch['registro']->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$infoCnrMatch['registro']->id_clase_no_realizada] = true;
+                                        $claseId = $infoCnrMatch['registro']->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $infoCnrMatch['registro']->id_recuperacion;
+                                    }
+                                }
                             }
                         }
-                        elseif (isset($this->clasesNoRealizadasCache[$claveClase])) {
-                            $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
-                            $claseId = $claseNoRealizada->id;
-                            $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
-                            $estadoStr = match($claseNoRealizada->estado) {
-                                'no_realizada' => 'No Registrada',
-                                'realizada', 'registrada' => 'Realizada',
-                                'justificado'  => 'Justificada',
-                                'recuperada'   => 'Recuperada',
-                                'pendiente'    => 'Pendiente de Recuperación',
-                                default        => 'No Registrada',
-                            };
-                            $motivo = $claseNoRealizada->motivo;
-                            $observaciones = $claseNoRealizada->observaciones;
+                        else {
+                            $infoCnrMatch = $this->resolverCnrORecuperacion(
+                                $fechaStr,
+                                $planificacion->id_espacio,
+                                $planificacion->id_modulo,
+                                $runProfesor,
+                                $planificacion->id_asignatura,
+                                $numModulo
+                            );
+                            if ($infoCnrMatch) {
+                                if ($infoCnrMatch['tipo'] === 'cnr') {
+                                    $claseNoRealizada = $infoCnrMatch['registro'];
+                                    $claseId = $claseNoRealizada->id;
+                                    $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                                    $estadoStr = match($claseNoRealizada->estado) {
+                                        'no_realizada' => 'No Registrada',
+                                        'realizada', 'registrada' => 'Realizada',
+                                        'justificado'  => 'Justificada',
+                                        'recuperada'   => 'Recuperada',
+                                        'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
+                                        default        => 'No Registrada',
+                                    };
+                                    if ($estadoStr === 'No Registrada' && (str_contains(mb_strtolower($claseNoRealizada->observaciones ?? '', 'UTF-8'), 'reagendad') || str_contains(mb_strtolower($claseNoRealizada->observaciones ?? '', 'UTF-8'), 'recupera'))) {
+                                        $estadoStr = 'Pendiente de Recuperación';
+                                    }
+                                    $motivo = $claseNoRealizada->motivo;
+                                    $observaciones = $claseNoRealizada->observaciones;
+                                } elseif ($infoCnrMatch['tipo'] === 'rec_original') {
+                                    $rc = $infoCnrMatch['registro'];
+                                    $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
+                                    if (!empty($rc->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$rc->id_clase_no_realizada] = true;
+                                        $claseId = $rc->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $rc->id_recuperacion;
+                                    }
+                                    $estadoStr = ($rc->estado === 'realizada') ? 'Recuperada' : 'Pendiente de Recuperación';
+                                    $motivo = $rc->notas ?: 'Clase reagendada';
+                                    $fReagFormat = Carbon::parse($rc->fecha_reagendada)->format('d/m/Y');
+                                    $observaciones = "Clase reagendada para el {$fReagFormat} (" . ($rc->id_espacio_reagendado ?: $planificacion->id_espacio) . ", módulo " . ($rc->id_modulo_reagendado ?: $planificacion->id_modulo) . ")";
+                                    if ($rc->notas) {
+                                        $observaciones .= " - " . $rc->notas;
+                                    }
+                                } elseif ($infoCnrMatch['tipo'] === 'rec_destino') {
+                                    $rc = $infoCnrMatch['registro'];
+                                    $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
+                                    if (!empty($rc->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$rc->id_clase_no_realizada] = true;
+                                        $claseId = $rc->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $rc->id_recuperacion;
+                                    }
+                                    $estadoStr = ($rc->estado === 'realizada') ? 'Recuperada' : 'Pendiente de Recuperación';
+                                    $motivo = $rc->notas ?: 'Recuperación programada';
+                                    $fOrigFormat = Carbon::parse($rc->fecha_clase_original)->format('d/m/Y');
+                                    $observaciones = "Recuperación de clase reagendada originalmente del {$fOrigFormat}";
+                                    if ($rc->notas) {
+                                        $observaciones .= " - " . $rc->notas;
+                                    }
+                                }
+                            }
                         }
 
                         // Respaldo por lista de asistencia del Portal Docente o Espacio Externo (Gimnasio UdeC / Pista Atlética)
@@ -588,6 +786,8 @@ class TodasClasesService
                             'run_profesor' => $runProfesor,
                             'ua' => $this->resolverUa($planificacion->asignatura, $planificacion->horario->profesor),
                             'carrera' => $this->resolverNombreUa($planificacion->asignatura, $planificacion->horario->profesor),
+                            'escuela' => $this->resolverEscuela($planificacion->asignatura, $planificacion->horario->profesor),
+                            'id_escuela' => $this->resolverIdEscuela($planificacion->asignatura, $planificacion->horario->profesor),
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
                             'seccion' => $planificacion->asignatura->seccion ?? 'N/A',
@@ -640,8 +840,20 @@ class TodasClasesService
             ->whereHas('modulo')
             ->whereHas('profesorColaborador.profesor');
 
-        if ($periodo && $periodo === $periodoActualReal && $tieneVigenciaColab) {
-            $queryColab->whereNull('fecha_fin_vigencia');
+        if ($periodo) {
+            if ($tieneVigenciaColab && $fechaInicio && $fechaFin) {
+                $fIniStr = $fechaInicio->toDateString();
+                $fFinStr = $fechaFin->toDateString();
+                $queryColab->where(function ($vq) use ($fIniStr) {
+                    $vq->whereNull('fecha_fin_vigencia')
+                       ->orWhere('fecha_fin_vigencia', '>=', $fIniStr);
+                })->where(function ($vq) use ($fFinStr) {
+                    $vq->whereNull('fecha_inicio_vigencia')
+                       ->orWhere('fecha_inicio_vigencia', '<=', $fFinStr);
+                });
+            } elseif ($periodo === $periodoActualReal && $tieneVigenciaColab) {
+                $queryColab->whereNull('fecha_fin_vigencia');
+            }
         }
 
         if ($search) {
@@ -682,6 +894,7 @@ class TodasClasesService
         $queryColab->chunk(100, function($planificacionesColab) use (
             &$clasesData,
             &$clasesNoRealizadasUsadasIds,
+            &$recuperacionesUsadasIds,
             &$reservasUsadasIds,
             &$coDocentesPorAsignatura,
             &$asignaturasValidasPeriodo,
@@ -732,11 +945,14 @@ class TodasClasesService
                     if (!$inicioColab || $inicioColab < $limColabIni) {
                         $inicioColab = $limColabIni;
                     }
-                    if (empty($planificacion->fecha_fin_vigencia)) {
+                    if (!$inicioPlan || $inicioPlan < $limColabIni) {
                         $inicioPlan = $limColabIni;
                     }
                     if (!$finColab || $finColab > $limColabFin) {
                         $finColab = $limColabFin;
+                    }
+                    if (!$finPlan || $finPlan > $limColabFin) {
+                        $finPlan = $limColabFin;
                     }
                 }
 
@@ -799,11 +1015,11 @@ class TodasClasesService
                                 $claseId = $claseNoRealizada->id;
                                 $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
                                 $estadoStr = match($claseNoRealizada->estado) {
-                                    'no_realizada' => 'No Registrada',
+                                    'no_realizada' => 'Feriado/Justificado',
                                     'realizada', 'registrada' => 'Realizada',
                                     'justificado'  => 'Feriado/Justificado',
                                     'recuperada'   => 'Recuperada',
-                                    'pendiente'    => 'Pendiente de Recuperación',
+                                    'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
                                     default        => 'Feriado/Justificado',
                                 };
                                 $motivo = $claseNoRealizada->motivo ?: $motivo;
@@ -823,6 +1039,8 @@ class TodasClasesService
                                 'run_profesor'      => $runProfesor,
                                 'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
                                 'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
+                                'escuela'           => $this->resolverEscuela($colab->asignatura, $profesorModel),
+                                'id_escuela'        => $this->resolverIdEscuela($colab->asignatura, $profesorModel),
                                 'asignatura'        => $asignaturaNombre,
                                 'codigo_asignatura' => $asignaturaCodigo,
                                 'seccion'           => $asignaturaSeccion,
@@ -895,26 +1113,90 @@ class TodasClasesService
                                 }
                             }
 
-                            if (isset($this->clasesNoRealizadasCache[$claveClase])) {
-                                $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
-                                $claseId = $claseNoRealizada->id;
-                                $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                            $infoCnrMatch = $this->resolverCnrORecuperacion(
+                                $fechaStr,
+                                $planificacion->id_espacio,
+                                $planificacion->id_modulo,
+                                $runProfesor,
+                                $idAsignatura,
+                                $numModulo
+                            );
+                            if ($infoCnrMatch) {
+                                if ($infoCnrMatch['tipo'] === 'cnr') {
+                                    $claseId = $infoCnrMatch['registro']->id;
+                                    $clasesNoRealizadasUsadasIds[$claseId] = true;
+                                } else {
+                                    $recuperacionesUsadasIds[$infoCnrMatch['registro']->id_recuperacion] = true;
+                                    if (!empty($infoCnrMatch['registro']->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$infoCnrMatch['registro']->id_clase_no_realizada] = true;
+                                        $claseId = $infoCnrMatch['registro']->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $infoCnrMatch['registro']->id_recuperacion;
+                                    }
+                                }
                             }
                         }
-                        elseif (isset($this->clasesNoRealizadasCache[$claveClase])) {
-                            $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
-                            $claseId = $claseNoRealizada->id;
-                            $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
-                            $estadoStr = match($claseNoRealizada->estado) {
-                                'no_realizada' => 'No Registrada',
-                                'realizada', 'registrada' => 'Realizada',
-                                'justificado'  => 'Justificada',
-                                'recuperada'   => 'Recuperada',
-                                'pendiente'    => 'Pendiente de Recuperación',
-                                default        => 'No Registrada',
-                            };
-                            $motivo = $claseNoRealizada->motivo;
-                            $observaciones = $claseNoRealizada->observaciones;
+                        else {
+                            $infoCnrMatch = $this->resolverCnrORecuperacion(
+                                $fechaStr,
+                                $planificacion->id_espacio,
+                                $planificacion->id_modulo,
+                                $runProfesor,
+                                $idAsignatura,
+                                $numModulo
+                            );
+                            if ($infoCnrMatch) {
+                                if ($infoCnrMatch['tipo'] === 'cnr') {
+                                    $claseNoRealizada = $infoCnrMatch['registro'];
+                                    $claseId = $claseNoRealizada->id;
+                                    $clasesNoRealizadasUsadasIds[$claseNoRealizada->id] = true;
+                                    $estadoStr = match($claseNoRealizada->estado) {
+                                        'no_realizada' => 'No Registrada',
+                                        'realizada', 'registrada' => 'Realizada',
+                                        'justificado'  => 'Justificada',
+                                        'recuperada'   => 'Recuperada',
+                                        'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
+                                        default        => 'No Registrada',
+                                    };
+                                    if ($estadoStr === 'No Registrada' && (str_contains(mb_strtolower($claseNoRealizada->observaciones ?? '', 'UTF-8'), 'reagendad') || str_contains(mb_strtolower($claseNoRealizada->observaciones ?? '', 'UTF-8'), 'recupera'))) {
+                                        $estadoStr = 'Pendiente de Recuperación';
+                                    }
+                                    $motivo = $claseNoRealizada->motivo;
+                                    $observaciones = $claseNoRealizada->observaciones;
+                                } elseif ($infoCnrMatch['tipo'] === 'rec_original') {
+                                    $rc = $infoCnrMatch['registro'];
+                                    $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
+                                    if (!empty($rc->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$rc->id_clase_no_realizada] = true;
+                                        $claseId = $rc->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $rc->id_recuperacion;
+                                    }
+                                    $estadoStr = ($rc->estado === 'realizada') ? 'Recuperada' : 'Pendiente de Recuperación';
+                                    $motivo = $rc->notas ?: 'Clase reagendada';
+                                    $fReagFormat = Carbon::parse($rc->fecha_reagendada)->format('d/m/Y');
+                                    $observaciones = "Clase reagendada para el {$fReagFormat} (" . ($rc->id_espacio_reagendado ?: $planificacion->id_espacio) . ", módulo " . ($rc->id_modulo_reagendado ?: $planificacion->id_modulo) . ")";
+                                    if ($rc->notas) {
+                                        $observaciones .= " - " . $rc->notas;
+                                    }
+                                } elseif ($infoCnrMatch['tipo'] === 'rec_destino') {
+                                    $rc = $infoCnrMatch['registro'];
+                                    $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
+                                    if (!empty($rc->id_clase_no_realizada)) {
+                                        $clasesNoRealizadasUsadasIds[$rc->id_clase_no_realizada] = true;
+                                        $claseId = $rc->id_clase_no_realizada;
+                                    } else {
+                                        $claseId = $rc->id_recuperacion;
+                                    }
+                                    $estadoStr = ($rc->estado === 'realizada') ? 'Recuperada' : 'Pendiente de Recuperación';
+                                    $motivo = $rc->notas ?: 'Recuperación programada';
+                                    $fOrigFormat = Carbon::parse($rc->fecha_clase_original)->format('d/m/Y');
+                                    $observaciones = "Recuperación de clase reagendada originalmente del {$fOrigFormat}";
+                                    if ($rc->notas) {
+                                        $observaciones .= " - " . $rc->notas;
+                                    }
+                                }
+                            }
                         }
 
                         // Respaldo por lista de asistencia del Portal Docente o Espacio Externo
@@ -955,6 +1237,8 @@ class TodasClasesService
                             'run_profesor'      => $runProfesor,
                             'ua'                => $this->resolverUa($colab->asignatura, $profesorModel),
                             'carrera'           => $this->resolverNombreUa($colab->asignatura, $profesorModel),
+                                'escuela'           => $this->resolverEscuela($colab->asignatura, $profesorModel),
+                                'id_escuela'        => $this->resolverIdEscuela($colab->asignatura, $profesorModel),
                             'asignatura'        => $asignaturaNombre,
                             'codigo_asignatura' => $asignaturaCodigo,
                             'seccion'           => $asignaturaSeccion,
@@ -1039,13 +1323,16 @@ class TodasClasesService
                 $reservaMatch = $resMatchInfo['reserva'] ?? null;
 
                 $estadoStr = match($cnr->estado) {
-                    'no_realizada'            => 'No Registrada',
-                    'realizada', 'registrada' => 'Realizada',
-                    'justificado'             => 'Justificada',
-                    'recuperada'              => 'Recuperada',
-                    'pendiente'               => 'Pendiente de Recuperación',
-                    default                   => 'No Registrada',
+                    'no_realizada'                                         => 'No Registrada',
+                    'realizada', 'registrada'                              => 'Realizada',
+                    'justificado'                                          => 'Justificada',
+                    'recuperada'                                           => 'Recuperada',
+                    'pendiente', 'reagendada', 'programada', 'confirmada'  => 'Pendiente de Recuperación',
+                    default                                                => 'No Registrada',
                 };
+                if ($estadoStr === 'No Registrada' && (str_contains(mb_strtolower($obsHist ?? '', 'UTF-8'), 'reagendad') || str_contains(mb_strtolower($obsHist ?? '', 'UTF-8'), 'recupera'))) {
+                    $estadoStr = 'Pendiente de Recuperación';
+                }
 
                 $horaEntradaCnr = null;
                 $horaSalidaCnr = null;
@@ -1074,6 +1361,8 @@ class TodasClasesService
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($cnr->asignatura, $cnr->profesor),
                     'carrera'           => $this->resolverNombreUa($cnr->asignatura, $cnr->profesor),
+                    'escuela'           => $this->resolverEscuela($cnr->asignatura, $cnr->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($cnr->asignatura, $cnr->profesor),
                     'asignatura'        => $cnr->asignatura->nombre_asignatura ?? 'N/A',
                     'codigo_asignatura' => $cnr->asignatura->codigo_asignatura ?? 'N/A',
                     'seccion'           => $cnr->asignatura->seccion ?? 'N/A',
@@ -1090,6 +1379,109 @@ class TodasClasesService
                     'observaciones'     => $obsHist,
                     'hora_deteccion'    => (in_array($cnr->estado, ['pendiente', 'recuperada'], true) || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'reagendad') || str_contains(mb_strtolower($obsHist, 'UTF-8'), 'recupera')) ? (!empty($horaEntradaCnr) ? Carbon::parse($fechaCnrStr . ' ' . $horaEntradaCnr) : $fechaCnr->copy()->setTimeFromTimeString($horaFinMod)) : ($cnr->hora_deteccion ?? $fechaCnr->copy()->setTimeFromTimeString($horaFinMod)),
                     'rol_bloque'        => 'historico',
+                ]);
+            }
+        }
+
+        // ── 7.1 RESCATAR RECUPERACIONES REAGENDADAS QUE NO COINCIDEN CON PLANIFICACIÓN HABITUAL ──
+        foreach ($todasRecuperaciones as $rc) {
+            if (isset($recuperacionesUsadasIds[$rc->id_recuperacion])) {
+                continue;
+            }
+            if (!$rc->fecha_reagendada) {
+                continue;
+            }
+
+            $fechaRc = Carbon::parse($rc->fecha_reagendada);
+            $fechaRcStr = $fechaRc->format('Y-m-d');
+
+            if ($fechaRcStr < $fechaInicio->toDateString() || $fechaRcStr > $fechaFin->toDateString()) {
+                continue;
+            }
+
+            $periodoFechaRc = $periodoPorFecha[$fechaRcStr] ?? $this->resolverPeriodoParaFecha($fechaRcStr, $periodosModels);
+            if ($periodo && $periodoFechaRc !== $periodo) {
+                continue;
+            }
+
+            $diaFecha = ModulosHelper::normalizarDia($dias[$fechaRc->dayOfWeek] ?? '');
+            $runProfNorm = $this->normalizeRun($rc->run_profesor);
+            $espReag = $rc->id_espacio_reagendado ?: $rc->id_espacio;
+            $modulosRc = array_values(array_filter(array_map('trim', explode(',', (string) $rc->id_modulo_reagendado))));
+            if (empty($modulosRc)) {
+                $modulosRc = ['JU.1'];
+            }
+
+            foreach ($modulosRc as $idModIndividual) {
+                $modNumStr = preg_replace('/^[A-Z]{2}\./', '', $idModIndividual);
+                $numModInt = (int) $modNumStr;
+                $horarioCanon = ModulosHelper::getHorarioModulo($diaFecha, $numModInt);
+                $horaInicioMod = $horarioCanon['inicio'] ?? '08:10:00';
+                $horaFinMod = $horarioCanon['fin'] ?? '09:00:00';
+
+                $resMatchInfo = $this->resolverReservaParaClase(
+                    $fechaRcStr,
+                    (string) $espReag,
+                    $rc->id_asignatura,
+                    $runProfNorm,
+                    [$runProfNorm => true],
+                    Carbon::parse($horaInicioMod),
+                    Carbon::parse($horaFinMod),
+                    30,
+                    $numModInt
+                );
+                $reservaMatch = $resMatchInfo['reserva'] ?? null;
+
+                $estadoStr = ($rc->estado === 'realizada') ? 'Recuperada' : 'Pendiente de Recuperación';
+                $horaEntradaCnr = null;
+                $horaSalidaCnr = null;
+
+                if ($reservaMatch) {
+                    $reservasUsadasIds[$reservaMatch->id_reserva] = true;
+                    $horaEntradaCnr = $reservaMatch->hora;
+                    $horaSalidaCnr = $reservaMatch->hora_salida;
+                    $estadoStr = 'Recuperada';
+                }
+
+                if ($estado && $estadoStr !== $this->transformEstado($estado)) {
+                    continue;
+                }
+
+                $obsRec = "Recuperación reagendada";
+                if ($rc->fecha_clase_original) {
+                    $obsRec .= " (originalmente del " . Carbon::parse($rc->fecha_clase_original)->format('d/m/Y') . ")";
+                }
+                if ($rc->notas) {
+                    $obsRec .= " - " . $rc->notas;
+                }
+
+                $clasesData->push([
+                    'id'                => $rc->id_clase_no_realizada ?? $rc->id_recuperacion,
+                    'fecha'             => clone $fechaRc,
+                    'dia'               => ucfirst($diaFecha),
+                    'periodo'           => $periodoFechaRc,
+                    'profesor'          => $rc->profesor->name ?? $rc->run_profesor,
+                    'run_profesor'      => $runProfNorm,
+                    'ua'                => $this->resolverUa($rc->asignatura, $rc->profesor),
+                    'carrera'           => $this->resolverNombreUa($rc->asignatura, $rc->profesor),
+                    'escuela'           => $this->resolverEscuela($rc->asignatura, $rc->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($rc->asignatura, $rc->profesor),
+                    'asignatura'        => $rc->asignatura->nombre_asignatura ?? 'N/A',
+                    'codigo_asignatura' => $rc->asignatura->codigo_asignatura ?? 'N/A',
+                    'seccion'           => $rc->asignatura->seccion ?? 'N/A',
+                    'id_asignatura'     => $rc->id_asignatura,
+                    'espacio'           => $espReag,
+                    'modulo'            => $modNumStr,
+                    'id_modulo_raw'     => $idModIndividual,
+                    'hora_inicio'       => $horaInicioMod,
+                    'hora_fin'          => $horaFinMod,
+                    'estado'            => $estadoStr,
+                    'hora_entrada'      => $horaEntradaCnr,
+                    'hora_salida'       => $horaSalidaCnr,
+                    'motivo'            => $rc->notas ?: 'Clase reagendada',
+                    'observaciones'     => $obsRec,
+                    'hora_deteccion'    => !empty($horaEntradaCnr) ? Carbon::parse($fechaRcStr . ' ' . $horaEntradaCnr) : $fechaRc->copy()->setTimeFromTimeString($horaFinMod),
+                    'rol_bloque'        => 'reagendada',
                 ]);
             }
         }
@@ -1173,7 +1565,7 @@ class TodasClasesService
                         'no_realizada' => 'No Registrada',
                         'realizada', 'registrada' => 'Realizada',
                         'justificado'  => 'Justificada',
-                        'recuperada', 'pendiente' => 'Recuperada',
+                        'recuperada', 'pendiente', 'reagendada', 'programada', 'confirmada' => 'Recuperada',
                         default        => $estadoReservaStr,
                     };
                     $motivoFinalRes = $cnrRes->motivo ?: $motivoFinalRes;
@@ -1192,6 +1584,8 @@ class TodasClasesService
                     'run_profesor'      => $runProfNorm,
                     'ua'                => $this->resolverUa($res->asignatura, $res->profesor),
                     'carrera'           => $this->resolverNombreUa($res->asignatura, $res->profesor),
+                    'escuela'           => $this->resolverEscuela($res->asignatura, $res->profesor),
+                    'id_escuela'        => $this->resolverIdEscuela($res->asignatura, $res->profesor),
                     'asignatura'        => $nombreAsig,
                     'codigo_asignatura' => $codigoAsig,
                     'seccion'           => $seccionAsig,
@@ -1386,10 +1780,14 @@ class TodasClasesService
                     return isset($runsDocentesPeriodo[$this->normalizeRun($item['run_profesor'] ?? '')]);
                 })->values();
                 if ($clasesData->count() !== $totalAntes) {
-                    \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Clases de docentes fuera del período descartadas', [
-                        'periodo' => $periodo,
-                        'descartadas' => $totalAntes - $clasesData->count(),
-                    ]);
+                    try {
+                        \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Clases de docentes fuera del período descartadas', [
+                            'periodo' => $periodo,
+                            'descartadas' => $totalAntes - $clasesData->count(),
+                        ]);
+                    } catch (\Throwable $e) {
+                        // Ignorar errores de escritura si no hay permisos sobre storage/logs
+                    }
                 }
             }
         }
@@ -1398,11 +1796,15 @@ class TodasClasesService
             $uaStr = trim((string)$ua);
             $uaNorm = mb_strtolower($uaStr, 'UTF-8');
 
-            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
-                'ua_buscada' => $uaStr,
-                'total_antes_filtro' => $clasesData->count(),
-                'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
-            ]);
+            try {
+                \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Filtrando por UA', [
+                    'ua_buscada' => $uaStr,
+                    'total_antes_filtro' => $clasesData->count(),
+                    'valores_ua_unicos' => $clasesData->pluck('ua')->unique()->values()->toArray(),
+                ]);
+            } catch (\Throwable $e) {
+                // Ignorar errores de log
+            }
 
             $clasesData = $clasesData->filter(function($item) use ($uaStr, $uaNorm) {
                 $itemUa = trim((string)($item['ua'] ?? ''));
@@ -1413,9 +1815,13 @@ class TodasClasesService
                 return str_contains($carreraNombre, $uaNorm);
             });
 
-            \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
-                'total_despues_filtro' => $clasesData->count(),
-            ]);
+            try {
+                \Illuminate\Support\Facades\Log::debug('[TodasClasesService] Resultado filtro UA', [
+                    'total_despues_filtro' => $clasesData->count(),
+                ]);
+            } catch (\Throwable $e) {
+                // Ignorar errores de log
+            }
         }
 
         return $clasesData->sortBy([
@@ -1432,6 +1838,188 @@ class TodasClasesService
      *  2. Co-docencia (titular y colaborador compartiendo asignatura).
      *  3. Salas dobles/paralelas (ej. salas 215 y 212) o cambio de laboratorio/espacio para la misma clase.
      */
+    /**
+     * Busca el registro de ClaseNoRealizada o RecuperacionClase asociado a una clase planificada.
+     */
+    private function resolverCnrORecuperacion(
+        string $fechaStr,
+        string $idEspacio,
+        ?string $idModulo,
+        string $runProfesor,
+        ?string $idAsignatura = null,
+        ?int $numModulo = null
+    ): ?array {
+        $modRaw = $idModulo ? trim($idModulo) : '';
+        $modNum = $numModulo ? (string) $numModulo : preg_replace('/^[A-Z]{2}\./', '', $modRaw);
+        $espacios = EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+        $runNorm = $this->normalizeRun($runProfesor);
+
+        // 0. Si la CNR encontrada está "no_realizada" pero existe una recuperación/reagendamiento para esta
+        //    misma fecha original y módulo, la recuperación tiene prioridad. Esto ocurre cuando el detector
+        //    automático vuelve a crear la CNR en la fecha original después de que la CNR original fue movida
+        //    a la nueva fecha al reagendar.
+        $cnrPrevio = $this->buscarCnrPorModulo($fechaStr, $espacios, $modRaw, $modNum, $runNorm, $idAsignatura);
+        if ($cnrPrevio && $cnrPrevio->estado === 'no_realizada') {
+            $recOrig = $this->buscarRecuperacionOriginalPorModulo($fechaStr, $espacios, $modRaw, $modNum, $runNorm, $idAsignatura);
+            if ($recOrig && $recOrig->estado !== 'obviada') {
+                return ['tipo' => 'rec_original', 'registro' => $recOrig];
+            }
+        }
+
+        // 1. Buscar en clasesNoRealizadasCache por Espacio
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
+            }
+        }
+        // 1.1 Buscar en clasesNoRealizadasCache por Asignatura
+        if ($idAsignatura) {
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
+            }
+            if (isset($this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 1.2 Buscar en clasesNoRealizadasCache directo por Docente + Módulo
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'cnr', 'registro' => $this->clasesNoRealizadasCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
+            }
+        }
+
+        // 2. Buscar si la clase fue reagendada originalmente en esta fecha
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
+            }
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
+            }
+            if (isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 2.1 DIRECTO por Docente + Módulo (fecha original)
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
+            }
+            if (isset($this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}"])) {
+                return ['tipo' => 'rec_original', 'registro' => $this->recuperacionesPorOriginalCache["{$fechaStr}_{$runNorm}"]];
+            }
+        }
+
+        // 3. Buscar si esta fecha corresponde a la fecha de realización reagendada
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$esp}_{$modNum}_{$runNorm}"]];
+            }
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}"]];
+            }
+            if (isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$idAsignatura}_{$runNorm}"]];
+            }
+        }
+        // 3.1 DIRECTO por Docente + Módulo (fecha reagendada)
+        if ($runNorm !== '') {
+            if ($modRaw !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modRaw}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modRaw}"]];
+            }
+            if ($modNum !== '' && isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modNum}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}_{$modNum}"]];
+            }
+            if (isset($this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}"])) {
+                return ['tipo' => 'rec_destino', 'registro' => $this->recuperacionesPorReagendadaCache["{$fechaStr}_{$runNorm}"]];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Busca una ClaseNoRealizada en caché para la fecha/módulo dados (misma prioridad que resolverCnrORecuperacion).
+     */
+    private function buscarCnrPorModulo(string $fechaStr, array $espacios, string $modRaw, string $modNum, string $runNorm, ?string $idAsignatura)
+    {
+        $claves = [];
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$esp}_{$modNum}_{$runNorm}";
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}";
+            $claves[] = "{$fechaStr}_{$idAsignatura}_{$runNorm}";
+        }
+        if ($runNorm !== '') {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modRaw}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modNum}";
+        }
+        foreach ($claves as $clave) {
+            if (isset($this->clasesNoRealizadasCache[$clave])) {
+                return $this->clasesNoRealizadasCache[$clave];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Busca una recuperación cuya fecha ORIGINAL coincida con la fecha y el MÓDULO específico dados
+     * (sin usar claves genéricas por docente, para no afectar otros bloques del mismo día).
+     */
+    private function buscarRecuperacionOriginalPorModulo(string $fechaStr, array $espacios, string $modRaw, string $modNum, string $runNorm, ?string $idAsignatura)
+    {
+        $claves = [];
+        foreach ($espacios as $esp) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$esp}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$esp}_{$modNum}_{$runNorm}";
+        }
+        if ($idAsignatura) {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modRaw}_{$runNorm}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$idAsignatura}_{$modNum}_{$runNorm}";
+        }
+        if ($runNorm !== '') {
+            if ($modRaw !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modRaw}";
+            if ($modNum !== '') $claves[] = "{$fechaStr}_{$runNorm}_{$modNum}";
+        }
+        foreach ($claves as $clave) {
+            if (isset($this->recuperacionesPorOriginalCache[$clave])) {
+                return $this->recuperacionesPorOriginalCache[$clave];
+            }
+        }
+        return null;
+    }
+
     private function resolverReservaParaClase(
         string $fechaStr,
         string $idEspacioPlanificado,
@@ -1557,10 +2145,13 @@ class TodasClasesService
             $finEfectivo = $horaSalidaTemp;
             if (!$finEfectivo || $finEfectivo->lte($horaAcceso)) {
                 $cantModulos = max(1, (int) ($r->modulos ?? 1));
-                $finEfectivo = $horaAcceso->copy()->addMinutes($cantModulos * 55);
+                // Si la reserva no tiene modulos especificados pero cubre un bloque habitual de clases (ej. 2 módulos),
+                // estimar al menos 110 minutos para no cortar el segundo módulo del bloque
+                $minutosEstimados = max(110, $cantModulos * 55);
+                $finEfectivo = $horaAcceso->copy()->addMinutes($minutosEstimados);
             }
 
-            $ingresoPrevio = ($horaAcceso < $margenInicio) && ($finEfectivo > $horaInicioModulo);
+            $ingresoPrevio = ($horaAcceso < $margenInicio) && ($finEfectivo >= $horaInicioModulo);
 
             if ($ingresoDirecto || $ingresoPrevio || $cubrePorModulo) {
                 $mismaAsignatura = ($idAsignatura && $r->id_asignatura == $idAsignatura);
@@ -1715,7 +2306,7 @@ class TodasClasesService
             'realizada', 'registrada' => 'Realizada',
             'justificado'             => 'Justificada',
             'recuperada'              => 'Recuperada',
-            'pendiente'               => 'Pendiente de Recuperación',
+            'pendiente', 'reagendada', 'programada', 'confirmada' => 'Pendiente de Recuperación',
             'feriado'                 => 'Feriado/Justificado',
             default                   => $estado,
         };
@@ -1756,9 +2347,139 @@ class TodasClasesService
     /**
      * Resolver el nombre de la Unidad Académica / Carrera
      */
-    private function resolverNombreUa($asignatura, $profesor = null): string
+    /**
+     * Resolver la Escuela (entidad académica real, no la etiqueta genérica de Área Académica)
+     */
+    public function resolverEscuela($asignatura, $profesor = null): string
     {
-        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
+        $info = $this->resolverDatosEscuela($asignatura, $profesor);
+        return $info['nombre'];
+    }
+
+    /**
+     * Resolver el ID de la Escuela
+     */
+    public function resolverIdEscuela($asignatura, $profesor = null): string
+    {
+        $info = $this->resolverDatosEscuela($asignatura, $profesor);
+        return $info['id'];
+    }
+
+    /**
+     * Resuelve los datos de la Escuela (nombre e identificador)
+     */
+    public function resolverDatosEscuela($asignatura, $profesor = null): array
+    {
+        // 1. Mapeo oficial de Carreras a Escuelas del Instituto Tecnológico
+        static $carrerasMap = [
+            1200 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1201 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1205 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1207 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1227 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1237 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1243 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1266 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1274 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1284 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1287 => ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'],
+            1297 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1318 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            1321 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            1352 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2200 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2207 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            2219 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+            2228 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2266 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],
+            2297 => ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'],
+        ];
+
+        // Obtener la carrera de la asignatura o del profesor
+        $carrera = ($asignatura && $asignatura->carrera) ? $asignatura->carrera : (($profesor && $profesor->carrera) ? $profesor->carrera : null);
+        $idCarrera = $carrera ? (int) $carrera->id_carrera : ($asignatura && !empty($asignatura->id_carrera) ? (int) $asignatura->id_carrera : null);
+
+        if ($idCarrera && isset($carrerasMap[$idCarrera])) {
+            return $carrerasMap[$idCarrera];
+        }
+
+        // 2. Si la carrera o el profesor están asociados directamente a un Área Académica que sea una Escuela real
+        $area = ($carrera && $carrera->areaAcademica) 
+            ? $carrera->areaAcademica 
+            : (($profesor && $profesor->areaAcademica) ? $profesor->areaAcademica : null);
+
+        if ($area && !empty($area->nombre_area_academica)) {
+            $nombreArea = trim($area->nombre_area_academica);
+            $esGenerica = preg_match('/^Área Académica/iu', $nombreArea) 
+                || preg_match('/^Area Academica/iu', $nombreArea) 
+                || stripos($nombreArea, 'Instituto Tecnológico') !== false;
+
+            if (!$esGenerica) {
+                return [
+                    'id'     => (string) ($area->id_area_academica ?: 'ESC_GEN'),
+                    'nombre' => $nombreArea,
+                ];
+            }
+        }
+
+        // 3. Resolución semántica por palabras clave en el nombre de la Carrera
+        $nombreCarrera = $carrera->nombre ?? '';
+        if (!empty($nombreCarrera)) {
+            $ncLower = mb_strtolower($nombreCarrera, 'UTF-8');
+            // Escuela de Educación y Salud
+            if (preg_match('/(salud|educaci[oó]n|p[aá]rvulo|alimento|enfermer[ií]a|nutrici[oó]n|kinesiolog[ií]a|qu[ií]mica|biolog[ií]a|pedagog[ií]a|deporte|social)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_EDUSAL',
+                    'nombre' => 'Escuela de Educación y Salud',
+                ];
+            }
+            // Escuela de Administración y Servicios
+            if (preg_match('/(administra|log[ií]stic|servicio|comercial|finanza|contador|auditor|gesti[oó]n|p[uú]blica|recursos humanos|negocio|empresa)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_ADMSERV',
+                    'nombre' => 'Escuela de Administración y Servicios',
+                ];
+            }
+            // Escuela de Ingeniería, Procesos Industriales y Medio Ambiente
+            if (preg_match('/(ingenier|industrial|construcci|prevenci|riesgo|electromec|refrigera|climatiza|electrici|inform[aá]tic|automatiza|mec[aá]nic|obra|computac|redes)/iu', $ncLower)) {
+                return [
+                    'id'     => 'ESC_INGPRO',
+                    'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente',
+                ];
+            }
+        }
+
+        // 4. Si la asignatura tiene nombre, intentar por su nombre
+        $nombreAsig = $asignatura->nombre_asignatura ?? '';
+        if (!empty($nombreAsig)) {
+            $naLower = mb_strtolower($nombreAsig, 'UTF-8');
+            if (preg_match('/(salud|p[aá]rvulo|alimento|enfermer|nutrici|pedagog)/iu', $naLower)) {
+                return ['id' => 'ESC_EDUSAL', 'nombre' => 'Escuela de Educación y Salud'];
+            }
+            if (preg_match('/(administra|log[ií]stic|finanza|contab|gesti[oó]n|empresa)/iu', $naLower)) {
+                return ['id' => 'ESC_ADMSERV', 'nombre' => 'Escuela de Administración y Servicios'];
+            }
+            if (preg_match('/(ingenier|industrial|construcci|prevenci|electric|inform[aá]tic|mec[aá]nic)/iu', $naLower)) {
+                return ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'];
+            }
+        }
+
+        // 5. Si tiene área asignada pero ninguna regla anterior coincidió, usar el área
+        if ($area && !empty($area->nombre_area_academica)) {
+            return [
+                'id'     => (string) $area->id_area_academica,
+                'nombre' => (string) $area->nombre_area_academica,
+            ];
+        }
+
+        return [
+            'id'     => 'SIN_ESCUELA',
+            'nombre' => 'Sin Escuela Asignada',
+        ];
+    }
+
+    private function resolverNombreUa($asignatura, $profesor = null): string
+    {        if ($asignatura && $asignatura->carrera && !empty($asignatura->carrera->nombre)) {
             return (string) $asignatura->carrera->nombre;
         }
         if ($profesor && $profesor->carrera && !empty($profesor->carrera->nombre)) {
