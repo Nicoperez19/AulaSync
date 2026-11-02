@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Docente;
 use App\Http\Controllers\Controller;
 use App\Models\Asignatura;
 use App\Models\AsistenciaEstudiante;
+use App\Models\ClaseNoRealizada;
+use App\Models\RecuperacionClase;
 use App\Models\Espacio;
 use App\Models\Estudiante;
 use App\Models\ProfesorColaborador;
@@ -149,6 +151,19 @@ class AsistenciaController extends Controller
         // Resolver espacio: 1. Reserva activa, 2. Sesión guardada, 3. Planificación del día consultado, 4. Planificación habitual
         $diaSemana = $this->obtenerDiaSemanaEspanol($fechaConsulta);
         $espacio = $reservaActiva?->espacio ?? $sesion?->espacio;
+
+        if (!$espacio) {
+            // Verificar si es una clase reagendada en esta fecha
+            $recuperacionFecha = RecuperacionClase::whereDate('fecha_reagendada', $fechaConsulta->toDateString())
+                ->where('id_asignatura', $asignatura?->id_asignatura ?? $id)
+                ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada'])
+                ->with(['espacioReagendado', 'espacio'])
+                ->first();
+
+            if ($recuperacionFecha) {
+                $espacio = $recuperacionFecha->espacioReagendado ?: $recuperacionFecha->espacio;
+            }
+        }
 
         if (!$espacio) {
             $planificaciones = $asignatura ? $asignatura->planificaciones : ($colaborador ? $colaborador->planificaciones : collect());
@@ -589,13 +604,65 @@ class AsistenciaController extends Controller
             $sala = $this->obtenerEspacioFormateado($espacio) ?? 'Sala no asignada';
         }
 
-        // CONDICIÓN 1: Validar si la asignatura tiene clases programadas el día de hoy
+        // CONDICIÓN 1: Validar si la asignatura tiene clases programadas el día de hoy o si fue reagendada para hoy
         $diaHoyEspanol = $this->obtenerDiaSemanaEspanol($hoy);
         $tieneClaseHoy = $planificaciones->contains(function ($p) use ($diaHoyEspanol) {
             return $p->modulo && strcasecmp(\App\Helpers\ModulosHelper::normalizarDia($p->modulo->dia), $diaHoyEspanol) === 0;
         });
 
-        // Si la planificación tiene módulos definidos y ninguno coincide con hoy, se rechaza
+        // Si no tiene clases regulares en este día, verificar si fue reagendada para hoy o si ya hay sesión creada hoy
+        $recuperacionHoy = null;
+        if (!$tieneClaseHoy) {
+            $hoyDateStr = $hoy->toDateString();
+            $idAsigBuscar = $asignatura?->id_asignatura ?? ($colaborador?->id_asignatura ?? $idAsignatura);
+
+            $recuperacionHoy = RecuperacionClase::whereDate('fecha_reagendada', $hoyDateStr)
+                ->where('id_asignatura', $idAsigBuscar)
+                ->whereIn('estado', ['reagendada', 'pendiente', 'confirmada', 'programada', 'realizada'])
+                ->with(['espacioReagendado', 'espacio'])
+                ->first();
+
+            if ($recuperacionHoy) {
+                $tieneClaseHoy = true;
+                $espacioReag = $recuperacionHoy->espacioReagendado ?: $recuperacionHoy->espacio;
+                if ($espacioReag) {
+                    $espacio = $espacioReag;
+                    $sala = $this->obtenerEspacioFormateado($espacio) ?? $sala;
+                }
+            } else {
+                // Verificar si existe una sesión de asistencia ya iniciada o guardada para hoy
+                $sesionIniciadaHoy = SesionAsistencia::where('fecha', $hoyDateStr)
+                    ->where(function ($q) use ($asignatura, $colaborador, $idAsignatura) {
+                        if ($asignatura) {
+                            $q->where('id_asignatura', $asignatura->id_asignatura);
+                        } elseif ($colaborador) {
+                            $q->where('id_profesor_colaborador', $colaborador->id);
+                        } else {
+                            $q->where('id_asignatura', $idAsignatura);
+                        }
+                    })
+                    ->exists();
+
+                if ($sesionIniciadaHoy) {
+                    $tieneClaseHoy = true;
+                } else {
+                    // Verificar si existe una ClaseNoRealizada reagendada para hoy
+                    $cnrReagendada = ClaseNoRealizada::whereDate('fecha_clase', $hoyDateStr)
+                        ->where('id_asignatura', $idAsigBuscar)
+                        ->where(function ($q) {
+                            $q->whereIn('estado', ['reagendada', 'recuperada', 'pendiente'])
+                              ->orWhere('observaciones', 'LIKE', '%Reagendada%');
+                        })
+                        ->exists();
+
+                    if ($cnrReagendada) {
+                        $tieneClaseHoy = true;
+                    }
+                }
+            }
+        }
+
+        // Si la planificación tiene módulos definidos y ninguno coincide con hoy, ni fue reagendada para hoy, se rechaza
         if ($planificaciones->isNotEmpty() && !$tieneClaseHoy) {
             return response()->json([
                 'error' => "La clase '{$nombreClase}' no tiene módulos programados para el día de hoy ({$diaHoyEspanol})."
@@ -623,6 +690,7 @@ class AsistenciaController extends Controller
         }
 
         // Buscar o crear la sesión de asistencia para el día de hoy
+        $moduloIdSesion = $recuperacionHoy?->id_modulo_reagendado ?: ($planificaciones->first()?->id_modulo ?? null);
         $sesion = SesionAsistencia::firstOrCreate(
             [
                 'fecha' => $hoy->toDateString(),
@@ -631,10 +699,13 @@ class AsistenciaController extends Controller
             ],
             [
                 'id_espacio' => $espacio?->id_espacio,
+                'id_modulo' => $moduloIdSesion,
                 'run_profesor' => $docente?->run ?? $asignatura?->run_profesor,
                 'rol_docente' => $rolDocente,
                 'registrado_por_run' => 'AGENTE_QR',
-                'actividad' => $esColaboracion ? ($colaborador->descripcion ?? 'Registro automático vía Lector QR') : 'Registro automático vía Lector QR',
+                'actividad' => $esColaboracion 
+                    ? ($colaborador->descripcion ?? 'Registro automático vía Lector QR') 
+                    : ($recuperacionHoy ? 'Clase recuperada / reagendada' : 'Registro automático vía Lector QR'),
             ]
         );
 
@@ -675,6 +746,18 @@ class AsistenciaController extends Controller
                 'observacion' => 'Registrado vía Lector QR en segundo plano a las ' . now()->format('H:i:s'),
             ]
         );
+
+        // Si era una clase reagendada, marcar la recuperacion como realizada
+        if ($recuperacionHoy && in_array($recuperacionHoy->estado, ['reagendada', 'pendiente', 'confirmada', 'programada'])) {
+            try {
+                $recuperacionHoy->update(['estado' => 'realizada']);
+                if ($recuperacionHoy->claseNoRealizada) {
+                    $recuperacionHoy->claseNoRealizada->update(['estado' => 'recuperada']);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[AsistenciaController] Error actualizando estado de recuperacion: ' . $e->getMessage());
+            }
+        }
 
         // Enviar correo de confirmación al estudiante
         $correoEnviado = false;
