@@ -11,8 +11,8 @@
 
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 11px;
-            line-height: 1.35;
+            font-size: 13px;
+            line-height: 1.4;
             color: #1e293b;
             margin: 0;
             padding: 0;
@@ -28,7 +28,7 @@
         }
 
         .header-inner {
-            padding: 10px 22px 10px 22px;
+            padding: 12px 24px;
         }
 
         .header-left {
@@ -50,17 +50,17 @@
         .logo-cell {
             width: auto;
             vertical-align: middle;
-            padding-right: 12px;
+            padding-right: 14px;
         }
 
         .logo-cell img {
-            max-height: 92px;
-            max-width: 140px;
+            max-height: 95px;
+            max-width: 145px;
             object-fit: contain;
         }
 
         .system-name {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: 600;
             color: #ffffff;
             margin: 0;
@@ -69,28 +69,28 @@
         }
 
         .system-inst {
-            font-size: 8.5px;
-            color: rgba(255,255,255,0.80);
-            margin-top: 3px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.85);
+            margin-top: 4px;
             font-weight: 400;
         }
 
         .voucher-label {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: bold;
             color: #ffffff;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
 
         .folio-box {
             display: inline-block;
             background-color: #ffffff;
             border-radius: 4px;
-            padding: 3px 9px;
+            padding: 4px 12px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             color: #D2091E;
             letter-spacing: 0.5px;
@@ -98,18 +98,18 @@
 
         /* ===== CONTENIDO ===== */
         .content-wrapper {
-            padding: 16px 22px;
+            padding: 18px 24px;
         }
 
         /* Banner de Estado */
         .status-banner {
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             border-collapse: collapse;
         }
 
         .status-banner td {
-            padding: 7px 12px;
+            padding: 9px 14px;
             border-radius: 6px;
         }
 
@@ -136,7 +136,7 @@
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             border: 1px solid #e2e8f0;
             border-radius: 6px;
             overflow: hidden;
@@ -146,8 +146,8 @@
             background-color: #f1f5f9;
             border-bottom: 1px solid #e2e8f0;
             border-left: 3px solid #D2091E;
-            padding: 6px 12px;
-            font-size: 10.5px;
+            padding: 8px 14px;
+            font-size: 12.5px;
             font-weight: bold;
             color: #002F6C;
             text-transform: uppercase;
@@ -155,7 +155,7 @@
         }
 
         .section-content {
-            padding: 9px 12px;
+            padding: 11px 14px;
             background-color: #ffffff;
         }
 
@@ -166,7 +166,7 @@
         }
 
         .kv-table td {
-            padding: 3px 4px;
+            padding: 4px 5px;
             vertical-align: middle;
         }
 
@@ -174,14 +174,14 @@
             width: 33%;
             font-weight: 600;
             color: #475569;
-            font-size: 9.5px;
+            font-size: 12px;
         }
 
         .kv-value {
             width: 67%;
             color: #0f172a;
             font-weight: 500;
-            font-size: 10.5px;
+            font-size: 13px;
         }
 
         .highlight-text {
@@ -200,32 +200,32 @@
             background-color: #D2091E;
             color: #ffffff;
             font-weight: bold;
-            font-size: 10.5px;
-            padding: 2px 8px;
+            font-size: 12.5px;
+            padding: 3px 10px;
             border-radius: 4px;
             white-space: nowrap;
             vertical-align: middle;
         }
 
         .espacio-nombre {
-            font-size: 10px;
+            font-size: 12px;
             color: #475569;
             vertical-align: middle;
-            padding-left: 5px;
+            padding-left: 6px;
         }
 
         /* Bloque inferior: QR + Instrucciones */
         .bottom-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 8px;
+            margin-top: 10px;
         }
 
         .qr-cell {
-            width: 115px;
+            width: 125px;
             text-align: center;
             vertical-align: top;
-            padding-right: 12px;
+            padding-right: 14px;
         }
 
         .qr-image {
@@ -238,9 +238,9 @@
         }
 
         .qr-caption {
-            font-size: 7.5px;
+            font-size: 10px;
             color: #64748b;
-            margin-top: 3px;
+            margin-top: 4px;
             line-height: 1.3;
         }
 
@@ -250,37 +250,37 @@
             border: 1px dashed #cbd5e1;
             border-left: 3px solid #002F6C;
             border-radius: 6px;
-            padding: 9px 12px;
+            padding: 10px 14px;
         }
 
         .terms-title {
             font-weight: bold;
-            font-size: 9px;
+            font-size: 11.5px;
             color: #002F6C;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
             text-transform: uppercase;
         }
 
         .terms-list {
             margin: 0;
-            padding-left: 14px;
-            font-size: 8px;
+            padding-left: 16px;
+            font-size: 10.5px;
             color: #64748b;
             line-height: 1.4;
         }
 
         .terms-list li {
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         /* Pie de página */
         .footer-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 12px;
-            padding-top: 8px;
+            margin-top: 14px;
+            padding-top: 10px;
             border-top: 1px solid #e2e8f0;
-            font-size: 8px;
+            font-size: 10px;
             color: #94a3b8;
         }
     </style>
@@ -331,10 +331,10 @@
             <td class="status-{{ strtolower($reserva->estado ?? 'activa') }}">
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                        <td style="width: 60%; font-size: 10.5px;">
+                        <td style="width: 60%; font-size: 12.5px;">
                             <strong>Estado:</strong> {{ $estado }} &nbsp;|&nbsp; <strong>Tipo:</strong> {{ $tipo_reserva }}
                         </td>
-                        <td style="width: 40%; text-align: right; font-size: 9px;">
+                        <td style="width: 40%; text-align: right; font-size: 11.5px;">
                             <strong>Emisión:</strong> {{ $fecha_emision }}
                         </td>
                     </tr>
@@ -344,7 +344,7 @@
     </table>
 
     <!-- Grid de Dos Columnas: Responsable y Espacio -->
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
         <tr>
             <!-- Columna 1: Responsable -->
             <td style="width: 49%; vertical-align: top;">
@@ -369,7 +369,7 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Correo:</td>
-                                    <td class="kv-value" style="word-break: break-all; font-size: 9.5px;">{{ $email_responsable }}</td>
+                                    <td class="kv-value" style="word-break: break-all; font-size: 11.5px;">{{ $email_responsable }}</td>
                                 </tr>
                                 @if($telefono_responsable && $telefono_responsable !== 'No registrado')
                                 <tr>
@@ -403,7 +403,7 @@
                                                     <span class="espacio-badge">{{ $id_espacio }}</span>
                                                 </td>
                                                 @if($nombre_espacio !== $id_espacio)
-                                                <td style="padding: 0 0 0 5px; vertical-align: middle;">
+                                                <td style="padding: 0 0 0 6px; vertical-align: middle;">
                                                     <span class="espacio-nombre">{{ $nombre_espacio }}</span>
                                                 </td>
                                                 @endif
@@ -425,7 +425,7 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Sede / Campus:</td>
-                                    <td class="kv-value" style="font-size: 9.5px;">{{ $institucion }}</td>
+                                    <td class="kv-value" style="font-size: 11.5px;">{{ $institucion }}</td>
                                 </tr>
                             </table>
                         </td>
@@ -474,12 +474,12 @@
                                 @if($descripcion_actividad)
                                 <tr>
                                     <td class="kv-label">Descripción:</td>
-                                    <td class="kv-value" style="font-size: 9px;">{{ $descripcion_actividad }}</td>
+                                    <td class="kv-value" style="font-size: 11.5px;">{{ $descripcion_actividad }}</td>
                                 </tr>
                                 @endif
                                 <tr>
                                     <td class="kv-label">Registrado por:</td>
-                                    <td class="kv-value" style="font-size: 9.5px;">{{ $creado_por }}</td>
+                                    <td class="kv-value" style="font-size: 11.5px;">{{ $creado_por }}</td>
                                 </tr>
                             </table>
                         </td>
@@ -487,7 +487,7 @@
                 </table>
 
                 @if($observaciones)
-                <div style="margin-top: 6px; padding-top: 5px; border-top: 1px dashed #e2e8f0; font-size: 8.5px; color: #475569;">
+                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #e2e8f0; font-size: 11.5px; color: #475569;">
                     <strong style="color: #002F6C;">Observaciones:</strong> {{ $observaciones }}
                 </div>
                 @endif
@@ -497,11 +497,11 @@
 
     <!-- QR de Validación -->
     @if(!empty($qr_base64))
-    <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
         <tr>
             <td style="text-align: center; padding: 6px 0;">
-                <img src="{{ $qr_base64 }}" style="width: 80px; height: 80px; border: 1px solid #cbd5e1; padding: 3px; border-radius: 4px; background: #fff;" alt="QR">
-                <div style="font-size: 7.5px; color: #64748b; margin-top: 3px;">
+                <img src="{{ $qr_base64 }}" style="width: 95px; height: 95px; border: 1px solid #cbd5e1; padding: 4px; border-radius: 4px; background: #fff;" alt="QR">
+                <div style="font-size: 10.5px; color: #64748b; margin-top: 4px;">
                     Código de Validación &nbsp;|&nbsp; <strong style="color: #002F6C;">{{ $id_reserva }}</strong>
                 </div>
             </td>

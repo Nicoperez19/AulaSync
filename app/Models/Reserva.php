@@ -152,8 +152,8 @@ class Reserva extends Model
     {
         $fecha = $fecha ?? now()->toDateString();
         $hora = $hora ?? now()->format('H:i:s');
-        // Margen de 10 minutos para no liberar el espacio antes de que el docente marque su salida al finalizar el módulo
-        $horaConMargen = \Carbon\Carbon::parse($fecha . ' ' . $hora)->subMinutes(10)->format('H:i:s');
+        // Margen de 45 minutos alineado con FinalizarReservasExpiradas para no liberar el espacio prematuramente
+        $horaConMargen = \Carbon\Carbon::parse($fecha . ' ' . $hora)->subMinutes(45)->format('H:i:s');
 
         return $query->where('estado', 'activa')
                      ->where('fecha_reserva', $fecha)

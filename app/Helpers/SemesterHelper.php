@@ -532,11 +532,8 @@ class SemesterHelper
                         ->exists();
 
                     if ($tieneActivasEnActual) {
-                        \Illuminate\Support\Facades\DB::connection('tenant')
-                            ->table('planificacion_asignaturas')
-                            ->whereIn('id_horario', $horariosActualesIds)
-                            ->whereNotNull('fecha_fin_vigencia')
-                            ->delete();
+                        // Preservar registros históricos de cambios de vigencia
+                            // ->delete() omitido para mantener auditoría de uso de infraestructura
                     }
 
                     $asigsOtroPeriodoIds = \Illuminate\Support\Facades\DB::connection('tenant')
