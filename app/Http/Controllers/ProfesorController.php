@@ -83,12 +83,41 @@ class ProfesorController extends Controller
                 ], 404);
             }
 
-            // Verificar que el espacio esté disponible
+            // Verificar que el espacio esté disponible (o auto-finalizar sesión previa del mismo docente / sesión expirada)
             if ($espacio->estado !== 'Disponible') {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El espacio no está disponible'
-                ], 400);
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
+                $reservaActivaEnEspacio = Reserva::whereIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'activa')
+                    ->latest('updated_at')
+                    ->first();
+
+                $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
+                $runOcupanteLimpio = $reservaActivaEnEspacio ? strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? '')) : '';
+
+                $esMismoProfesor = ($runOcupanteLimpio !== '' && $runProfLimpio === $runOcupanteLimpio);
+                $horaActualStr = now()->format('H:i:s');
+                $fechaResStr = $reservaActivaEnEspacio && $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
+                    ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
+                    : ($reservaActivaEnEspacio ? substr($reservaActivaEnEspacio->fecha_reserva, 0, 10) : null);
+                $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
+                    || ($reservaActivaEnEspacio && $reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
+
+                if ($reservaActivaEnEspacio && ($esMismoProfesor || $esReservaAntigua)) {
+                    $reservaActivaEnEspacio->estado = 'finalizada';
+                    if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
+                        $reservaActivaEnEspacio->hora_salida = $horaActualStr;
+                    }
+                    $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
+                    $reservaActivaEnEspacio->save();
+
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'El espacio no está disponible'
+                    ], 400);
+                }
             }
 
             $horaActual = now()->format('H:i:s');
@@ -270,12 +299,41 @@ class ProfesorController extends Controller
                 ], 404);
             }
 
-            // Verificar que el espacio esté disponible
+            // Verificar que el espacio esté disponible (o auto-finalizar sesión previa del mismo docente / sesión expirada)
             if ($espacio->estado !== 'Disponible') {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El espacio no está disponible'
-                ], 400);
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
+                $reservaActivaEnEspacio = Reserva::whereIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'activa')
+                    ->latest('updated_at')
+                    ->first();
+
+                $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
+                $runOcupanteLimpio = $reservaActivaEnEspacio ? strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? '')) : '';
+
+                $esMismoProfesor = ($runOcupanteLimpio !== '' && $runProfLimpio === $runOcupanteLimpio);
+                $horaActualStr = now()->format('H:i:s');
+                $fechaResStr = $reservaActivaEnEspacio && $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
+                    ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
+                    : ($reservaActivaEnEspacio ? substr($reservaActivaEnEspacio->fecha_reserva, 0, 10) : null);
+                $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
+                    || ($reservaActivaEnEspacio && $reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
+
+                if ($reservaActivaEnEspacio && ($esMismoProfesor || $esReservaAntigua)) {
+                    $reservaActivaEnEspacio->estado = 'finalizada';
+                    if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
+                        $reservaActivaEnEspacio->hora_salida = $horaActualStr;
+                    }
+                    $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
+                    $reservaActivaEnEspacio->save();
+
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'El espacio no está disponible'
+                    ], 400);
+                }
             }
 
             // Validar horario académico
