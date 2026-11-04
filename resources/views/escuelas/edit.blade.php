@@ -22,7 +22,7 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div class="space-y-2">
                         <x-form.label for="id_area_academica" value="ID Escuela *" />
-                        <x-form.input id="id_area_academica" name="id_area_academica" type="text" class="w-full @error('id_area_academica') border-red-500 @enderror" required maxlength="20" value="{{ old('id_area_academica', $escuela->id_area_academica) }}" />
+                        <x-form.input id="id_area_academica" name="id_area_academica" type="text" class="w-full bg-gray-100 cursor-not-allowed @error('id_area_academica') border-red-500 @enderror" required maxlength="20" value="{{ old('id_area_academica', $escuela->id_area_academica) }}" readonly />
                         @error('id_area_academica')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror

@@ -81,10 +81,41 @@ trait BelongsToTenant
     }
 
     /**
+     * Determina si la tabla actual pertenece a la base de datos central.
+     */
+    protected function isCentralTable(): bool
+    {
+        if ($this->getConnectionName() === 'mysql') {
+            return true;
+        }
+
+        $tablasCentrales = [
+            'area_academicas',
+            'carreras',
+            'facultades',
+            'sedes',
+            'universidades',
+            'periodos_academicos',
+            'dias_feriados',
+            'users',
+            'roles',
+            'permissions',
+            'tenants',
+        ];
+
+        return in_array($this->getTable(), $tablasCentrales);
+    }
+
+    /**
      * Establecer la conexión del tenant si está activa
      */
     public function setTenantConnection()
     {
+        if ($this->isCentralTable()) {
+            $this->setConnection('mysql');
+            return $this;
+        }
+
         $tenant = Tenant::current();
         if ($tenant && Config::get('multitenancy.separate_databases', false)) {
             $this->setConnection('tenant');
@@ -98,6 +129,11 @@ trait BelongsToTenant
     public function newQuery()
     {
         $query = parent::newQuery();
+
+        if ($this->isCentralTable()) {
+            $query->getModel()->setConnection('mysql');
+            return $query;
+        }
 
         $tenant = Tenant::current();
         if ($tenant && Config::get('multitenancy.separate_databases', false)) {

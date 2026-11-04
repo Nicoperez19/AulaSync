@@ -11,6 +11,7 @@ class AreaAcademica extends Model
     use HasFactory, BelongsToTenant;
 
     protected $table = 'area_academicas';
+    protected $connection = 'mysql';
     protected $primaryKey = 'id_area_academica';
 
     public $incrementing = false; 
