@@ -154,12 +154,6 @@
                                     </form>
                                 </div>
                             </td>
-                                                title="Eliminar visitante">
-                                            <x-icons.delete class="w-3.5 h-3.5" aria-hidden="true" />
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
                         </tr>
                     @empty
                         <tr wire:key="empty-visitantes-row">

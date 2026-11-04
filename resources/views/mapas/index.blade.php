@@ -13,9 +13,8 @@
             </div>
         </div>
     </x-slot>
-    <div class="p-6 bg-white rounded-lg shadow-lg">
-
-        @if (auth()->user()->hasRole('Administrador'))
+    <div class="space-y-4">
+@if (auth()->user()->hasRole('Administrador'))
             <div class="flex justify-end mb-4">
                 <x-button x-on:click.prevent="window.location.href='{{ route('mapas.create') }}'" variant="add"
                     class="max-w-xs gap-2">

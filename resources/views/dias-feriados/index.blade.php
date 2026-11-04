@@ -13,8 +13,8 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-white rounded-lg shadow-lg">
-        @if (session()->has('message'))
+    <div class="space-y-4">
+@if (session()->has('message'))
             <div class="p-4 mb-4 text-sm text-green-800 bg-green-100 rounded-lg" role="alert">
                 {{ session('message') }}
             </div>

@@ -14,9 +14,8 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-white rounded-lg shadow-lg">
-
-        <div class="flex items-center justify-end mb-4">
+    <div class="space-y-4">
+<div class="flex items-center justify-end mb-4">
             <x-button variant="add" class="gap-2"
                 x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')">
                 <x-icons.add class="w-4 h-4 shrink-0" aria-hidden="true" />

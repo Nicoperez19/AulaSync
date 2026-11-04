@@ -16,8 +16,20 @@ class FacultiesTable extends Component
     public $search = '';
     public $perPage = 10;
     public $paginationOptions = [5, 10, 50];
+    public $sortField = 'nombre_facultad';
+    public $sortDirection = 'asc';
 
-    protected $updatesQueryString = ['search', 'perPage'];
+    protected $updatesQueryString = ['search', 'perPage', 'sortField', 'sortDirection'];
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+    }
 
     public function updatingSearch()
     {
@@ -91,7 +103,7 @@ class FacultiesTable extends Component
                     }
                 });
             })
-            ->orderBy('nombre_facultad', 'asc')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate((int) $this->perPage);
 
         return view('livewire.faculties-table', compact('facultades'));

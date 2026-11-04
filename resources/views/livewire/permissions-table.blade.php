@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700" wire:loading.class="opacity-60">
         <div class="overflow-x-auto">
             <table id="permissions-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
