@@ -98,7 +98,7 @@
     <div class="email-wrapper">
         <div class="header">
             <h1>📌 Confirmación de Reserva</h1>
-            <p>SIA | Sistema de Información de Aulas</p>
+            <p>SIA (Sistema de Información de Aulas)</p>
         </div>
 
         <div class="body">
@@ -152,12 +152,12 @@
             </div>
 
             <p>Si tiene alguna consulta, contacte con administración.</p>
-            <p>Saludos cordiales,<br><strong>Equipo SIA | Sistema de Información de Aulas</strong></p>
+            <p>Saludos cordiales,<br><strong>Equipo SIA (Sistema de Información de Aulas)</strong></p>
         </div>
 
         <div class="footer">
             <p>Este es un mensaje automático, por favor no responda a este correo.</p>
-            <p>&copy; {{ date('Y') }} <strong>SIA | Sistema de Información de Aulas</strong></p>
+            <p>&copy; {{ date('Y') }} <strong>SIA (Sistema de Información de Aulas)</strong></p>
         </div>
     </div>
 </body>

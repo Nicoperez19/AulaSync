@@ -335,7 +335,38 @@ class ProfesorController extends Controller
             $espacioLimpio = str_replace(['-', ' '], '', $espacio->id_espacio);
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
 
-            $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+            // Helper para verificar si un bloque/asignatura específico ya fue finalizado hoy
+            $verificarReservaFinalizadaProf = function ($idAsig, $idMod) use ($fechaActual, $espacio, $espaciosEquiv, $espacioLimpio, $profesor, $runProfesor, $runLimpio, $runSinDv) {
+                $numModulo = \App\Helpers\ModulosHelper::getNumeroModulo($idMod);
+                return Reserva::where('fecha_reserva', $fechaActual)
+                    ->where('estado', 'finalizada')
+                    ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
+                        $eq->where('id_espacio', $espacio->id_espacio)
+                           ->orWhereIn('id_espacio', $espaciosEquiv)
+                           ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                    })
+                    ->where(function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                        $q->where('run_profesor', $profesor->run_profesor)
+                          ->orWhere('run_profesor', $runProfesor)
+                          ->orWhere('run_profesor', $runLimpio)
+                          ->orWhere('run_profesor', $runSinDv)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })
+                    ->where(function ($q) use ($idAsig, $numModulo) {
+                        if ($numModulo !== null) {
+                            $q->where('modulo_inicio', '<=', $numModulo)
+                              ->where('modulo_fin', '>=', $numModulo);
+                        }
+                        if (!empty($idAsig)) {
+                            $q->where('id_asignatura', $idAsig);
+                        }
+                    })
+                    ->latest('updated_at')
+                    ->first();
+            };
+
+            $candidatosRegulares = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
                 ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                     $eq->where('id_espacio', $espacio->id_espacio)
                        ->orWhereIn('id_espacio', $espaciosEquiv)
@@ -370,7 +401,35 @@ class ProfesorController extends Controller
                           });
                       });
                 })
-                ->first();
+                ->get();
+
+            $programacion = null;
+            $candidatoRegFinalizado = null;
+            $reservaFinalizadaHoy = null;
+
+            foreach ($candidatosRegulares as $candReg) {
+                $resFin = $verificarReservaFinalizadaProf($candReg->id_asignatura, $candReg->id_modulo);
+                if (!$resFin) {
+                    if (!$programacion) {
+                        $programacion = $candReg;
+                    } else {
+                        $esActivoActual = $candReg->modulo && $candReg->modulo->hora_inicio <= $horaActual && $candReg->modulo->hora_termino >= $horaActual;
+                        $esActivoPrevio = $programacion->modulo && $programacion->modulo->hora_inicio <= $horaActual && $programacion->modulo->hora_termino >= $horaActual;
+                        if ($esActivoActual && !$esActivoPrevio) {
+                            $programacion = $candReg;
+                        }
+                    }
+                } else {
+                    if (!$candidatoRegFinalizado) {
+                        $candidatoRegFinalizado = $candReg;
+                        $reservaFinalizadaHoy = $resFin;
+                    }
+                }
+            }
+
+            if (!$programacion && $candidatoRegFinalizado) {
+                $programacion = $candidatoRegFinalizado;
+            }
 
             $esTemporal = false;
             $planColaborador = null;
@@ -378,7 +437,7 @@ class ProfesorController extends Controller
             if (!$programacion) {
                 // Buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
                 $hoyFecha = $fechaActual;
-                $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
+                $candidatosColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
                     ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
                            ->orWhereIn('id_espacio', $espaciosEquiv)
@@ -409,7 +468,30 @@ class ProfesorController extends Controller
                               });
                           });
                     })
-                    ->first();
+                    ->get();
+
+                $candidatoColabFinalizado = null;
+
+                foreach ($candidatosColaborador as $candColab) {
+                    $resFinColab = $verificarReservaFinalizadaProf(
+                        $candColab->profesorColaborador->id_asignatura ?? null,
+                        $candColab->id_modulo
+                    );
+                    if (!$resFinColab) {
+                        if (!$planColaborador) {
+                            $planColaborador = $candColab;
+                        }
+                    } else {
+                        if (!$candidatoColabFinalizado) {
+                            $candidatoColabFinalizado = $candColab;
+                            $reservaFinalizadaHoy = $resFinColab;
+                        }
+                    }
+                }
+
+                if (!$planColaborador && $candidatoColabFinalizado) {
+                    $planColaborador = $candidatoColabFinalizado;
+                }
 
                 if ($planColaborador) {
                     $esTemporal = true;
@@ -425,6 +507,15 @@ class ProfesorController extends Controller
                     $horaActual,
                     60
                 );
+                if ($infoRecuperacion) {
+                    $resFinRec = $verificarReservaFinalizadaProf(
+                        $infoRecuperacion['id_asignatura'] ?? null,
+                        $infoRecuperacion['id_modulo'] ?? null
+                    );
+                    if ($resFinRec) {
+                        $reservaFinalizadaHoy = $resFinRec;
+                    }
+                }
             }
 
             if (!$programacion && !$planColaborador && !$infoRecuperacion) {
@@ -435,42 +526,7 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
-            // Protección contra re-apertura automática: Verificar si la clase ya fue finalizada hoy
-            $idAsignaturaCheck = $programacion
-                ? $programacion->id_asignatura
-                : ($planColaborador?->profesorColaborador?->id_asignatura ?? ($infoRecuperacion['id_asignatura'] ?? null));
-            $idModuloCheck = $programacion
-                ? $programacion->id_modulo
-                : ($planColaborador?->id_modulo ?? ($infoRecuperacion['id_modulo'] ?? null));
-            $numModuloActualCheck = \App\Helpers\ModulosHelper::getNumeroModulo($idModuloCheck);
-
-            $reservaFinalizadaHoy = Reserva::where('fecha_reserva', $fechaActual)
-                ->where('estado', 'finalizada')
-                ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
-                    $eq->where('id_espacio', $espacio->id_espacio)
-                       ->orWhereIn('id_espacio', $espaciosEquiv)
-                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
-                })
-                ->where(function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $profesor->run_profesor)
-                      ->orWhere('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->where(function ($q) use ($idAsignaturaCheck, $numModuloActualCheck) {
-                    if ($numModuloActualCheck !== null) {
-                        $q->where('modulo_inicio', '<=', $numModuloActualCheck)
-                          ->where('modulo_fin', '>=', $numModuloActualCheck);
-                    }
-                    if (!empty($idAsignaturaCheck)) {
-                        $q->where('id_asignatura', $idAsignaturaCheck);
-                    }
-                })
-                ->latest('updated_at')
-                ->first();
-
+            // Si el candidato seleccionado ya fue finalizado hoy, bloquear re-apertura
             if ($reservaFinalizadaHoy) {
                 return response()->json([
                     'success' => false,
@@ -493,25 +549,7 @@ class ProfesorController extends Controller
                            ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
-                    ->where(function ($qPrincipal) use ($programacion, $profesor, $runProfesor, $runLimpio, $runSinDv) {
-                        $qPrincipal->where('id_asignatura', $programacion->id_asignatura)
-                            ->orWhereHas('asignatura', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
-                                $q->where('run_profesor', $profesor->run_profesor)
-                                  ->orWhere('run_profesor', $runProfesor)
-                                  ->orWhere('run_profesor', $runLimpio)
-                                  ->orWhere('run_profesor', $runSinDv)
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                            })
-                            ->orWhereHas('horario', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
-                                $q->where('run_profesor', $profesor->run_profesor)
-                                  ->orWhere('run_profesor', $runProfesor)
-                                  ->orWhere('run_profesor', $runLimpio)
-                                  ->orWhere('run_profesor', $runSinDv)
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                            });
-                    })
+                    ->where('id_asignatura', $programacion->id_asignatura)
                     ->where(function ($q) use ($periodo, $programacion) {
                         $q->where('id_horario', $programacion->id_horario)
                           ->orWhereHas('horario', function ($hq) use ($periodo) {
@@ -553,22 +591,7 @@ class ProfesorController extends Controller
                            ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
                     })
-                    ->where(function ($q) use ($idColab, $profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {
-                        $q->where('id_profesor_colaborador', $idColab)
-                          ->orWhereHas('profesorColaborador', function ($cq) use ($profesor, $runProfesor, $runLimpio, $runSinDv, $fechaActual) {
-                              $cq->where('estado', 'activo')
-                                 ->where('fecha_inicio', '<=', $fechaActual)
-                                 ->where('fecha_termino', '>=', $fechaActual)
-                                 ->where(function ($subQ) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
-                                     $subQ->where('run_profesor_colaborador', $profesor->run_profesor)
-                                          ->orWhere('run_profesor_colaborador', $runProfesor)
-                                          ->orWhere('run_profesor_colaborador', $runLimpio)
-                                          ->orWhere('run_profesor_colaborador', $runSinDv)
-                                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                                 });
-                          });
-                    })
+                    ->where('id_profesor_colaborador', $idColab)
                     ->whereHas('modulo', function ($q) use ($diasPosibles) {
                         $q->whereIn('dia', $diasPosibles);
                     })

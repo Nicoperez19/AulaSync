@@ -424,14 +424,7 @@ class ApiReservaController extends Controller
 
                     $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
                         ->whereIn('id_espacio', $espaciosEquivalentes)
-                        ->where(function ($q) use ($tieneClase, $runLimpio) {
-                            if (!empty($tieneClase->id_asignatura)) {
-                                $q->where('id_asignatura', $tieneClase->id_asignatura);
-                            }
-                            $q->orWhereHas('asignatura', function ($aq) use ($runLimpio) {
-                                $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-                            });
-                        })
+                        ->where('id_asignatura', $tieneClase->id_asignatura)
                         ->whereHas('horario', function ($q) use ($periodoActual) {
                             $q->where('periodo', $periodoActual);
                         })
@@ -1107,12 +1100,7 @@ class ApiReservaController extends Controller
                             $eq->where('id_espacio', $request->espacio_id)
                                ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioLib]);
                         })
-                        ->where(function ($q) use ($tieneClaseProgramada, $runLimpioLib) {
-                            $q->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
-                              ->orWhereHas('asignatura', function ($aq) use ($runLimpioLib) {
-                                  $aq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpioLib]);
-                              });
-                        })
+                        ->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
                         ->whereHas('horario', function ($q) use ($periodo) {
                             $q->where('periodo', $periodo);
                         })

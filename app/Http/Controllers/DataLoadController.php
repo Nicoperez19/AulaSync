@@ -322,7 +322,9 @@ class DataLoadController extends Controller
                 // Contar espacios del seeder (con piso_id configurado)
                 $espaciosSeeder = Espacio::whereNotNull('piso_id')->count();
                 // Eliminar solo espacios sin piso_id (generados por cargas masivas previas)
-                $espaciosEliminados = Espacio::whereNull('piso_id')->delete();
+                // PRESERVAR HISTORIAL: Se protege la totalidad de los espacios físicos y su historial de reservas
+                $espaciosPreservados = Espacio::count();
+                Log::info("Espacios preservados en tenant " . ($tenant ? $tenant->domain : "actual") . ": {$espaciosPreservados} (historial protegido)");
                 Log::info('Espacios del seeder preservados: ' . $espaciosSeeder);
                 Log::info('Espacios sin piso eliminados del tenant ' . $tenant->domain . ': ' . $espaciosEliminados);
             }

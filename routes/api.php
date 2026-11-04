@@ -206,7 +206,38 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
 
         $espacioLimpio = str_replace(['-', ' '], '', $espacio);
         $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio);
-        $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+        $hoyFecha = \Carbon\Carbon::today()->toDateString();
+
+        $verificarReservaFinalizada = function ($idAsignatura, $idModulo) use ($hoyFecha, $espacio, $espacioLimpio, $espaciosEquiv, $usuario, $runLimpio, $runSinDv) {
+            $numModulo = \App\Helpers\ModulosHelper::getNumeroModulo($idModulo);
+            return \App\Models\Reserva::where('fecha_reserva', $hoyFecha)
+                ->where('estado', 'finalizada')
+                ->where(function ($q) use ($espacio, $espacioLimpio, $espaciosEquiv) {
+                    $q->where('id_espacio', $espacio)
+                      ->orWhereIn('id_espacio', $espaciosEquiv)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
+                ->where(function ($q) use ($usuario, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $usuario)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->where(function ($q) use ($idAsignatura, $numModulo) {
+                    if ($numModulo !== null) {
+                        $q->where('modulo_inicio', '<=', $numModulo)
+                          ->where('modulo_fin', '>=', $numModulo);
+                    }
+                    if (!empty($idAsignatura)) {
+                        $q->where('id_asignatura', $idAsignatura);
+                    }
+                })
+                ->latest('updated_at')
+                ->first();
+        };
+
+        $candidatosRegulares = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
             ->where(function ($eq) use ($espacio, $espacioLimpio, $espaciosEquiv) {
                 $eq->where('id_espacio', $espacio)
                    ->orWhereIn('id_espacio', $espaciosEquiv)
@@ -239,12 +270,41 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                       });
                   });
             })
-            ->first();
+            ->get();
 
-        $tieneProgramacion = $programacion !== null;
+        $programacion = null;
+        $candidatoRegFinalizado = null;
+        $reservaFinalizada = null;
+
+        foreach ($candidatosRegulares as $cand) {
+            $resFin = $verificarReservaFinalizada($cand->id_asignatura, $cand->id_modulo);
+            if (!$resFin) {
+                if (!$programacion) {
+                    $programacion = $cand;
+                } else {
+                    $esActivoActual = $cand->modulo && $cand->modulo->hora_inicio <= $horaActualStr && $cand->modulo->hora_termino >= $horaActualStr;
+                    $esActivoPrevio = $programacion->modulo && $programacion->modulo->hora_inicio <= $horaActualStr && $programacion->modulo->hora_termino >= $horaActualStr;
+                    if ($esActivoActual && !$esActivoPrevio) {
+                        $programacion = $cand;
+                    }
+                }
+            } else {
+                if (!$candidatoRegFinalizado) {
+                    $candidatoRegFinalizado = $cand;
+                    $reservaFinalizada = $resFin;
+                }
+            }
+        }
+
+        // Si todos los candidatos regulares ya fueron finalizados, tomar como referencia el finalizado
+        if (!$programacion && $candidatoRegFinalizado) {
+            $programacion = $candidatoRegFinalizado;
+        }
+
+        $tieneProgramacion = $programacion !== null && !$reservaFinalizada;
         $modulosInfo = null;
 
-        if ($tieneProgramacion && $programacion && $programacion->modulo) {
+        if ($programacion && $programacion->modulo) {
             $modulosInfo = [
                 'id_modulo' => $programacion->id_modulo,
                 'hora_inicio' => $programacion->modulo->hora_inicio,
@@ -253,9 +313,12 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                 'es_temporal' => false
             ];
         } else {
-            $hoyFecha = \Carbon\Carbon::today()->toDateString();
-            $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
-                ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+            $candidatosColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
+                ->where(function ($eq) use ($espacio, $espacioLimpio, $espaciosEquiv) {
+                    $eq->where('id_espacio', $espacio)
+                       ->orWhereIn('id_espacio', $espaciosEquiv)
+                       ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
                 ->whereHas('profesorColaborador', function ($q) use ($usuario, $runLimpio, $runSinDv, $hoyFecha) {
                     $q->where('estado', 'activo')
                       ->where('fecha_inicio', '<=', $hoyFecha)
@@ -280,10 +343,34 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                           });
                       });
                 })
-                ->first();
+                ->get();
+
+            $planColaborador = null;
+            $candidatoColabFinalizado = null;
+
+            foreach ($candidatosColaborador as $candColab) {
+                $resFinColab = $verificarReservaFinalizada(
+                    $candColab->profesorColaborador->id_asignatura ?? null,
+                    $candColab->id_modulo
+                );
+                if (!$resFinColab) {
+                    if (!$planColaborador) {
+                        $planColaborador = $candColab;
+                    }
+                } else {
+                    if (!$candidatoColabFinalizado) {
+                        $candidatoColabFinalizado = $candColab;
+                        $reservaFinalizada = $resFinColab;
+                    }
+                }
+            }
+
+            if (!$planColaborador && $candidatoColabFinalizado) {
+                $planColaborador = $candidatoColabFinalizado;
+            }
 
             if ($planColaborador && $planColaborador->modulo) {
-                $tieneProgramacion = true;
+                $tieneProgramacion = !$reservaFinalizada;
                 $modulosInfo = [
                     'id_modulo' => $planColaborador->id_modulo,
                     'hora_inicio' => $planColaborador->modulo->hora_inicio,
@@ -301,7 +388,14 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                     60
                 );
                 if ($recProg) {
-                    $tieneProgramacion = true;
+                    $resFinRec = $verificarReservaFinalizada(
+                        $recProg['id_asignatura'] ?? null,
+                        $recProg['id_modulo'] ?? null
+                    );
+                    if ($resFinRec) {
+                        $reservaFinalizada = $resFinRec;
+                    }
+                    $tieneProgramacion = !$reservaFinalizada;
                     $modulosInfo = [
                         'id_modulo' => $recProg['id_modulo'],
                         'id_modulo_fin' => $recProg['id_modulo_fin'] ?? $recProg['id_modulo'],
@@ -321,45 +415,13 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $claseYaFinalizada = false;
         $reservaFinalizadaInfo = null;
 
-        if ($tieneProgramacion && $modulosInfo) {
-            $hoyFecha = \Carbon\Carbon::today()->toDateString();
-            $numModulo = \App\Helpers\ModulosHelper::getNumeroModulo($modulosInfo['id_modulo']);
-
-            $reservaFinalizada = \App\Models\Reserva::where('fecha_reserva', $hoyFecha)
-                ->where('estado', 'finalizada')
-                ->where(function ($q) use ($espacio, $espacioLimpio, $espaciosEquiv) {
-                    $q->where('id_espacio', $espacio)
-                      ->orWhereIn('id_espacio', $espaciosEquiv)
-                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
-                })
-                ->where(function ($q) use ($usuario, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $usuario)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->where(function ($q) use ($modulosInfo, $numModulo) {
-                    if ($numModulo !== null) {
-                        $q->where('modulo_inicio', '<=', $numModulo)
-                          ->where('modulo_fin', '>=', $numModulo);
-                    }
-                    if (!empty($modulosInfo['id_asignatura'])) {
-                        $q->where('id_asignatura', $modulosInfo['id_asignatura']);
-                    }
-                })
-                ->latest('updated_at')
-                ->first();
-
-            if ($reservaFinalizada) {
-                $claseYaFinalizada = true;
-                $tieneProgramacion = false; // Detener auto-inicio de clase ya concluida
-                $reservaFinalizadaInfo = [
-                    'id_reserva' => $reservaFinalizada->id_reserva,
-                    'hora_salida' => $reservaFinalizada->hora_salida,
-                    'anticipada' => (bool)$reservaFinalizada->clase_finalizada_anticipadamente,
-                ];
-            }
+        if ($reservaFinalizada && !$tieneProgramacion) {
+            $claseYaFinalizada = true;
+            $reservaFinalizadaInfo = [
+                'id_reserva' => $reservaFinalizada->id_reserva,
+                'hora_salida' => $reservaFinalizada->hora_salida,
+                'anticipada' => (bool)$reservaFinalizada->clase_finalizada_anticipadamente,
+            ];
         }
 
         $esRecuperacion = (bool) ($modulosInfo['es_recuperacion'] ?? false);

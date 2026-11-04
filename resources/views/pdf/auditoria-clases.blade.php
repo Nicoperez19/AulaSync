@@ -200,7 +200,7 @@
     </table>
 
     <div class="footer">
-        SIA | Sistema de Información de Aulas &bull; Universidad Católica de la Santísima Concepción &bull; Registro oficial de auditoría emitido automáticamente.
+        SIA (Sistema de Información de Aulas) &bull; Universidad Católica de la Santísima Concepción &bull; Registro oficial de auditoría emitido automáticamente.
     </div>
 </body>
 </html>
