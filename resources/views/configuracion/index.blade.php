@@ -1,51 +1,29 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between pr-2">
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-[#c5221f] flex items-center justify-center text-white shadow-xs flex-shrink-0">
-                    <i class="text-2xl fa-solid fa-cog"></i>
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-gear"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight text-gray-900">Configuración del Sistema</h2>
+                    <h2 class="text-2xl font-bold leading-tight">Configuración del Sistema</h2>
                     <p class="text-sm text-gray-500">Administra la configuración general del sistema (logo institucional, etc.)</p>
                 </div>
-            </div>
-
-            <div class="flex items-center gap-3 flex-wrap">
-                @if(isset($sedes) && count($sedes) > 1)
-                <div class="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-3 py-1.5 shadow-2xs">
-                    <span class="text-xs font-semibold text-gray-500">Sede:</span>
-                    <select onchange="window.location.href='{{ route('configuracion.index') }}?id_sede=' + this.value" 
-                        class="text-xs font-bold text-gray-800 border-none bg-transparent focus:ring-0 cursor-pointer p-0 pr-4">
-                        @foreach($sedes as $s)
-                            <option value="{{ $s->id_sede }}" {{ $sede && $sede->id_sede == $s->id_sede ? 'selected' : '' }}>
-                                {{ $s->nombre_sede }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                @endif
-
-                <button type="button" x-on:click.prevent="$dispatch('open-modal', 'add-configuracion')"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-[#0e5c3c] hover:bg-[#0b482f] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors">
-                    <i class="fa-solid fa-circle-plus text-base"></i>
-                    <span>Agregar Configuración</span>
-                </button>
             </div>
         </div>
     </x-slot>
 
-    {{-- CARD PRINCIPAL: Identidad Visual y Períodos Académicos --}}
-    <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-6 md:p-8 mb-6">
+    {{-- CARD PRINCIPAL: Parámetros de la Sede, Identidad Visual y Períodos Académicos --}}
+    <div class="bg-white rounded-xl shadow-xs border border-gray-200 p-6 md:p-8 space-y-6">
         @if (session('success'))
-            <div class="mb-5 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 shadow-2xs">
+            <div class="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 shadow-2xs">
                 <i class="fa-solid fa-circle-check text-green-500 text-lg"></i>
                 <span class="font-medium text-sm">{{ session('success') }}</span>
             </div>
         @endif
 
         @if (isset($errors) && $errors->any())
-            <div class="mb-5 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg shadow-2xs">
+            <div class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg shadow-2xs">
                 <div class="flex items-center gap-2 mb-1">
                     <i class="fa-solid fa-circle-exclamation text-red-500 text-lg"></i>
                     <span class="font-semibold text-sm">Por favor corrige los siguientes errores:</span>
@@ -58,6 +36,33 @@
             </div>
         @endif
 
+        {{-- Barra Superior Interna: Selección de Sede --}}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-200 gap-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-[#950101]"></i>
+                    <span>Parámetros de la Sede</span>
+                </h3>
+                <p class="text-xs text-gray-500">Ajusta la identidad visual y los períodos académicos para la sede seleccionada</p>
+            </div>
+
+            @if(isset($sedes) && count($sedes) > 1)
+            <div class="flex items-center gap-2 bg-gray-50 border border-gray-300 rounded-lg px-3 py-1.5 shadow-2xs">
+                <label for="sede_selector" class="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                    <i class="fa-solid fa-building-columns text-gray-400"></i> Sede:
+                </label>
+                <select id="sede_selector" onchange="window.location.href='{{ route('configuracion.index') }}?id_sede=' + this.value" 
+                    class="text-xs font-bold text-gray-800 border-none bg-transparent focus:ring-0 cursor-pointer p-0 pr-4">
+                    @foreach($sedes as $s)
+                        <option value="{{ $s->id_sede }}" {{ $sede && $sede->id_sede == $s->id_sede ? 'selected' : '' }}>
+                            {{ $s->nombre_sede }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+        </div>
+
         <form action="{{ route('configuracion.guardar-general') }}" method="POST" enctype="multipart/form-data" id="config-general-form">
             @csrf
             <input type="hidden" name="id_sede" value="{{ $sede ? $sede->id_sede : 'LA' }}">
@@ -66,42 +71,53 @@
             <input type="file" id="logo_file_input" name="logo" accept="image/jpeg,image/png,image/jpg,image/gif,image/svg+xml" class="hidden" onchange="handleLogoSelect(this)">
 
             {{-- SECCIÓN 1: Identidad Visual --}}
-            <div class="mb-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-2">Identidad Visual</h3>
-                <hr class="border-gray-200 mb-4">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <!-- Izquierda: Logo institucional -->
-                    <div class="space-y-2">
+            <div class="mb-8">
+                <h4 class="text-base font-bold text-gray-800 flex items-center gap-2 mb-4">
+                    <i class="fa-solid fa-palette text-[#950101]"></i>
+                    <span>Identidad Visual</span>
+                </h4>
+
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 bg-gray-50/60 p-5 rounded-xl border border-gray-200">
+                    <!-- Izquierda: Previsualización con Fondo Negro y Botones de Acción -->
+                    <div class="space-y-3">
                         <label class="block text-sm font-semibold text-gray-800">
-                            Logo institucional de la Sede {{ $sede ? $sede->nombre_sede : 'Los Ángeles' }}
+                            Logo Institucional de la Sede {{ $sede ? $sede->nombre_sede : 'Los Ángeles' }}
                         </label>
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <!-- Botones agrupados: Subir Archivo y Examinar -->
-                            <div class="inline-flex rounded-md shadow-2xs" role="group">
-                                <button type="button" onclick="document.getElementById('logo_file_input').click()" 
-                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 focus:z-10 transition">
-                                    <i class="fa-solid fa-arrow-up-from-bracket text-gray-500"></i> Subir Archivo
-                                </button>
-                                <button type="button" onclick="document.getElementById('logo_file_input').click()" 
-                                    class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-gray-700 bg-white border-t border-b border-r border-gray-300 rounded-r-md hover:bg-gray-50 focus:z-10 transition">
-                                    <i class="fa-regular fa-folder text-gray-500"></i> Examinar
-                                </button>
-                            </div>
 
-                            <!-- Miniatura Logo y Eliminar -->
-                            <div id="logo-preview-badge" class="inline-flex items-center gap-2 border border-gray-300 rounded-md px-2.5 py-1 bg-white shadow-2xs">
-                                <img id="logo-preview-img" src="{{ $logoUrl }}" alt="Logo" class="w-6 h-6 object-contain rounded-full border border-gray-200">
-                                <button type="button" onclick="eliminarLogoClick()" class="text-xs font-semibold text-red-600 hover:text-red-800 hover:underline transition">
-                                    Eliminar
-                                </button>
-                            </div>
+                        <!-- Caja de Previsualización con Fondo Negro -->
+                        <div class="w-full sm:w-80 h-36 bg-black rounded-xl p-4 flex flex-col items-center justify-center border border-gray-800 shadow-inner relative group overflow-hidden">
+                            <img id="logo-preview-img" src="{{ $logoUrl }}" alt="Logo institucional" 
+                                class="max-h-24 max-w-full object-contain transition-transform duration-200 group-hover:scale-105">
+                            <span class="absolute bottom-1 right-2 text-[10px] text-gray-400 font-mono tracking-wider select-none bg-black/70 px-1 rounded">
+                                VISTA PREVIA
+                            </span>
+                        </div>
 
-                            <span id="logo-status-text" class="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 hidden"></span>
+                        <!-- Botones Unificados de Acción -->
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <x-button type="button" variant="primary" size="sm" onclick="document.getElementById('logo_file_input').click()" class="gap-1.5">
+                                <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                                <span>Subir Archivo</span>
+                            </x-button>
+
+                            <x-button type="button" variant="outline" size="sm" onclick="document.getElementById('logo_file_input').click()" class="gap-1.5">
+                                <i class="fa-regular fa-folder-open"></i>
+                                <span>Examinar</span>
+                            </x-button>
+
+                            <x-button type="button" variant="danger" size="sm" onclick="eliminarLogoClick()" class="gap-1.5">
+                                <i class="fa-solid fa-trash-can"></i>
+                                <span>Eliminar</span>
+                            </x-button>
+                        </div>
+
+                        <div id="logo-status-container">
+                            <span id="logo-status-text" class="hidden"></span>
                         </div>
                     </div>
 
                     <!-- Derecha: Toggle Switch Períodos Definidos -->
-                    <div class="flex items-center">
+                    <div class="flex items-center lg:pt-8">
                         <label class="relative inline-flex items-center cursor-pointer select-none">
                             <input type="checkbox" name="periodos_definidos" id="periodos_definidos" value="1" 
                                 class="sr-only peer" {{ $periodosDefinidos ? 'checked' : '' }} onchange="togglePeriodosDefinidosUI(this.checked)">
@@ -116,12 +132,15 @@
 
             {{-- SECCIÓN 2: Períodos Académicos y Semanas de Receso --}}
             <div class="mb-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">Períodos Académicos y Semanas de Receso</h3>
+                <h4 class="text-base font-bold text-gray-800 flex items-center gap-2 mb-4">
+                    <i class="fa-regular fa-calendar-days text-[#950101]"></i>
+                    <span>Períodos Académicos y Semanas de Receso</span>
+                </h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5" id="periodos-cards-container">
                     <!-- Tarjeta: Primer Semestre -->
                     <div class="border border-gray-200 rounded-xl p-4 bg-white shadow-2xs transition-all duration-200">
-                        <h4 class="font-bold text-gray-900 text-sm mb-3">Primer Semestre {{ $anio }} ({{ $anio }}-1)</h4>
+                        <h5 class="font-bold text-gray-900 text-sm mb-3">Primer Semestre {{ $anio }} ({{ $anio }}-1)</h5>
                         
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <div>
@@ -138,7 +157,7 @@
 
                         <!-- Receso Box Inset -->
                         <div class="bg-[#ebedf0] bg-gray-100 rounded-lg p-3 border border-gray-200/80">
-                            <h5 class="font-bold text-xs text-gray-800 mb-2">Semana de Receso</h5>
+                            <h6 class="font-bold text-xs text-gray-800 mb-2">Semana de Receso</h6>
                             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                                 <div class="sm:col-span-5 flex items-center">
                                     <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
@@ -165,7 +184,7 @@
 
                     <!-- Tarjeta: Segundo Semestre -->
                     <div class="border border-gray-200 rounded-xl p-4 bg-white shadow-2xs transition-all duration-200">
-                        <h4 class="font-bold text-gray-900 text-sm mb-3">Segundo Semestre {{ $anio }} ({{ $anio }}-2)</h4>
+                        <h5 class="font-bold text-gray-900 text-sm mb-3">Segundo Semestre {{ $anio }} ({{ $anio }}-2)</h5>
                         
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <div>
@@ -182,7 +201,7 @@
 
                         <!-- Receso Box Inset -->
                         <div class="bg-[#ebedf0] bg-gray-100 rounded-lg p-3 border border-gray-200/80">
-                            <h5 class="font-bold text-xs text-gray-800 mb-2">Semana de Receso</h5>
+                            <h6 class="font-bold text-xs text-gray-800 mb-2">Semana de Receso</h6>
                             <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                                 <div class="sm:col-span-5 flex items-center">
                                     <label class="inline-flex items-center gap-2 cursor-pointer text-xs font-medium text-gray-700">
@@ -209,133 +228,15 @@
                 </div>
             </div>
 
-            <!-- Botón Guardar Cambios -->
-            <div class="flex justify-end mt-6">
-                <button type="submit" 
-                    class="inline-flex items-center px-6 py-2.5 bg-[#0d6955] hover:bg-[#0a5243] text-white text-sm font-semibold rounded-lg shadow-xs transition-colors">
-                    Guardar Cambios
-                </button>
+            <!-- Botón Guardar Cambios Unificado -->
+            <div class="flex justify-end pt-4 border-t border-gray-200">
+                <x-button type="submit" variant="success" size="base" class="gap-2 px-6">
+                    <i class="fa-solid fa-floppy-disk text-base"></i>
+                    <span>Guardar Cambios</span>
+                </x-button>
             </div>
         </form>
     </div>
-
-    {{-- SECCIÓN SECUNDARIA: Otras configuraciones del sistema (Tabla y Modal) --}}
-    <div x-data="{ openTable: false }" class="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden mb-6">
-        <div @click="openTable = !openTable" class="p-4 bg-gray-50/70 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition select-none">
-            <div class="flex items-center gap-2.5">
-                <i class="fa-solid fa-list-check text-gray-500"></i>
-                <h4 class="text-sm font-bold text-gray-800">Otras Configuraciones del Sistema</h4>
-                <span class="text-xs text-gray-500 font-medium">({{ isset($configuraciones) ? $configuraciones->count() : 0 }} registros)</span>
-            </div>
-            <div class="flex items-center gap-2 text-xs font-semibold text-gray-600">
-                <span x-text="openTable ? 'Ocultar listado' : 'Ver listado'"></span>
-                <i class="fa-solid text-xs" :class="openTable ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </div>
-        </div>
-        <div x-show="openTable" class="p-6" style="display: none;">
-            <livewire:configuracion-table />
-        </div>
-    </div>
-
-    {{-- MODAL PARA AGREGAR CONFIGURACIÓN GENERAL --}}
-    <x-modal name="add-configuracion" :show="isset($errors) && ($errors->has('clave') || $errors->has('valor'))" focusable>
-        @slot('title')
-        <div class="relative flex items-center justify-between p-2 bg-red-700">
-            <div class="flex items-center gap-3">
-                <div class="p-4 bg-red-100 rounded-full">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                </div>
-                <h2 class="text-2xl font-bold text-white">
-                    Agregar Configuración
-                </h2>
-            </div>
-            <button @click="show = false"
-                class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
-        </div>
-        @endslot
-
-        <form method="POST" action="{{ route('configuracion.store') }}" class="p-6" enctype="multipart/form-data">
-            @csrf
-
-            <div class="grid gap-4">
-                <div class="space-y-2">
-                    <x-form.label for="clave" value="Clave *" />
-                    <select id="clave" name="clave" 
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('clave') border-red-500 @enderror" 
-                        required onchange="toggleLogoUpload()">
-                        <option value="">Seleccione una configuración</option>
-                        <option value="logo_institucional" {{ old('clave') == 'logo_institucional' ? 'selected' : '' }}>Logo Institucional</option>
-                        <option value="other" {{ old('clave') && old('clave') !== 'logo_institucional' ? 'selected' : '' }}>Otra configuración</option>
-                    </select>
-                    @error('clave')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div id="sede-select-section" class="space-y-2" style="display: none;">
-                    <x-form.label for="id_sede" value="Sede *" />
-                    <select id="id_sede" name="id_sede" 
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('id_sede') border-red-500 @enderror">
-                        <option value="">Seleccione una sede</option>
-                        @foreach(\App\Models\Sede::all() as $s)
-                            <option value="{{ $s->id_sede }}" {{ old('id_sede') == $s->id_sede ? 'selected' : '' }}>
-                                {{ $s->nombre_sede }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('id_sede')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div id="other-clave-input" class="space-y-2" style="display: none;">
-                    <x-form.label for="clave_custom" value="Nombre de la clave *" />
-                    <x-form.input id="clave_custom" name="clave_custom" type="text"
-                        class="w-full @error('clave_custom') border-red-500 @enderror" maxlength="100"
-                        placeholder="Ej: nombre_institucion" value="{{ old('clave_custom') }}" />
-                    @error('clave_custom')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div id="logo-upload-section" class="space-y-2" style="display: none;">
-                    <x-form.label for="logo_create" value="Logo Institucional *" />
-                    <x-form.input id="logo_create" name="logo" type="file" 
-                        class="w-full @error('logo') border-red-500 @enderror" accept="image/*" />
-                    <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, JPG, GIF, SVG (máx. 2MB)</p>
-                    @error('logo')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div id="valor-section" class="space-y-2">
-                    <x-form.label for="valor" value="Valor *" />
-                    <textarea id="valor" name="valor" rows="3"
-                        class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('valor') border-red-500 @enderror">{{ old('valor') }}</textarea>
-                    @error('valor')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="space-y-2">
-                    <x-form.label for="descripcion" value="Descripción" />
-                    <x-form.input id="descripcion" name="descripcion" type="text"
-                        class="w-full @error('descripcion') border-red-500 @enderror" maxlength="255"
-                        placeholder="Descripción de la configuración" value="{{ old('descripcion') }}" />
-                    @error('descripcion')
-                        <p class="text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Crear Configuración') }}</x-button>
-                </div>
-            </div>
-        </form>
-    </x-modal>
 
     <script>
         function handleLogoSelect(input) {
@@ -358,7 +259,8 @@
                     document.getElementById('eliminar_logo_input').value = '0';
                     const statusText = document.getElementById('logo-status-text');
                     if (statusText) {
-                        statusText.innerText = 'Nuevo logo: ' + file.name + ' (Guardar para aplicar)';
+                        statusText.innerText = 'Nuevo logo cargado: ' + file.name + ' (Guardar para aplicar cambios)';
+                        statusText.className = 'text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 inline-flex items-center gap-1.5';
                         statusText.classList.remove('hidden');
                     }
                 };
@@ -395,10 +297,9 @@
             document.getElementById('logo-preview-img').src = '{{ asset("images/logo_instituto_tecnologico-01.png") }}';
             const statusText = document.getElementById('logo-status-text');
             if (statusText) {
-                statusText.innerText = 'Logo marcado para eliminación (Guardar para aplicar)';
+                statusText.innerText = 'Logo marcado para eliminación (Guardar para aplicar cambios)';
+                statusText.className = 'text-xs font-medium text-amber-800 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200 inline-flex items-center gap-1.5';
                 statusText.classList.remove('hidden');
-                statusText.classList.remove('text-emerald-700', 'bg-emerald-50', 'border-emerald-200');
-                statusText.classList.add('text-amber-800', 'bg-amber-50', 'border-amber-200');
             }
         }
 
@@ -424,48 +325,6 @@
                 } else {
                     container.classList.remove('opacity-75');
                 }
-            }
-        }
-
-        function toggleLogoUpload() {
-            var claveSelect = document.getElementById('clave');
-            var logoSection = document.getElementById('logo-upload-section');
-            var valorSection = document.getElementById('valor-section');
-            var otherClaveInput = document.getElementById('other-clave-input');
-            var sedeSection = document.getElementById('sede-select-section');
-            var valorTextarea = document.getElementById('valor');
-            var logoInput = document.getElementById('logo_create');
-            var sedeSelect = document.getElementById('id_sede');
-            
-            if (!claveSelect) return;
-
-            if (claveSelect.value === 'logo_institucional') {
-                if (logoSection) logoSection.style.display = 'block';
-                if (valorSection) valorSection.style.display = 'none';
-                if (otherClaveInput) otherClaveInput.style.display = 'none';
-                if (sedeSection) sedeSection.style.display = 'block';
-                
-                if (valorTextarea) valorTextarea.removeAttribute('required');
-                if (logoInput) logoInput.setAttribute('required', 'required');
-                if (sedeSelect) sedeSelect.setAttribute('required', 'required');
-            } else if (claveSelect.value === 'other') {
-                if (logoSection) logoSection.style.display = 'none';
-                if (valorSection) valorSection.style.display = 'block';
-                if (otherClaveInput) otherClaveInput.style.display = 'block';
-                if (sedeSection) sedeSection.style.display = 'none';
-                
-                if (valorTextarea) valorTextarea.setAttribute('required', 'required');
-                if (logoInput) logoInput.removeAttribute('required');
-                if (sedeSelect) sedeSelect.removeAttribute('required');
-            } else {
-                if (logoSection) logoSection.style.display = 'none';
-                if (valorSection) valorSection.style.display = 'none';
-                if (otherClaveInput) otherClaveInput.style.display = 'none';
-                if (sedeSection) sedeSection.style.display = 'none';
-                
-                if (valorTextarea) valorTextarea.removeAttribute('required');
-                if (logoInput) logoInput.removeAttribute('required');
-                if (sedeSelect) sedeSelect.removeAttribute('required');
             }
         }
 
