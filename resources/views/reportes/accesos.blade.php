@@ -44,7 +44,7 @@
                     </div>
                     <div class="ml-3">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total de accesos</p>
-                        <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $accesos->count() }}</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $totalAccesos ?? $accesos->total() }}</p>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     <div class="ml-3">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Usuarios únicos</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->unique('run')->count() }}
+                            {{ $usuariosUnicos ?? $accesos->unique('run')->count() }}
                         </p>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                     <div class="ml-3">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Espacios utilizados</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->unique('espacio')->count() }}
+                            {{ $espaciosUtilizados ?? $accesos->unique('espacio')->count() }}
                         </p>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                     <div class="ml-3">
                         <p class="text-xs font-medium text-gray-500 dark:text-gray-400">En curso</p>
                         <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->where('hora_salida', 'En curso')->count() }}
+                            {{ $enCursoCount ?? 0 }}
                         </p>
                     </div>
                 </div>
@@ -207,7 +207,7 @@
                         Registro de accesos
                     </h3>
                     <span class="px-2.5 py-0.5 text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full">
-                        Total: <strong class="text-gray-900 dark:text-white">{{ $accesos->count() }}</strong> {{ $accesos->count() === 1 ? 'registro' : 'registros' }}
+                        Total: <strong class="text-gray-900 dark:text-white">{{ $accesos->total() }}</strong> {{ $accesos->total() === 1 ? 'registro' : 'registros' }}
                     </span>
                 </div>
                 <div class="flex items-center gap-2">
@@ -253,13 +253,13 @@
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                         <tr>
-                            <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                                 Usuario
                             </th>
-                            <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                                 UA
                             </th>
-                            <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                            <th scope="col" class="px-4 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                                 Asignatura
                             </th>
                             <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
@@ -288,18 +288,15 @@
                     <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                         @forelse($accesos as $acceso)
                             <tr class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
-                                <td class="px-4 py-3.5">
+                                <td class="px-4 py-3.5 text-center">
                                     <div class="text-sm font-semibold text-gray-900 dark:text-white">
                                         {{ $acceso['usuario'] }}
                                     </div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                                        {{ $acceso['run'] }}
-                                    </div>
                                 </td>
-                                <td class="px-4 py-3.5 text-xs text-gray-700 dark:text-gray-300 max-w-xs">
+                                <td class="px-4 py-3.5 text-center text-xs text-gray-700 dark:text-gray-300 font-medium max-w-xs">
                                     {{ $acceso['ua'] ?? 'N/A' }}
                                 </td>
-                                <td class="px-4 py-3.5 text-xs text-gray-800 dark:text-gray-200 max-w-xs font-medium">
+                                <td class="px-4 py-3.5 text-center text-xs text-gray-800 dark:text-gray-200 font-medium max-w-xs">
                                     {{ $acceso['asignatura'] ?? 'N/A' }}
                                 </td>
                                 <td class="px-3 py-3.5 text-center whitespace-nowrap">
@@ -384,10 +381,13 @@
             </div>
 
             <!-- Footer / Paginación -->
-            @if($accesos->count() > 0)
-                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 dark:bg-gray-800/50 dark:border-gray-700 flex items-center justify-between">
+            @if($accesos->total() > 0)
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 dark:bg-gray-800/50 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div class="text-xs text-gray-500 dark:text-gray-400">
-                        Mostrando <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $accesos->count() }}</span> de <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $accesos->count() }}</span> registros
+                        Mostrando <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $accesos->firstItem() }}</span> a <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $accesos->lastItem() }}</span> de <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $accesos->total() }}</span> registros
+                    </div>
+                    <div>
+                        {{ $accesos->links() }}
                     </div>
                 </div>
             @endif

@@ -1081,14 +1081,38 @@ class ReportController extends Controller
 
         // Obtener accesos registrados con filtros
         try {
-            $accesos = $this->obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso, $tipoUsuario, $espacio, $search, $ua, $estado);
+            $accesosColeccion = $this->obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso, $tipoUsuario, $espacio, $search, $ua, $estado);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Error en obtenerAccesosRegistrados: ' . $e->getMessage());
-            $accesos = collect();
+            $accesosColeccion = collect();
         }
+
+        $totalAccesos = $accesosColeccion->count();
+        $usuariosUnicos = $accesosColeccion->unique('run')->count();
+        $espaciosUtilizados = $accesosColeccion->unique('espacio')->count();
+        $enCursoCount = $accesosColeccion->where('hora_salida', 'En curso')->count();
+
+        // Paginar a 15 registros por página manteniendo los filtros GET
+        $perPage = 15;
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+        $currentItems = $accesosColeccion->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $accesos = new \Illuminate\Pagination\LengthAwarePaginator(
+            $currentItems,
+            $totalAccesos,
+            $perPage,
+            $currentPage,
+            [
+                'path' => \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('reportes.accesos', compact(
             'accesos',
+            'totalAccesos',
+            'usuariosUnicos',
+            'espaciosUtilizados',
+            'enCursoCount',
             'fechaInicio',
             'fechaFin',
             'periodo',
