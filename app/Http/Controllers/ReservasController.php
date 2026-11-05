@@ -33,6 +33,14 @@ class ReservasController extends Controller
         return view('reservas.index', compact('reservas', 'universidades', 'espaciosDisponibles'));
     }
 
+    /**
+     * Vista dedicada de Solicitudes y Reservas (Ocupación de Externos + Docentes)
+     */
+    public function solicitudesReservas()
+    {
+        return view('reservas.solicitudes-reservas');
+    }
+
     public function create()
     {
         $universidades = Universidad::all();
@@ -312,93 +320,44 @@ class ReservasController extends Controller
     }
 
     /**
-     * Exportar reservas filtradas a Excel
+     * Exportar reservas filtradas y resumen de ocupación a Excel
      */
     public function exportExcel(Request $request)
     {
-        $fechaInicio = $request->get('fecha_inicio');
-        $fechaFin = $request->get('fecha_fin');
-        $tipoEspacio = $request->get('tipo_espacio');
-        $estado = $request->get('estado');
-        $search = trim($request->get('search', ''));
+        $fechaInicio = $request->get('fecha_inicio', '');
+        $fechaFin = $request->get('fecha_fin', '');
+        $tipoEspacio = $request->get('tipo_espacio', '');
+        $tipoSolicitante = $request->get('tipo_solicitante', '');
+        $estado = $request->get('estado', '');
+        $search = trim((string) $request->get('search', ''));
 
-        $query = Reserva::query()
-            ->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
-
-        if (!empty($fechaInicio)) {
-            $query->whereDate('fecha_reserva', '>=', $fechaInicio);
-        }
-        if (!empty($fechaFin)) {
-            $query->whereDate('fecha_reserva', '<=', $fechaFin);
-        }
-
-        if (!empty($tipoEspacio)) {
-            if ($tipoEspacio === 'Laboratorios') {
-                $query->whereHas('espacio', function ($q) {
-                    $q->where('tipo_espacio', 'like', 'Laboratorio%');
-                });
-            } else {
-                $query->whereHas('espacio', function ($q) use ($tipoEspacio) {
-                    $q->where('tipo_espacio', $tipoEspacio);
-                });
-            }
-        } else {
-            $query->whereHas('espacio', function ($q) {
-                $q->whereIn('tipo_espacio', ['Auditorio', 'Sala de Estudio'])
-                  ->orWhere('tipo_espacio', 'like', 'Laboratorio%');
-            });
-        }
-
-        if (!empty($estado)) {
-            $query->where('estado', $estado);
-        }
-
-        if ($search !== '') {
-            $cleanRun = preg_replace('/[^0-9Kk]/', '', $search);
-            $termSinTilde = str_replace(
-                ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
-                ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
-                $search
-            );
-            $terms = array_unique(array_filter([$search, $termSinTilde, mb_strtoupper($search), mb_strtolower($search)]));
-
-            $query->where(function ($q) use ($terms, $search, $cleanRun) {
-                $q->where('id_reserva', 'like', '%' . $search . '%')
-                  ->orWhere('id_espacio', 'like', '%' . $search . '%')
-                  ->orWhere('fecha_reserva', 'like', '%' . $search . '%');
-
-                if (!empty($cleanRun)) {
-                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
-                      ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
-                }
-
-                foreach ($terms as $t) {
-                    $q->orWhere('estado', 'like', '%' . $t . '%')
-                      ->orWhereHas('profesor', function ($pq) use ($t) {
-                          $pq->where('name', 'like', '%' . $t . '%');
-                      })
-                      ->orWhereHas('solicitante', function ($sq) use ($t) {
-                          $sq->where('nombre', 'like', '%' . $t . '%');
-                      })
-                      ->orWhereHas('espacio', function ($eq) use ($t) {
-                          $eq->where('nombre_espacio', 'like', '%' . $t . '%');
-                      })
-                      ->orWhereHas('asignatura', function ($aq) use ($t) {
-                          $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
-                      });
-                }
-            });
-        }
+        $query = \App\Livewire\ReservationsTable::construirQuery(
+            $tipoEspacio,
+            $tipoSolicitante,
+            $fechaInicio,
+            $fechaFin,
+            $estado,
+            $search,
+            true
+        )->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
 
         $reservas = $query->orderBy('fecha_reserva', 'desc')
                           ->orderBy('hora', 'asc')
                           ->get();
 
+        $metricas = \App\Livewire\ReservationsTable::calcularMetricasOcupacion(
+            $reservas,
+            $tipoEspacio,
+            $fechaInicio,
+            $fechaFin,
+            $tipoSolicitante
+        );
+
         $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)) . '_' : '';
-        $nombreArchivo = 'reporte_reservas_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
+        $nombreArchivo = 'reporte_reservas_ocupacion_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
 
         return Excel::download(
-            new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin),
+            new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin, $metricas),
             $nombreArchivo
         );
     }

@@ -386,20 +386,25 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::get('/facultades/{universidadId}', [EspacioController::class, 'getFacultades']);
 });
 
-Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
+// Solicitudes y Reservas (Reporte de Ocupación de Reservas de Docentes y Externos)
+Route::group(['middleware' => ['auth', 'role_or_permission:Administrador|Supervisor|Director|Estudiante en Práctica|reportes|mantenedor de reservas']], function () {
+    Route::get('/solicitudes-reservas', [ReservasController::class, 'solicitudesReservas'])->name('solicitudes-reservas.index');
     Route::get('/reservas/export-excel', [ReservasController::class, 'exportExcel'])->name('reservas.export-excel');
+    Route::get('/reservas/{id_reserva}/comprobante', [ReservasController::class, 'descargarComprobante'])->name('reservas.comprobante');
+
+    // Registro administrativo de entrada/salida en nombre de un docente o solicitante
+    Route::post('/reservas/{id}/admin-entrada', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarEntradaAdmin'])->name('reservas.admin.entrada');
+    Route::post('/reservas/{id}/admin-salida', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarSalidaAdmin'])->name('reservas.admin.salida');
+});
+
+Route::group(['middleware' => ['auth', 'role_or_permission:Administrador|Supervisor|mantenedor de reservas']], function () {
     Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
     Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');
-    Route::get('/reservas/{id_reserva}/comprobante', [ReservasController::class, 'descargarComprobante'])->name('reservas.comprobante');
     Route::get('/reservas/{id_reserva}/edit', [ReservasController::class, 'edit'])->name('reservas.edit');
     Route::put('/reservas/{id_reserva}', [ReservasController::class, 'update'])->name('reservas.update');
     Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');
     Route::get('/espacios-disponibles', [ReservasController::class, 'getEspaciosDisponibles']);
-
-    // Registro administrativo de entrada/salida en nombre de un docente
-    Route::post('/reservas/{id}/admin-entrada', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarEntradaAdmin'])->name('reservas.admin.entrada');
-    Route::post('/reservas/{id}/admin-salida', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarSalidaAdmin'])->name('reservas.admin.salida');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de asignaturas']], function () {

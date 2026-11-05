@@ -1,20 +1,15 @@
 <div>
-    <!-- Título Solicitudes y Reservas -->
-    <div class="mb-4">
-        <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
-            <i class="fas fa-calendar-check text-[#950101] text-xl"></i>
-            <span>Solicitudes y Reservas</span>
-        </span>
-    </div>
-
-    <!-- Navpills / Estadísticas idénticas a Control de Clases -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <!-- Total reservas -->
+    <!-- Tarjetas principales de Ocupación y Reservas (Reporte Don Boris: Externos + Docentes) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <!-- 1. Total Reservas y Horas -->
         <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center justify-between">
+            <div class="flex items-start justify-between">
                 <div>
                     <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total Reservas</p>
                     <p class="text-3xl font-black text-blue-950 mt-1">{{ number_format($kpis['total'] ?? 0) }}</p>
+                    <p class="text-xs text-blue-800 mt-1.5 font-medium">
+                        <i class="fa-regular fa-clock mr-1"></i>{{ number_format($kpis['horas_totales'] ?? 0, 1) }} hrs utilizadas ({{ number_format($kpis['modulos_totales'] ?? 0) }} mód.)
+                    </p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-lg text-[#950101]">
                     <i class="fas fa-calendar-check text-xl"></i>
@@ -22,75 +17,176 @@
             </div>
         </div>
 
-        <!-- Auditorio -->
-        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center justify-between">
+        <!-- 2. % de Ocupación (Externos + Docentes) -->
+        <div class="stat-card bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-start justify-between">
+                <div class="min-w-0 flex-1 pr-2">
+                    <p class="text-emerald-800 text-xs font-semibold uppercase tracking-wider" title="Porcentaje de ocupación sobre las salas reservadas en el período evaluado">
+                        % Ocupación Reservas
+                    </p>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <p class="text-3xl font-black text-emerald-950">{{ number_format($kpis['pct_ocupacion_salas_usadas'] ?? 0, 1) }}%</p>
+                        <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                            {{ $kpis['espacios_usados_count'] ?? 0 }} {{ ($kpis['espacios_usados_count'] ?? 0) === 1 ? 'sala usada' : 'salas usadas' }}
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-emerald-800 mt-1.5 font-medium leading-tight">
+                        Docentes: <strong>{{ number_format($kpis['pct_ocupacion_docentes_salas'] ?? 0, 1) }}%</strong> · Externos: <strong>{{ number_format($kpis['pct_ocupacion_externos_salas'] ?? 0, 1) }}%</strong>
+                        <span class="block text-[10px] text-emerald-700/80 mt-0.5">
+                            Sobre total campus ({{ $kpis['espacios_catalogo_count'] ?? 0 }} salas): {{ number_format($kpis['pct_ocupacion_catalogo'] ?? 0, 2) }}%
+                        </span>
+                    </p>
+                </div>
+                <div class="p-3 bg-emerald-100 rounded-lg text-emerald-700 shrink-0">
+                    <i class="fas fa-chart-pie text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Reservas Docentes -->
+        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-indigo-100/70 transition-colors"
+             wire:click="$set('tipoSolicitante', '{{ $tipoSolicitante === 'docente' ? '' : 'docente' }}')"
+             title="Clic para filtrar solo reservas de Docentes">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Auditorio</p>
-                    <p class="text-3xl font-black text-indigo-950 mt-1">{{ number_format($kpis['auditorio'] ?? 0) }}</p>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Reservas Docentes</span>
+                        @if($tipoSolicitante === 'docente')
+                            <span class="px-1.5 py-0.2 bg-indigo-600 text-white text-[10px] rounded">Filtro activo</span>
+                        @endif
+                    </p>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <p class="text-3xl font-black text-indigo-950">{{ number_format($kpis['reservas_docentes'] ?? 0) }}</p>
+                        <span class="text-xs font-bold text-indigo-700">({{ number_format($kpis['pct_share_docentes'] ?? 0, 1) }}% del uso)</span>
+                    </div>
+                    <p class="text-xs text-indigo-800 mt-1.5 font-medium">
+                        {{ number_format($kpis['horas_docentes'] ?? 0, 1) }} hrs ({{ number_format($kpis['modulos_docentes'] ?? 0) }} módulos)
+                    </p>
                 </div>
                 <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
-                    <i class="fas fa-landmark text-xl"></i>
+                    <i class="fas fa-chalkboard-user text-xl"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Salas de Estudio -->
-        <div class="stat-card bg-sky-50 border border-sky-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center justify-between">
+        <!-- 4. Reservas Externos (Servicio de Salud, Municipalidad, etc.) -->
+        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-amber-100/70 transition-colors"
+             wire:click="$set('tipoSolicitante', '{{ $tipoSolicitante === 'externo' ? '' : 'externo' }}')"
+             title="Clic para filtrar solo reservas de Solicitantes Externos">
+            <div class="flex items-start justify-between">
                 <div>
-                    <p class="text-sky-700 text-xs font-semibold uppercase tracking-wider">Salas de Estudio</p>
-                    <p class="text-3xl font-black text-sky-950 mt-1">{{ number_format($kpis['salas_estudio'] ?? 0) }}</p>
-                </div>
-                <div class="p-3 bg-sky-100 rounded-lg text-sky-600">
-                    <i class="fas fa-book-reader text-xl"></i>
-                </div>
-            </div>
-        </div>
-
-        <!-- Laboratorios -->
-        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Laboratorios</p>
-                    <p class="text-3xl font-black text-amber-950 mt-1">{{ number_format($kpis['laboratorios'] ?? 0) }}</p>
+                    <p class="text-amber-800 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Reservas Externos</span>
+                        @if($tipoSolicitante === 'externo')
+                            <span class="px-1.5 py-0.2 bg-amber-600 text-white text-[10px] rounded">Filtro activo</span>
+                        @endif
+                    </p>
+                    <div class="flex items-baseline gap-2 mt-1">
+                        <p class="text-3xl font-black text-amber-950">{{ number_format($kpis['reservas_externos'] ?? 0) }}</p>
+                        <span class="text-xs font-bold text-amber-800">({{ number_format($kpis['pct_share_externos'] ?? 0, 1) }}% del uso)</span>
+                    </div>
+                    <p class="text-xs text-amber-900 mt-1.5 font-medium">
+                        {{ number_format($kpis['horas_externos'] ?? 0, 1) }} hrs ({{ number_format($kpis['modulos_externos'] ?? 0) }} módulos)
+                    </p>
                 </div>
                 <div class="p-3 bg-amber-100 rounded-lg text-amber-600">
-                    <i class="fas fa-flask text-xl"></i>
+                    <i class="fas fa-building-user text-xl"></i>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Sección FILTROS idéntica a Control de Clases -->
+    <!-- Resumen rápido por Tipo de Espacio e Instituciones / Entidades detectadas -->
+    <div class="bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <!-- Distribución por Tipo de Espacio -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="font-bold text-gray-600 uppercase tracking-wider mr-1">
+                <i class="fas fa-door-open text-[#950101] mr-1"></i>Por Espacio:
+            </span>
+            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Sala de Clases' ? '' : 'Sala de Clases' }}')"
+                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Sala de Clases' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
+                Salas de Clases: <strong>{{ number_format($kpis['salas_clases'] ?? 0) }}</strong>
+            </button>
+            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Auditorio' ? '' : 'Auditorio' }}')"
+                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Auditorio' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
+                Auditorio: <strong>{{ number_format($kpis['auditorio'] ?? 0) }}</strong>
+            </button>
+            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Laboratorios' ? '' : 'Laboratorios' }}')"
+                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Laboratorios' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
+                Laboratorios: <strong>{{ number_format($kpis['laboratorios'] ?? 0) }}</strong>
+            </button>
+            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Sala de Estudio' ? '' : 'Sala de Estudio' }}')"
+                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Sala de Estudio' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
+                Salas de Estudio: <strong>{{ number_format($kpis['salas_estudio'] ?? 0) }}</strong>
+            </button>
+        </div>
+
+        <!-- Filtros rápidos por Institución / Entidad Externa -->
+        @if(!empty($kpis['por_institucion']))
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="font-bold text-gray-600 uppercase tracking-wider mr-1">
+                    <i class="fas fa-filter text-amber-600 mr-1"></i>Entidades / Uso:
+                </span>
+                @foreach(array_slice($kpis['por_institucion'], 0, 5) as $instItem)
+                    <button type="button"
+                            wire:click="$set('search', '{{ $search === $instItem['institucion'] ? '' : ($instItem['institucion'] === 'Docente Interno' ? '' : $instItem['institucion']) }}')"
+                            class="px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors {{ $instItem['categoria'] === 'Externo' ? 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100' : 'bg-indigo-50 text-indigo-800 border-indigo-200 hover:bg-indigo-100' }}"
+                            title="Clic para filtrar por {{ $instItem['institucion'] }}">
+                        {{ \Illuminate\Support\Str::limit($instItem['institucion'], 26) }}:
+                        <strong>{{ $instItem['total_reservas'] }}</strong> ({{ $instItem['horas'] }}h · {{ $instItem['pct_del_total_reservas'] }}%)
+                    </button>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
+    <!-- Sección FILTROS -->
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                <i class="fas fa-filter text-[#950101]"></i> FILTROS
+                <i class="fas fa-filter text-[#950101]"></i> FILTROS DEL REPORTE
             </h3>
+            <span class="text-xs text-gray-500">
+                Período evaluado: <strong>{{ $kpis['fecha_inicio_calculo'] ?? '-' }}</strong> al <strong>{{ $kpis['fecha_fin_calculo'] ?? '-' }}</strong>
+                ({{ $kpis['dias_habiles'] ?? 1 }} días hábiles · {{ number_format($kpis['horas_disponibles_salas_usadas'] ?? 0, 0) }} hrs disp. en salas usadas)
+            </span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {{-- Tipo de Espacio (sin emojis) --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            {{-- Tipo de Solicitante --}}
+            <div>
+                <label for="tipo_solicitante_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo Solicitante</label>
+                <select id="tipo_solicitante_filtro" wire:model.live="tipoSolicitante"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
+                    <option value="">Docentes + Externos (Reporte Completo)</option>
+                    <option value="externo">Solo Externos (Servicio Salud, Municipalidad, etc.)</option>
+                    <option value="docente">Solo Docentes</option>
+                    <option value="todos">Todos (incluye Estudiantes / Salas Estudio)</option>
+                </select>
+            </div>
+
+            {{-- Tipo de Espacio --}}
             <div>
                 <label for="tipo_espacio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo de Espacio</label>
                 <select id="tipo_espacio_filtro" wire:model.live="tipoEspacio"
                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420] bg-white">
-                    <option value="">Todos (Auditorio, Salas de Estudio, Laboratorios)</option>
+                    <option value="">Todos los espacios</option>
+                    <option value="Sala de Clases">Salas de Clases</option>
                     <option value="Auditorio">Auditorio</option>
-                    <option value="Sala de Estudio">Salas de Estudio</option>
                     <option value="Laboratorios">Laboratorios</option>
+                    <option value="Taller">Taller</option>
+                    <option value="Sala de Estudio">Salas de Estudio</option>
                 </select>
             </div>
 
-            {{-- Buscar --}}
+            {{-- Buscar (incluye institución / actividad) --}}
             <div>
-                <label for="search_input" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar</label>
+                <label for="search_input" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar / Institución</label>
                 <div class="relative">
                     <input type="text"
                            id="search_input"
                            wire:model.live.debounce.400ms="search"
-                           placeholder="Profesor, solicitante, RUN o espacio..."
+                           placeholder="Servicio de Salud, Municipalidad, docente, sala..."
                            class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#D12420]/20 focus:border-[#D12420]" />
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
@@ -128,21 +224,42 @@
             </div>
         </div>
 
-        <!-- Botones de Acción -->
-        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-            <button type="button" wire:click="limpiarFiltros" 
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
-                <i class="fas fa-undo text-xs"></i> Limpiar
-            </button>
+        <!-- Botones de filtro rápido y Limpiar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mt-4 pt-4 border-t border-gray-100">
+            <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                <span class="text-gray-500 font-medium mr-1">Búsqueda rápida:</span>
+                <button type="button" wire:click="$set('search', 'Servicio de Salud')"
+                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+                    Servicio de Salud
+                </button>
+                <button type="button" wire:click="$set('search', 'Municipalidad')"
+                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+                    Municipalidad
+                </button>
+                <button type="button" wire:click="$set('search', 'Hospital')"
+                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
+                    Hospital / CESFAM
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" wire:click="limpiarFiltros" 
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
+                    <i class="fas fa-undo text-xs"></i> Limpiar filtros
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Botón Exportar al estilo Control de Clases -->
-    <div class="flex justify-end mb-4">
-        <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
-           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
+    <!-- Botón Exportar Reporte Completo a Excel -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div class="text-xs text-gray-600">
+            El archivo Excel incluye <strong>2 hojas</strong>: <em>Detalle de Reservas</em> (con autofiltros por Institución, Categoría y Sala) y <em>Resumen de Ocupación (% Don Boris)</em>.
+        </div>
+        <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'tipo_solicitante' => $tipoSolicitante, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold shrink-0 self-end sm:self-auto">
             <i class="fas fa-file-excel"></i>
-            <span>Exportar todas las reservas</span>
+            <span>Exportar Reporte Completo (% Ocupación + Detalle)</span>
         </a>
     </div>
 
@@ -162,7 +279,7 @@
                                 @endif
                             </span>
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_reserva')">
+                        <th scope="col" class="w-28 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_reserva')">
                             <span class="inline-flex items-center gap-1 justify-center">
                                 Fecha
                                 @if($sortField === 'fecha_reserva')
@@ -173,7 +290,7 @@
                             </span>
                         </th>
                         <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                            Horario
+                            Horario / Duración
                         </th>
                         <th scope="col" class="w-36 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer select-none hover:text-red-100" wire:click="sortBy('id_espacio')">
                             <span class="inline-flex items-center gap-1 justify-center">
@@ -185,24 +302,32 @@
                                 @endif
                             </span>
                         </th>
-                        <th scope="col" class="px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                            Usuario / Solicitante
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                            Usuario / Categoría
                         </th>
-                        <th scope="col" class="w-32 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                        <th scope="col" class="px-3 py-3.5 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                            Institución / Actividad / Motivo
+                        </th>
+                        <th scope="col" class="w-28 px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Estado
                         </th>
-                        <th scope="col" class="min-w-[220px] px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                        <th scope="col" class="min-w-[200px] px-3 py-3.5 text-center text-xs font-semibold text-white uppercase tracking-wider">
                             Acciones
                         </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                     @forelse ($reservas as $reserva)
+                        @php
+                            $infoExtra = \App\Livewire\ReservationsTable::extraerInstitucionYActividad($reserva);
+                            $horasDuracion = \App\Livewire\ReservationsTable::calcularHorasReserva($reserva);
+                            $modulosReserva = max(1, (int) ($reserva->modulos ?? 1));
+                        @endphp
                         <tr wire:key="reserva-row-{{ $reserva->id_reserva }}" class="hover:bg-slate-50/80 dark:hover:bg-gray-700/50 transition-colors">
                             <td class="w-24 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <span class="font-medium text-[#950101] dark:text-blue-400 text-sm">#{{ $reserva->id_reserva }}</span>
                             </td>
-                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                            <td class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <span class="font-medium text-gray-800 dark:text-gray-200 text-sm">
                                     {{ $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '-' }}
                                 </span>
@@ -211,6 +336,9 @@
                                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                                     {{ substr($reserva->hora, 0, 5) }} - {{ substr($reserva->hora_salida, 0, 5) }}
                                 </span>
+                                <div class="text-[11px] text-gray-500 mt-0.5 font-medium">
+                                    {{ $horasDuracion }} hrs ({{ $modulosReserva }} {{ $modulosReserva === 1 ? 'mód.' : 'móds.' }})
+                                </div>
                             </td>
                             <td class="w-36 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <div class="font-semibold text-gray-800 dark:text-white text-sm">
@@ -218,18 +346,61 @@
                                 </div>
                                 @if($reserva->espacio && $reserva->espacio->tipo_espacio)
                                     <span class="text-[11px] text-gray-500 truncate block">
-                                        {{ $reserva->espacio->tipo_espacio }}
+                                        {{ $reserva->espacio->tipo_espacio }} ({{ $reserva->id_espacio }})
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-center align-middle">
-                                <div class="flex flex-col items-center justify-center">
-                                    <span class="font-medium text-gray-900 dark:text-gray-100 text-sm leading-snug" title="{{ $reserva->nombre_usuario }}">
+                            <td class="px-3 py-3 align-middle">
+                                <div class="flex flex-col items-start">
+                                    <span class="font-semibold text-gray-900 dark:text-gray-100 text-sm leading-snug">
                                         {{ $reserva->nombre_usuario }}
                                     </span>
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        @if($infoExtra['categoria'] === 'Docente')
+                                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                                Docente
+                                            </span>
+                                        @elseif($infoExtra['categoria'] === 'Externo')
+                                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                                Externo
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+                                                {{ $infoExtra['categoria'] }}
+                                            </span>
+                                        @endif
+                                        @if($reserva->run_profesor || $reserva->run_solicitante)
+                                            <span class="text-[11px] text-gray-500 font-mono">
+                                                RUN: {{ $reserva->run_profesor ?: $reserva->run_solicitante }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </div>
                             </td>
-                            <td class="w-32 px-3 py-3 text-center align-middle whitespace-nowrap">
+                            <td class="px-3 py-3 align-middle max-w-xs">
+                                <div class="flex flex-col items-start">
+                                    @if($infoExtra['institucion'] && $infoExtra['institucion'] !== 'Docente Interno' && $infoExtra['institucion'] !== $infoExtra['actividad'])
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 mb-1 rounded text-[11px] font-bold bg-amber-100/80 text-amber-900 border border-amber-300/70">
+                                            <i class="fa-solid fa-building text-[10px]"></i>
+                                            {{ $infoExtra['institucion'] }}
+                                        </span>
+                                    @endif
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2" title="{{ $infoExtra['actividad'] }}">
+                                        {{ $infoExtra['actividad'] }}
+                                    </span>
+                                    @if(!empty($infoExtra['descripcion']) && $infoExtra['descripcion'] !== $infoExtra['actividad'])
+                                        <span class="text-xs text-gray-500 line-clamp-1 mt-0.5" title="{{ $infoExtra['descripcion'] }}">
+                                            {{ $infoExtra['descripcion'] }}
+                                        </span>
+                                    @endif
+                                    @if(!empty($reserva->creado_por))
+                                        <span class="text-[10px] text-gray-400 mt-0.5">
+                                            Reg. por: {{ $reserva->creado_por }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="w-28 px-3 py-3 text-center align-middle whitespace-nowrap">
                                 @if($reserva->estado === 'activa')
                                     <span class="px-2.5 py-0.5 inline-flex text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-800">
                                         Activa
@@ -248,14 +419,16 @@
                                     </span>
                                 @endif
                             </td>
-                            <td class="min-w-[220px] px-3 py-3 text-center align-middle whitespace-nowrap">
+                            <td class="min-w-[200px] px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                    <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
-                                       class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
-                                       title="Editar reserva">
-                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
-                                        <span>Editar</span>
-                                    </a>
+                                    @can('mantenedor de reservas')
+                                        <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
+                                           class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                           title="Editar reserva">
+                                            <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                            <span>Editar</span>
+                                        </a>
+                                    @endcan
                                     <a href="{{ route('reservas.comprobante', $reserva->id_reserva) }}"
                                        target="_blank"
                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 transition-colors shadow-xs"
@@ -263,16 +436,18 @@
                                         <i class="fa-solid fa-file-pdf text-xs"></i>
                                         <span>PDF</span>
                                     </a>
-                                    <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" title="Cancelar reserva"
-                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs btn-delete-reserva"
-                                                data-espacio="{{ $reserva->id_espacio }}">
-                                            <i class="fa-solid fa-trash text-xs"></i>
-                                            <span>Cancelar</span>
-                                        </button>
-                                    </form>
+                                    @can('mantenedor de reservas')
+                                        <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" title="Cancelar reserva"
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs btn-delete-reserva"
+                                                    data-espacio="{{ $reserva->id_espacio }}">
+                                                <i class="fa-solid fa-trash text-xs"></i>
+                                                <span>Cancelar</span>
+                                            </button>
+                                        </form>
+                                    @endcan
 
                                     @php
                                         $esHoy = $reserva->fecha_reserva && \Carbon\Carbon::parse($reserva->fecha_reserva)->isToday();
@@ -306,11 +481,11 @@
                         </tr>
                     @empty
                         <tr wire:key="empty-reservas-row">
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="8" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                 <div class="flex flex-col items-center justify-center">
                                     <i class="fa-solid fa-calendar-xmark text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
                                     <p class="text-base font-medium text-gray-700 dark:text-gray-300">No se encontraron reservas con los filtros seleccionados.</p>
-                                    @if(!empty($search) || !empty($tipoEspacio) || !empty($fechaInicio) || !empty($fechaFin) || !empty($estado))
+                                    @if(!empty($search) || !empty($tipoEspacio) || !empty($tipoSolicitante) || !empty($fechaInicio) || !empty($fechaFin) || !empty($estado))
                                         <button type="button" wire:click="limpiarFiltros" class="mt-2 text-xs text-[#950101] hover:text-blue-800 underline font-medium">
                                             Restablecer todos los filtros
                                         </button>
@@ -331,7 +506,6 @@
 </div>
 
 <script>
-    // Interceptar clicks en botones de eliminar reservas para confirmación SweetAlert y notificar otras pestañas
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.btn-delete-reserva').forEach(btn => {
             btn.addEventListener('click', function (e) {

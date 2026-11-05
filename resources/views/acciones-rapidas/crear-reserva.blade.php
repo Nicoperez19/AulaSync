@@ -196,17 +196,37 @@
                                         <div class="flex items-center gap-2 mb-2">
                                             <i class="fa-solid fa-info-circle text-blue-500"></i>
                                             <span class="text-sm font-medium text-blue-800">Información de la
-                                                Actividad</span>
+                                                Actividad e Institución Externa</span>
                                         </div>
-                                        <p class="text-xs text-blue-600">Complete los datos de la actividad que se llevará a
-                                            cabo en el espacio reservado.</p>
+                                        <p class="text-xs text-blue-600">Complete la institución o entidad solicitante y los datos de la actividad para los reportes de ocupación.</p>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Institución / Entidad Solicitante</label>
+                                        <input type="text" id="institucion-solicitante" list="lista-instituciones-externas"
+                                            placeholder="Ej: Servicio de Salud, Municipalidad, Hospital, CESFAM..."
+                                            maxlength="120"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                                        <datalist id="lista-instituciones-externas">
+                                            <option value="Servicio de Salud"></option>
+                                            <option value="Municipalidad"></option>
+                                            <option value="Hospital"></option>
+                                            <option value="CESFAM"></option>
+                                            <option value="SEREMI"></option>
+                                            <option value="DAEM / DEM"></option>
+                                            <option value="Gobierno Regional"></option>
+                                            <option value="Colegio / Liceo"></option>
+                                            <option value="Empresa Externa"></option>
+                                            <option value="Particular / Otro"></option>
+                                        </datalist>
+                                        <p class="text-xs text-gray-500 mt-1">Permite filtrar directamente en el reporte de Solicitudes y Reservas (Servicio de Salud, Municipalidad, etc.)</p>
                                     </div>
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Actividad
                                             *</label>
                                         <input type="text" id="nombre-actividad"
-                                            placeholder="Ej: Charla de Seguridad Industrial, Reunión de Apoderados..."
+                                            placeholder="Ej: Capacitación Servicio de Salud, Reunión Municipal, Charla..."
                                             maxlength="255"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
                                     </div>
@@ -455,6 +475,12 @@
                 const tipoFrecuencia = document.querySelector('input[name="tipo_frecuencia"]:checked')?.value || 'puntual';
                 const fechaFin = tipoFrecuencia === 'recurrente' ? document.getElementById('fecha-fin-reserva').value : null;
 
+                const institucionSolicitante = document.getElementById('institucion-solicitante')?.value?.trim() || '';
+                let descripcionActividadFinal = document.getElementById('descripcion-actividad')?.value?.trim() || '';
+                if (institucionSolicitante && !descripcionActividadFinal.toLowerCase().includes('[institución:')) {
+                    descripcionActividadFinal = `[Institución: ${institucionSolicitante}]` + (descripcionActividadFinal ? ` ${descripcionActividadFinal}` : '');
+                }
+
                 const formData = {
                     nombre: document.getElementById('nombre-responsable').value.trim(),
                     run: document.getElementById('run-responsable').value.trim(),
@@ -470,7 +496,7 @@
                     modulo_final: parseInt(document.getElementById('modulo-final').value),
                     observaciones: document.getElementById('observaciones-reserva').value.trim(),
                     nombre_actividad: document.getElementById('nombre-actividad')?.value?.trim() || null,
-                    descripcion_actividad: document.getElementById('descripcion-actividad')?.value?.trim() || null,
+                    descripcion_actividad: descripcionActividadFinal || null,
                     forzar: forzarActivo,
                 };
 
