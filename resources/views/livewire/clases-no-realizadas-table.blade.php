@@ -233,7 +233,7 @@
             @endif
 
             {{-- Barra de Acciones Masivas --}}
-            @if(count($selectedClases) > 0 || $selectAllFiltered)
+            @if($this->puedeGestionarClases && (count($selectedClases) > 0 || $selectAllFiltered))
                 <div class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200">
                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700 border border-slate-300/60">
@@ -274,6 +274,7 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
+                                @if($this->puedeGestionarClases)
                                 <th class="px-3 py-3 text-center w-10">
                                     <input type="checkbox" 
                                            wire:model.live="selectAllPage" 
@@ -281,6 +282,7 @@
                                            title="Seleccionar todas las clases no registradas"
                                            @if(empty($currentPageNoRealizadasKeys)) disabled @endif>
                                 </th>
+                                @endif
                                 <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer w-24" 
                                     wire:click="sortBy('fecha_clase')">
                                     Fecha
@@ -313,6 +315,7 @@
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
                                 <tr class="table-row hover:bg-gray-50">
+                                    @if($this->puedeGestionarClases)
                                     <td class="px-3 py-4 text-center w-10">
                                         @if($clase['estado'] === 'No Registrada')
                                             <input type="checkbox" 
@@ -323,6 +326,7 @@
                                             <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden seleccionar clases no registradas">
                                         @endif
                                     </td>
+                                    @endif
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1 justify-center">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
@@ -438,7 +442,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="{{ $this->puedeGestionarClases ? 10 : 9 }}" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <i class="fas fa-calendar-times text-4xl text-gray-300 mb-4"></i>
                                             <p class="text-lg font-medium">No se encontraron registros</p>

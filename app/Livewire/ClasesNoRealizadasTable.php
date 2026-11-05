@@ -290,6 +290,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function abrirModalAccionMasiva()
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         $clasesFiltradas = $this->getClasesFiltradasCollection();
         $noRealizadas = $clasesFiltradas->where('estado', 'No Registrada');
 
@@ -321,6 +325,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function ejecutarJustificacionMasiva($motivo, $observaciones, $sobrescribir = false)
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         @ini_set('memory_limit', '512M');
         @set_time_limit(180);
         @ini_set('max_execution_time', '180');
@@ -432,6 +440,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function ejecutarRegistroMasivo($motivo, $observaciones, $sobrescribir = false)
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         @ini_set('memory_limit', '512M');
         @set_time_limit(180);
         @ini_set('max_execution_time', '180');
@@ -793,6 +805,21 @@ class ClasesNoRealizadasTable extends Component
         return $this->todasLasClasesFiltradasCache;
     }
 
+    public function getPuedeGestionarClasesProperty(): bool
+    {
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+
+        // Estudiante en Práctica es estrictamente de solo lectura (no puede modificar, agregar ni cambiar estados)
+        if ($user->hasRole('Estudiante en Práctica')) {
+            return false;
+        }
+
+        return $user->isSuperAdmin() || $user->hasAnyRole(['Administrador', 'Supervisor']) || $user->can('gestionar recuperacion clases');
+    }
+
     public function getHayFiltrosActivosProperty(): bool
     {
         $periodoActual = SemesterHelper::getPeriodoActual();
@@ -825,6 +852,11 @@ class ClasesNoRealizadasTable extends Component
 
         if ($accion === 'historial') {
             $this->verHistorialClase($id, $claseData);
+            return;
+        }
+
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
             return;
         }
 
@@ -861,6 +893,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function updateClase($id, $estado, $observaciones)
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         // Validar los datos recibidos
         if (empty($estado) || !in_array($estado, ['no_realizada', 'justificado', 'pendiente', 'realizada', 'registrada'])) {
             $this->dispatch('show-error', ['message' => 'El estado seleccionado no es válido']);
@@ -929,6 +965,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function reagendarClase($id, $nuevaFecha, $nuevoEspacio, $nuevoModulo, $cantidadModulos = 1, $observaciones = '')
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
             
@@ -1087,6 +1127,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function marcarComoRecuperada($id)
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
             
@@ -1162,6 +1206,10 @@ class ClasesNoRealizadasTable extends Component
 
     public function confirmDelete($id)
     {
+        if (!$this->puedeGestionarClases) {
+            $this->dispatch('show-error', ['message' => 'No tienes permisos para modificar o cambiar estados de clases.']);
+            return;
+        }
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
             $valoresAnteriores = $clase->toArray();
