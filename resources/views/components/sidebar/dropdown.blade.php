@@ -23,7 +23,7 @@
         x-collapse
         class="mt-1"
     >
-        <ul class="space-y-1">
+        <ul class="space-y-1 bg-black/[0.08] dark:bg-black/20 rounded-xl p-1.5">
             {{ $slot }}
         </ul>
     </div>
