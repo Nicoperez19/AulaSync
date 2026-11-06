@@ -70,6 +70,16 @@ class ReservationsTable extends Component
         $this->resetPage();
     }
 
+    public function aplicarFiltros()
+    {
+        if (!empty($this->fechaInicio) && !empty($this->fechaFin)) {
+            if (Carbon::parse($this->fechaInicio)->gt(Carbon::parse($this->fechaFin))) {
+                $this->fechaFin = $this->fechaInicio;
+            }
+        }
+        $this->resetPage();
+    }
+
     public function limpiarFiltros()
     {
         $this->reset(['search', 'tipoEspacio', 'tipoSolicitante', 'fechaInicio', 'fechaFin', 'estado']);

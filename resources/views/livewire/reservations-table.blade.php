@@ -1,15 +1,12 @@
 <div>
-    <!-- Tarjetas principales de Ocupación y Reservas (Reporte Don Boris: Externos + Docentes) -->
+    <!-- Tarjetas principales de Ocupación y Reservas -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <!-- 1. Total Reservas y Horas -->
+        <!-- 1. Total Reservas -->
         <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-start justify-between">
+            <div class="flex items-center justify-between">
                 <div>
                     <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total Reservas</p>
                     <p class="text-3xl font-black text-blue-950 mt-1">{{ number_format($kpis['total'] ?? 0) }}</p>
-                    <p class="text-xs text-blue-800 mt-1.5 font-medium">
-                        <i class="fa-regular fa-clock mr-1"></i>{{ number_format($kpis['horas_totales'] ?? 0, 1) }} hrs utilizadas ({{ number_format($kpis['modulos_totales'] ?? 0) }} mód.)
-                    </p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-lg text-[#950101]">
                     <i class="fas fa-calendar-check text-xl"></i>
@@ -19,23 +16,12 @@
 
         <!-- 2. % de Ocupación (Externos + Docentes) -->
         <div class="stat-card bg-emerald-50 border border-emerald-200 rounded-xl p-4 shadow-sm">
-            <div class="flex items-start justify-between">
-                <div class="min-w-0 flex-1 pr-2">
+            <div class="flex items-center justify-between">
+                <div>
                     <p class="text-emerald-800 text-xs font-semibold uppercase tracking-wider" title="Porcentaje de ocupación sobre las salas reservadas en el período evaluado">
                         % Ocupación Reservas
                     </p>
-                    <div class="flex items-baseline gap-2 mt-1">
-                        <p class="text-3xl font-black text-emerald-950">{{ number_format($kpis['pct_ocupacion_salas_usadas'] ?? 0, 1) }}%</p>
-                        <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                            {{ $kpis['espacios_usados_count'] ?? 0 }} {{ ($kpis['espacios_usados_count'] ?? 0) === 1 ? 'sala usada' : 'salas usadas' }}
-                        </span>
-                    </div>
-                    <p class="text-[11px] text-emerald-800 mt-1.5 font-medium leading-tight">
-                        Docentes: <strong>{{ number_format($kpis['pct_ocupacion_docentes_salas'] ?? 0, 1) }}%</strong> · Externos: <strong>{{ number_format($kpis['pct_ocupacion_externos_salas'] ?? 0, 1) }}%</strong>
-                        <span class="block text-[10px] text-emerald-700/80 mt-0.5">
-                            Sobre total campus ({{ $kpis['espacios_catalogo_count'] ?? 0 }} salas): {{ number_format($kpis['pct_ocupacion_catalogo'] ?? 0, 2) }}%
-                        </span>
-                    </p>
+                    <p class="text-3xl font-black text-emerald-950 mt-1">{{ number_format($kpis['pct_ocupacion_salas_usadas'] ?? 0, 1) }}%</p>
                 </div>
                 <div class="p-3 bg-emerald-100 rounded-lg text-emerald-700 shrink-0">
                     <i class="fas fa-chart-pie text-xl"></i>
@@ -47,7 +33,7 @@
         <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-indigo-100/70 transition-colors"
              wire:click="$set('tipoSolicitante', '{{ $tipoSolicitante === 'docente' ? '' : 'docente' }}')"
              title="Clic para filtrar solo reservas de Docentes">
-            <div class="flex items-start justify-between">
+            <div class="flex items-center justify-between">
                 <div>
                     <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
                         <span>Reservas Docentes</span>
@@ -55,13 +41,7 @@
                             <span class="px-1.5 py-0.2 bg-indigo-600 text-white text-[10px] rounded">Filtro activo</span>
                         @endif
                     </p>
-                    <div class="flex items-baseline gap-2 mt-1">
-                        <p class="text-3xl font-black text-indigo-950">{{ number_format($kpis['reservas_docentes'] ?? 0) }}</p>
-                        <span class="text-xs font-bold text-indigo-700">({{ number_format($kpis['pct_share_docentes'] ?? 0, 1) }}% del uso)</span>
-                    </div>
-                    <p class="text-xs text-indigo-800 mt-1.5 font-medium">
-                        {{ number_format($kpis['horas_docentes'] ?? 0, 1) }} hrs ({{ number_format($kpis['modulos_docentes'] ?? 0) }} módulos)
-                    </p>
+                    <p class="text-3xl font-black text-indigo-950 mt-1">{{ number_format($kpis['reservas_docentes'] ?? 0) }}</p>
                 </div>
                 <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
                     <i class="fas fa-chalkboard-user text-xl"></i>
@@ -69,11 +49,11 @@
             </div>
         </div>
 
-        <!-- 4. Reservas Externos (Servicio de Salud, Municipalidad, etc.) -->
+        <!-- 4. Reservas Externos -->
         <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-amber-100/70 transition-colors"
              wire:click="$set('tipoSolicitante', '{{ $tipoSolicitante === 'externo' ? '' : 'externo' }}')"
              title="Clic para filtrar solo reservas de Solicitantes Externos">
-            <div class="flex items-start justify-between">
+            <div class="flex items-center justify-between">
                 <div>
                     <p class="text-amber-800 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
                         <span>Reservas Externos</span>
@@ -81,13 +61,7 @@
                             <span class="px-1.5 py-0.2 bg-amber-600 text-white text-[10px] rounded">Filtro activo</span>
                         @endif
                     </p>
-                    <div class="flex items-baseline gap-2 mt-1">
-                        <p class="text-3xl font-black text-amber-950">{{ number_format($kpis['reservas_externos'] ?? 0) }}</p>
-                        <span class="text-xs font-bold text-amber-800">({{ number_format($kpis['pct_share_externos'] ?? 0, 1) }}% del uso)</span>
-                    </div>
-                    <p class="text-xs text-amber-900 mt-1.5 font-medium">
-                        {{ number_format($kpis['horas_externos'] ?? 0, 1) }} hrs ({{ number_format($kpis['modulos_externos'] ?? 0) }} módulos)
-                    </p>
+                    <p class="text-3xl font-black text-amber-950 mt-1">{{ number_format($kpis['reservas_externos'] ?? 0) }}</p>
                 </div>
                 <div class="p-3 bg-amber-100 rounded-lg text-amber-600">
                     <i class="fas fa-building-user text-xl"></i>
@@ -96,48 +70,184 @@
         </div>
     </div>
 
-    <!-- Resumen rápido por Tipo de Espacio e Instituciones / Entidades detectadas -->
-    <div class="bg-white px-4 py-3 rounded-xl border border-gray-200 shadow-xs mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <!-- Distribución por Tipo de Espacio -->
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-            <span class="font-bold text-gray-600 uppercase tracking-wider mr-1">
-                <i class="fas fa-door-open text-[#950101] mr-1"></i>Por Espacio:
-            </span>
-            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Sala de Clases' ? '' : 'Sala de Clases' }}')"
-                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Sala de Clases' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
-                Salas de Clases: <strong>{{ number_format($kpis['salas_clases'] ?? 0) }}</strong>
-            </button>
-            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Auditorio' ? '' : 'Auditorio' }}')"
-                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Auditorio' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
-                Auditorio: <strong>{{ number_format($kpis['auditorio'] ?? 0) }}</strong>
-            </button>
-            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Laboratorios' ? '' : 'Laboratorios' }}')"
-                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Laboratorios' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
-                Laboratorios: <strong>{{ number_format($kpis['laboratorios'] ?? 0) }}</strong>
-            </button>
-            <button type="button" wire:click="$set('tipoEspacio', '{{ $tipoEspacio === 'Sala de Estudio' ? '' : 'Sala de Estudio' }}')"
-                    class="px-2.5 py-1 rounded-lg border font-semibold transition-colors {{ $tipoEspacio === 'Sala de Estudio' ? 'bg-[#950101] text-white border-[#950101]' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100' }}">
-                Salas de Estudio: <strong>{{ number_format($kpis['salas_estudio'] ?? 0) }}</strong>
-            </button>
+    @php
+        $espaciosData = [
+            ['label' => 'Salas de Clases', 'filter' => 'Sala de Clases', 'value' => (int) ($kpis['salas_clases'] ?? 0), 'color' => '#3b82f6'],
+            ['label' => 'Auditorio', 'filter' => 'Auditorio', 'value' => (int) ($kpis['auditorio'] ?? 0), 'color' => '#10b981'],
+            ['label' => 'Laboratorios', 'filter' => 'Laboratorios', 'value' => (int) ($kpis['laboratorios'] ?? 0), 'color' => '#6366f1'],
+            ['label' => 'Salas de Estudio', 'filter' => 'Sala de Estudio', 'value' => (int) ($kpis['salas_estudio'] ?? 0), 'color' => '#f59e0b'],
+        ];
+        $topInstituciones = array_slice($kpis['por_institucion'] ?? [], 0, 5);
+        $entidadesData = array_map(function ($item) {
+            return [
+                'label' => \Illuminate\Support\Str::limit($item['institucion'], 28),
+                'full_label' => $item['institucion'],
+                'value' => (int) ($item['total_reservas'] ?? 0),
+                'horas' => $item['horas'] ?? 0,
+                'pct' => $item['pct_del_total_reservas'] ?? 0,
+                'categoria' => $item['categoria'] ?? 'Externo',
+            ];
+        }, $topInstituciones);
+        $chartEspaciosKey = md5(json_encode([$espaciosData, $tipoEspacio]));
+        $chartEntidadesKey = md5(json_encode([$entidadesData, $search]));
+    @endphp
+
+    <!-- Gráficos: Por Espacio y Entidades / Uso -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <!-- Gráfico 1: Por Espacio -->
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm" wire:key="card-espacios-{{ $chartEspaciosKey }}">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fas fa-door-open text-[#950101]"></i> Por Espacio
+                </h3>
+                @if(!empty($tipoEspacio))
+                    <button type="button" wire:click="$set('tipoEspacio', '')" class="text-xs text-[#950101] hover:underline font-semibold">
+                        Ver todos ({{ $tipoEspacio }})
+                    </button>
+                @endif
+            </div>
+            <div class="h-52 relative" wire:ignore
+                 x-data="{
+                    chart: null,
+                    items: @js($espaciosData),
+                    activeFilter: @js($tipoEspacio),
+                    init() {
+                        const canvas = this.$refs.canvasEspacios;
+                        if (!canvas || typeof Chart === 'undefined') return;
+                        const existing = Chart.getChart(canvas);
+                        if (existing) existing.destroy();
+
+                        this.chart = new Chart(canvas, {
+                            type: 'bar',
+                            data: {
+                                labels: this.items.map(i => i.label),
+                                datasets: [{
+                                    label: 'Reservas',
+                                    data: this.items.map(i => i.value),
+                                    backgroundColor: this.items.map(i => (!this.activeFilter || this.activeFilter === i.filter) ? i.color : i.color + '40'),
+                                    borderRadius: 6,
+                                    maxBarThickness: 44
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                onClick: (evt, elements) => {
+                                    if (elements.length > 0) {
+                                        const idx = elements[0].index;
+                                        const chosen = this.items[idx]?.filter || '';
+                                        $wire.set('tipoEspacio', this.activeFilter === chosen ? '' : chosen);
+                                    }
+                                },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (ctx) => ` ${ctx.parsed.y.toLocaleString()} reservas`
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: { color: '#f1f5f9' },
+                                        ticks: { font: { size: 11 }, precision: 0 }
+                                    },
+                                    x: {
+                                        grid: { display: false },
+                                        ticks: { font: { size: 11, weight: '600' } }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                 }">
+                <canvas x-ref="canvasEspacios" class="cursor-pointer"></canvas>
+            </div>
         </div>
 
-        <!-- Filtros rápidos por Institución / Entidad Externa -->
-        @if(!empty($kpis['por_institucion']))
-            <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                <span class="font-bold text-gray-600 uppercase tracking-wider mr-1">
-                    <i class="fas fa-filter text-amber-600 mr-1"></i>Entidades / Uso:
-                </span>
-                @foreach(array_slice($kpis['por_institucion'], 0, 5) as $instItem)
-                    <button type="button"
-                            wire:click="$set('search', '{{ $search === $instItem['institucion'] ? '' : ($instItem['institucion'] === 'Docente Interno' ? '' : $instItem['institucion']) }}')"
-                            class="px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-colors {{ $instItem['categoria'] === 'Externo' ? 'bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100' : 'bg-indigo-50 text-indigo-800 border-indigo-200 hover:bg-indigo-100' }}"
-                            title="Clic para filtrar por {{ $instItem['institucion'] }}">
-                        {{ \Illuminate\Support\Str::limit($instItem['institucion'], 26) }}:
-                        <strong>{{ $instItem['total_reservas'] }}</strong> ({{ $instItem['horas'] }}h · {{ $instItem['pct_del_total_reservas'] }}%)
+        <!-- Gráfico 2: Entidades / Uso -->
+        <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm" wire:key="card-entidades-{{ $chartEntidadesKey }}">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fas fa-chart-bar text-amber-600"></i> Entidades / Uso
+                </h3>
+                @if(!empty($search))
+                    <button type="button" wire:click="$set('search', '')" class="text-xs text-[#950101] hover:underline font-semibold">
+                        Quitar filtro ({{ \Illuminate\Support\Str::limit($search, 20) }})
                     </button>
-                @endforeach
+                @endif
             </div>
-        @endif
+            @if(!empty($entidadesData))
+                <div class="h-52 relative" wire:ignore
+                     x-data="{
+                        chart: null,
+                        items: @js($entidadesData),
+                        currentSearch: @js($search),
+                        init() {
+                            const canvas = this.$refs.canvasEntidades;
+                            if (!canvas || typeof Chart === 'undefined') return;
+                            const existing = Chart.getChart(canvas);
+                            if (existing) existing.destroy();
+
+                            this.chart = new Chart(canvas, {
+                                type: 'bar',
+                                data: {
+                                    labels: this.items.map(i => i.label),
+                                    datasets: [{
+                                        label: 'Reservas',
+                                        data: this.items.map(i => i.value),
+                                        backgroundColor: this.items.map(i => i.categoria === 'Docente' ? '#4f46e5' : '#d97706'),
+                                        borderRadius: 6,
+                                        maxBarThickness: 26
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    onClick: (evt, elements) => {
+                                        if (elements.length > 0) {
+                                            const idx = elements[0].index;
+                                            const inst = this.items[idx]?.full_label || '';
+                                            const target = inst === 'Docente Interno' ? '' : inst;
+                                            $wire.set('search', this.currentSearch === inst ? '' : target);
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => {
+                                                    const item = this.items[ctx.dataIndex];
+                                                    return ` ${item.value.toLocaleString()} reservas (${item.horas}h · ${item.pct}%)`;
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        x: {
+                                            beginAtZero: true,
+                                            grid: { color: '#f1f5f9' },
+                                            ticks: { font: { size: 11 }, precision: 0 }
+                                        },
+                                        y: {
+                                            grid: { display: false },
+                                            ticks: { font: { size: 11, weight: '600' } }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                     }">
+                    <canvas x-ref="canvasEntidades" class="cursor-pointer"></canvas>
+                </div>
+            @else
+                <div class="h-52 flex items-center justify-center text-sm text-gray-400">
+                    Sin datos de entidades para los filtros seleccionados
+                </div>
+            @endif
+        </div>
     </div>
 
     <!-- Sección FILTROS -->
@@ -224,42 +334,25 @@
             </div>
         </div>
 
-        <!-- Botones de filtro rápido y Limpiar -->
-        <div class="flex flex-wrap items-center justify-between gap-2 mt-4 pt-4 border-t border-gray-100">
-            <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                <span class="text-gray-500 font-medium mr-1">Búsqueda rápida:</span>
-                <button type="button" wire:click="$set('search', 'Servicio de Salud')"
-                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
-                    Servicio de Salud
-                </button>
-                <button type="button" wire:click="$set('search', 'Municipalidad')"
-                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
-                    Municipalidad
-                </button>
-                <button type="button" wire:click="$set('search', 'Hospital')"
-                        class="px-2.5 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors">
-                    Hospital / CESFAM
-                </button>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button type="button" wire:click="limpiarFiltros" 
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
-                    <i class="fas fa-undo text-xs"></i> Limpiar filtros
-                </button>
-            </div>
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button type="button" wire:click="limpiarFiltros" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+            <button type="button" wire:click="aplicarFiltros" 
+                    class="px-4 py-2 text-sm font-semibold text-white bg-[#191919] hover:bg-black active:bg-gray-900 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-filter text-xs"></i> Aplicar filtros
+            </button>
         </div>
     </div>
 
-    <!-- Botón Exportar Reporte Completo a Excel -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-        <div class="text-xs text-gray-600">
-            El archivo Excel incluye <strong>2 hojas</strong>: <em>Detalle de Reservas</em> (con autofiltros por Institución, Categoría y Sala) y <em>Resumen de Ocupación (% Don Boris)</em>.
-        </div>
+    <!-- Botón Exportar Reporte a Excel -->
+    <div class="flex justify-end mb-4">
         <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'tipo_solicitante' => $tipoSolicitante, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
-           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold shrink-0 self-end sm:self-auto">
+           class="btn btn-excel gap-2 px-4 py-2.5 text-sm font-semibold">
             <i class="fas fa-file-excel"></i>
-            <span>Exportar Reporte Completo (% Ocupación + Detalle)</span>
+            <span>Exportar reporte</span>
         </a>
     </div>
 
