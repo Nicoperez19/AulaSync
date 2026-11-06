@@ -85,7 +85,6 @@
                 'value' => (int) ($item['total_reservas'] ?? 0),
                 'horas' => $item['horas'] ?? 0,
                 'pct' => $item['pct_del_total_reservas'] ?? 0,
-                'categoria' => $item['categoria'] ?? 'Externo',
             ];
         }, $topInstituciones);
         $chartEspaciosKey = md5(json_encode([$espaciosData, $tipoEspacio]));
@@ -96,7 +95,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <!-- Gráfico 1: Por Espacio -->
         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm" wire:key="card-espacios-{{ $chartEspaciosKey }}">
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex h-5 items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                     <i class="fas fa-door-open text-[#950101]"></i> Por Espacio
                 </h3>
@@ -106,7 +105,7 @@
                     </button>
                 @endif
             </div>
-            <div class="h-52 relative" wire:ignore
+            <div class="relative h-[208px] shrink-0" wire:ignore
                  x-data="{
                     chart: null,
                     items: @js($espaciosData),
@@ -162,15 +161,15 @@
                         });
                     }
                  }">
-                <canvas x-ref="canvasEspacios" class="cursor-pointer"></canvas>
+                <canvas x-ref="canvasEspacios" class="block h-full w-full cursor-pointer"></canvas>
             </div>
         </div>
 
         <!-- Gráfico 2: Entidades / Uso -->
         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm" wire:key="card-entidades-{{ $chartEntidadesKey }}">
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex h-5 items-center justify-between mb-3">
                 <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-amber-600"></i> Entidades / Uso
+                    <i class="fas fa-chart-pie text-amber-600"></i> Entidades / Uso
                 </h3>
                 @if(!empty($search))
                     <button type="button" wire:click="$set('search', '')" class="text-xs text-[#950101] hover:underline font-semibold">
@@ -179,7 +178,7 @@
                 @endif
             </div>
             @if(!empty($entidadesData))
-                <div class="h-52 relative" wire:ignore
+                <div class="relative h-[208px] shrink-0" wire:ignore
                      x-data="{
                         chart: null,
                         items: @js($entidadesData),
@@ -191,19 +190,20 @@
                             if (existing) existing.destroy();
 
                             this.chart = new Chart(canvas, {
-                                type: 'bar',
+                                type: 'pie',
                                 data: {
                                     labels: this.items.map(i => i.label),
                                     datasets: [{
                                         label: 'Reservas',
                                         data: this.items.map(i => i.value),
-                                        backgroundColor: this.items.map(i => i.categoria === 'Docente' ? '#4f46e5' : '#d97706'),
-                                        borderRadius: 6,
-                                        maxBarThickness: 26
+                                        backgroundColor: this.items.map((_, index) => ['#4f46e5', '#d97706', '#0ea5e9', '#10b981', '#ef4444'][index % 5]),
+                                        hoverBackgroundColor: this.items.map((_, index) => ['#4338ca', '#b45309', '#0284c7', '#059669', '#dc2626'][index % 5]),
+                                        borderWidth: 2,
+                                        borderColor: '#ffffff',
+                                        hoverOffset: 6
                                     }]
                                 },
                                 options: {
-                                    indexAxis: 'y',
                                     responsive: true,
                                     maintainAspectRatio: false,
                                     onClick: (evt, elements) => {
@@ -215,7 +215,17 @@
                                         }
                                     },
                                     plugins: {
-                                        legend: { display: false },
+                                        legend: {
+                                            position: 'right',
+                                            labels: {
+                                                boxWidth: 10,
+                                                boxHeight: 10,
+                                                padding: 8,
+                                                font: { size: 10 },
+                                                usePointStyle: true,
+                                                pointStyle: 'circle'
+                                            }
+                                        },
                                         tooltip: {
                                             callbacks: {
                                                 label: (ctx) => {
@@ -224,26 +234,15 @@
                                                 }
                                             }
                                         }
-                                    },
-                                    scales: {
-                                        x: {
-                                            beginAtZero: true,
-                                            grid: { color: '#f1f5f9' },
-                                            ticks: { font: { size: 11 }, precision: 0 }
-                                        },
-                                        y: {
-                                            grid: { display: false },
-                                            ticks: { font: { size: 11, weight: '600' } }
-                                        }
                                     }
                                 }
                             });
                         }
                      }">
-                    <canvas x-ref="canvasEntidades" class="cursor-pointer"></canvas>
+                    <canvas x-ref="canvasEntidades" class="block h-full w-full cursor-pointer"></canvas>
                 </div>
             @else
-                <div class="h-52 flex items-center justify-center text-sm text-gray-400">
+                <div class="flex h-[208px] shrink-0 items-center justify-center text-sm text-gray-400">
                     Sin datos de entidades para los filtros seleccionados
                 </div>
             @endif
