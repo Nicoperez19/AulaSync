@@ -14,12 +14,15 @@ use App\Models\Solicitante;
 use App\Models\Tenant;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ReservaService
 {
     protected EspacioService $espacioService;
+    protected static ?array $horariosModulosCache = null;
 
     public function __construct(EspacioService $espacioService)
     {
@@ -213,7 +216,7 @@ class ReservaService
     }
 
     /**
-     * Verificar conflictos con clases programadas y reservas existentes.
+     * Verificar conflictos con clases programadas y reservas existentes (optimizado en 2 consultas).
      */
     public function verificarConflictos(array $params): array
     {
@@ -229,33 +232,40 @@ class ReservaService
         $prefijoDia = $prefijosDias[$fechaReserva->dayOfWeek];
         $periodo = SemesterHelper::getCurrentPeriod($fechaReserva);
 
+        $modulosMap = [];
         for ($modulo = $moduloInicial; $modulo <= $moduloFinal; ++$modulo) {
-            $idModulo = $prefijoDia . '.' . $modulo;
+            $modulosMap[$prefijoDia . '.' . $modulo] = $modulo;
+        }
 
-            $planificacion = Planificacion_Asignatura::with(['asignatura.profesor', 'asignatura.carrera', 'modulo'])
+        if (!empty($modulosMap)) {
+            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'asignatura.carrera', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $espacioCodigo)
-                ->where('id_modulo', $idModulo)
+                ->whereIn('id_modulo', array_keys($modulosMap))
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
-                ->first();
+                ->get()
+                ->keyBy('id_modulo');
 
-            if ($planificacion) {
-                $conflictos[] = [
-                    'tipo' => 'planificacion',
-                    'modulo' => $modulo,
-                    'id_modulo' => $idModulo,
-                    'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin nombre',
-                    'codigo' => $planificacion->asignatura->codigo_asignatura ?? '-',
-                    'profesor' => $planificacion->horario->profesor->name ?? 'Sin profesor',
-                    'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
-                ];
+            foreach ($modulosMap as $idModulo => $numModulo) {
+                $planificacion = $planificaciones->get($idModulo);
+                if ($planificacion) {
+                    $conflictos[] = [
+                        'tipo' => 'planificacion',
+                        'modulo' => $numModulo,
+                        'id_modulo' => $idModulo,
+                        'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin nombre',
+                        'codigo' => $planificacion->asignatura->codigo_asignatura ?? '-',
+                        'profesor' => $planificacion->horario->profesor->name ?? 'Sin profesor',
+                        'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
+                    ];
+                }
             }
         }
 
         $reservaExistente = Reserva::with(['profesor', 'solicitante', 'asignatura'])
             ->where('id_espacio', $espacioCodigo)
-            ->where('fecha_reserva', $fechaStr)
+            ->whereDate('fecha_reserva', $fechaStr)
             ->whereIn('estado', ['activa', 'programada'])
             ->where(function ($q) use ($moduloInicial, $moduloFinal) {
                 $q->where(function ($inner) use ($moduloInicial, $moduloFinal) {
@@ -339,8 +349,13 @@ class ReservaService
             ];
         }
 
-        $diaNormalizado = ModulosHelper::normalizarDia(Carbon::parse($data['fecha'])->locale('es')->isoFormat('dddd'));
-        $horariosModulos = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+        $fechaBase = Carbon::parse($data['fecha']);
+        $diasSemanaNorm = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaNormalizado = $diasSemanaNorm[$fechaBase->dayOfWeek] ?? 'lunes';
+        if (self::$horariosModulosCache === null) {
+            self::$horariosModulosCache = ModulosHelper::getHorariosModulos();
+        }
+        $horariosModulos = self::$horariosModulosCache[$diaNormalizado] ?? [];
 
         $duracionModulos = $moduloFinal - $moduloInicial + 1;
 
@@ -348,7 +363,7 @@ class ReservaService
         $esRecurrente = (($data['tipo_frecuencia'] ?? '') === 'recurrente' && !empty($data['fecha_fin']));
 
         if ($esRecurrente) {
-            $inicio = Carbon::parse($data['fecha']);
+            $inicio = $fechaBase->copy();
             $fin = Carbon::parse($data['fecha_fin']);
             $curr = $inicio->copy();
             while ($curr->lte($fin)) {
@@ -392,38 +407,47 @@ class ReservaService
             $runSolicitante = $solicitante->run_solicitante;
         }
 
+        // Pre-calcular módulos y horarios una sola vez (todas las fechas recurrentes caen el mismo día de la semana)
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $prefijoReserva = $prefijosDias[$fechaBase->dayOfWeek];
+
+        $modulosReserva = [];
+        for ($i = $moduloInicial; $i <= $moduloFinal; ++$i) {
+            $modulosReserva[] = $prefijoReserva . '.' . $i;
+        }
+        $idModuloString = implode(',', $modulosReserva);
+        $idModuloInicial = $prefijoReserva . '.' . $moduloInicial;
+        $idModuloFinal = $prefijoReserva . '.' . $moduloFinal;
+
+        $modulosObjs = Modulo::whereIn('id_modulo', [$idModuloInicial, $idModuloFinal])->get()->keyBy('id_modulo');
+        $moduloInicialObj = $modulosObjs->get($idModuloInicial);
+        $moduloFinalObj = $modulosObjs->get($idModuloFinal);
+
+        $horaInicio = $moduloInicialObj ? $moduloInicialObj->hora_inicio : ($horariosModulos[$moduloInicial]['inicio'] ?? '08:10:00');
+        $horaFin = $moduloFinalObj ? $moduloFinalObj->hora_termino : ($horariosModulos[$moduloFinal]['fin'] ?? '09:00:00');
+
+        // Pre-cargar reservas existentes en las fechas solicitadas en 1 sola consulta
+        $reservasExistentesPorFecha = Reserva::where('id_espacio', $data['espacio'])
+            ->where(function ($q) use ($fechasASerReservadas) {
+                $q->whereIn('fecha_reserva', $fechasASerReservadas)
+                  ->orWhereIn(DB::raw('DATE(fecha_reserva)'), $fechasASerReservadas);
+            })
+            ->whereIn('estado', ['activa', 'programada'])
+            ->where(function ($q) use ($moduloInicial, $moduloFinal) {
+                $q->where(function ($inner) use ($moduloInicial, $moduloFinal) {
+                    $inner->where('modulo_inicio', '<=', $moduloFinal)
+                          ->where('modulo_fin', '>=', $moduloInicial);
+                });
+            })
+            ->get()
+            ->keyBy(fn ($r) => $r->fecha_reserva instanceof Carbon ? $r->fecha_reserva->format('Y-m-d') : substr((string) $r->fecha_reserva, 0, 10));
+
+        $clasesConflictoPorPeriodo = [];
         $reservasCreadas = [];
         $esForzado = !empty($data['forzar']);
 
         foreach ($fechasASerReservadas as $indexFecha => $fechaObjStr) {
-            $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
-            $prefijoReserva = $prefijosDias[Carbon::parse($fechaObjStr)->dayOfWeek];
-
-            $modulosReserva = [];
-            for ($i = $moduloInicial; $i <= $moduloFinal; ++$i) {
-                $modulosReserva[] = $prefijoReserva . '.' . $i;
-            }
-            $idModuloString = implode(',', $modulosReserva);
-            $idModuloInicial = $prefijoReserva . '.' . $moduloInicial;
-            $idModuloFinal = $prefijoReserva . '.' . $moduloFinal;
-
-            $moduloInicialObj = Modulo::where('id_modulo', $idModuloInicial)->first();
-            $moduloFinalObj = Modulo::where('id_modulo', $idModuloFinal)->first();
-
-            $horaInicio = $moduloInicialObj ? $moduloInicialObj->hora_inicio : ($horariosModulos[$moduloInicial]['inicio'] ?? '08:10:00');
-            $horaFin = $moduloFinalObj ? $moduloFinalObj->hora_termino : ($horariosModulos[$moduloFinal]['fin'] ?? '09:00:00');
-
-            // Validar reservas activas
-            $reservaExistente = Reserva::where('id_espacio', $data['espacio'])
-                ->where('fecha_reserva', $fechaObjStr)
-                ->whereIn('estado', ['activa', 'programada'])
-                ->where(function ($q) use ($moduloInicial, $moduloFinal) {
-                    $q->where(function ($inner) use ($moduloInicial, $moduloFinal) {
-                        $inner->where('modulo_inicio', '<=', $moduloFinal)
-                              ->where('modulo_fin', '>=', $moduloInicial);
-                    });
-                })
-                ->first();
+            $reservaExistente = $reservasExistentesPorFecha->get($fechaObjStr);
 
             if ($reservaExistente && !$esForzado) {
                 if (!$esRecurrente) {
@@ -438,14 +462,17 @@ class ReservaService
                 continue;
             }
 
-            // Validar clases programadas
+            // Validar clases programadas (cacheado por período académico)
             if (!$esForzado) {
                 $periodoActual = SemesterHelper::getCurrentPeriod(Carbon::parse($fechaObjStr));
-                $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo'])
-                    ->where('id_espacio', $data['espacio'])
-                    ->whereIn('id_modulo', $modulosReserva)
-                    ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
-                    ->first();
+                if (!array_key_exists($periodoActual, $clasesConflictoPorPeriodo)) {
+                    $clasesConflictoPorPeriodo[$periodoActual] = Planificacion_Asignatura::with(['asignatura', 'modulo'])
+                        ->where('id_espacio', $data['espacio'])
+                        ->whereIn('id_modulo', $modulosReserva)
+                        ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
+                        ->first();
+                }
+                $claseConflicto = $clasesConflictoPorPeriodo[$periodoActual];
 
                 if ($claseConflicto) {
                     $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
@@ -476,20 +503,9 @@ class ReservaService
             $observacionesAutomaticas = $tipoTag . $forzadoTag . 'RESERVA CREADA MANUALMENTE por ' . ($usuario->name ?? 'Administrador') . ' el ' . now()->format('d/m/Y H:i:s') . ' | ' . $rangoModulos;
             $observacionesCompletas = $observacionesAutomaticas . ($data['observaciones'] ?? '');
 
-            $fechaActual = now()->format('Y-m-d');
-            $horaActualStr = now()->format('H:i:s');
-            $esMismoDia = ($fechaObjStr === $fechaActual);
-
-            $estaEnFranjaActual = false;
-            if ($esMismoDia) {
-                $horaInicioModulo = $horariosModulos[$moduloInicial]['inicio'] ?? null;
-                $horaFinModulo = $horariosModulos[$moduloFinal]['fin'] ?? null;
-                if ($horaInicioModulo && $horaFinModulo) {
-                    $estaEnFranjaActual = ($horaActualStr >= $horaInicioModulo && $horaActualStr <= $horaFinModulo);
-                }
-            }
-
-            $estadoReserva = ($esMismoDia && $estaEnFranjaActual) ? 'activa' : 'programada';
+            // Toda reserva temporal creada por una Asistente nace como 'programada'
+            // para que el docente o solicitante escanee en el Plano Digital al utilizar la sala.
+            $estadoReserva = 'programada';
             $tipoReserva = $esRecurrente ? 'recurrente' : ((($data['tipo'] === 'profesor' || $data['tipo'] === 'colaborador') && $idAsignatura) ? 'clase' : 'directa');
 
             $datosReserva = [
@@ -522,7 +538,7 @@ class ReservaService
                 $this->enviarCorreoReserva($reservaCreated, $data['correo'] ?? null);
             }
 
-            if ($indexFecha === 0) {
+            if ($indexFecha === 0 && $reservaCreated->estado === 'activa') {
                 $this->espacioService->ocuparEspacioSiEsReservaActual($reservaCreated);
             }
         }
@@ -638,7 +654,6 @@ class ReservaService
             ];
         }
 
-        $espacioId = $reserva->id_espacio;
         $espacioLiberado = false;
 
         // Liberar el espacio relacionado si estaba activa o programada
@@ -777,7 +792,11 @@ class ReservaService
         $moduloFin = null;
         $cantidadModulos = 1;
 
-        if ($reserva->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reserva->observaciones, $matches)) {
+        if (!empty($reserva->modulo_inicio) && !empty($reserva->modulo_fin)) {
+            $moduloInicio = (int) $reserva->modulo_inicio;
+            $moduloFin = (int) $reserva->modulo_fin;
+            $cantidadModulos = max(1, $moduloFin - $moduloInicio + 1);
+        } elseif ($reserva->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reserva->observaciones, $matches)) {
             $moduloInicio = (int) $matches[1];
             $moduloFin = (int) $matches[2];
             $cantidadModulos = $moduloFin - $moduloInicio + 1;
@@ -789,8 +808,16 @@ class ReservaService
             $cantidadModulos = (int) $reserva->modulos;
         }
 
-        $diaNormalizado = ModulosHelper::normalizarDia(Carbon::parse($reserva->fecha_reserva)->locale('es')->isoFormat('dddd'));
-        $horariosModulos = ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+        if (self::$horariosModulosCache === null) {
+            self::$horariosModulosCache = ModulosHelper::getHorariosModulos();
+        }
+
+        $fechaCarbon = $reserva->fecha_reserva instanceof Carbon
+            ? $reserva->fecha_reserva
+            : Carbon::parse($reserva->fecha_reserva);
+        $diasSemanaNorm = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaNormalizado = $diasSemanaNorm[$fechaCarbon->dayOfWeek] ?? 'lunes';
+        $horariosModulos = self::$horariosModulosCache[$diaNormalizado] ?? [];
 
         if (!$moduloInicio && $reserva->hora) {
             $horaReserva = substr($reserva->hora, 0, 5);
@@ -823,32 +850,145 @@ class ReservaService
             'modulo_inicial' => null,
             'modulo_final' => null,
             'cantidad_modulos' => $cantidadModulos,
-            'hora_inicio' => substr($reserva->hora, 0, 5),
+            'hora_inicio' => substr((string) $reserva->hora, 0, 5),
             'hora_fin' => 'Desconocido',
-            'rango_horario' => substr($reserva->hora, 0, 5),
-            'texto_completo' => 'Hora: ' . substr($reserva->hora, 0, 5) . " • Duración: {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : ''),
+            'rango_horario' => substr((string) $reserva->hora, 0, 5),
+            'texto_completo' => 'Hora: ' . substr((string) $reserva->hora, 0, 5) . " • Duración: {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : ''),
         ];
     }
 
     /**
-     * Enviar comprobante de reserva por correo.
+     * Enviar comprobante de reserva por correo en segundo plano (sin bloquear la respuesta HTTP).
      */
     public function enviarCorreoReserva(Reserva $reserva, ?string $emailFallback = null): void
     {
+        $this->despacharCorreoSegundoPlano($reserva, 'confirmacion', $emailFallback);
+    }
+
+    /**
+     * Enviar correo de confirmación de devolución en segundo plano (sin bloquear la respuesta HTTP).
+     */
+    public function enviarCorreoDevolucion(Reserva $reserva, ?string $emailFallback = null): void
+    {
+        $this->despacharCorreoSegundoPlano($reserva, 'devolucion', $emailFallback);
+    }
+
+    /**
+     * Verifica si la configuración SMTP está disponible y sin bloqueo de credenciales (535).
+     */
+    public function smtpDisponibleParaEnvio(): bool
+    {
         try {
-            $reserva->loadMissing(['profesor', 'solicitante', 'espacio', 'asignatura']);
+            $mailer = (string) config('mail.default', 'smtp');
+            if (in_array($mailer, ['log', 'array'], true)) {
+                return true;
+            }
 
-            $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
+            $host = strtolower((string) config('mail.mailers.smtp.host', ''));
+            $user = (string) config('mail.mailers.smtp.username', '');
+            $pass = (string) config('mail.mailers.smtp.password', '');
+            $smtpKey = 'smtp_backoff_' . md5($host . ':' . $user . ':' . $pass);
 
-            if (!$destinatario) {
-                Log::info("ℹ️ Reserva {$reserva->id_reserva}: no se encontró correo para enviar comprobante.");
+            $cache = Cache::store('file');
+            if ($cache->get($smtpKey)) {
+                return false;
+            }
+
+            // Gmail SMTP rechaza con tarpit de ~10s cualquier contraseña que no sea App Password de 16 caracteres
+            $cleanPass = str_replace(' ', '', $pass);
+            if (str_contains($host, 'gmail.com') && ($cleanPass === '' || strlen($cleanPass) !== 16)) {
+                $cache->put($smtpKey, true, now()->addHours(12));
+                Log::warning('⚠️ Envío SMTP omitido para evitar demora: smtp.gmail.com requiere una Contraseña de Aplicación de Google de 16 caracteres en MAIL_PASSWORD.');
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            return true;
+        }
+    }
+
+    /**
+     * Registra en caché de archivo un fallo de conexión o autenticación SMTP para no bloquear futuras reservas.
+     */
+    public function registrarFalloSmtp(string $mensajeError): void
+    {
+        try {
+            if (
+                str_contains($mensajeError, '535') ||
+                str_contains($mensajeError, 'BadCredentials') ||
+                str_contains($mensajeError, 'Username and Password not accepted') ||
+                str_contains($mensajeError, 'Failed to authenticate') ||
+                str_contains($mensajeError, 'Connection could not be established') ||
+                str_contains($mensajeError, 'timed out')
+            ) {
+                $host = strtolower((string) config('mail.mailers.smtp.host', ''));
+                $user = (string) config('mail.mailers.smtp.username', '');
+                $pass = (string) config('mail.mailers.smtp.password', '');
+                $smtpKey = 'smtp_backoff_' . md5($host . ':' . $user . ':' . $pass);
+                Cache::store('file')->put($smtpKey, true, now()->addMinutes(15));
+            }
+        } catch (\Throwable $e) {
+            // Ignorar errores de caché
+        }
+    }
+
+    /**
+     * Despacha el envío de correo tras finalizar la respuesta HTTP para no demorar la reserva.
+     */
+    protected function despacharCorreoSegundoPlano(Reserva $reserva, string $tipo = 'confirmacion', ?string $emailFallback = null): void
+    {
+        try {
+            if (!$this->smtpDisponibleParaEnvio()) {
                 return;
             }
 
-            Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
-            Log::info("📧 Comprobante de reserva {$reserva->id_reserva} enviado a {$destinatario}");
+            $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
+            if (!$destinatario || !filter_var($destinatario, FILTER_VALIDATE_EMAIL) || str_ends_with($destinatario, '@temp.com')) {
+                return;
+            }
+
+            // En Linux/macOS despachar proceso en segundo plano real sin bloqueo
+            if (strncasecmp(PHP_OS, 'WIN', 3) !== 0 && function_exists('popen')) {
+                $phpBinary = defined('PHP_BINARY') && PHP_BINARY ? PHP_BINARY : 'php';
+                $artisan = base_path('artisan');
+                $tenantDb = config('database.connections.tenant.database') ?: (Tenant::current()?->id ?? '');
+                $cmdArgs = sprintf(
+                    'reservas:enviar-correo %s --tipo=%s --email=%s --tenant=%s',
+                    escapeshellarg((string) $reserva->id_reserva),
+                    escapeshellarg($tipo),
+                    escapeshellarg($destinatario),
+                    escapeshellarg((string) $tenantDb)
+                );
+                $command = sprintf('nohup "%s" "%s" %s > /dev/null 2>&1 &', $phpBinary, $artisan, $cmdArgs);
+                $handle = @popen($command, 'r');
+                if ($handle !== false) {
+                    @pclose($handle);
+                    return;
+                }
+            }
+
+            // Diferir al término del ciclo HTTP (0 ms durante crearReserva)
+            app()->terminating(function () use ($reserva, $tipo, $destinatario) {
+                try {
+                    if (!$this->smtpDisponibleParaEnvio()) {
+                        return;
+                    }
+                    config(['mail.mailers.smtp.timeout' => 3]);
+                    $reserva->loadMissing(['profesor', 'solicitante', 'espacio', 'asignatura']);
+                    if ($tipo === 'devolucion') {
+                        Mail::to($destinatario)->send(new \App\Mail\ConfirmacionDevolucion($reserva));
+                    } else {
+                        Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
+                    }
+                } catch (\Throwable $e) {
+                    $msg = $e->getMessage();
+                    $this->registrarFalloSmtp($msg);
+                    Log::warning("⚠️ No se pudo enviar el correo ({$tipo}) de la reserva {$reserva->id_reserva}: " . $msg);
+                }
+            });
         } catch (\Throwable $e) {
-            Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
+            Log::warning("⚠️ Error al despachar correo ({$tipo}) de la reserva {$reserva->id_reserva}: " . $e->getMessage());
         }
     }
 
@@ -887,6 +1027,17 @@ class ReservaService
             return '';
         }
 
-        return strtoupper(preg_replace('/[^0-9kK]/', '', $run));
+        if (str_contains($run, 'run=')) {
+            if (preg_match('/[?&]run=([^&]+)/i', $run, $matches)) {
+                $run = $matches[1];
+            }
+        }
+
+        if (str_contains($run, '-')) {
+            $parts = explode('-', $run);
+            $run = $parts[0];
+        }
+
+        return preg_replace('/[^0-9]/', '', $run);
     }
 }

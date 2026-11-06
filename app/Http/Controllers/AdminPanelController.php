@@ -189,7 +189,7 @@ class AdminPanelController extends Controller
                 $emailDestinatario = $data['correo'] ?? null;
                 if ($emailDestinatario) {
                     $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-                    Mail::to($emailDestinatario)->send(new ConfirmacionReserva($reserva));
+                    app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $emailDestinatario);
                     Log::info("📧 Correo de confirmación enviado en AdminPanel a: {$emailDestinatario}");
                 }
             } catch (\Exception $eMail) {

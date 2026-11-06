@@ -223,39 +223,14 @@ class ReservasController extends Controller
      */
     private function enviarCorreoReserva(Reserva $reserva): void
     {
-        try {
-            $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = $this->resolverEmail($reserva);
-            if ($email) {
-                Mail::to($email)->send(new ConfirmacionReserva($reserva));
-            }
-        } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de reserva: ' . $e->getMessage(), [
-                'id_reserva' => $reserva->id_reserva,
-            ]);
-        }
+        app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva);
     }
 
-    /**
-     * Envía el correo de confirmación de devolución al profesor o solicitante.
-     */
     private function enviarCorreoDevolucion(Reserva $reserva): void
     {
-        try {
-            $email = $this->resolverEmail($reserva);
-            if ($email) {
-                Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
-            }
-        } catch (\Exception $e) {
-            Log::error('Error al enviar correo de confirmación de devolución: ' . $e->getMessage(), [
-                'id_reserva' => $reserva->id_reserva,
-            ]);
-        }
+        app(\App\Services\ReservaService::class)->enviarCorreoDevolucion($reserva);
     }
 
-    /**
-     * Resuelve el correo electrónico del responsable de la reserva.
-     */
     private function resolverEmail(Reserva $reserva): ?string
     {
         if ($reserva->run_profesor && $reserva->profesor) {
