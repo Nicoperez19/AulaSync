@@ -93,14 +93,14 @@
     @endif
 
     <!-- Acciones Rápidas - Solo Administrador y Supervisor -->
-    @canany(['acciones rapidas', 'mantenedor de reservas'])
+    @can('admin panel')
         <x-sidebar.link title="Acciones Rápidas" href="{{ route('quick-actions.index') }}"
             :isActive="request()->routeIs('quick-actions.*')">
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
-    @endcanany
+    @endcan
 
     <!-- Control Docente - Dropdown con sublinks (ordenados alfabéticamente) -->
     @canany(['gestionar licencias profesores', 'gestionar recuperacion clases', 'reportes', 'mantenedor de reservas'])

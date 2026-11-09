@@ -397,7 +397,7 @@ Route::group(['middleware' => ['auth', 'role_or_permission:Administrador|Supervi
     Route::post('/reservas/{id}/admin-salida', [\App\Http\Controllers\Api\ApiReservaController::class, 'registrarSalidaAdmin'])->name('reservas.admin.salida');
 });
 
-Route::group(['middleware' => ['auth', 'role_or_permission:Administrador|Supervisor|mantenedor de reservas|acciones rapidas']], function () {
+Route::group(['middleware' => ['auth', 'role_or_permission:Administrador|Supervisor|mantenedor de reservas']], function () {
     Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
     Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');

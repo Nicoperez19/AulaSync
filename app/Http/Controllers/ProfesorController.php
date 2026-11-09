@@ -160,6 +160,12 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Encontrar el módulo actual para asignar como inicio/fin
+            $diaSemanaStr = strtolower(\Carbon\Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaSemanaStr);
+            $moduloActual = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActual, $diaNormalizado);
+            $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+
             // Verificar si el profesor tiene una recuperación de clase reagendada para este horario/espacio
             $infoRecEspontanea = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
                 $espacio->id_espacio,
@@ -169,15 +175,7 @@ class ProfesorController extends Controller
                 30
             );
 
-            // Bloquear reservas temporales/espontáneas desde el sistema de sala de profesores
-            if (!$infoRecEspontanea) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'No se permite tomar reservas temporales desde el sistema de sala de profesores. Por favor, solicite la reserva con una Asistente.'
-                ], 403);
-            }
-
-            // Crear la reserva (solo para recuperación reagendada autorizada)
+            // Crear la reserva (como recuperación si aplica, o espontánea)
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $profesor->run_profesor;
@@ -185,11 +183,24 @@ class ProfesorController extends Controller
             $reserva->id_asignatura = $infoRecEspontanea['id_asignatura'] ?? null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
-            $reserva->modulo_inicio = $infoRecEspontanea['modulo_inicio'];
-            $reserva->modulo_fin = $infoRecEspontanea['modulo_fin'];
-            $reserva->hora_salida = $infoRecEspontanea['hora_termino'];
-            $reserva->modulos = $infoRecEspontanea['cantidad_modulos'];
-            $reserva->tipo_reserva = 'recuperacion';
+            
+            if ($infoRecEspontanea) {
+                $reserva->modulo_inicio = $infoRecEspontanea['modulo_inicio'];
+                $reserva->modulo_fin = $infoRecEspontanea['modulo_fin'];
+                $reserva->hora_salida = $infoRecEspontanea['hora_termino'];
+                $reserva->modulos = $infoRecEspontanea['cantidad_modulos'];
+                $reserva->tipo_reserva = 'recuperacion';
+            } elseif ($moduloActual) {
+                $reserva->modulo_inicio = $moduloActual;
+                $cantModsSol = max(1, (int) $request->input('modulos', 1)); $modFinCalc = $moduloActual; for ($mS = 1; $mS < $cantModsSol; $mS++) { if (isset($horarios[$moduloActual + $mS])) { $modFinCalc = $moduloActual + $mS; } } $reserva->modulo_fin = $modFinCalc;
+                $reserva->hora_salida = $horarios[$modFinCalc]['fin'] ?? $horarios[$moduloActual]['fin'];
+                $reserva->modulos = ($modFinCalc - $moduloActual) + 1;
+                $reserva->tipo_reserva = 'espontanea';
+            } else {
+                $reserva->hora_salida = \Carbon\Carbon::parse($horaActual)->addHour()->format('H:i:s');
+                $reserva->tipo_reserva = 'espontanea';
+            }
+            
             $reserva->estado = 'activa';
             $reserva->save();
 

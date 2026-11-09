@@ -598,17 +598,6 @@ class ReservationsTable extends Component
             ->orderBy('hora', 'asc')
             ->paginate($this->perPage);
 
-        return view('livewire.reservations-table', [
-            'reservas' => $reservas,
-            'kpis' => $kpis,
-            'tipoSolicitante' => $this->tipoSolicitante,
-            'tipoEspacio' => $this->tipoEspacio,
-            'fechaInicio' => $this->fechaInicio,
-            'fechaFin' => $this->fechaFin,
-            'estado' => $this->estado,
-            'search' => $this->search,
-            'sortField' => $this->sortField,
-            'sortDirection' => $this->sortDirection,
-        ]);
+        return view('livewire.reservations-table', compact('reservas', 'kpis'));
     }
 }

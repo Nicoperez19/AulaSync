@@ -13,13 +13,13 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2.5">
-                @canany(['acciones rapidas', 'mantenedor de reservas'])
+                @can('admin panel')
                     <a href="{{ route('quick-actions.crear-reserva') }}"
                        class="inline-flex items-center gap-2 px-4 py-2 bg-[#950101] hover:bg-[#7B0101] text-white text-sm font-semibold rounded-xl shadow-sm transition-colors duration-150">
                         <i class="fa-solid fa-plus text-xs"></i>
                         <span>Nueva Reserva</span>
                     </a>
-                @endcanany
+                @endcan
                 <a href="{{ route('dashboard') }}"
                    class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150">
                     <i class="fa-solid fa-arrow-left text-xs text-slate-500"></i>

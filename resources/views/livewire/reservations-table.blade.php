@@ -70,195 +70,6 @@
         </div>
     </div>
 
-    @php
-        $espaciosChartData = [
-            'labels' => ['Salas de Clases', 'Auditorio', 'Laboratorios', 'Salas de Estudio'],
-            'keys' => ['Sala de Clases', 'Auditorio', 'Laboratorios', 'Sala de Estudio'],
-            'values' => [
-                (int) ($kpis['salas_clases'] ?? 0),
-                (int) ($kpis['auditorio'] ?? 0),
-                (int) ($kpis['laboratorios'] ?? 0),
-                (int) ($kpis['salas_estudio'] ?? 0),
-            ],
-        ];
-        $topEntidades = array_slice($kpis['desglose_instituciones'] ?? [], 0, 5);
-        $entidadesChartData = [
-            'labels' => array_map(fn($item) => \Illuminate\Support\Str::limit($item['nombre'], 26), $topEntidades),
-            'fullLabels' => array_map(fn($item) => $item['nombre'], $topEntidades),
-            'reservas' => array_map(fn($item) => (int) ($item['reservas'] ?? 0), $topEntidades),
-            'horas' => array_map(fn($item) => (float) ($item['horas'] ?? 0), $topEntidades),
-            'pcts' => array_map(fn($item) => (float) ($item['pct_del_uso'] ?? 0), $topEntidades),
-            'categorias' => array_map(fn($item) => $item['categoria'] ?? '', $topEntidades),
-        ];
-    @endphp
-
-    <!-- Gráficos de desglose: Por Espacio y Entidades / Uso -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6"
-         x-data="{
-            espaciosData: @js($espaciosChartData),
-            entidadesData: @js($entidadesChartData),
-            chartEspacios: null,
-            chartEntidades: null,
-            ensureChartJs(cb) {
-                if (window.Chart) { cb(); return; }
-                let script = document.getElementById('chartjs-cdn-script');
-                if (!script) {
-                    script = document.createElement('script');
-                    script.id = 'chartjs-cdn-script';
-                    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-                    script.onload = () => cb();
-                    document.head.appendChild(script);
-                } else {
-                    script.addEventListener('load', () => cb());
-                }
-            },
-            initCharts() {
-                this.ensureChartJs(() => {
-                    this.renderEspacios();
-                    this.renderEntidades();
-                });
-            },
-            renderEspacios() {
-                const canvas = this.$refs.canvasEspacios;
-                if (!canvas || !window.Chart) return;
-                if (this.chartEspacios) {
-                    this.chartEspacios.destroy();
-                }
-                this.chartEspacios = new Chart(canvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: this.espaciosData.labels,
-                        datasets: [{
-                            label: 'Reservas',
-                            data: this.espaciosData.values,
-                            backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
-                            borderRadius: 6,
-                            maxBarThickness: 38
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        onClick: (evt, elements) => {
-                            if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const key = this.espaciosData.keys[idx];
-                                const current = @js($tipoEspacio);
-                                $wire.set('tipoEspacio', current === key ? '' : key);
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => ` ${ctx.parsed.y.toLocaleString('es-CL')} reservas (clic para filtrar)`
-                                }
-                            }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f3f4f6' } },
-                            x: { ticks: { font: { size: 11, weight: '600' } }, grid: { display: false } }
-                        }
-                    }
-                });
-            },
-            renderEntidades() {
-                const canvas = this.$refs.canvasEntidades;
-                if (!canvas || !window.Chart) return;
-                if (this.chartEntidades) {
-                    this.chartEntidades.destroy();
-                }
-                const colors = this.entidadesData.categorias.map(c => c === 'Docente' ? '#4f46e5' : '#d97706');
-                this.chartEntidades = new Chart(canvas.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: this.entidadesData.labels,
-                        datasets: [{
-                            label: 'Reservas',
-                            data: this.entidadesData.reservas,
-                            backgroundColor: colors,
-                            borderRadius: 6,
-                            maxBarThickness: 24
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        onClick: (evt, elements) => {
-                            if (elements.length > 0) {
-                                const idx = elements[0].index;
-                                const fullLabel = this.entidadesData.fullLabels[idx];
-                                if (fullLabel === 'Docente Interno') {
-                                    $wire.set('tipoSolicitante', 'docente');
-                                } else {
-                                    $wire.set('tipoSolicitante', 'externo');
-                                    $wire.set('search', fullLabel === 'Externo / Particular' ? '' : fullLabel);
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    title: (items) => this.entidadesData.fullLabels[items[0].dataIndex] || items[0].label,
-                                    label: (ctx) => {
-                                        const i = ctx.dataIndex;
-                                        const res = this.entidadesData.reservas[i] ?? 0;
-                                        const hrs = this.entidadesData.horas[i] ?? 0;
-                                        const pct = this.entidadesData.pcts[i] ?? 0;
-                                        return ` ${res.toLocaleString('es-CL')} reservas · ${hrs}h (${pct}% del uso)`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            x: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f3f4f6' } },
-                            y: { ticks: { font: { size: 11, weight: '600' } }, grid: { display: false } }
-                        }
-                    }
-                });
-            }
-         }"
-         x-init="initCharts()"
-         x-effect="espaciosData = @js($espaciosChartData); entidadesData = @js($entidadesChartData); initCharts();">
-
-        <!-- Gráfico 1: Por Espacio -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                    <i class="fas fa-door-open text-[#950101]"></i> Por Espacio
-                </span>
-                @if(!empty($tipoEspacio))
-                    <button type="button" wire:click="$set('tipoEspacio', '')" class="text-[11px] text-[#950101] hover:underline font-semibold">
-                        Quitar filtro ({{ $tipoEspacio }})
-                    </button>
-                @else
-                    <span class="text-[11px] text-gray-400">Clic en una barra para filtrar</span>
-                @endif
-            </div>
-            <div class="h-48 relative" wire:ignore>
-                <canvas x-ref="canvasEspacios"></canvas>
-            </div>
-        </div>
-
-        <!-- Gráfico 2: Entidades / Uso -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
-                    <i class="fas fa-chart-bar text-amber-600"></i> Entidades / Uso (Top 5)
-                </span>
-                <div class="flex items-center gap-3 text-[11px] font-medium text-gray-500">
-                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-indigo-600 inline-block"></span> Docentes</span>
-                    <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-600 inline-block"></span> Externos</span>
-                </div>
-            </div>
-            <div class="h-48 relative" wire:ignore>
-                <canvas x-ref="canvasEntidades"></canvas>
-            </div>
-        </div>
-    </div>
-
     <!-- Sección FILTROS -->
     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -523,14 +334,14 @@
                             </td>
                             <td class="min-w-[200px] px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                    @canany(['mantenedor de reservas', 'acciones rapidas'])
+                                    @can('mantenedor de reservas')
                                         <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
                                            title="Editar reserva">
                                             <i class="fa-solid fa-pen-to-square text-xs"></i>
                                             <span>Editar</span>
                                         </a>
-                                    @endcanany
+                                    @endcan
                                     <a href="{{ route('reservas.comprobante', $reserva->id_reserva) }}"
                                        target="_blank"
                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-600 hover:text-white rounded-lg border border-red-200 transition-colors shadow-xs"
@@ -538,7 +349,7 @@
                                         <i class="fa-solid fa-file-pdf text-xs"></i>
                                         <span>PDF</span>
                                     </a>
-                                    @canany(['mantenedor de reservas', 'acciones rapidas'])
+                                    @can('mantenedor de reservas')
                                         <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
                                             @csrf
                                             @method('DELETE')
@@ -549,7 +360,7 @@
                                                 <span>Cancelar</span>
                                             </button>
                                         </form>
-                                    @endcanany
+                                    @endcan
 
                                     @php
                                         $esHoy = $reserva->fecha_reserva && \Carbon\Carbon::parse($reserva->fecha_reserva)->isToday();

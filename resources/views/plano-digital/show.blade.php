@@ -736,6 +736,67 @@
         </div>
     </div>
 
+    <!-- Modal para seleccionar cantidad de módulos -->
+    <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-2xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado azul con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Seleccionar Módulos</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Reserva de Espacio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalModulos()"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+              <!-- Selección de módulos -->
+                <div class="p-4 mb-6 bg-white rounded-lg shadow-sm">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-800">Configuración de Reserva</h3>
+                    <div class="mb-4 text-center">
+                        <p class="mb-4 text-base text-gray-700">¿Por cuántos módulos desea reservar?</p>
+                        <div class="flex items-center justify-center gap-4">
+                            <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
+                                class="w-24 px-4 py-3 text-xl font-semibold text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <span class="text-sm text-gray-600">
+                                de <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> disponibles
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información detallada de módulos -->
+                <div id="info-modulos-disponibles" class="mb-6"></div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <x-button id="btn-confirmar-modulos" variant='add'>
+                        Confirmar Reserva
+                    </x-button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para registro de solicitante -->
     <x-modal name="registro-solicitante" :show="false" @close-modal.window="handleClose($event, 'registro-solicitante')">
         @slot('title')
@@ -1025,7 +1086,8 @@
                 document.addEventListener('click', (event) => {
                     // Detectar clics en botones de cerrar modal
                     if (event.target.matches('[onclick*="cerrarModal"]') ||
-                        event.target.matches('[onclick*="cerrarModalRegistro"]')) {
+                        event.target.matches('[onclick*="cerrarModalRegistro"]') ||
+                        event.target.matches('[onclick*="cerrarModalModulos"]')) {
                         setTimeout(() => {
                             this.restaurarInputActivo();
                         }, 200);
@@ -1815,17 +1877,17 @@
                     cerrarModalEsperaLlaves(false);
                     
                     if (result.tipo_usuario === 'solicitante_nuevo') {
-                        Swal.fire({
-                            title: 'Reserva Temporal no disponible',
-                            text: 'Las reservas temporales de espacios solo pueden ser gestionadas por las Asistentes.',
-                            icon: 'info',
-                            confirmButtonText: 'Entendido',
-                            confirmButtonColor: '#0066CC',
-                            timer: 4000,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        });
-                        limpiarEstadoLectura('Solicite su reserva temporal con una Asistente');
+                        // Flujo de registro de nuevo solicitante
+                        runSolicitantePendiente = run;
+                        const runElem = document.getElementById('run-solicitante-no-registrado');
+                        if (runElem) runElem.textContent = run;
+                        
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
+                        
+                        setTimeout(() => {
+                            if (qrInputManager) qrInputManager.desactivarTodosLosInputs();
+                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'registro-solicitante' }));
+                        }, 300);
                     } else {
                         limpiarEstadoLectura(result.mensaje || 'Usuario no autorizado');
                     }
@@ -1963,50 +2025,16 @@
                         }, 3000);
                     }
                 } else {
-                    // CASO 2: Profesor SIN clases programadas en este espacio - no se permiten reservas temporales en Sala de Profesores
-                    Swal.close();
-                    Swal.fire({
-                        title: 'Sin clase programada en este espacio',
-                        text: 'No tienes una clase ni reserva programada en este espacio para el bloque actual. Las reservas temporales deben solicitarse con una Asistente.',
-                        icon: 'warning',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#0066CC',
-                        timer: 4500,
-                        timerProgressBar: true,
-                        showConfirmButton: true
-                    });
-                    limpiarEstadoLectura();
-                    ordenEscaneo = 'usuario';
+                    // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
+                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
                     detenerWatchdog();
-                    setTimeout(() => {
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 300);
-                    return;
+                    return; // No continuar, esperar selección de módulos
                 }
             } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                // CASO 3: Solicitante registrado sin reserva programada activa para este horario
-                Swal.close();
-                Swal.fire({
-                    title: 'Sin reserva programada',
-                    text: 'No tienes una reserva programada para este espacio en el bloque actual. Las reservas temporales deben ser gestionadas con una Asistente.',
-                    icon: 'warning',
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#0066CC',
-                    timer: 4500,
-                    timerProgressBar: true,
-                    showConfirmButton: true
-                });
-                limpiarEstadoLectura();
-                ordenEscaneo = 'usuario';
+                // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
                 detenerWatchdog();
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 300);
-                return;
+                return; // No continuar, esperar selección de módulos
             } else {
                 Swal.close();
                 ordenEscaneo = 'usuario';
@@ -2438,20 +2466,29 @@
                                 <p><strong>Asignatura:</strong> ${asignaturaNombre}</p>
                                 <p><strong>Horario:</strong> ${horarioStr}</p>
                             </div>
-                            <p class="text-gray-700">No se permite tomar reservas temporales desde la Sala de Profesores. Si requiere una sala temporal, por favor solicítela con una Asistente.</p>
+                            <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
                         </div>
                     `,
                     icon: 'warning',
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#0066CC',
-                    timer: 4500,
-                    timerProgressBar: true
-                }).then(() => {
-                    limpiarEstadoLectura();
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Reservar Espacio',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#D12420',
+                    cancelButtonColor: '#8D8D8D',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        // Proceder con la reserva
+                        await continuarReserva(usuarioEscaneado, espacio);
+                    } else {
+                        // Cancelado - resetear
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
                     }
-                    ordenEscaneo = 'usuario';
                 });
 
                 detenerWatchdog();
@@ -5280,9 +5317,322 @@
             state.originalCoordinates = [];
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            cargarHorariosModulos();
+        function cerrarModalModulos() {
+            // Ocultar directamente el modal
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+
+            // También intentar con el selector de data-modal
+            const modalAlt = document.querySelector('[data-modal="seleccionar-modulos"]');
+            if (modalAlt) {
+                modalAlt.classList.add('hidden');
+            }
+
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+
+            // Limpiar variables
+            espacioParaReserva = null;
+            runParaReserva = null;
+
+            // Resetear interfaz
+            limpiarEstadoCompleto();
+        }
+
+        async function calcularModulosDisponibles(idEspacio) {
+            try {
+                // Obtener hora y día actual
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const diaActual = obtenerDiaActual();
+
+                // Enviando parámetros al servidor, incluyendo información sobre si estamos en break
+                const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+                const espacioIdEncoded = encodeURIComponent(String(idEspacio));
+                const query = new URLSearchParams({
+                    hora_actual: horaActual,
+                    dia_actual: diaActual,
+                    modulo_solicitado: String(moduloParaReserva),
+                    permitir_breaks: 'true'
+                });
+                const response = await fetch(`/api/espacio/${espacioIdEncoded}/modulos-disponibles?${query.toString()}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                            if (data.success) {
+            // Guardar información adicional para mostrar en el modal
+            window.modulosInfo = {
+                max_modulos: data.max_modulos || 1,
+                modulo_actual: data.modulo_actual,
+                modulos_disponibles: data.modulos_disponibles || [],
+                proxima_clase: data.proxima_clase,
+                clases_proximas: data.clases_proximas || [],
+                detalles: data.detalles
+            };
+
+            return data.max_modulos || 1;
+        } else {
+            // Mostrar información detallada del error
+            if (data.detalles && data.detalles.razon === 'fuera_horario') {
+                // Horario no disponible
+            }
+            return 1;
+        }
+                } else {
+                    // Error en la respuesta del servidor
+                    return 1;
+                }
+            } catch (error) {
+                // Error al calcular módulos disponibles
+                return 1;
+            }
+        }
+
+        async function mostrarModalSeleccionarModulos(idEspacio, run) {
+            Swal.close();
+            const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+
+            // Usar exactamente los módulos disponibles calculados por el servidor (mínimo 1 para reserva espontánea)
+            maxModulosDisponibles = Math.max(1, modulosDisponibles || 1);
+
+            // Actualizar elementos del modal si existen
+            const maxModulosElement = document.getElementById('max-modulos-disponibles');
+            const inputModulos = document.getElementById('input-cantidad-modulos');
+
+            if (maxModulosElement) {
+                maxModulosElement.textContent = maxModulosDisponibles;
+            }
+
+            if (inputModulos) {
+                inputModulos.max = maxModulosDisponibles;
+                inputModulos.value = 1;
+            }
+
+            espacioParaReserva = idEspacio;
+            runParaReserva = run;
+
+            // Mostrar información detallada si está disponible
+            if (window.modulosInfo) {
+                mostrarInformacionModulos(window.modulosInfo);
+            }
+
+            // Mostrar el modal directamente
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
+                modal.classList.remove('hidden');
+                // Desactivar todos los inputs QR cuando se abre el modal
+                qrInputManager.desactivarTodosLosInputs();
+                // Enfocar el input
+                setTimeout(() => {
+                    if (inputModulos) {
+                        inputModulos.focus();
+                    }
+                }, 100);
+            }
+        }
+
+        function mostrarInformacionModulos(info) {
+            const infoContainer = document.getElementById('info-modulos-disponibles');
+            if (!infoContainer) return;
+
+                    // Información de módulos recibida
+
+            let html = '<div class="p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">';
+            html += '<h3 class="mb-3 text-lg font-semibold text-gray-800">Información de Disponibilidad</h3>';
+
+            // Información básica con validación
+            const moduloActual = info.modulo_actual !== null && info.modulo_actual !== undefined ? info.modulo_actual : 'No disponible';
+            const maxModulos = info.max_modulos || 0;
+
+            html += '<div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">';
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="font-semibold text-gray-800">${moduloActual}</p></div>`;
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="font-semibold text-gray-800">${maxModulos}</p></div>`;
+            html += '</div>';
+
+
+        // Clases próximas con información básica
+            if (info.clases_proximas && info.clases_proximas.length > 0) {
+                html += '<div class="p-4 mb-4 border-l-4 border-blue-400 rounded-lg bg-blue-50">';
+                html += '<h4 class="mb-3 text-sm font-semibold text-blue-800">Clases próximas:</h4>';
+                info.clases_proximas.forEach((clase, index) => {
+                    html += `<div class="p-3 mb-3 bg-white border rounded">`;
+                    html += '<div class="grid grid-cols-1 gap-3 md:grid-cols-2">';
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'Sin asignatura'}</p></div>`;
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Profesor:</p><p class="text-blue-800">${clase.profesor || 'No especificado'}</p></div>`;
+                    html += '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+        html += '</div>';
+            infoContainer.innerHTML = html;
+        }
+
+       document.addEventListener('DOMContentLoaded', function () {
+    // Cargar horarios de módulos al inicio
+    cargarHorariosModulos();
+    
+    const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
+
+    if (btnConfirmarModulos) {
+        btnConfirmarModulos.addEventListener('click', async function () {
+            const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
+
+            if (!espacioParaReserva || !runParaReserva) {
+                return;
+            }
+
+
+
+            // Determinar el tipo de usuario y la ruta correcta
+            let apiEndpoint = '/api/crear-reserva-solicitante';
+            let tipoUsuario = 'solicitante';
+
+            // Si tenemos información del usuario escaneado, usar su tipo real
+            if (usuarioEscaneado && typeof usuarioInfo !== 'undefined' && usuarioInfo.tipo_usuario) {
+                if (usuarioInfo.tipo_usuario === 'profesor') {
+                    apiEndpoint = '/api/crear-reserva-profesor';
+                    tipoUsuario = 'profesor';
+                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                    apiEndpoint = '/api/crear-reserva-solicitante';
+                    tipoUsuario = 'solicitante';
+                }
+            }
+
+
+            // Preparar datos para la petición según el tipo de usuario
+            let requestBody = {};
+
+            // Obtener el módulo para la reserva (incluso durante breaks)
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+
+            if (tipoUsuario === 'profesor') {
+                requestBody = {
+                    run_profesor: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    modulo_solicitado: moduloParaReserva, modulos: cantidad
+                };
+            } else {
+                requestBody = {
+                    run_solicitante: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    modulos: cantidad,
+                    modulo_inicio: moduloParaReserva
+                };
+            }
+
+
+            // Mostrar mensaje de proceso
+            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+
+            // Mostrar SweetAlert indicando que se está creando el registro o reserva
+            const loadingTitle = (tipoUsuario === 'profesor') ? 'Creando registro de clase...' : 'Creando reserva...';
+            const loadingText = (tipoUsuario === 'profesor') ? 'Por favor, espera un momento mientras registramos tu clase.' : 'Por favor, espera un momento mientras registramos tu reserva.';
+            Swal.fire({
+                title: loadingTitle,
+                text: loadingText,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+        const data = await response.json();
+
+
+        if (data.success) {
+            // Cerrar el modal inmediatamente
+            cerrarModalModulos();
+            Swal.close();
+
+            // Mostrar Sweet Alert de éxito para reserva creada (Sin programación)
+            Swal.fire({
+                title: '¡Reserva registrada!',
+                text: 'La reserva ha sido creada exitosamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#10B981',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+
+            document.getElementById('qr-status').innerHTML = 'Reserva creada';
+            document.getElementById('qr-status').classList.remove('parpadeo');
+
+            // Limpiar estado después del Sweet Alert
+            setTimeout(() => {
+                limpiarEstadoCompleto();
+                // Restaurar autofocus del qr-input después de crear reserva
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 2000);
+        } else {
+            let mensajeError = data.mensaje || 'No se pudo reservar';
+
+            if (data.errors) {
+                mensajeError = 'Errores de validación:\n';
+                Object.keys(data.errors).forEach(field => {
+                    data.errors[field].forEach(error => {
+                        mensajeError += `• ${field}: ${error}\n`;
+                    });
+                });
+            }
+
+            Swal.close();
+            // Mostrar SweetAlert de error
+            Swal.fire({
+                title: 'Error al Crear Reserva',
+                text: mensajeError,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#D12420'
+            });
+
+            // Cerrar modal en caso de error
+            cerrarModalModulos();
+
+            // Restaurar autofocus del qr-input después de error en reserva
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 300);
+        }
         });
+    }
+});
+
+
 
         function obtenerDiaActual() {
             const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
@@ -5540,7 +5890,7 @@
             }
 
             // 2. Si no hay modales de formulario abiertos y lleva > 35s en espera de espacio, resetear a usuario
-            const hayModalesAbiertos = document.querySelectorAll('.swal2-container:not(.swal2-hidden), [data-modal]:not(.hidden), #modal-espacio-info:not(.hidden)').length > 0;
+            const hayModalesAbiertos = document.querySelectorAll('.swal2-container:not(.swal2-hidden), [data-modal]:not(.hidden), #modal-espacio-info:not(.hidden), #modal-seleccionar-modulos:not(.hidden)').length > 0;
 
             if (!hayModalesAbiertos) {
                 if (ordenEscaneo === 'espacio' && tiempoInactivo > 35000) {
@@ -5648,6 +5998,12 @@
                 return;
             }
 
+            // Cerrar modal de módulos si está abierto
+            const modalModulos = document.getElementById('modal-seleccionar-modulos');
+            if (modalModulos && !modalModulos.classList.contains('hidden')) {
+                cerrarModalModulos();
+                return;
+            }
 
             // Cerrar modal de registro de solicitante si está abierto
             const modalRegistro = document.querySelector('[data-modal="registro-solicitante"]');
