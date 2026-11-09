@@ -363,29 +363,37 @@ class PlanoDigitalController extends Controller
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 $reservaProxima = $reservasProximas->firstWhere('id_espacio', $idEspacio);
 
-                // Filtrar planificaciones si la clase fue finalizada anticipadamente o el profesor ya registró salida
+                // Filtrar planificaciones si la clase de ESTE módulo fue finalizada anticipadamente o el profesor ya registró salida
+                $coincideReservaConPlan = function ($r, $plan) {
+                    $numModPlan = ModulosHelper::getNumeroModulo($plan->id_modulo ?? null);
+                    if ($numModPlan !== null && $r->modulo_inicio !== null && $r->modulo_fin !== null) {
+                        if ($numModPlan < (int) $r->modulo_inicio || $numModPlan > (int) $r->modulo_fin) {
+                            return false;
+                        }
+                    } elseif ($plan->modulo && $r->hora_salida && $r->hora_salida <= $plan->modulo->hora_inicio) {
+                        return false;
+                    }
+
+                    if ($r->id_asignatura && !empty($plan->id_asignatura) && $r->id_asignatura == $plan->id_asignatura) {
+                        return true;
+                    }
+                    $runDocente = $plan->horario?->run_profesor ?? $plan->asignatura?->run_profesor ?? $plan->profesorColaborador?->run_profesor_colaborador ?? null;
+                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) {
+                        return true;
+                    }
+                    return false;
+                };
+
                 if ($planificacionActiva) {
                     $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $idEspacio)
-                        ->first(function ($r) use ($planificacionActiva) {
-                            if ($r->clase_finalizada_anticipadamente) return true;
-                            if ($r->id_asignatura && $planificacionActiva->id_asignatura && $r->id_asignatura == $planificacionActiva->id_asignatura) return true;
-                            $runDocente = $planificacionActiva->horario->run_profesor ?? $planificacionActiva->asignatura->run_profesor ?? null;
-                            if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                            return true;
-                        });
+                        ->first(fn ($r) => $coincideReservaConPlan($r, $planificacionActiva));
                     if ($claseFinalizada) {
                         $planificacionActiva = null;
                     }
                 }
                 if ($planificacionProxima) {
                     $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $idEspacio)
-                        ->first(function ($r) use ($planificacionProxima) {
-                            if ($r->clase_finalizada_anticipadamente) return true;
-                            if ($r->id_asignatura && $planificacionProxima->id_asignatura && $r->id_asignatura == $planificacionProxima->id_asignatura) return true;
-                            $runDocente = $planificacionProxima->horario->run_profesor ?? $planificacionProxima->asignatura->run_profesor ?? null;
-                            if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                            return false;
-                        });
+                        ->first(fn ($r) => $coincideReservaConPlan($r, $planificacionProxima));
                     if ($claseFinalizada) {
                         $planificacionProxima = null;
                     }
@@ -508,7 +516,7 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
         $diaLimpio = ModulosHelper::normalizarDia($diaActual);
-        $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
+        $diasPosibles = array_values(array_unique([$diaActual, $diaLimpio]));
 
         $periodo = SemesterHelper::getCurrentPeriod();
 
@@ -623,8 +631,8 @@ class PlanoDigitalController extends Controller
                 $detalles['planificacion'] = [
                     'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                     'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
-                    'profesor' => ucwords($planificacion->horario->profesor->name ?? 'No asignado'),
-                    'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
+                    'profesor' => ucwords($planificacion->horario?->profesor?->name ?? $planificacion->asignatura?->profesor?->name ?? 'No asignado'),
+                    'carrera' => $planificacion->asignatura?->carrera?->nombre ?? '-',
                     'es_reserva_activa' => false,
                     'modulos' => $planificacion
                         ->asignatura
@@ -648,19 +656,19 @@ class PlanoDigitalController extends Controller
         if ($planificacionProxima) {
             if ($planificacionProxima instanceof PlanificacionProfesorColaborador) {
                 $detalles['planificacion_proxima'] = [
-                    'asignatura' => $planificacionProxima->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
-                    'profesor' => ucwords($planificacionProxima->profesorColaborador->profesor->name ?? 'No asignado'),
-                    'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
-                    'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
-                    'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
+                    'asignatura' => $planificacionProxima->profesorColaborador?->nombre_asignatura ?? 'Sin asignatura',
+                    'profesor' => ucwords($planificacionProxima->profesorColaborador?->profesor?->name ?? 'No asignado'),
+                    'hora_inicio' => substr($planificacionProxima->modulo?->hora_inicio ?? '00:00', 0, 5),
+                    'hora_termino' => substr($planificacionProxima->modulo?->hora_termino ?? '00:00', 0, 5),
+                    'modulo' => explode('.', $planificacionProxima->modulo?->id_modulo ?? '')[1] ?? 'No especificado'
                 ];
             } elseif ($planificacionProxima->asignatura) {
                 $detalles['planificacion_proxima'] = [
                     'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                    'profesor' => ucwords($planificacionProxima->horario->profesor->name ?? 'No asignado'),
-                    'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
-                    'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
-                    'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
+                    'profesor' => ucwords($planificacionProxima->horario?->profesor?->name ?? $planificacionProxima->asignatura?->profesor?->name ?? 'No asignado'),
+                    'hora_inicio' => substr($planificacionProxima->modulo?->hora_inicio ?? '00:00', 0, 5),
+                    'hora_termino' => substr($planificacionProxima->modulo?->hora_termino ?? '00:00', 0, 5),
+                    'modulo' => explode('.', $planificacionProxima->modulo?->id_modulo ?? '')[1] ?? 'No especificado'
                 ];
             }
         }
@@ -849,18 +857,35 @@ class PlanoDigitalController extends Controller
                     }
                 }
 
+                $coincideReservaEstado = function ($r, $p, $esColab = false) {
+                    $numModPlan = ModulosHelper::getNumeroModulo($p->id_modulo ?? null);
+                    if ($numModPlan !== null && $r->modulo_inicio !== null && $r->modulo_fin !== null) {
+                        if ($numModPlan < (int) $r->modulo_inicio || $numModPlan > (int) $r->modulo_fin) {
+                            return false;
+                        }
+                    } elseif ($p->modulo && $r->hora_salida && $r->hora_salida <= $p->modulo->hora_inicio) {
+                        return false;
+                    }
+
+                    $idAsigPlan = $esColab ? ($p->profesorColaborador?->id_asignatura ?? null) : ($p->id_asignatura ?? null);
+                    if ($r->id_asignatura && $idAsigPlan && $r->id_asignatura == $idAsigPlan) {
+                        return true;
+                    }
+                    $runDocente = $esColab
+                        ? ($p->profesorColaborador?->run_profesor_colaborador ?? $p->profesorColaborador?->run_profesor ?? null)
+                        : ($p->horario?->run_profesor ?? $p->asignatura?->run_profesor ?? null);
+                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) {
+                        return true;
+                    }
+                    return false;
+                };
+
                 $claseEnCurso = $planificacionesActivasYProximas
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio) {
-                        if ($p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
+                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio, $coincideReservaEstado) {
+                        if ($p->modulo && $p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
                             $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
-                                ->first(function ($r) use ($p) {
-                                    if ($r->clase_finalizada_anticipadamente) return true;
-                                    if ($r->id_asignatura && $p->id_asignatura && $r->id_asignatura == $p->id_asignatura) return true;
-                                    $runDocente = $p->horario->run_profesor ?? $p->asignatura->run_profesor ?? null;
-                                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                                    return true;
-                                });
+                                ->first(fn ($r) => $coincideReservaEstado($r, $p, false));
                             return !$claseFinalizada;
                         }
                         return false;
@@ -868,16 +893,10 @@ class PlanoDigitalController extends Controller
 
                 $colaboradorEnCurso = $colaboradoresActivosYProximos
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio) {
-                        if ($p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
+                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio, $coincideReservaEstado) {
+                        if ($p->modulo && $p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
                             $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
-                                ->first(function ($r) use ($p) {
-                                    if ($r->clase_finalizada_anticipadamente) return true;
-                                    if ($r->id_asignatura && $p->profesorColaborador->id_asignatura && $r->id_asignatura == $p->profesorColaborador->id_asignatura) return true;
-                                    $runDocente = $p->profesorColaborador->run_profesor ?? null;
-                                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                                    return true;
-                                });
+                                ->first(fn ($r) => $coincideReservaEstado($r, $p, true));
                             return !$claseFinalizada;
                         }
                         return false;
@@ -885,16 +904,10 @@ class PlanoDigitalController extends Controller
 
                 $claseProxima = $planificacionesActivasYProximas
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio) {
-                        if ($p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
+                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio, $coincideReservaEstado) {
+                        if ($p->modulo && $p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
                             $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
-                                ->first(function ($r) use ($p) {
-                                    if ($r->clase_finalizada_anticipadamente) return true;
-                                    if ($r->id_asignatura && $p->id_asignatura && $r->id_asignatura == $p->id_asignatura) return true;
-                                    $runDocente = $p->horario->run_profesor ?? $p->asignatura->run_profesor ?? null;
-                                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                                    return false;
-                                });
+                                ->first(fn ($r) => $coincideReservaEstado($r, $p, false));
                             return !$claseFinalizada;
                         }
                         return false;
@@ -902,16 +915,10 @@ class PlanoDigitalController extends Controller
 
                 $colaboradorProxima = $colaboradoresActivosYProximos
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio) {
-                        if ($p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
+                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio, $coincideReservaEstado) {
+                        if ($p->modulo && $p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
                             $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
-                                ->first(function ($r) use ($p) {
-                                    if ($r->clase_finalizada_anticipadamente) return true;
-                                    if ($r->id_asignatura && $p->profesorColaborador->id_asignatura && $r->id_asignatura == $p->profesorColaborador->id_asignatura) return true;
-                                    $runDocente = $p->profesorColaborador->run_profesor ?? null;
-                                    if ($runDocente && $r->run_profesor && $this->normalizeRun($runDocente) === $this->normalizeRun($r->run_profesor)) return true;
-                                    return false;
-                                });
+                                ->first(fn ($r) => $coincideReservaEstado($r, $p, true));
                             return !$claseFinalizada;
                         }
                         return false;
@@ -961,18 +968,18 @@ class PlanoDigitalController extends Controller
                     $curso = $claseEnCurso ?? $colaboradorEnCurso;
                     if ($curso) {
                         $asignaturaNombre = ($curso instanceof Planificacion_Asignatura)
-                            ? ($curso->asignatura->nombre_asignatura ?? 'Sin asignatura')
-                            : ($curso->profesorColaborador->nombre_asignatura ?? 'Sin asignatura');
+                            ? ($curso->asignatura?->nombre_asignatura ?? 'Sin asignatura')
+                            : ($curso->profesorColaborador?->nombre_asignatura ?? 'Sin asignatura');
                         $profesorNombre = ($curso instanceof Planificacion_Asignatura)
-                            ? ($curso->horario->profesor->name ?? 'No especificado')
-                            : ($curso->profesorColaborador->profesor->name ?? 'No especificado');
+                            ? ($curso->horario?->profesor?->name ?? $curso->asignatura?->profesor?->name ?? 'No especificado')
+                            : ($curso->profesorColaborador?->profesor?->name ?? 'No especificado');
 
                         $informacionAdicional = [
                             'asignatura' => $asignaturaNombre,
                             'profesor' => $profesorNombre,
-                            'modulo' => explode('.', $curso->modulo->id_modulo)[1] ?? 'No especificado',
-                            'hora_inicio' => substr($curso->modulo->hora_inicio, 0, 5),
-                            'hora_termino' => substr($curso->modulo->hora_termino, 0, 5)
+                            'modulo' => explode('.', $curso->modulo?->id_modulo ?? '')[1] ?? 'No especificado',
+                            'hora_inicio' => substr($curso->modulo?->hora_inicio ?? '00:00', 0, 5),
+                            'hora_termino' => substr($curso->modulo?->hora_termino ?? '00:00', 0, 5)
                         ];
                     }
                 } elseif ($tieneReservaActiva) {
@@ -1013,7 +1020,14 @@ class PlanoDigitalController extends Controller
 
 
     /**
+     * Alias compatible para la ruta /api/devolver-llaves
+     */
+    public function devolverLlaves(Request $request)
+    {
+        return $this->devolverEspacio($request);
+    }
 
+    /**
      * Devolver un espacio ocupado
      */
     public function devolverEspacio(Request $request)
@@ -1024,7 +1038,7 @@ class PlanoDigitalController extends Controller
 
             $request->validate([
                 'id_espacio' => 'required|string',
-                'run_usuario' => 'required|numeric',
+                'run_usuario' => 'required',
                 'tipo_desocupacion' => 'sometimes|string|in:normal,forzosa',
                 'run_administrador' => 'required_if:tipo_desocupacion,forzosa'
             ]);
@@ -1446,20 +1460,31 @@ class PlanoDigitalController extends Controller
                 $this->establecerContextoTenant();
 
                 $request->validate([
-                    'run_usuario' => 'required|numeric',
+                    'run_usuario' => 'required',
                     'id_espacio' => 'required|string',
                     'id_reserva_anterior' => 'required|string'
                 ]);
 
-                $runNuevo = $this->normalizeRun($request->input('run_usuario'));
+                $runRawNuevo = (string) $request->input('run_usuario');
+                $runNuevo = $this->normalizeRun($runRawNuevo);
+                $runLimpioNuevo = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRawNuevo));
+                $runSinDvNuevo = strlen($runLimpioNuevo) > 7 ? substr($runLimpioNuevo, 0, -1) : $runNuevo;
                 $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
                 $idReservaAnterior = $request->input('id_reserva_anterior');
 
                 // 1. Obtener datos de los involucrados
-                $docenteNuevo = Profesor::where('run_profesor', $runNuevo)->first();
+                $docenteNuevo = Profesor::where(function ($q) use ($runNuevo, $runLimpioNuevo, $runSinDvNuevo) {
+                    $q->where('run_profesor', $runNuevo)
+                      ->orWhere('run_profesor', $runLimpioNuevo)
+                      ->orWhere('run_profesor', $runSinDvNuevo)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runNuevo])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpioNuevo])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDvNuevo]);
+                })->first();
                 if (!$docenteNuevo) {
                     return response()->json(['success' => false, 'mensaje' => 'Docente nuevo no encontrado (' . $runNuevo . ')'], 404);
                 }
+                $runNuevo = $docenteNuevo->run_profesor;
 
 
                 $reservaAnterior = Reserva::with(['profesor', 'solicitante'])->find($idReservaAnterior);
@@ -2798,8 +2823,12 @@ class PlanoDigitalController extends Controller
             // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
 
+            $idEspacioNorm = $this->normalizeEspacioId($idEspacio);
             $espacio = Espacio::with(['piso.facultad.sede'])
-                ->where('id_espacio', $idEspacio)
+                ->where(function ($q) use ($idEspacio, $idEspacioNorm) {
+                    $q->where('id_espacio', $idEspacio)
+                      ->orWhere('id_espacio', $idEspacioNorm);
+                })
                 ->first();
 
             if (!$espacio) {
@@ -2821,9 +2850,9 @@ class PlanoDigitalController extends Controller
                     'tipo' => $espacio->tipo_espacio,
                     'puestos' => $espacio->puestos_disponibles,
                     'estado' => $espacio->estado,
-                    'piso' => $espacio->piso->numero_piso,
-                    'facultad' => $espacio->piso->facultad->nombre_facultad,
-                    'sede' => $espacio->piso->facultad->sede->nombre_sede
+                    'piso' => $espacio->piso?->numero_piso,
+                    'facultad' => $espacio->piso?->facultad?->nombre_facultad,
+                    'sede' => $espacio->piso?->facultad?->sede?->nombre_sede
                 ],
                 'mensaje' => $disponible ? 'Espacio disponible' : 'Espacio no disponible'
             ]);
@@ -3101,9 +3130,9 @@ class PlanoDigitalController extends Controller
                 return response()->json([
                     'success' => true,
                     'tipo' => 'profesor',
-                    'nombre' => $profesor->nombre_profesor,
+                    'nombre' => $profesor->name ?? $profesor->nombre_profesor,
                     'run' => $profesor->run_profesor,
-                    'email' => $profesor->email_profesor ?? null
+                    'email' => $profesor->email ?? $profesor->email_profesor ?? null
                 ]);
             }
 
@@ -3364,10 +3393,13 @@ class PlanoDigitalController extends Controller
                 'id_espacio' => 'required|string'
             ]);
 
-            $idEspacio = $request->input('id_espacio');
+            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
             // Buscar el espacio
-            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            $espacio = Espacio::whereIn('id_espacio', $espaciosEquiv)
+                ->orWhere('id_espacio', $idEspacio)
+                ->first();
 
             if (!$espacio) {
                 return response()->json([
@@ -3377,7 +3409,7 @@ class PlanoDigitalController extends Controller
             }
 
             // Obtener la reserva activa actual en este espacio
-            $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+            $reservaActiva = Reserva::whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
                 ->where('fecha_reserva', Carbon::today())
                 ->first();
