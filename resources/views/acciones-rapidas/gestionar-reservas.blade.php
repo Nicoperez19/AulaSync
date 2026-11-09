@@ -57,12 +57,12 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div>
-                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Solicitante</label>
+                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1 dark:text-gray-300">Buscar</label>
                 <div class="relative">
                     <input 
                         type="text"
                         id="filtro-solicitante-reserva"
-                        placeholder="Nombre o RUN..."
+                        placeholder="Solicitante, RUN, asignatura o actividad..."
                         oninput="filtrarReservas()"
                         class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#950101]/20 focus:border-[#950101] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                     />
@@ -913,11 +913,25 @@ function procesarReservas() {
     let reservasProcesadas = [...reservasOriginales];
     
     if (solicitanteFiltro) {
+        const normalizarTexto = (txt) => String(txt || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const terminoBusqueda = normalizarTexto(solicitanteFiltro);
         reservasProcesadas = reservasProcesadas.filter(r => {
-            const nombre = String(r.nombre_responsable || '').toLowerCase();
-            const run = String(r.run_responsable || r.run || '').toLowerCase();
-            const id = String(r.id || '').toLowerCase();
-            return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
+            const campos = [
+                r.nombre_responsable,
+                r.run_responsable,
+                r.run,
+                r.id,
+                r.asignatura,
+                r.id_asignatura,
+                r.nombre_actividad,
+                r.descripcion_actividad,
+                r.observaciones,
+                r.espacio,
+                r.id_espacio,
+                r.carrera,
+                r.escuela
+            ];
+            return campos.some(campo => normalizarTexto(campo).includes(terminoBusqueda));
         });
     }
 

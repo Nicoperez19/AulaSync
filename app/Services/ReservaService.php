@@ -59,7 +59,7 @@ class ReservaService
         }
 
         $query = Reserva::on('tenant')
-            ->with(['profesor', 'solicitante', 'espacio', 'asignatura'])
+            ->with(['profesor.carrera.areaAcademica', 'profesor.areaAcademica', 'solicitante', 'espacio', 'asignatura.carrera.areaAcademica'])
             ->orderBy('fecha_reserva', 'desc')
             ->orderBy('hora');
 
@@ -94,6 +94,15 @@ class ReservaService
                 $asignaturaInfo = $reserva->id_asignatura;
             }
 
+            $carreraNombre = $reserva->asignatura?->carrera?->nombre
+                ?? $reserva->profesor?->carrera?->nombre
+                ?? null;
+
+            $escuelaNombre = $reserva->asignatura?->carrera?->areaAcademica?->nombre_area_academica
+                ?? $reserva->profesor?->areaAcademica?->nombre_area_academica
+                ?? $reserva->profesor?->carrera?->areaAcademica?->nombre_area_academica
+                ?? null;
+
             $modulosInfo = $this->procesarModulosYHorarios($reserva);
 
             $fueEditada = $reserva->created_at
@@ -122,6 +131,8 @@ class ReservaService
                 'id_asignatura' => $reserva->id_asignatura,
                 'nombre_actividad' => $reserva->nombre_actividad,
                 'descripcion_actividad' => $reserva->descripcion_actividad,
+                'carrera' => $carreraNombre,
+                'escuela' => $escuelaNombre,
                 'tipo_reserva' => $reserva->tipo_reserva ?? 'directa',
                 'estado' => $reserva->estado ?? 'activa',
                 'observaciones' => $reserva->observaciones,
