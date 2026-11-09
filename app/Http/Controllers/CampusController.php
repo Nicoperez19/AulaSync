@@ -18,7 +18,7 @@ class CampusController extends Controller
         try {
             $sedes = Sede::with('universidad')->get();
             
-            return view('layouts.campus.campus_index', compact('sedes'));
+            return view('campus.index', compact('sedes'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los campus.'])->withInput();
         }
@@ -69,7 +69,7 @@ class CampusController extends Controller
             $campus = Campus::findOrFail($id);
             $sedes = Sede::with('universidad')->get();
             
-            return view('layouts.campus.campus_edit', compact('campus', 'sedes'));
+            return view('campus.edit', compact('campus', 'sedes'));
         } catch (ModelNotFoundException $e) {
             return redirect()->route('campus.index')->withErrors(['error' => 'Campus no encontrado.']);
         } catch (\Exception $e) {

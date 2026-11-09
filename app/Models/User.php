@@ -111,4 +111,17 @@ class User extends Authenticatable
     {
         Mail::to($this->email)->send(new ResetPasswordMail($token, $this->email));
     }
+
+    /**
+     * Determina si el usuario actual tiene privilegios de superadministrador.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (bool) (
+            $this->is_superuser ||
+            (string) $this->run === '19716146' ||
+            (method_exists($this, 'hasRole') && $this->hasRole('Super Admin'))
+        );
+    }
 }
+

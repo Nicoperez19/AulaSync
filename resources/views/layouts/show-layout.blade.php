@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'SIA | Sistema de Información de Aulas') }}</title>
+    <title>{{ config('app.name', 'SIA (Sistema de InformaciÃ³n de Aulas)') }}</title>
 
     <!-- Estilos de Livewire -->
     @livewireStyles
@@ -35,7 +35,7 @@
         <div class="min-h-screen text-gray-900 bg-white dark:bg-dark-eval-0 dark:text-gray-200">
             <!-- Contenido principal -->
             <div
-                class="flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-grey-100 dark:bg-dark-eval-0">
+                class="flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-[#F1EFF2] dark:bg-[#191919]">
                 <!-- Main content -->
                 <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6 bg-gray">
                     {{ $slot }}

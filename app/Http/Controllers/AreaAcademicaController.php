@@ -15,7 +15,7 @@ class AreaAcademicaController extends Controller
     {
         try {
             $facultades = Facultad::with('sede.universidad')->get();
-            return view('layouts.academic_area.academic_area_index', compact('facultades'));
+            return view('areas-academicas.index', compact('facultades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las áreas académicas.'])->withInput();
         }
@@ -67,7 +67,7 @@ class AreaAcademicaController extends Controller
             $areaAcademica = AreaAcademica::findOrFail($id);
             $facultades = Facultad::with('sede.universidad')->get();
             
-            return view('layouts.academic_area.academic_area_edit', compact('areaAcademica', 'facultades'));
+            return view('areas-academicas.edit', compact('areaAcademica', 'facultades'));
         } catch (ModelNotFoundException $e) {
             return redirect()->route('academic_areas.index')->withErrors(['error' => 'Área Académica no encontrada.']);
         } catch (\Exception $e) {

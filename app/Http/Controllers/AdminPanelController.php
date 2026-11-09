@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
 
 class AdminPanelController extends Controller
@@ -469,32 +470,14 @@ class AdminPanelController extends Controller
     }
 
     /**
-     * Obtener el módulo actual basado en la hora
+     * Obtener el módulo actual basado en la hora y día
      */
     private function obtenerModuloActual()
     {
-        // Esta función debería obtener el módulo actual basado en los horarios
-        // Por ahora retornamos un valor por defecto
-        $hora = Carbon::now()->hour;
-        
-        // Horarios aproximados (ajustar según sea necesario)
-        if ($hora >= 8 && $hora < 9) return 1;
-        if ($hora >= 9 && $hora < 10) return 2;
-        if ($hora >= 10 && $hora < 11) return 3;
-        if ($hora >= 11 && $hora < 12) return 4;
-        if ($hora >= 12 && $hora < 13) return 5;
-        if ($hora >= 13 && $hora < 14) return 6;
-        if ($hora >= 14 && $hora < 15) return 7;
-        if ($hora >= 15 && $hora < 16) return 8;
-        if ($hora >= 16 && $hora < 17) return 9;
-        if ($hora >= 17 && $hora < 18) return 10;
-        if ($hora >= 18 && $hora < 19) return 11;
-        if ($hora >= 19 && $hora < 20) return 12;
-        if ($hora >= 20 && $hora < 21) return 13;
-        if ($hora >= 21 && $hora < 22) return 14;
-        if ($hora >= 22 && $hora < 23) return 15;
-        if ($hora >= 23 || $hora < 8) return 16;
-        
-        return 1; // Por defecto
+        $now = Carbon::now();
+        $diaNormalizado = ModulosHelper::normalizarDia(
+            strtolower($now->locale('es')->isoFormat('dddd'))
+        );
+        return ModulosHelper::obtenerModuloActual($now->format('H:i:s'), $diaNormalizado);
     }
 }

@@ -4,8 +4,8 @@
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
             <i class="fas fa-lock text-2xl text-gray-600"></i>
         </div>
-        <h2 class="text-2xl font-bold text-gray-800">Acceso al Asistente de Configuración</h2>
-        <p class="text-gray-600 mt-2">Ingrese la contraseña de inicialización para continuar</p>
+        <h2 class="text-2xl font-bold text-gray-800">Acceso al Asistente de Configuraci&oacute;n</h2>
+        <p class="text-gray-600 mt-2">Ingrese la contrase&ntilde;a de inicializaci&oacute;n para continuar</p>
     </div>
 
     @if(session('error'))
@@ -24,14 +24,14 @@
             <!-- Password Field -->
             <div>
                 <label for="init_password" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-key mr-1"></i> Contraseña de Inicialización
+                    <i class="fas fa-key mr-1"></i> Contrase&ntilde;a de Inicializaci&oacute;n
                 </label>
                 <div class="relative">
                     <input type="password" 
                            id="init_password" 
                            name="init_password" 
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition @error('init_password') border-red-500 @enderror"
-                           placeholder="Ingrese la contraseña"
+                           placeholder="Ingrese la contrase&ntilde;a"
                            required 
                            autofocus>
                     <button type="button" 
@@ -48,12 +48,12 @@
             <!-- Info Box -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
-                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3 flex-shrink-0"></i>
                     <div>
-                        <h4 class="font-semibold text-blue-800">¿Dónde obtener esta contraseña?</h4>
+                        <h4 class="font-semibold text-blue-800">&iquest;D&oacute;nde obtener esta contrase&ntilde;a?</h4>
                         <p class="text-sm text-blue-700 mt-1">
-                            La contraseña de inicialización fue proporcionada por el administrador del sistema.
-                            Si no la tiene, contacte al equipo de soporte técnico.
+                            La contrase&ntilde;a de inicializaci&oacute;n fue proporcionada por el administrador del sistema.
+                            Si no la tiene, contacte al equipo de soporte t&eacute;cnico.
                         </p>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
             <a href="{{ route('tenant.initialization.cancel') }}" 
                class="w-full inline-flex items-center justify-center px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition text-sm">
                 <i class="fas fa-arrow-left mr-2 text-gray-500"></i>
-                Cancelar y volver a Selección de Sedes
+                Cancelar y volver a Selecci&oacute;n de Sedes
             </a>
 
             @auth
@@ -78,7 +78,7 @@
                 <form method="POST" action="{{ route('logout') }}" class="inline">
                     @csrf
                     <button type="submit" class="text-xs text-gray-500 hover:text-red-600 transition inline-flex items-center">
-                        <i class="fas fa-sign-out-alt mr-1"></i> Cerrar sesión / Volver al Login
+                        <i class="fas fa-sign-out-alt mr-1"></i> Cerrar sesi&oacute;n / Volver al Login
                     </button>
                 </form>
             </div>

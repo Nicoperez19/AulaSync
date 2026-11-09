@@ -32,7 +32,7 @@ class ResetPasswordMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Restablecer Contraseña - AulaSync',
+            subject: 'Restablecer Contraseña - SIA',
             from: config('mail.from.address'),
         );
     }

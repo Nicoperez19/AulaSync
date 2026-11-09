@@ -19,7 +19,7 @@ class SedeController extends Controller
             $universidades = Universidad::all();
             $comunas = Comuna::all();
             
-            return view('layouts.sedes.sede_index', compact('universidades', 'comunas'));
+            return view('sedes.index', compact('universidades', 'comunas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las sedes.'])->withInput();
         }
@@ -73,7 +73,7 @@ class SedeController extends Controller
             $universidades = Universidad::all();
             $comunas = Comuna::all();
             
-            return view('layouts.sedes.sede_edit', compact('sede', 'universidades', 'comunas'));
+            return view('sedes.edit', compact('sede', 'universidades', 'comunas'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('sedes.index')->withErrors(['error' => 'Sede no encontrada.']);
         } catch (\Exception $e) {

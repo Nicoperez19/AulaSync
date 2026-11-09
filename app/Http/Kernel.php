@@ -78,10 +78,12 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
         'ajax.session.timeout' => \App\Http\Middleware\AjaxSessionTimeout::class,
         'extend.execution' => \App\Http\Middleware\ExtendExecutionTime::class,
         'tenant' => \App\Http\Middleware\TenantMiddleware::class,
         'tenant.init' => \App\Http\Middleware\CheckTenantInitialization::class,
+        'portal.docente' => \App\Http\Middleware\PortalDocente::class,
     ];
 }

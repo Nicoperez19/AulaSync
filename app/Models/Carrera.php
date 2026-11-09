@@ -11,6 +11,7 @@ class Carrera extends Model
     use HasFactory, BelongsToTenant;
 
     protected $table = 'carreras';
+    protected $connection = 'mysql';
     protected $primaryKey = 'id_carrera';
 
     protected $fillable = [

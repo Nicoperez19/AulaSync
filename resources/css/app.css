@@ -8,25 +8,99 @@
     }
 
     body {
-        @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+        @apply bg-[#F1EFF2] text-[#191919] dark:bg-[#191919] dark:text-gray-100;
     }
 }
 
 @layer components {
     .btn {
-        @apply inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2;
+        @apply inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-150 active:scale-[0.98];
     }
 
-    .btn-primary {
-        @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    /* Acciones Positivas / Éxito (Verde #10B981) */
+    .btn-success,
+    .btn-save,
+    .btn-add,
+    .btn-create,
+    .btn-confirm,
+    .btn-accept,
+    .btn-apply,
+    .btn-continue,
+    .btn-next,
+    .btn-submit,
+    .btn-action-success {
+        @apply bg-[#10B981] text-white hover:bg-[#059669] active:bg-[#047857] focus:ring-[#10B981] shadow-sm hover:shadow active:scale-[0.98];
     }
 
-    .btn-secondary {
-        @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500;
+    /* Acciones Primarias / Institucionales de Marca (Rojo #D12420) */
+    .btn-primary,
+    .btn-brand,
+    .btn-login,
+    .btn-register,
+    .btn-process,
+    .btn-execute {
+        @apply bg-[#D12420] text-white hover:bg-[#950101] active:bg-[#7B0101] focus:ring-[#D12420] shadow-sm hover:shadow active:scale-[0.98];
+    }
+
+    /* Acciones Destructivas / Peligro (Rojo Alerta #D12420) */
+    .btn-danger,
+    .btn-delete,
+    .btn-remove,
+    .btn-logout {
+        @apply bg-[#D12420] text-white hover:bg-[#950101] active:bg-[#7B0101] focus:ring-[#D12420] shadow-sm hover:shadow active:scale-[0.98];
+    }
+
+    /* Exportaciones Especiales */
+    .btn-excel {
+        @apply bg-[#107C41] text-white hover:bg-[#0E6B37] active:bg-[#0B562C] focus:ring-[#107C41] shadow-sm hover:shadow active:scale-[0.98];
+    }
+
+    .btn-pdf {
+        @apply bg-[#D12420] text-white hover:bg-[#950101] active:bg-[#7B0101] focus:ring-[#D12420] shadow-sm hover:shadow active:scale-[0.98];
+    }
+
+    /* Utilidades Oscuras / Filtrado / Búsqueda / Refrescar */
+    .btn-dark,
+    .btn-filter,
+    .btn-search,
+    .btn-refresh,
+    .btn-edit {
+        @apply bg-[#191919] text-white hover:bg-[#950101] active:bg-black focus:ring-[#191919] shadow-sm hover:shadow active:scale-[0.98] dark:bg-gray-800 dark:hover:bg-[#950101];
+    }
+
+    /* Acciones Secundarias Sólidas (Gris Neutro #8D8D8D) */
+    .btn-secondary,
+    .btn-cancel {
+        @apply bg-[#8D8D8D] text-white hover:bg-[#737373] active:bg-[#5A5A5A] focus:ring-[#8D8D8D] shadow-sm hover:shadow active:scale-[0.98];
+    }
+
+    /* Botones Outline / Neutros (Borde #C0C0C0) */
+    .btn-outline,
+    .btn-back,
+    .btn-close,
+    .btn-clear,
+    .btn-reset,
+    .btn-undo,
+    .btn-redo,
+    .btn-copy,
+    .btn-duplicate {
+        @apply border border-[#C0C0C0] bg-white text-[#191919] hover:bg-[#F1EFF2] hover:border-[#8D8D8D] active:bg-gray-200 focus:ring-gray-300 dark:bg-dark-eval-1 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-dark-eval-2 shadow-sm active:scale-[0.98];
+    }
+
+    .card-surface {
+        @apply bg-white dark:bg-[#232323] border border-[#C0C0C0] dark:border-gray-700 rounded-xl shadow-sm;
+    }
+
+    .badge-brand {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EDB9B9] text-[#950101];
+    }
+
+    .badge-success {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300;
     }
 
     .form-input {
-        @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700;
+        @apply block w-full rounded-lg border-[#C0C0C0] shadow-sm focus:border-[#D12420] focus:ring-[#D12420] sm:text-sm dark:bg-gray-800 dark:border-gray-700 transition-colors duration-150;
     }
 
     .form-label {
@@ -34,13 +108,13 @@
     }
 
     .form-error {
-        @apply mt-1 text-sm text-red-600 dark:text-red-400;
+        @apply mt-1 text-sm text-[#D12420] dark:text-[#EDB9B9];
     }
 
     /* Estilos para scroll personalizado */
     .custom-scrollbar {
         scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+        scrollbar-color: rgba(141, 141, 141, 0.4) transparent;
     }
 
     .custom-scrollbar::-webkit-scrollbar {
@@ -52,12 +126,12 @@
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.5);
+        background-color: rgba(141, 141, 141, 0.4);
         border-radius: 20px;
     }
 
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.7);
+        background-color: rgba(141, 141, 141, 0.7);
     }
 
     /* Estilos para ocultar scrollbar pero mantener funcionalidad */
@@ -114,5 +188,15 @@
 
 .form-textarea,
 .form-select {
-    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700;
+    @apply block w-full rounded-lg border-[#C0C0C0] shadow-sm focus:border-[#D12420] focus:ring-[#D12420] sm:text-sm dark:bg-gray-800 dark:border-gray-700 transition-colors duration-150;
+}
+
+/* Accesibilidad global: respetar preferencias de reducción de movimiento */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

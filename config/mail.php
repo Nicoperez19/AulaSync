@@ -109,7 +109,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'soporteaulasync@gmail.com'),
-        'name' => env('MAIL_FROM_NAME', 'AulaSync'),
+        'name' => env('MAIL_FROM_NAME', 'SIA | Sistema de Información de Aulas'),
     ],
 
     /*

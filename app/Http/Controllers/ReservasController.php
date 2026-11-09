@@ -12,6 +12,8 @@ use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionReserva;
 use App\Mail\ConfirmacionDevolucion;
 use App\Services\ComprobanteReservaService;
+use App\Exports\ReservasExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -28,7 +30,15 @@ class ReservasController extends Controller
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_index', compact('reservas', 'universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('reservas', 'universidades', 'espaciosDisponibles'));
+    }
+
+    /**
+     * Vista dedicada de Solicitudes y Reservas (Ocupación de Externos + Docentes)
+     */
+    public function solicitudesReservas()
+    {
+        return view('reservas.solicitudes-reservas');
     }
 
     public function create()
@@ -38,7 +48,7 @@ class ReservasController extends Controller
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_create', compact('universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('universidades', 'espaciosDisponibles'));
     }
 
 
@@ -307,5 +317,48 @@ class ReservasController extends Controller
         $descargar = $request->boolean('download', false);
 
         return $comprobanteService->responderPdf($reserva, $descargar);
+    }
+
+    /**
+     * Exportar reservas filtradas y resumen de ocupación a Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio', '');
+        $fechaFin = $request->get('fecha_fin', '');
+        $tipoEspacio = $request->get('tipo_espacio', '');
+        $tipoSolicitante = $request->get('tipo_solicitante', '');
+        $estado = $request->get('estado', '');
+        $search = trim((string) $request->get('search', ''));
+
+        $query = \App\Livewire\ReservationsTable::construirQuery(
+            $tipoEspacio,
+            $tipoSolicitante,
+            $fechaInicio,
+            $fechaFin,
+            $estado,
+            $search,
+            true
+        )->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
+
+        $reservas = $query->orderBy('fecha_reserva', 'desc')
+                          ->orderBy('hora', 'asc')
+                          ->get();
+
+        $metricas = \App\Livewire\ReservationsTable::calcularMetricasOcupacion(
+            $reservas,
+            $tipoEspacio,
+            $fechaInicio,
+            $fechaFin,
+            $tipoSolicitante
+        );
+
+        $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)) . '_' : '';
+        $nombreArchivo = 'reporte_reservas_ocupacion_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin, $metricas),
+            $nombreArchivo
+        );
     }
 }

@@ -9,8 +9,8 @@
 
 /* Header de la tabla */
 .tabla-header {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    border-bottom: 2px solid #1e40af;
+    background: linear-gradient(135deg, #D12420 0%, #950101 100%);
+    border-bottom: 2px solid #7B0101;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -100,10 +100,10 @@
 }
 
 .tabla-principal tbody tr:hover {
-    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    background: linear-gradient(135deg, #F1EFF2 0%, #FFFFFF 100%);
     transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-    border-left: 4px solid #3b82f6;
+    box-shadow: 0 4px 12px rgba(209, 36, 32, 0.1);
+    border-left: 4px solid #D12420;
 }
 
 /* Celdas de la tabla */
@@ -139,9 +139,9 @@
 
 /* Badge del ID del espacio */
 .badge-id-espacio {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    border: 1px solid #93c5fd;
-    color: #1e40af;
+    background: linear-gradient(135deg, #F1EFF2 0%, #EDB9B9 100%);
+    border: 1px solid #C0C0C0;
+    color: #950101;
     font-weight: 600;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
@@ -152,7 +152,7 @@
 .badge-id-espacio:hover {
     background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 8px rgba(209, 36, 32, 0.3);
 }
 
 /* Información del espacio */
@@ -223,7 +223,7 @@
 .avatar-profesor {
     width: 32px;
     height: 32px;
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #F1EFF2 0%, #EDB9B9 100%);
     border: 2px solid #93c5fd;
     border-radius: 50%;
     display: flex;
@@ -234,7 +234,7 @@
 
 .avatar-profesor:hover {
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 12px rgba(209, 36, 32, 0.3);
 }
 
 .nombre-profesor {
@@ -275,7 +275,7 @@
 .icono-estado {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    background: linear-gradient(135deg, #F1EFF2 0%, #EDB9B9 100%);
     border: 2px solid #93c5fd;
     border-radius: 50%;
     display: flex;
@@ -287,7 +287,7 @@
 
 .icono-estado:hover {
     transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 8px 25px rgba(209, 36, 32, 0.2);
 }
 
 .titulo-estado {
@@ -304,8 +304,8 @@
 }
 
 .info-box {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    border: 1px solid #93c5fd;
+    background: linear-gradient(135deg, #F1EFF2 0%, #EDB9B9 100%);
+    border: 1px solid #C0C0C0;
     border-radius: 0.5rem;
     padding: 1rem;
     max-width: 400px;
@@ -314,11 +314,11 @@
 
 .info-box:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+    box-shadow: 0 4px 20px rgba(209, 36, 32, 0.15);
 }
 
 .info-box p {
-    color: #1e40af;
+    color: #950101;
     margin: 0;
     font-size: 0.875rem;
     font-weight: 500;
@@ -418,7 +418,7 @@
     top: 0;
     height: 100%;
     width: 0;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #D12420 0%, #950101 100%);
     transition: width 0.3s ease;
     z-index: 1;
 }

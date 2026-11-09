@@ -421,6 +421,9 @@ class CalendarioAcademicoTable extends Component
             session()->flash('message', 'Períodos académicos creados exitosamente (1° y 2° semestre).');
         }
 
+        // Auto-sincronizar estados: solo el semestre que coincide con la fecha de hoy queda activo
+        PeriodoAcademico::sincronizarEstadosSegunFechas();
+
         $this->closeModalPeriodo();
     }
 
@@ -434,7 +437,16 @@ class CalendarioAcademicoTable extends Component
     public function toggleActivoPeriodo($id)
     {
         $periodo = PeriodoAcademico::findOrFail($id);
-        $periodo->update(['activo' => !$periodo->activo]);
+        $nuevoEstado = !$periodo->activo;
+
+        if ($nuevoEstado) {
+            // Garantizar que solo un semestre esté activo a la vez
+            PeriodoAcademico::where('id_periodo', '!=', $id)
+                ->where('activo', true)
+                ->update(['activo' => false]);
+        }
+
+        $periodo->update(['activo' => $nuevoEstado]);
         session()->flash('message', 'Estado del período actualizado exitosamente.');
     }
 

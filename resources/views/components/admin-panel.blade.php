@@ -38,7 +38,7 @@
         <!-- Botón Vaciar Reservas -->
         <button
             onclick="confirmarVaciarReservas()"
-            class="group relative w-full flex items-center justify-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-200"
+            class="group relative w-full btn btn-danger px-3 py-2 text-sm font-medium"
             title="Finalizar todas las reservas activas">
             <div class="flex items-center space-x-2">
                 <x-heroicon-s-trash class="w-4 h-4" />

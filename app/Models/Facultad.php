@@ -11,6 +11,7 @@ class Facultad extends Model
     use HasFactory, BelongsToTenant;
     
     protected $table = 'facultades';
+    protected $connection = 'mysql';
     protected $primaryKey = 'id_facultad';
     public $incrementing = false;
     protected $keyType = 'string';

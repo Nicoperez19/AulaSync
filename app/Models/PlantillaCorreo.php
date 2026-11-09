@@ -99,10 +99,10 @@ class PlantillaCorreo extends Model
         
         $footerHTML = <<<HTML
         <div style="background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; border-top: 3px solid #667eea; margin-top: 30px;">
-            <p style="margin: 0 0 10px 0;"><strong>Este correo fue generado automáticamente por AulaSync</strong></p>
-            <p style="margin: 0 0 5px 0;">Sistema de Gestión Académica</p>
+            <p style="margin: 0 0 10px 0;"><strong>Este correo fue generado automáticamente por SIA</strong></p>
+            <p style="margin: 0 0 5px 0;">Sistema de Información de Aulas</p>
             <p style="margin: 0; font-size: 11px;">Por favor no responda a este mensaje. Para consultas, contacte con su administrador.</p>
-            <p style="margin: 10px 0 0 0; font-size: 11px;">&copy; {$year} AulaSync. Todos los derechos reservados.</p>
+            <p style="margin: 10px 0 0 0; font-size: 11px;">&copy; {$year} SIA - UCSC. Todos los derechos reservados.</p>
         </div>
         HTML;
         
@@ -112,7 +112,7 @@ class PlantillaCorreo extends Model
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Correo AulaSync</title>
+            <title>Correo SIA</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
             <div style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">

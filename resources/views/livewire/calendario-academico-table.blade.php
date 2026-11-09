@@ -22,11 +22,11 @@
                 <span class="text-sm font-medium text-gray-700">Vista:</span>
                 <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1">
                     <button wire:click="cambiarVista('tabla')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $vistaActiva === 'tabla' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $vistaActiva === 'tabla' ? 'bg-[#D12420] text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-table mr-1"></i> Tabla
                     </button>
                     <button wire:click="cambiarVista('calendario')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $vistaActiva === 'calendario' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $vistaActiva === 'calendario' ? 'bg-[#D12420] text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-calendar mr-1"></i> Calendario
                     </button>
                 </div>
@@ -37,15 +37,15 @@
             <div class="flex items-center gap-2">
                 <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1">
                     <button wire:click="cambiarTab('feriados')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'feriados' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'feriados' ? 'bg-[#D12420] text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-calendar-xmark mr-1"></i> Feriados
                     </button>
                     <button wire:click="cambiarTab('periodos')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'periodos' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'periodos' ? 'bg-[#D12420] text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-graduation-cap mr-1"></i> Períodos Académicos
                     </button>
                     <button wire:click="cambiarTab('cursos_verano')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'cursos_verano' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'cursos_verano' ? 'bg-[#D12420] text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-sun mr-1"></i> Período de Verano
                     </button>
                 </div>
@@ -171,19 +171,19 @@
     
         <!-- TAB FERIADOS -->
         @if($tabActivo === 'feriados')
-        <div class="mb-4">
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
                     <!-- Búsqueda -->
                     <div class="relative">
                         <input type="text" wire:model.live.debounce.500ms="search" placeholder="Buscar feriado..."
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg md:w-64 focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg md:w-64 focus:ring-2 focus:ring-[#950101] focus:border-[#950101] text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
                     </div>
 
                     <!-- Filtro de tipo -->
                     <select wire:model.live="tipo"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#950101] focus:border-[#950101] text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                         <option value="">Todos los tipos</option>
                         <option value="feriado">Feriado</option>
                         <option value="semana_reajuste">Semana de Reajuste</option>
@@ -195,7 +195,7 @@
                     <!-- Botón importar de la API -->
                     <button wire:click="importarFeriadosAPI"
                         wire:loading.attr="disabled"
-                        class="px-4 py-2 text-white transition-colors rounded-lg bg-purple-600 hover:bg-purple-700 flex items-center gap-2 shadow-sm font-medium text-sm">
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-purple-600 hover:bg-purple-700 flex items-center gap-2 shadow-xs font-medium text-sm">
                         <i class="fa-solid fa-cloud-arrow-down" wire:loading.remove wire:target="importarFeriadosAPI"></i>
                         <i class="fa-solid fa-spinner animate-spin" wire:loading wire:target="importarFeriadosAPI"></i>
                         <span>Importar Feriados (API)</span>
@@ -203,54 +203,67 @@
 
                     <!-- Botón agregar -->
                     <button wire:click="openCreateModal"
-                        class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue flex items-center gap-2 font-medium text-sm">
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-[#D12420] hover:bg-[#950101] flex items-center gap-2 font-medium text-sm shadow-xs">
                         <i class="fa-solid fa-plus"></i>
-                        Agregar Feriado
+                        <span>Agregar Feriado</span>
                     </button>
                 </div>
             </div>
         </div>
 
         <!-- Tabla de feriados -->
-        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs text-white uppercase bg-light-cloud-blue">
-                    <tr>
-                        <th class="px-6 py-3 cursor-pointer" wire:click="sortBy('nombre')">
-                            Nombre
-                            @if ($sortField === 'nombre')
-                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th class="px-6 py-3 cursor-pointer" wire:click="sortBy('fecha_inicio')">
-                            Fecha Inicio
-                            @if ($sortField === 'fecha_inicio')
-                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th class="px-6 py-3 cursor-pointer" wire:click="sortBy('fecha_fin')">
-                            Fecha Fin
-                            @if ($sortField === 'fecha_fin')
-                                <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th class="px-6 py-3">Tipo</th>
-                        <th class="px-6 py-3">Estado</th>
-                        <th class="px-6 py-3 text-center">Acciones</th>
-                    </tr>
-                </thead>
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                        <tr>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center cursor-pointer select-none hover:text-red-100" wire:click="sortBy('nombre')">
+                                <div class="flex items-center gap-1.5 justify-center">
+                                    <span>Nombre</span>
+                                    @if ($sortField === 'nombre')
+                                        <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                    @else
+                                        <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                    @endif
+                                </div>
+                            </th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_inicio')">
+                                <div class="flex items-center gap-1.5 justify-center">
+                                    <span>Fecha Inicio</span>
+                                    @if ($sortField === 'fecha_inicio')
+                                        <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                    @else
+                                        <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                    @endif
+                                </div>
+                            </th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center cursor-pointer select-none hover:text-red-100" wire:click="sortBy('fecha_fin')">
+                                <div class="flex items-center gap-1.5 justify-center">
+                                    <span>Fecha Fin</span>
+                                    @if ($sortField === 'fecha_fin')
+                                        <i class="fa-solid fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-white text-xs"></i>
+                                    @else
+                                        <i class="fa-solid fa-sort text-xs text-white/50"></i>
+                                    @endif
+                                </div>
+                            </th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Tipo</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Estado</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center w-48">Acciones</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     @forelse ($feriados as $feriado)
-                        <tr class="bg-white border-b hover:bg-gray-50">
+                        <tr class="bg-white border-b hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700/50">
                             <td class="px-6 py-4">
-                                <div class="font-medium">{{ $feriado->nombre }}</div>
+                                <div class="font-medium text-gray-900 dark:text-gray-100">{{ $feriado->nombre }}</div>
                                 @if ($feriado->descripcion)
-                                    <div class="text-xs text-gray-500">{{ Str::limit($feriado->descripcion, 50) }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ Str::limit($feriado->descripcion, 50) }}</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">{{ $feriado->fecha_inicio->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">{{ $feriado->fecha_fin->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">{{ $feriado->fecha_inicio->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-center">{{ $feriado->fecha_fin->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-center">
                                 @php
                                     $tipoLabels = [
                                         'feriado' => 'Feriado',
@@ -267,22 +280,26 @@
                                     {{ $tipoLabels[$feriado->tipo] ?? ucfirst($feriado->tipo) }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 <button wire:click="toggleActivo({{ $feriado->id_feriado }})"
                                     class="px-2 py-1 text-xs font-semibold rounded {{ $feriado->activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                     {{ $feriado->activo ? 'Activo' : 'Inactivo' }}
                                 </button>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center gap-2">
+                            <td class="px-4 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
                                     <button wire:click="openEditModal({{ $feriado->id_feriado }})"
-                                        class="text-blue-600 hover:text-blue-900" title="Editar">
-                                        <i class="fa-solid fa-edit"></i>
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                        title="Editar">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
                                     </button>
                                     <button wire:click="delete({{ $feriado->id_feriado }})"
                                         wire:confirm="¿Está seguro de eliminar este registro?"
-                                        class="text-red-600 hover:text-red-900" title="Eliminar">
-                                        <i class="fa-solid fa-trash"></i>
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
+                                        title="Eliminar">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                        <span>Eliminar</span>
                                     </button>
                                 </div>
                             </td>
@@ -314,7 +331,7 @@
 
                 <div class="flex gap-2">
                     <button wire:click="openCreateModalPeriodo"
-                        class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue font-medium text-sm flex items-center gap-2">
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-[#D12420] hover:bg-[#950101] font-medium text-sm flex items-center gap-2">
                         <i class="fa-solid fa-plus"></i>
                         Agregar Período
                     </button>
@@ -322,17 +339,18 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs text-white uppercase bg-light-cloud-blue">
-                    <tr>
-                        <th class="px-6 py-3">Período</th>
-                        <th class="px-6 py-3">Inicio Actividades</th>
-                        <th class="px-6 py-3">Fin Actividades</th>
-                        <th class="px-6 py-3">Estado</th>
-                        <th class="px-6 py-3 text-center">Acciones</th>
-                    </tr>
-                </thead>
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                        <tr>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Período</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Inicio Actividades</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Fin Actividades</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Estado</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center w-48">Acciones</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     @forelse ($periodos as $periodo)
                         <tr class="bg-white border-b hover:bg-gray-50 {{ $periodo->estaEnCurso() ? 'bg-green-50' : '' }}">
@@ -342,24 +360,30 @@
                                     <span class="text-xs text-green-600"><i class="fa-solid fa-circle text-xs mr-1"></i>En curso</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4">{{ $periodo->fecha_inicio->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">{{ $periodo->fecha_fin->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">{{ $periodo->fecha_inicio->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-center">{{ $periodo->fecha_fin->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-center">
                                 <button wire:click="toggleActivoPeriodo({{ $periodo->id_periodo }})"
                                     class="px-2 py-1 text-xs font-semibold rounded {{ $periodo->activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                     {{ $periodo->estado_texto }}
                                 </button>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <button wire:click="openEditModalPeriodo({{ $periodo->id_periodo }})"
-                                    class="text-blue-600 hover:text-blue-900 mr-2" title="Editar fechas">
-                                    <i class="fa-solid fa-edit"></i>
-                                </button>
-                                <button wire:click="deletePeriodo({{ $periodo->id_periodo }})"
-                                    wire:confirm="¿Está seguro de eliminar este período académico?"
-                                    class="text-red-600 hover:text-red-900" title="Eliminar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
+                            <td class="px-4 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                    <button wire:click="openEditModalPeriodo({{ $periodo->id_periodo }})"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                        title="Editar fechas">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                    <button wire:click="deletePeriodo({{ $periodo->id_periodo }})"
+                                        wire:confirm="¿Está seguro de eliminar este período académico?"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
+                                        title="Eliminar">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                        <span>Eliminar</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -388,50 +412,57 @@
                 </div>
 
                 <button wire:click="openModalAgregarVerano"
-                    class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue font-medium text-sm flex items-center gap-2">
+                    class="px-4 py-2 text-white transition-colors rounded-lg bg-[#D12420] hover:bg-[#950101] font-medium text-sm flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i>
                     Agregar Período Verano
                 </button>
             </div>
         </div>
 
-        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
-            <table class="w-full text-sm text-left">
-                <thead class="text-xs text-white uppercase bg-light-cloud-blue">
-                    <tr>
-                        <th class="px-6 py-3">Año</th>
-                        <th class="px-6 py-3">Inicio</th>
-                        <th class="px-6 py-3">Fin</th>
-                        <th class="px-6 py-3">Duración</th>
-                        <th class="px-6 py-3">Estado</th>
-                        <th class="px-6 py-3 text-center">Acciones</th>
-                    </tr>
-                </thead>
+        <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                        <tr>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Año</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Inicio</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Fin</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Duración</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center">Estado</th>
+                            <th scope="col" class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider text-center w-48">Acciones</th>
+                        </tr>
+                    </thead>
                 <tbody>
                     @forelse ($cursosVerano as $curso)
                         <tr class="bg-white border-b hover:bg-gray-50">
-                            <td class="px-6 py-4 font-semibold">{{ $curso->anio }}</td>
-                            <td class="px-6 py-4">{{ $curso->fecha_inicio->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4">{{ $curso->fecha_fin->format('d/m/Y') }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">
+                            <td class="px-6 py-4 font-semibold text-center">{{ $curso->anio }}</td>
+                            <td class="px-6 py-4 text-center">{{ $curso->fecha_inicio->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-center">{{ $curso->fecha_fin->format('d/m/Y') }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600 text-center">
                                 {{ $curso->fecha_fin->diffInDays($curso->fecha_inicio) }} días
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 text-center">
                                 <button wire:click="toggleActivoVerano({{ $curso->id_curso_verano }})"
                                     class="px-2 py-1 text-xs font-semibold rounded {{ $curso->activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                                     {{ $curso->activo ? 'Activo' : 'Inactivo' }}
                                 </button>
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                <button wire:click="openModalEditarVerano({{ $curso->id_curso_verano }})"
-                                    class="text-blue-600 hover:text-blue-900 mr-2" title="Editar">
-                                    <i class="fa-solid fa-edit"></i>
-                                </button>
-                                <button wire:click="deleteVerano({{ $curso->id_curso_verano }})"
-                                    wire:confirm="¿Está seguro de eliminar este período de verano?"
-                                    class="text-red-600 hover:text-red-900" title="Eliminar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
+                            <td class="px-4 py-3 text-center align-middle whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                    <button wire:click="openModalEditarVerano({{ $curso->id_curso_verano }})"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
+                                        title="Editar">
+                                        <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                        <span>Editar</span>
+                                    </button>
+                                    <button wire:click="deleteVerano({{ $curso->id_curso_verano }})"
+                                        wire:confirm="¿Está seguro de eliminar este período de verano?"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
+                                        title="Eliminar">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                        <span>Eliminar</span>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -530,7 +561,7 @@
                             Cancelar
                         </button>
                         <button type="submit"
-                            class="px-4 py-2 text-white rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
+                            class="px-4 py-2 text-white rounded-lg bg-[#D12420] hover:bg-[#950101]">
                             {{ $editMode ? 'Actualizar' : 'Guardar' }}
                         </button>
                     </div>
@@ -634,7 +665,7 @@
                             Cancelar
                         </button>
                         <button type="submit"
-                            class="px-4 py-2 text-white rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
+                            class="px-4 py-2 text-white rounded-lg bg-[#D12420] hover:bg-[#950101]">
                             {{ $editModePeriodo ? 'Actualizar Semestres' : 'Guardar Ambos Semestres' }}
                         </button>
                     </div>
@@ -719,7 +750,7 @@
                                 Cancelar
                             </button>
                             <button type="submit"
-                                class="px-4 py-2 text-white rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
+                                class="px-4 py-2 text-white rounded-lg bg-[#D12420] hover:bg-[#950101]">
                                 {{ $editModeVerano ? 'Actualizar' : 'Crear' }} Período de Verano
                             </button>
                         </div>

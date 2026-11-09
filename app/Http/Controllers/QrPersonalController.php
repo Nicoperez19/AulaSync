@@ -167,6 +167,12 @@ class QrPersonalController extends Controller
         $espacio->estado = 'Disponible';
         $espacio->save();
 
+        try {
+            $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+            \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+            \Illuminate\Support\Facades\Cache::forget('estados_espacios');
+        } catch (\Throwable $e) {}
+
         return response()->json([
             'success' => true,
             'reservas_finalizadas' => $finalizadas,

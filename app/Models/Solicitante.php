@@ -15,7 +15,9 @@ use App\Traits\BelongsToTenant;
  */
 class Solicitante extends Model
 {
-        use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant;
+
+    protected $connection = 'tenant';
 
     protected $fillable = [
         'run_solicitante',

@@ -16,6 +16,7 @@ class RecuperacionClase extends Model
 
     protected $fillable = [
         'id_licencia',
+        'id_clase_no_realizada',
         'run_profesor',
         'id_asignatura',
         'id_espacio',
@@ -44,6 +45,14 @@ class RecuperacionClase extends Model
     public function licencia()
     {
         return $this->belongsTo(LicenciaProfesor::class, 'id_licencia', 'id_licencia');
+    }
+
+    /**
+     * Clase original registrada en Control de Clases
+     */
+    public function claseNoRealizada()
+    {
+        return $this->belongsTo(ClaseNoRealizada::class, 'id_clase_no_realizada');
     }
 
     /**

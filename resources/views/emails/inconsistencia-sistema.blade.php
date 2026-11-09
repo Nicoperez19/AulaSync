@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alerta de Inconsistencias - SIA | Sistema de Información de Aulas</title>
+    <title>Alerta de Inconsistencias - SIA (Sistema de Información de Aulas)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,7 +93,7 @@
     <div class="container">
         <div class="header">
             <span class="alert-icon">ðŸš¨</span>
-            <strong>Alerta de Inconsistencias - SIA | Sistema de Información de Aulas</strong>
+            <strong>Alerta de Inconsistencias - SIA (Sistema de Información de Aulas)</strong>
             <br>
             <small>Fecha de verificaciÃ³n: {{ $datos['fecha_verificacion'] }}</small>
         </div>
@@ -178,7 +178,7 @@
         </ul>
 
         <div class="footer">
-            <p>Este correo fue generado automÃ¡ticamente por el sistema de monitoreo de SIA | Sistema de Información de Aulas.</p>
+            <p>Este correo fue generado automÃ¡ticamente por el sistema de monitoreo de SIA (Sistema de Información de Aulas).</p>
             <p>Para mÃ¡s informaciÃ³n, revise los logs del sistema o contacte al administrador.</p>
         </div>
     </div>

@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Notificacion;
+use App\Services\AcademicPeriodReminderService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -34,13 +35,15 @@ class NotificacionesDropdown extends Component
             return;
         }
 
-        $this->notificaciones = Notificacion::where('run_usuario', $usuario->run)
+        $notificaciones = Notificacion::where('run_usuario', $usuario->run)
             ->orderBy('created_at', 'desc')
             ->take(10)
             ->get()
             ->map(function ($notificacion) {
                 // Regenerar URL dinámicamente según el tipo de notificación
-                if (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
+                if ($notificacion->tipo === 'periodos_academicos_pendientes') {
+                    $notificacion->url = route('dias-feriados.index');
+                } elseif (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
                     $notificacion->url = route('quick-actions.gestionar-salas-estudio');
                 } else {
                     $notificacion->url = route('recuperacion-clases.index');
@@ -67,7 +70,26 @@ class NotificacionesDropdown extends Component
                 return $notificacion;
             });
 
-        $this->contadorNoLeidas = Notificacion::contadorNoLeidas($usuario->run);
+        $recordatorioPeriodosPendientes = app(AcademicPeriodReminderService::class)->shouldNotify();
+
+        if ($recordatorioPeriodosPendientes) {
+            $recordatorio = new Notificacion();
+            $recordatorio->forceFill([
+                'id' => 'academic-period-reminder',
+                'tipo' => 'periodos_academicos_pendientes',
+                'titulo' => 'Períodos académicos pendientes',
+                'mensaje' => 'Los períodos académicos no están configurados. Configúrelos para un mejor seguimiento de horarios.',
+                'url' => route('dias-feriados.index'),
+                'leida' => false,
+                'created_at' => now(),
+            ]);
+
+            $notificaciones->prepend($recordatorio);
+        }
+
+        $this->notificaciones = $notificaciones->take(10);
+        $this->contadorNoLeidas = Notificacion::contadorNoLeidas($usuario->run)
+            + (int) $recordatorioPeriodosPendientes;
     }
 
     public function marcarComoLeida($notificacionId)

@@ -70,8 +70,13 @@ class LoginRequest extends FormRequest
         if (! Auth::attempt($this->only('run', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
 
+            $failedMessage = trans('auth.failed');
+            if ($failedMessage === 'auth.failed') {
+                $failedMessage = 'El usuario o la contraseña ingresada son incorrectos.';
+            }
+
             throw ValidationException::withMessages([
-                'run' => 'El RUN o la contraseña ingresados no son correctos.',
+                'run' => $failedMessage,
             ]);
         }
 

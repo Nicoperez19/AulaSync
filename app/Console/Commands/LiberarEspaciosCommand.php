@@ -17,7 +17,7 @@ class LiberarEspaciosCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'espacios:liberar';
+    protected $signature = 'espacios:liberar {--forzar : Permite la ejecución diurna forzada de cierre total}';
 
     /**
      * The console command description.
@@ -49,11 +49,23 @@ class LiberarEspaciosCommand extends Command
         try {
             $tenant->makeCurrent();
 
-            $ahora        = Carbon::now();
-            // Si corre de madrugada (00:00 - 05:59), limpia hasta el día de ayer.
-            // Si se ejecuta tarde en la noche (ej. 23:00), limpia hasta el día de hoy.
-            $fechaLimite  = ($ahora->hour < 6) ? $ahora->copy()->subDay()->toDateString() : $ahora->toDateString();
-            $cerradoEn    = $ahora;
+            $ahora             = Carbon::now();
+            $esHorarioNocturno = ($ahora->hour >= 23 || $ahora->hour < 6);
+            $forzar            = (bool) $this->option('forzar');
+
+            // Protección de jornada diurna (06:00 a 22:59):
+            // Si el comando se ejecuta durante el día (ej. 12:00 hrs) sin flag --forzar,
+            // NUNCA debe cerrar las reservas del día de hoy ni liberar aulas en clases diurnas.
+            // Solo procesa días estrictamente anteriores (< hoy).
+            if (!$esHorarioNocturno && !$forzar) {
+                $fechaLimite = $ahora->copy()->subDay()->toDateString();
+            } else {
+                // Si corre de madrugada (00:00 - 05:59), limpia hasta el día de ayer.
+                // Si se ejecuta tarde en la noche (ej. 23:00), limpia hasta el día de hoy.
+                $fechaLimite = ($ahora->hour < 6) ? $ahora->copy()->subDay()->toDateString() : $ahora->toDateString();
+            }
+
+            $cerradoEn = $ahora;
 
             // ── 1. Reservas ACTIVAS de días anteriores (llave no devuelta / sin cierre) ──
             $reservasActivas = Reserva::withoutGlobalScopes()
@@ -105,12 +117,29 @@ class LiberarEspaciosCommand extends Command
             }
 
             // ── 3. Liberar espacios físicos que quedaron en estado Ocupado/Reservado ──
-            Espacio::withoutGlobalScopes()
-                ->whereIn('estado', ['Ocupado', 'Reservado'])
-                ->update([
-                    'estado'     => 'Disponible',
-                    'updated_at' => $ahora,
-                ]);
+            if (!$esHorarioNocturno && !$forzar) {
+                // En horario diurno, preservar los espacios que tienen reservas activas hoy
+                $espaciosConReservaHoy = Reserva::withoutGlobalScopes()
+                    ->where('estado', 'activa')
+                    ->where('fecha_reserva', $ahora->toDateString())
+                    ->pluck('id_espacio')
+                    ->unique();
+
+                Espacio::withoutGlobalScopes()
+                    ->whereIn('estado', ['Ocupado', 'Reservado'])
+                    ->whereNotIn('id_espacio', $espaciosConReservaHoy)
+                    ->update([
+                        'estado'     => 'Disponible',
+                        'updated_at' => $ahora,
+                    ]);
+            } else {
+                Espacio::withoutGlobalScopes()
+                    ->whereIn('estado', ['Ocupado', 'Reservado'])
+                    ->update([
+                        'estado'     => 'Disponible',
+                        'updated_at' => $ahora,
+                    ]);
+            }
 
         } catch (\Exception $e) {
             // Solo mostramos en consola, nunca en logs de archivo

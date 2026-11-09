@@ -29,7 +29,7 @@ class InconsistenciaSistema extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '🚨 Alerta: Inconsistencias detectadas en AulaSync',
+            subject: '🚨 Alerta: Inconsistencias detectadas en SIA',
         );
     }
 

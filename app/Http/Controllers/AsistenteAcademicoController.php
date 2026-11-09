@@ -19,7 +19,7 @@ class AsistenteAcademicoController extends Controller
             $escuelas = AreaAcademica::where('tipo_area_academica', 'escuela')
                 ->with('facultad.sede.universidad')
                 ->get();
-            return view('layouts.asistentes_academicos.asistente_academico_index', compact('escuelas'));
+            return view('asistentes-academicos.index', compact('escuelas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los asistentes académicos.'])->withInput();
         }
@@ -76,7 +76,7 @@ class AsistenteAcademicoController extends Controller
             $escuelas = AreaAcademica::where('tipo_area_academica', 'escuela')
                 ->with('facultad.sede.universidad')
                 ->get();
-            return view('layouts.asistentes_academicos.asistente_academico_edit', compact('asistenteAcademico', 'escuelas'));
+            return view('asistentes-academicos.edit', compact('asistenteAcademico', 'escuelas'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('asistentes-academicos.index')->withErrors(['error' => 'Asistente académico no encontrado.']);
         } catch (\Exception $e) {

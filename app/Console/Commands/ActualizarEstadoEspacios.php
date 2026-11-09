@@ -77,10 +77,14 @@ class ActualizarEstadoEspacios extends Command
 
             $this->line("  Planificaciones activas encontradas: " . $planificacionesActivas->count());
 
-            // Obtener reservas activas usando el scope unificado 'vigentes'
-            // Esto asegura consistencia en la lógica de determinación de estado
+            // Obtener reservas activas para el día de hoy
+            // Toda reserva en estado 'activa' de hoy mantiene el espacio en estado Ocupado
+            // mientras el usuario tenga la llave y la reserva no haya sido finalizada o cancelada.
+            // Esto evita que un espacio se libere a las 12:00 hrs o en cambios de módulo
+            // antes de que el docente registre la salida o el comando de expiradas la cierre.
             $reservasActivas = Reserva::on('tenant')
-                ->vigentes($ahora->toDateString(), $horaActual)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', $ahora->toDateString())
                 ->get();
 
             $this->line("  Reservas activas encontradas: " . $reservasActivas->count());

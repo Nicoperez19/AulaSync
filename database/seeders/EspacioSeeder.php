@@ -60,22 +60,19 @@ class EspacioSeeder extends Seeder
         $this->command->info("Creando espacios para sede: {$sedeId}");
 
         foreach ($espacios as $data) {
-            // Verificar si el espacio ya existe para evitar duplicados en seeds repetidos
-            $exists = DB::connection('tenant')->table('espacios')->where('id_espacio', $data['id_espacio'])->exists();
+            // Insertar o corregir espacios existentes para mantener piso_id sincronizado.
+            DB::connection('tenant')->table('espacios')->updateOrInsert(
+                ['id_espacio' => $data['id_espacio']],
+                $data
+            );
 
-            if (!$exists) {
-                // Insertar directamente en la conexión tenant
-                $espacioId = DB::connection('tenant')->table('espacios')->insertGetId($data);
-
-                // Generar QR para el espacio recién creado
-                // Usamos el modelo para aprovechar la función generateQR
-                $espacio = Espacio::on('tenant')->withoutGlobalScopes()->find($espacioId);
-                if ($espacio) {
-                    try {
-                        $espacio->generateQR();
-                    } catch (\Exception $e) {
-                        // Ignorar error de QR si falla (ej. si no hay driver de imagen)
-                    }
+            // Generar QR usando la clave string del espacio.
+            $espacio = Espacio::on('tenant')->withoutGlobalScopes()->find($data['id_espacio']);
+            if ($espacio) {
+                try {
+                    $espacio->generateQR();
+                } catch (\Exception $e) {
+                    // Ignorar error de QR si falla (ej. si no hay driver de imagen)
                 }
             }
         }
@@ -92,14 +89,33 @@ class EspacioSeeder extends Seeder
             return [];
         }
 
+        // Obtener IDs de facultad asociadas a la sede del tenant para no cruzar pisos de otras sedes
+        $facultadIds = DB::connection('tenant')->table('facultades')
+            ->where('id_sede', $tenant->sede_id)
+            ->pluck('id_facultad');
+
         // Usar DB directo para evitar global scopes
-        $pisos = collect(DB::connection('tenant')->table('pisos')->get());
+        $pisosQuery = DB::connection('tenant')->table('pisos');
+        if ($facultadIds->isNotEmpty()) {
+            $pisosQuery->whereIn('id_facultad', $facultadIds);
+        }
+        $pisos = collect($pisosQuery->get());
         $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: " . $pisos->count());
 
         $map = [];
 
         // Mapeo para Talcahuano (TH)
         if ($tenant->sede_id === 'TH') {
+            $pisos = collect(DB::connection('tenant')->table('pisos')
+                ->where('id_facultad', 'IT_TH')
+                ->get());
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $map[1] = data_get($piso1, 'id');
+            $map[2] = data_get($piso2, 'id');
+        }
+        // Mapeo para Concepción (CCP)
+        elseif ($tenant->sede_id === 'CCP') {
             $piso1 = $pisos->where('numero_piso', 1)->first();
             $piso2 = $pisos->where('numero_piso', 2)->first();
             $map[1] = data_get($piso1, 'id');

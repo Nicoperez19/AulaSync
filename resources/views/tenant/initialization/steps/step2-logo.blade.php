@@ -15,12 +15,12 @@
             <!-- Info sobre dimensiones recomendadas -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
-                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3 flex-shrink-0"></i>
                     <div>
                         <h4 class="font-semibold text-blue-800">Dimensiones recomendadas</h4>
                         <p class="text-sm text-blue-700 mt-1">
-                            Altura mínima: <strong>80px</strong>. Formato preferido: PNG con fondo transparente.
-                            El logo se mostrará con una altura máxima de 48px en la barra de navegación.
+                            Altura m&iacute;nima: <strong>80px</strong>. Formato preferido: PNG con fondo transparente.
+                            El logo se mostrar&aacute; con una altura m&aacute;xima de 48px en la barra de navegaci&oacute;n.
                         </p>
                     </div>
                 </div>
@@ -53,7 +53,7 @@
                     </label>
                 </div>
                 <p class="text-center text-sm text-gray-500 mt-2">
-                    Formatos permitidos: JPEG, PNG, JPG, GIF, SVG. Máximo 2MB.
+                    Formatos permitidos: JPEG, PNG, JPG, GIF, SVG. M&aacute;ximo 2MB.
                 </p>
             </div>
         </div>
@@ -65,7 +65,7 @@
                 Anterior
             </a>
             <button type="submit" 
-                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
                 Siguiente
                 <i class="fas fa-arrow-right ml-2"></i>
             </button>
@@ -77,20 +77,17 @@
     document.getElementById('logo').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            // Validate that file is an image
             if (!file.type.startsWith('image/')) {
-                alert('Por favor seleccione un archivo de imagen válido.');
+                alert('Por favor seleccione un archivo de imagen v\u00e1lido.');
                 return;
             }
             
             const reader = new FileReader();
             reader.onload = function(e) {
                 const previewContainer = document.getElementById('logo-preview');
-                // Clear existing content safely
                 while (previewContainer.firstChild) {
                     previewContainer.removeChild(previewContainer.firstChild);
                 }
-                // Create img element safely
                 const img = document.createElement('img');
                 img.src = e.target.result;
                 img.alt = 'Vista previa';

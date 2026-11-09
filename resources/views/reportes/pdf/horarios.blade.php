@@ -112,7 +112,7 @@
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnol贸gico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
         <h1>An谩lisis de Horarios</h1>
-        <p>SIA | Sistema de Informaci髇 de Aulas - Instituto Tecnol贸gico</p>
+        <p>SIA (Sistema de Informaci贸n de Aulas) - Instituto Tecnol贸gico</p>
         <p>Fecha: {{ $fecha }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
@@ -160,7 +160,7 @@
     </table>
 
     <div class="footer">
-        <p>Este reporte fue generado autom谩ticamente por el SIA | Sistema de Informaci髇 de Aulas</p>
+        <p>Este reporte fue generado autom谩ticamente por el SIA (Sistema de Informaci贸n de Aulas)</p>
         <p>P谩gina 1 de 1</p>
     </div>
 </body>

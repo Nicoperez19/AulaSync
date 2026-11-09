@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'SIA | Sistema de Información de Aulas') }}</title>
+    <title>{{ config('app.name', 'SIA (Sistema de InformaciÃ³n de Aulas)') }}</title>
 
     <!-- Estilos de Livewire -->
     @livewireStyles
@@ -87,7 +87,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 
@@ -104,7 +104,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 
@@ -121,7 +121,7 @@
                 `,
                 icon: 'warning',
                 confirmButtonText: 'Entendido',
-                confirmButtonColor: '#3B82F6'
+                confirmButtonColor: '#D12420'
             });
         }
 

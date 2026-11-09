@@ -20,15 +20,31 @@ class SedeSelectionController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+        // Si el usuario tiene una sede específica asignada y NO es superadministrador, redirigir directamente
+        if ($user->id_sede && !$user->isSuperAdmin()) {
+            if ($user->id_sede === 'CCP') {
+                Auth::logout();
+                request()->session()->invalidate();
+                request()->session()->regenerateToken();
+                return redirect()->route('login')->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema. Por favor, contacta al administrador.');
+            }
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
+        }
         
         $query = Sede::whereHas('tenant', function ($query) {
             $query->where('is_active', true);
         })
         ->with(['tenant', 'universidad', 'comuna']);
+
+        // Concepción aún no está activa: ocultarla para todos excepto el Super Admin
+        if (!$user->isSuperAdmin()) {
+            $query->where('id_sede', '!=', 'CCP');
+        }
         
         // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
-        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
-            // No aplicar filtros - ver todas las sedes activas
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director') || $user->hasRole('Super Admin') || (string)$user->run === '19716146') {
+            // No aplicar filtros adicionales de asignación de usuario
         }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
         elseif ($user->id_sede) {
@@ -41,6 +57,11 @@ class SedeSelectionController extends Controller
         
         $sedes = $query->get();
 
+        // Si solo hay una sede disponible y el usuario es Director, auto-seleccionar y redirigir
+        if ($sedes->count() === 1 && $user->hasRole('Director')) {
+            return redirect()->route('sedes.redirect', ['sede' => $sedes->first()->id_sede]);
+        }
+
         return view('sedes.selection', compact('sedes'));
     }
 
@@ -49,40 +70,53 @@ class SedeSelectionController extends Controller
      */
     public function redirect(Request $request, $sedeId)
     {
-        $sede = Sede::with('tenant')->findOrFail($sedeId);
+        $user = Auth::user();
 
-        if (!$sede->tenant || !$sede->tenant->is_active) {
-            return back()->with('error', 'Esta sede no está disponible actualmente.');
+        // Si intenta acceder a Concepción y no es superadministrador, bloquear acceso
+        if (strtoupper($sedeId) === 'CCP' && !$user->isSuperAdmin()) {
+            return redirect()->route('sedes.selection')
+                ->with('error', 'La sede de Concepción aún no se encuentra activa en el sistema.');
         }
 
-        // Almacenar el tenant en la sesión
-        // El sistema ahora identifica tenants por sesión en lugar de subdominio
+        // Si el usuario tiene una sede específica asignada y NO es superadministrador, bloquear acceso a otras sedes
+        if ($user->id_sede && !$user->isSuperAdmin() && $sedeId !== $user->id_sede) {
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede])
+                ->with('error', 'Solo tienes acceso a tu sede asignada.');
+        }
 
-        session(['tenant_id' => $sede->tenant->id]);
-        session()->save(); // Forzar guardado inmediato
+        $sede = Sede::with('tenant')->findOrFail($sedeId);
 
-
-        // Establecer el tenant como actual
-        $sede->tenant->makeCurrent();
+        $tenantService = app(\App\Services\TenantSessionService::class);
+        if (!$tenantService->activar($sede)) {
+            return back()->with('error', 'Esta sede no está disponible actualmente.');
+        }
 
         // DEBUG: Log para verificar
         $user = Auth::user();
 
+        // Si es Profesor puro, NUNCA debe ver el wizard y va a su portal
+        if ($user->hasRole('Profesor') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
+            if ($sede->tenant->needsInitialization()) {
+                return \Illuminate\Support\Facades\Route::has('docente.sede-no-inicializada')
+                    ? redirect()->route('docente.sede-no-inicializada')
+                    : redirect('/docente/sede-no-inicializada');
+            }
+            return \Illuminate\Support\Facades\Route::has('docente.dashboard')
+                ? redirect()->route('docente.dashboard')
+                : redirect('/docente');
+        }
 
-        // Verificar si el tenant necesita inicialización
+        // Verificar si el tenant necesita inicialización (para otros roles)
         if ($sede->tenant->needsInitialization()) {
-
             return redirect()->route('tenant.initialization.index');
         }
 
-        // Si es Control Docente, redirigir directamente al plano
-        if ($user->hasRole('Control Docente')) {
-
+        // Si es Control Docente puro, redirigir directamente al plano
+        if ($user->hasRole('Control Docente') && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Director', 'Super Admin']) && !$user->is_superuser && (string)$user->run !== '19716146') {
             return redirect()->route('plano.index');
         }
 
         // Ya autenticado y tenant seleccionado, redirigir al dashboard según rol
-
         return $this->redirectByRole();
     }
 }

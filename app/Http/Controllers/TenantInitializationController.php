@@ -439,6 +439,24 @@ class TenantInitializationController extends Controller
             "Indica si los períodos académicos están definidos para la sede"
         );
 
+        // IMPORTANTE: SemesterHelper lee el período actual desde la tabla `periodos_academicos`
+        // (BD central), NO desde Configuracion. Sin esto, las fechas del wizard no tenían efecto
+        // y el sistema podía seguir operando sobre el semestre equivocado.
+        foreach ([1 => ['periodo1_inicio', 'periodo1_fin'], 2 => ['periodo2_inicio', 'periodo2_fin']] as $semestre => [$ini, $fin]) {
+            \App\Models\PeriodoAcademico::updateOrCreate(
+                ['anio' => (int) $year, 'semestre' => $semestre],
+                [
+                    'fecha_inicio' => $validated[$ini],
+                    'fecha_fin' => $validated[$fin],
+                    'activo' => true,
+                    'created_by' => auth()->user()->run ?? null,
+                ]
+            );
+        }
+
+        // Auto-sincronizar: solo el semestre correspondiente a la fecha de hoy queda activo
+        \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
+
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(6);
 

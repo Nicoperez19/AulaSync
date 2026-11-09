@@ -177,29 +177,30 @@
                         <h2 class="text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">Resumen Detallado por Espacio</h2>
                         <div class="flex gap-2">
                             <a href="{{ route('reportes.espacios.export', 'excel') }}?{{ http_build_query(request()->all()) }}"
-                                class="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700">
+                                class="btn btn-excel px-4 py-2 text-sm font-semibold">
                                 <i class="mr-2 fas fa-file-excel"></i>Exportar Excel
                             </a>
                             <a href="{{ route('reportes.espacios.export', 'pdf') }}?{{ http_build_query(request()->all()) }}"
-                                class="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700">
+                                class="btn btn-pdf px-4 py-2 text-sm font-semibold">
                                 <i class="mr-2 fas fa-file-pdf"></i>Exportar PDF
                             </a>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm text-left bg-white rounded-lg shadow-sm" id="tabla-resumen">
-                            <thead class="bg-white border-b border-gray-400">
-                                <tr class="text-xs text-gray-600 uppercase">
-                                    <th class="px-6 py-4 font-semibold">Espacio</th>
-                                    <th class="px-6 py-4 font-semibold">Tipo</th>
-                                    <th class="px-6 py-4 font-semibold">Piso</th>
-                                    <th class="px-6 py-4 font-semibold">Facultad</th>
-                                    <th class="px-6 py-4 font-semibold">Estado</th>
-                                    <th class="px-6 py-4 font-semibold">Puestos</th>
-                                    <th class="px-6 py-4 font-semibold">Total Reservas</th>
-                                    <th class="px-6 py-4 font-semibold">Horas Utilizadas</th>
-                                    <th class="px-6 py-4 font-semibold">Promedio de Uso</th>
-                                    <th class="px-6 py-4 font-semibold">Estado</th>
+                    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm" id="tabla-resumen">
+                                <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                                    <tr>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Espacio</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Tipo</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Piso</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Facultad</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Puestos</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Total Reservas</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Horas Utilizadas</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Promedio de Uso</th>
+                                    <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -248,6 +249,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -272,11 +274,11 @@
                     <h2 class="text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">Histórico de Reservas de Espacios</h2>
                     <div class="flex gap-2">
                         <a href="{{ route('reportes.espacios.export', 'excel') }}?{{ http_build_query(request()->all()) }}&fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}"
-                            class="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700">
+                            class="btn btn-excel px-4 py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-excel"></i>Exportar Excel
                         </a>
                         <a href="{{ route('reportes.espacios.export', 'pdf') }}?{{ http_build_query(request()->all()) }}&fecha_inicio={{ $fechaInicio }}&fecha_fin={{ $fechaFin }}"
-                            class="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700">
+                            class="btn btn-pdf px-4 py-2 text-sm font-semibold">
                             <i class="mr-2 fas fa-file-pdf"></i>Exportar PDF
                         </a>
                     </div>
@@ -288,22 +290,23 @@
                     {{ \Carbon\Carbon::parse($fechaFin)->format('d/m/Y') }}
                 </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm text-left bg-white rounded-lg shadow-sm">
-                        <thead class="bg-white border-b border-gray-400">
-                            <tr class="text-xs text-gray-600 uppercase">
-                                <th class="px-6 py-4 font-semibold">Fecha</th>
-                                <th class="px-6 py-4 font-semibold">Hora Inicio</th>
-                                <th class="px-6 py-4 font-semibold">Hora Fin</th>
-                                <th class="px-6 py-4 font-semibold">Espacio</th>
-                                <th class="px-6 py-4 font-semibold">Tipo</th>
-                                <th class="px-6 py-4 font-semibold">Piso</th>
-                                <th class="px-6 py-4 font-semibold">Facultad</th>
-                                <th class="px-6 py-4 font-semibold">Profesor/Solicitante</th>
-                                <th class="px-6 py-4 font-semibold">Asignatura</th>
-                                <th class="px-6 py-4 font-semibold">Horas</th>
-                                <th class="px-6 py-4 font-semibold">Duración</th>
-                                <th class="px-6 py-4 font-semibold">Estado</th>
+                <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                            <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
+                                <tr>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Fecha</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Hora Inicio</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Hora Fin</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Espacio</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Tipo</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Piso</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Facultad</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Profesor/Solicitante</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Asignatura</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Horas</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Duración</th>
+                                <th class="px-4 py-3.5 text-xs font-semibold text-white uppercase tracking-wider">Estado</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -359,6 +362,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
                 </div>
             </div>
         </div>

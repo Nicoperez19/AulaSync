@@ -4,31 +4,60 @@ namespace App\Livewire;
 
 use App\Models\Mapa;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Illuminate\Support\Facades\Storage;
 
 class MapasTable extends Component
 {
+    use WithPagination;
+
     protected $listeners = ['cerrarModal'];
-    public $mapas;
+    public $search = '';
+    public $sortField = 'nombre_mapa';
+    public $sortDirection = 'asc';
+    public $perPage = 10;
     public $mapaSeleccionado = null;
     public $mostrarModal = false;
     public $mapaAEliminar = null;
     public $mostrarModalEliminar = false;
 
-    public function mount()
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'sortField' => ['except' => 'nombre_mapa'],
+        'sortDirection' => ['except' => 'asc'],
+    ];
+
+    public function updatingSearch()
     {
-        $this->mapas = Mapa::with('piso')->get();
+        $this->resetPage();
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function render()
     {
-        return view('livewire.mapas-table');
+        $mapas = Mapa::with('piso')
+            ->when($this->search, function ($query) {
+                $query->where('nombre_mapa', 'like', '%' . $this->search . '%');
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate($this->perPage);
+
+        return view('livewire.mapas-table', compact('mapas'));
     }
 
     public function eliminar($id)
     {
         Mapa::findOrFail($id)->delete();
-        $this->mount(); // refrescar la lista
+        $this->resetPage();
     }
 
     /**
@@ -61,7 +90,7 @@ class MapasTable extends Component
 
             $this->mostrarModalEliminar = false;
             $this->mapaAEliminar = null;
-            $this->mount();
+            $this->resetPage();
             $this->dispatch('notify', ['type' => 'success', 'message' => 'Mapa eliminado correctamente']);
         } catch (\Exception $e) {
             $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
@@ -80,7 +109,6 @@ class MapasTable extends Component
             $this->mapaSeleccionado = Mapa::with(['piso.facultad'])->findOrFail($id);
             $this->mostrarModal = true;
         } catch (\Exception $e) {
-            // En caso de error, mostrar un mensaje o manejar la excepción
             $this->mapaSeleccionado = null;
             $this->mostrarModal = false;
         }
@@ -90,7 +118,7 @@ class MapasTable extends Component
     {
         $this->mostrarModal = false;
         $this->mapaSeleccionado = null;
-    $this->dispatch('modalClosed');
+        $this->dispatch('modalClosed');
     }
 
     public function limpiarEstado()

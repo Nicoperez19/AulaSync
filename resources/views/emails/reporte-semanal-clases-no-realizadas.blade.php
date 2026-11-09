@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -164,7 +164,7 @@
         @endif
 
         <div class="footer">
-            <p><strong>SIA | Sistema de Información de Aulas - Sistema de GestiÃ³n AcadÃ©mica</strong></p>
+            <p><strong>SIA (Sistema de Información de Aulas) - Sistema de GestiÃ³n AcadÃ©mica</strong></p>
             <p>Este es un correo automÃ¡tico, por favor no responder.</p>
             <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         </div>

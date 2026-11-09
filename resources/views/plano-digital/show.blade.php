@@ -1,0 +1,6079 @@
+<x-show-layout>
+    <style>
+        @keyframes parpadeo {
+            0% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .parpadeo {
+            animation: parpadeo 2s ease-in-out infinite;
+        }
+
+        /* Estilos para modal de veto */
+        .swal-veto-popup {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+            padding: 0 !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.3), 0 10px 10px -5px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .swal-veto-close {
+            color: white !important;
+            font-size: 1.5em !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-radius: 50% !important;
+            width: 32px !important;
+            height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .swal-veto-close:hover {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: rotate(90deg) !important;
+        }
+
+        .swal2-icon.swal2-error {
+            display: none !important;
+        }
+
+        /* Animación para el ícono de veto */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .swal-veto-icon {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Estilos para el estado de mantención */
+        @keyframes rotarEngranaje {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .mantenimiento-icon {
+            animation: rotarEngranaje 2s linear infinite;
+        }
+
+        .espacio-mantenimiento {
+            opacity: 0.7;
+            filter: grayscale(50%);
+        }
+
+        .espacio-mantenimiento-overlay {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .espacio-mantenimiento-overlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(107, 114, 128, 0.1) 10px,
+                rgba(107, 114, 128, 0.1) 20px
+            );
+            pointer-events: none;
+        }
+
+        /* Ocultar barra de scroll visualmente en clases actuales pero manteniendo desplazamiento */
+        #sidebar-modulo-list {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+        }
+        #sidebar-modulo-list::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            background: transparent !important;
+        }
+    </style>
+    <div class="flex h-screen overflow-hidden">
+        <aside
+            class="fixed top-0 left-0 z-40 flex flex-col w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs overflow-hidden">
+
+            <div class="flex-shrink-0 flex flex-col items-center gap-2 md:gap-1">
+                <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
+                    <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
+                </a>
+            </div>
+
+            <div class="flex flex-col flex-1 min-h-0 w-full max-w-md p-1 mx-auto pb-2">
+                <div class="w-full mt-6">
+                    <div class="mt-3 text-sm text-white bg-red-700/90 rounded-xl px-3 py-2 hidden">
+                        <div class="flex items-center gap-2 text-red-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-xs font-medium">Horario:</span>
+                            <span id="horario-actual" class="text-xs font-semibold">--:-- - --:--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de QR y Usuario -->
+                <div class="w-full mt-auto mb-2">
+                    <div class="mt-2 mb-2 text-white bg-light-cloud-blue">
+                        <div class="flex items-center gap-3 p-3 mb-3 rounded-md bg-red-500/80">
+
+                            <div class="bg-red-400 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="text-white w-7 h-7" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando</span>
+                                <span class="text-xs text-white/80 parpadeo">Escanea el código QR</span>
+                            </div>
+                        </div>
+
+                        <hr class="my-2 border-white/30">
+
+                        <!-- Información del usuario (oculta inicialmente) -->
+                        <div id="info-usuario" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide text-gray-800 uppercase">Información de
+                            usuario</h3>
+
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span class="font-bold text-gray-800">Usuario:</span>
+                                <span id="nombre-usuario" class="ml-auto text-gray-700">--</span>
+                            </div>
+                        </div>
+
+                       <input type="text" id="qr-input" class="absolute w-px h-px p-0 m-0 opacity-0" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+
+                    </div>
+                </div>
+
+                <!-- Lista de clases del módulo actual -->
+                <div class="w-full mt-3 mb-2 flex-1 min-h-0">
+                    <div class="flex h-full flex-col rounded-xl bg-red-700 rounded px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                       
+                        <div id="sidebar-modulo-list" class="space-y-2 overflow-y-auto min-h-0 max-h-[25vh] select-none" style="-ms-overflow-style: none; scrollbar-width: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Leyenda abajo del todo -->
+                <div class="flex flex-col items-center justify-end w-full max-w-md mx-auto mt-2">
+                    <div class="w-full">
+                        <div class="p-4 text-white bg-red-700 rounded">
+                        <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            LEYENDA DE ESTADO
+                        </h3>
+                        <div class="flex flex-col items-start gap-1">
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Disponible</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Ocupado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Reservado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Programado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Próximo</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-gray-400 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">En Mantención</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enlace Volver -->
+                <div class="w-full mt-4">
+                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
+                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-100 shadow-md"
+                       onclick="qrInputManager.setActiveInput('main')">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+                        </svg>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-52 overflow-hidden">
+            <div class="flex flex-col h-full">
+
+                <div class="flex flex-col flex-1 min-h-0">
+                    <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
+                        <ul class="flex" id="pills-tab" role="tablist">
+                            @foreach ($pisos as $piso)
+                                @if ($piso['id_mapa'])
+                                    <li role="presentation">
+                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
+                                            class="px-4 py-2 text-sm font-semibold transition-all duration-150 rounded-t-xl border border-b-0
+                                            {{ $piso['id_mapa'] === $mapa->id_mapa
+                                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
+                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
+                                            {{ $piso['nombre'] }}
+                                        </a>
+                                    </li>
+                                @endif
+                            @endforeach
+                        </ul>
+                        <!-- Card para el canvas y controles -->
+                        <div class="flex flex-col h-full">
+                            <div class="p-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    Plano: {{ $mapa->piso->display_name }},
+                                    {{ $mapa->piso->facultad->nombre_facultad }},
+                                    Sede {{ $mapa->piso->facultad->sede->nombre_sede }}
+                                </h3>
+                            </div>
+
+
+                            <div class="relative flex-1 min-h-0 h-[calc(100vh-180px)] w-[calc(100%+1rem)] -mx-2">
+                                <!-- Canvas para la imagen base -->
+                                <canvas id="mapCanvas"
+                                    class="absolute inset-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+
+                                <!-- Canvas para los indicadores -->
+                                <canvas id="indicatorsCanvas"
+                                    class="absolute inset-0 w-full h-full pointer-events-auto"></canvas>
+
+                                <!-- Reloj digital y módulo actual (flotante sobre el canvas) -->
+                                <div id="modal-reloj"
+                                    class="absolute bottom-4 right-4 sm:bottom-6 sm:right-8 z-50 pointer-events-auto transition-all duration-300 ease-out group"
+                                    style="position: absolute; bottom: 1.5rem; right: 2rem; z-index: 50;">
+                                    <!-- Estado Expandido -->
+                                    <div id="reloj-expandido"
+                                        class="bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-2xl shadow-red-950/20 rounded-2xl border border-white/20 px-4 py-3 sm:px-5 sm:py-3.5 flex items-center gap-3 sm:gap-4 transition-all duration-300 relative z-50"
+                                        style="z-index: 50;">
+                                        <div class="p-2 sm:p-2.5 bg-white/15 text-white rounded-xl transition-all duration-300 shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex flex-col select-none">
+                                            <span id="hora-actual" class="font-mono text-xl sm:text-2xl font-black text-white leading-none tracking-tight my-0.5">--:--:--</span>
+                                            <span id="modulo-actual" class="text-xs sm:text-sm font-bold text-red-100">Módulo actual: -</span>
+                                        </div>
+                                        <button type="button" onclick="toggleModalReloj(true)" title="Minimizar reloj" class="ml-1 text-white/70 hover:text-white hover:bg-white/20 rounded-lg p-1.5 transition-colors duration-150 shrink-0">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                        </button>
+                                    </div>
+
+                                    <!-- Estado Minimizado -->
+                                    <div id="reloj-minimizado"
+                                        onclick="toggleModalReloj(false)"
+                                        title="Mostrar reloj y módulo actual"
+                                        class="hidden cursor-pointer bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-xl hover:shadow-2xl rounded-full border border-white/20 px-3.5 py-2 flex items-center gap-2 text-white hover:scale-105 transition-all duration-200 relative z-50"
+                                        style="z-index: 50;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span class="font-mono text-xs sm:text-sm font-bold" id="modal-hora-minimizada">--:--:--</span>
+                                        <svg class="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7" /></svg>
+                                    </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de desocupación forzada removidos - la liberación se realiza únicamente mediante escaneo QR -->
+
+    <!-- Modal para mostrar información del espacio -->
+    <div id="modal-espacio-info" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-4xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-building"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 id="modalTitulo" class="text-3xl font-bold text-white truncate">Información del Espacio</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="modalSubtitulo" class="text-lg truncate text-white/80">Estado y detalles</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <!-- Grupo: Estado Badge -->
+                    <div class="flex flex-col items-center gap-1">
+                        <!-- Badge de estado -->
+                        <div class="flex items-center gap-2">
+                            <span id="estadoIcon" class="w-3 h-3 rounded-full"></span>
+                            <span id="modalEstado" class="text-sm font-semibold text-white">Cargando...</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Botón cerrar -->
+                    <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+                <!-- Vista de Pasos: Clase Anterior - Próxima Clase -->
+                <div id="pasoClasesContainer" class="p-6 mb-6 bg-white shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-6 text-lg font-semibold text-gray-800">Cronología de Clases</h3>
+                    
+                    <div class="flex items-center justify-between">
+                        <!-- Paso 1: Clase Anterior -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-gray-400 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-gray-500 uppercase mb-3">Clase Anterior</div>
+                            <div id="pasoClaseAnterior" class="w-full px-4 py-3 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
+                            </div>
+                        </div>
+
+                        <!-- Línea conectora 1 -->
+                        <div class="flex-shrink-0 w-12 h-0.5 bg-gray-300 mx-2"></div>
+
+                        <!-- Paso 2: Ahora -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div id="pasoAhoraIcono" class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div id="pasoAhoraEtiqueta" class="text-xs font-medium text-blue-600 uppercase mb-3">Ahora</div>
+                            <div id="pasoEstadoActual" class="w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
+                            </div>
+                        </div>
+
+                        <!-- Línea conectora 2 -->
+                        <div class="flex-shrink-0 w-12 h-0.5 bg-gray-300 mx-2"></div>
+
+                        <!-- Paso 3: Próxima Clase -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-gray-400 bg-white border-2 border-gray-300 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-gray-500 uppercase mb-3">Próxima Clase</div>
+                            <div id="pasoClaseProxima" class="w-full px-4 py-3 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del ocupante actual / último ocupante -->
+                <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-green-500 fas fa-user"></i>
+                        Ocupante Actual
+                    </h3>
+                    <div id="ocupanteInfo" class="space-y-3">
+                        <!-- La información se insertará dinámicamente -->
+                    </div>
+                </div>
+
+                <!-- Próxima clase programada -->
+                <div id="proximaClaseContainer" class="p-6 mb-6 bg-white border-l-4 border-purple-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-purple-500 fas fa-clock"></i>
+                        Próxima Clase
+                    </h3>
+                    <div id="proximaClaseInfo" class="space-y-3">
+                        <!-- La información se insertará dinámicamente -->
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Sala de Estudio -->
+    <div id="modal-sala-estudio" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-4xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-gradient-to-r bg-red-600 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 id="modalSalaEstudioTitulo" class="text-3xl font-bold text-white truncate">Sala de Estudio</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="modalSalaEstudioCapacidad" class="text-lg truncate text-white/80">Capacidad disponible</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalSalaEstudio(); qrInputManager.setActiveInput('main')"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+                <!-- Información de capacidad -->
+                <div class="p-6 mb-6 bg-white border-l-4 border-red-500 shadow-sm rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            <i class="mr-2 text-red-500 fas fa-users"></i>
+                            Capacidad
+                        </h3>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-600">
+                                <span id="salaEstudioOcupados" class="text-2xl font-bold text-red-600">0</span>
+                                <span class="text-gray-500">/</span>
+                                <span id="salaEstudioCapacidadMax" class="text-lg font-semibold text-gray-700">0</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
+                    </div>
+                </div>
+
+              
+
+                <!-- Alumnos registrados -->
+                <div class="p-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-green-500 fas fa-user-check"></i>
+                        Alumnos Registrados
+                    </h3>
+                    <div id="listaSalaEstudioAlumnos" class="space-y-2">
+                        <p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para reconocimiento -->
+    <x-modal name="reconocimiento" :show="false" focusable>
+        @slot('title')
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Reconocimiento
+            </h2>
+        @endslot
+        <div class="p-6">
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <div id="reconocimiento-icono" class="text-6xl">
+                    <!-- El ícono se llenará dinámicamente -->
+                </div>
+                <h3 id="reconocimiento-titulo" class="text-xl font-medium text-gray-900"></h3>
+                <div id="reconocimiento-detalles" class="space-y-2 text-sm text-gray-600">
+                    <p id="reconocimiento-usuario"></p>
+                    <p id="reconocimiento-espacio"></p>
+                </div>
+            </div>
+        </div>
+    </x-modal>
+
+
+    <!-- Modal para devolución de llaves (rediseñado) -->
+    <x-modal name="devolver-llaves" :show="false" focusable>
+        @slot('title')
+            <div class="px-6 py-3 text-white bg-red-700 rounded-t">
+                <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
+            </div>
+        @endslot
+        <div class="flex flex-col items-center justify-center p-8 bg-white">
+            <div class="flex flex-col items-center mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 mb-4 text-black" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span id="qr-status-devolucion" class="mb-2 text-base text-black">Esperando escaneo del
+                    usuario...</span>
+                <span class="text-sm text-black">Escanee el código QR del usuario y luego del espacio</span>
+            </div>
+            <input type="text" id="qr-input-devolucion"
+                class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Escanea un código QR" autocomplete="off" autofocus>
+        </div>
+    </x-modal>
+
+    <!-- Modal para solicitud de llaves -->
+    <x-modal name="solicitar-llaves" :show="false" focusable>
+        @slot('title')
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Solicitar Llaves
+            </h2>
+        @endslot
+        <div class="p-6">
+            <div class="flex flex-col items-center justify-center">
+                <div
+                    class="w-full max-w-md p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
+                    <!-- QR Placeholder -->
+                    <div class="p-2 mt-2 text-center rounded-md bg-white/10">
+                        <div class="relative">
+                            <span id="qr-status-solicitud" class="text-xs text-white">Esperando escaneo...</span>
+                        </div>
+                        <div class="mt-1 mb-1 qr-placeholder">
+                            <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-white/80">Escanee el código QR del usuario y luego del espacio</p>
+                    </div>
+                    <!-- Input para el escáner QR (oculto) -->
+                    <div class="mt-2">
+                        <input type="text" id="qr-input-solicitud"
+                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Escanea un código QR" autocomplete="off" autofocus>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </x-modal>
+
+
+
+    <!-- Modal de espera de llaves (Rediseñado con Estilo Banner) -->
+    <div id="modal-espera-llaves" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all transform scale-95 duration-150 opacity-0" id="modal-espera-llaves-content">
+            
+            <!-- Encabezado Rojo tipo Banner (Igual a la imagen de referencia) -->
+            <div class="relative flex items-center justify-between p-6 bg-red-700">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-24 h-24 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-24 h-24 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center gap-4 relative z-10">
+                    <!-- Icono Circular Blanco con icono rojo -->
+                    <div class="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Escaneo de Llaves</h2>
+                </div>
+
+                <!-- Botón Cerrar Cuadrado Blanco con X Roja (Igual a la imagen) -->
+                <button onclick="cerrarModalEsperaLlaves()" class="flex items-center justify-center w-9 h-9 bg-white rounded-md shadow-lg hover:bg-gray-100 transition-all duration-100 group relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Contenido del Cuerpo -->
+            <div class="p-8 flex flex-col items-center text-center space-y-8">
+                
+                <div class="space-y-3">
+                    <h3 class="text-3xl font-extrabold text-gray-800" id="espera-llaves-nombre">¡Hola!</h3>
+                    <p class="text-lg text-gray-500 font-medium">Por favor, acerca las llaves al lector para continuar.</p>
+                </div>
+
+                <!-- Animación de Escaneo mejorada -->
+                <div class="relative w-48 h-48 flex items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 group-hover:border-red-200 transition-colors">
+                    <!-- Marco de escaneo -->
+                    <div class="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-red-600 rounded-tl-xl"></div>
+                    <div class="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-red-600 rounded-tr-xl"></div>
+                    <div class="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-red-600 rounded-bl-xl"></div>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-red-600 rounded-br-xl"></div>
+
+                    <!-- Icono Llave Animado -->
+                    <div class="text-red-600 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-28 w-28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Banner Informativo Azul (estilo el de la imagen de referencia) -->
+                <div class="w-full bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-start gap-4 text-left shadow-sm">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-blue-900 text-sm tracking-tight">Información de Escaneo</p>
+                        <p class="text-blue-700 text-xs leading-relaxed mt-1 font-medium">
+                            El sistema está esperando el código del llavero vinculado a este espacio. Acerque el sensor al lector para completar la operación.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar si hubo asistentes -->
+    <div id="modal-confirmar-asistentes" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-md mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado -->
+            <div class="p-6 bg-gradient-to-r from-blue-500 to-blue-600">
+                <div class="flex items-center justify-center mb-2">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-center text-white">Devolución anticipada</h3>
+                <p class="mt-2 text-sm text-center text-blue-100">Clase finalizada antes del primer módulo</p>
+            </div>
+
+            <!-- Contenido -->
+            <div class="p-6 bg-gray-50">
+                <div class="mb-6 text-center">
+                    <p class="mb-2 text-base font-medium text-gray-800">¿Hubo asistentes en la clase?</p>
+                    <p class="text-sm text-gray-600">Esta información ayuda a mejorar las estadísticas de uso</p>
+                </div>
+
+                <!-- Información de la clase -->
+                <div class="p-4 mb-6 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm">
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Espacio:</span>
+                            <span id="asistentes-espacio" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Asignatura:</span>
+                            <span id="asistentes-asignatura" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Módulos programados:</span>
+                            <span id="asistentes-modulos" class="font-semibold text-gray-800"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-sin-asistentes"
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span class="font-semibold">Sin asistentes</span>
+                    </button>
+                    <button id="btn-con-asistentes"
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span class="font-semibold">Con asistentes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleccionar cantidad de módulos -->
+    <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-2xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado azul con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Seleccionar Módulos</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Reserva de Espacio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalModulos()"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+              <!-- Selección de módulos -->
+                <div class="p-4 mb-6 bg-white rounded-lg shadow-sm">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-800">Configuración de Reserva</h3>
+                    <div class="mb-4 text-center">
+                        <p class="mb-4 text-base text-gray-700">¿Por cuántos módulos desea reservar?</p>
+                        <div class="flex items-center justify-center gap-4">
+                            <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
+                                class="w-24 px-4 py-3 text-xl font-semibold text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <span class="text-sm text-gray-600">
+                                de <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> disponibles
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información detallada de módulos -->
+                <div id="info-modulos-disponibles" class="mb-6"></div>
+
+                <!-- Botones de acción -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <x-button id="btn-confirmar-modulos" variant='add'>
+                        Confirmar Reserva
+                    </x-button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para registro de solicitante -->
+    <x-modal name="registro-solicitante" :show="false" @close-modal.window="handleClose($event, 'registro-solicitante')">
+        @slot('title')
+            <div id="modalHeader"
+                class="relative flex flex-col gap-6 p-8 bg-red-700 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span
+                    class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span
+                    class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-user-plus"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Registro de Solicitante</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Usuario No Registrado</span>
+                            <span class="text-lg text-white/80">•</span>
+                            <span class="text-lg font-semibold text-white/80">{{ date('Y') }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalRegistroSolicitante(); qrInputManager.setActiveInput('main')"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+        @endslot
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="text-center">
+                    <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
+                    <p class="mt-2 text-sm text-gray-600">
+                        El usuario no está registrado como profesor.
+                        Complete los siguientes datos para continuar con la solicitud como solicitante.
+                    </p>
+                </div>
+
+                <form id="form-registro-solicitante" class="space-y-4">
+                    <div>
+                        <label for="nombre-solicitante" class="block text-sm font-medium text-gray-700">Nombre Completo
+                            *</label>
+                        <input type="text" id="nombre-solicitante" name="nombre" required autocomplete="name"
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            autofocus>
+                    </div>
+
+                    <div>
+                        <label for="email-solicitante" class="block text-sm font-medium text-gray-700">Correo
+                            Electrónico *</label>
+                        <input type="email" id="email-solicitante" name="email" required autocomplete="email"
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="telefono-solicitante" class="block text-sm font-medium text-gray-700">Teléfono
+                            *</label>
+                        <div class="flex mt-1">
+                            <div class="flex items-center px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                                <span class="text-sm font-medium text-gray-600">+56</span>
+                            </div>
+                            <input type="tel" id="telefono-solicitante" name="telefono" required autocomplete="tel"
+                                pattern="[0-9]{9}"
+                                title="Ingrese un número de teléfono válido (9 dígitos, sin el +56)"
+                                placeholder="912345678"
+                                maxlength="9"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Formato: 9 dígitos (ej: 912345678). No incluir +56</p>
+                    </div>
+
+                    <div>
+                        <label for="tipo-solicitante" class="block text-sm font-medium text-gray-700">Tipo de
+                            Solicitante *</label>
+                        <select id="tipo-solicitante" name="tipo_solicitante" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccione el tipo</option>
+                            <option value="estudiante">Estudiante</option>
+                            <option value="personal">Personal Administrativo</option>
+                            <option value="visitante">Visitante</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+
+
+
+                    <div class="flex pt-4 space-x-3">
+                        <button type="submit"
+                            class="w-full px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Registrar y Continuar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </x-modal>
+
+    <script>
+        window.tenantPrefix = '{{ strtoupper(tenant_prefijo() ?: tenant_domain() ?: "") }}';
+        window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
+
+        // Escuchar cuando se abra el modal de registro para establecer el foco correcto
+        document.addEventListener('open-modal', (event) => {
+            if (event.detail === 'registro-solicitante') {
+                // Esperar a que el modal esté completamente visible
+                setTimeout(() => {
+                    const nombreInput = document.getElementById('nombre-solicitante');
+                    if (nombreInput) {
+                        nombreInput.focus();
+                    }
+                }, 150);
+            }
+        });
+        // Función para manejar el cierre de modales
+        function handleClose(event, modalName) {
+            if (event.detail === modalName) {
+                // Cerrar el modal específico
+                const modal = document.querySelector(`[x-data*="modalComponent"][x-data*="${modalName}"]`);
+                if (modal) {
+                    const modalInstance = Alpine.$data(modal);
+                    if (modalInstance && typeof modalInstance.show !== 'undefined') {
+                        modalInstance.show = false;
+                    }
+                }
+            }
+        }
+
+        @php
+            $mapaIdValue = $mapa->id_mapa ?? 1;
+        @endphp
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+                if (width < 2 * radius) radius = width / 2;
+                if (height < 2 * radius) radius = height / 2;
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.arcTo(x + width, y, x + width, y + height, radius);
+                this.arcTo(x + width, y + height, x, y + height, radius);
+                this.arcTo(x, y + height, x, y, radius);
+                this.arcTo(x, y, x + width, y, radius);
+                this.closePath();
+                return this;
+            };
+        }
+
+        // Variable global para horarios de módulos (se carga desde JSON)
+        let horariosModulos = {};
+
+        // Cargar horarios de módulos desde archivo JSON
+        async function cargarHorariosModulos() {
+            try {
+                const response = await fetch('/js/horarios-modulos.json');
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el archivo de horarios');
+                }
+                horariosModulos = await response.json();
+                console.log('✅ Horarios de módulos cargados correctamente');
+            } catch (error) {
+                console.error('❌ Error al cargar horarios de módulos:', error);
+                console.log('⚠️ Usando horarios de fallback');
+            }
+        }
+
+        // SISTEMA GLOBAL DE MANEJO DE AUTOFOCUS PARA TODOS LOS INPUTS QR
+        class QRInputManager {
+            constructor() {
+                this.qrInputs = {
+                    main: document.getElementById('qr-input'),
+                    devolucion: document.getElementById('qr-input-devolucion'),
+                    solicitud: document.getElementById('qr-input-solicitud'),
+                    salaEstudio: document.getElementById('qr-input-sala-estudio')
+                };
+                this.activeInput = null;
+                this.modalStates = new Map();
+                this.init();
+            }
+
+            init() {
+                // Configurar estado inicial
+                this.setActiveInput('main');
+                this.setupEventListeners();
+            }
+
+            setActiveInput(inputType) {
+                // Desactivar todos los inputs primero
+                Object.values(this.qrInputs).forEach(input => {
+                    if (input) {
+                        input.blur();
+                        input.removeAttribute('autofocus');
+                    }
+                });
+
+                // Activar el input especificado
+                const targetInput = this.qrInputs[inputType];
+                if (targetInput) {
+                    this.activeInput = inputType;
+                    targetInput.setAttribute('autofocus', '');
+                    setTimeout(() => {
+                        targetInput.focus();
+                    }, 100);
+                }
+            }
+
+            desactivarTodosLosInputs() {
+                Object.values(this.qrInputs).forEach(input => {
+                    if (input) {
+                        input.blur();
+                        input.removeAttribute('autofocus');
+                    }
+                });
+                this.activeInput = null;
+            }
+
+            restaurarInputActivo() {
+                if (this.activeInput && this.qrInputs[this.activeInput]) {
+                    const input = this.qrInputs[this.activeInput];
+                    input.setAttribute('autofocus', '');
+                    setTimeout(() => {
+                        input.focus();
+                    }, 100);
+                }
+            }
+
+            setupEventListeners() {
+                // Event listeners para modales Bootstrap
+                document.addEventListener('show.bs.modal', (event) => {
+                    this.desactivarTodosLosInputs();
+                });
+
+                document.addEventListener('hide.bs.modal', (event) => {
+                    this.restaurarInputActivo();
+                });
+
+                // Event listeners para modales personalizados (Livewire)
+                document.addEventListener('show-modal', (event) => {
+                    this.desactivarTodosLosInputs();
+
+                    // Cambiar el input activo según el tipo de modal
+                    if (event.detail === 'devolver-llaves') {
+                        this.setActiveInput('devolucion');
+                    } else if (event.detail === 'solicitar-llaves') {
+                        this.setActiveInput('solicitud');
+                    }
+                });
+
+                document.addEventListener('close-modal', (event) => {
+                    this.restaurarInputActivo();
+                });
+
+                // Event listeners para Sweet Alerts
+                document.addEventListener('swal:open', (event) => {
+                    this.desactivarTodosLosInputs();
+                });
+
+                document.addEventListener('swal:close', (event) => {
+                    this.restaurarInputActivo();
+                });
+
+                // Interceptar SweetAlert2 si está disponible
+                if (typeof Swal !== 'undefined') {
+                    const originalFire = Swal.fire;
+                    Swal.fire = (...args) => {
+                        this.desactivarTodosLosInputs();
+                        const result = originalFire.apply(Swal, args);
+
+                        if (result && typeof result.then === 'function') {
+                            result.then(() => {
+                                this.restaurarInputActivo();
+                            }).catch(() => {
+                                this.restaurarInputActivo();
+                            });
+                        }
+
+                        return result;
+                    };
+                }
+
+                // Event listeners para modales personalizados específicos
+                document.addEventListener('click', (event) => {
+                    // Detectar clics en botones de cerrar modal
+                    if (event.target.matches('[onclick*="cerrarModal"]') ||
+                        event.target.matches('[onclick*="cerrarModalRegistro"]') ||
+                        event.target.matches('[onclick*="cerrarModalModulos"]')) {
+                        setTimeout(() => {
+                            this.restaurarInputActivo();
+                        }, 200);
+                    }
+
+                    // Detectar clics en diferentes áreas para cambiar el input activo
+                    if (event.target.closest('#modal-devolver-llaves')) {
+                        this.setActiveInput('devolucion');
+                    } else if (event.target.closest('#modal-solicitar-llaves')) {
+                        this.setActiveInput('solicitud');
+                    } else if (event.target.closest('aside')) {
+                        this.setActiveInput('main');
+                    }
+                });
+            }
+        }
+
+        // Inicializar el gestor de inputs QR
+        const qrInputManager = new QRInputManager();
+
+            // Debug flag: set to false to disable all QR debug logs quickly
+        const QR_DEBUG = false;
+
+            let bufferQR = '';
+        let ordenEscaneo = 'usuario';
+        let usuarioEscaneado = null;
+        let espacioEscaneado = null;
+        let procesandoDevolucion = false;
+        let runSolicitantePendiente = null;
+        let maxModulosDisponibles = 1;
+        let espacioParaReserva = null;
+        let runParaReserva = null;
+        let usuarioInfo = null; // Variable global para almacenar la información del usuario
+        let isProcessingQR = false; // Bloqueo para evitar procesamiento múltiple
+        let watchdogTimer = null; // Temporizador para resetear el flujo por inactividad
+
+        
+        // Liberación forzada removida - la gestión de reservas se realiza únicamente mediante escaneo QR
+        
+        const mapaId = @json($mapaIdValue);
+
+        const config = {
+            indicatorSize: 35,
+            indicatorWidth: 37,
+            indicatorHeight: 37,
+            indicatorBorder: '#FFFFFF',
+            indicatorTextColor: '#FFFFFF',
+            fontSize: 12
+        };
+
+        const state = {
+            mapImage: null,
+            originalImageSize: null,
+            indicators: @json($bloques) || [],
+            originalCoordinates: @json($bloques) || [],
+            isImageLoaded: false,
+            mouseX: 0,
+            mouseY: 0,
+            updateInterval: null,
+            hoveredIndicator: null,
+            lastLocalChange: null,
+            ultimoCambioLocal: null,
+            currentIndicatorId: null,
+            currentOccupantRun: null
+        };
+
+        let elements = {
+            mapCanvas: null,
+            mapCtx: null,
+            indicatorsCanvas: null,
+            indicatorsCtx: null
+        };
+
+        function getQrStatus() {
+            return document.getElementById('qr-status');
+        }
+
+        function getInfoUsuario() {
+            return document.getElementById('info-usuario');
+        }
+
+        function getMensajeInicial() {
+            return document.getElementById('mensaje-inicial');
+        }
+
+        function mostrarInfo(tipo, nombre, run = null, conPausa = false) {
+            // Ocultar mensaje inicial
+            const mensajeInicial = getMensajeInicial();
+            if (mensajeInicial) {
+                mensajeInicial.classList.add('hidden');
+            }
+
+            if (tipo === 'usuario') {
+                // Ya no mostramos info en el sidebar, ahora usamos el modal
+                if (conPausa) {
+                    setTimeout(() => {
+                        abrirModalEsperaLlaves(nombre);
+                    }, 1500); // Pausa de 1.5 segundos
+                } else {
+                    abrirModalEsperaLlaves(nombre);
+                }
+            }
+        }
+
+        function abrirModalEsperaLlaves(nombre) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+            const nombreTxt = document.getElementById('espera-llaves-nombre');
+
+            if (modal && content && nombreTxt) {
+                nombreTxt.textContent = `¡Hola, ${nombre}!`;
+                modal.classList.remove('hidden');
+                
+                // Forzar reflow para animación
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+
+                // Desactivar otros inputs para asegurar que el principal siga capturando
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }
+        }
+
+        function cerrarModalEsperaLlaves(manual = true) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+
+            if (modal && content && !modal.classList.contains('hidden')) {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    // Si es manual (botón X), limpiamos todo el estado para permitir nuevo escaneo de RUN
+                    if (manual) {
+                        limpiarEstadoLectura();
+                    }
+                }, 150);
+            }
+        }
+
+        function iniciarWatchdog() {
+            detenerWatchdog();
+            watchdogTimer = setTimeout(() => {
+                if (ordenEscaneo === 'espacio') {
+                    console.log('Watchdog: Reiniciando flujo por inactividad');
+                    limpiarEstadoLectura('Tiempo de espera agotado');
+                }
+            }, 60000); // 60 segundos de espera para el espacio
+        }
+
+        function detenerWatchdog() {
+            if (watchdogTimer) {
+                clearTimeout(watchdogTimer);
+                watchdogTimer = null;
+            }
+        }
+
+        function limpiarEstadoCompleto() {
+            detenerWatchdog();
+            isProcessingQR = false;
+
+            // Resetear variables globales
+            ordenEscaneo = 'usuario';
+            usuarioEscaneado = null;
+            espacioEscaneado = null;
+            espacioParaReserva = null;
+            runParaReserva = null;
+            usuarioInfo = null; // Limpiar información del usuario
+
+            // Limpiar buffers
+            bufferQR = '';
+
+            // Ocultar información del usuario
+            const infoUsuario = getInfoUsuario();
+            if (infoUsuario) infoUsuario.classList.add('hidden');
+
+            // Mostrar mensaje inicial
+            const mensajeInicial = getMensajeInicial();
+            if (mensajeInicial) {
+                mensajeInicial.classList.remove('hidden');
+            }
+
+            // Limpiar datos
+            const runEsc = document.getElementById('run-escaneado');
+            if (runEsc) runEsc.textContent = '--';
+
+            const nomUser = document.getElementById('nombre-usuario');
+            if (nomUser) nomUser.textContent = '--';
+
+            // Restaurar parpadeo del estado QR
+            const qrStatus = getQrStatus();
+            if (qrStatus) {
+                qrStatus.classList.add('parpadeo');
+                qrStatus.innerHTML = 'Escanea el carnet';
+            }
+
+            // Limpiar cualquier input de QR que pueda tener datos
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.value = '';
+            }
+
+            // Restaurar el input QR activo después de limpiar el estado
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
+        }
+
+        function resetearFlujoPorError(mensajeError) {
+            // Solo limpiar el estado de lectura, NO cerrar modales ni resetear toda la interfaz
+            limpiarEstadoLectura(mensajeError);
+
+            // Restaurar el input QR activo después de resetear el flujo
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
+        }
+
+        function limpiarEstadoSilencioso() {
+            // Limpiar buffer y input sin mostrar mensajes
+            bufferQR = '';
+            lastBufferLength = 0;
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+                errorTimeout = null;
+            }
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+
+            // OCULTAR el bloque de información del usuario silenciosamente
+            const infoUsuario = getInfoUsuario();
+            if (infoUsuario) {
+                infoUsuario.classList.add('hidden');
+            }
+
+            // Limpiar los datos mostrados
+            const runEscaneado = document.getElementById('run-escaneado');
+            const nombreUsuario = document.getElementById('nombre-usuario');
+            if (runEscaneado) runEscaneado.textContent = '--';
+            if (nombreUsuario) nombreUsuario.textContent = '--';
+
+            // Restaurar el input QR activo después de limpiar el estado silenciosamente
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
+        }
+
+        function limpiarEstadoLectura(mensajeError = null) {
+            detenerWatchdog();
+            isProcessingQR = false;
+
+            // Cerrar el modal de espera de llaves si estuviera abierto (sin recursión manual)
+            cerrarModalEsperaLlaves(false);
+
+            // Solo limpiar el estado de lectura del QR, NO toda la interfaz
+
+            // Limpiar buffer y timeouts
+            bufferQR = '';
+            lastBufferLength = 0;
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+                errorTimeout = null;
+            }
+
+            // Limpiar input
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+
+            // OCULTAR el bloque de información del usuario cuando hay error
+            const infoUsuario = getInfoUsuario();
+            if (infoUsuario) {
+                infoUsuario.classList.add('hidden');
+            }
+
+            // Limpiar los datos mostrados en el bloque de información
+            const runEscaneado = document.getElementById('run-escaneado');
+            const nombreUsuario = document.getElementById('nombre-usuario');
+            if (runEscaneado) runEscaneado.textContent = '--';
+            if (nombreUsuario) nombreUsuario.textContent = '--';
+
+            // Mostrar mensaje de error temporal si se proporciona
+            if (mensajeError) {
+                const qrStatus = getQrStatus();
+                if (qrStatus) {
+                    qrStatus.classList.remove('parpadeo');
+                    qrStatus.innerHTML = `Error: ${mensajeError}`;
+                    qrStatus.style.color = '#FFFFFF';
+
+                    // Restaurar estado normal después de 1.5 segundos
+                    setTimeout(() => {
+                        qrStatus.classList.add('parpadeo');
+                        qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                        qrStatus.style.color = '';
+                    }, 1500);
+                }
+            } else {
+                // Si no hay mensaje de error, solo restaurar el estado normal
+                const qrStatus = getQrStatus();
+                if (qrStatus) {
+                    qrStatus.classList.add('parpadeo');
+                    qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                }
+            }
+
+            // Resetear orden de escaneo
+            ordenEscaneo = 'usuario';
+
+            // Restaurar el input QR activo después de limpiar el estado de lectura
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
+        }
+
+
+
+        async function verificarUsuario(run) {
+            try {
+                const response = await fetch(`/api/verificar-usuario/${run}`);
+                if (!response.ok) {
+                    // Error en respuesta del servidor
+                    return null;
+                }
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                // Error al verificar usuario
+                return null;
+            }
+        }
+
+
+
+
+
+        async function verificarProgramacionEnEspacio(espacio, run) {
+            try {
+                const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
+                const result = await response.json();
+                return {
+                    tieneClase: Boolean(result.success && (result.tieneProgramacion === true || result.tiene_clase === true)),
+                    claseYaFinalizada: Boolean(result.clase_ya_finalizada),
+                    mensaje: result.mensaje || null,
+                    modulosInfo: result.modulosInfo || null,
+                    esRecuperacion: Boolean(result.es_recuperacion || result.modulosInfo?.es_recuperacion || result.tipo === 'clase_reagendada')
+                };
+            } catch (error) {
+                console.error('Error al verificar programación en espacio:', error);
+                return { tieneClase: false, claseYaFinalizada: false };
+            }
+        }
+
+
+        async function registrarAsistenciaProfesor(run, idEspacio) {
+            try {
+                const response = await fetch('/api/registrar-uso-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: run,
+                        espacio_id: idEspacio
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                // Error al registrar asistencia
+                return null;
+            }
+        }
+
+        /**
+         * Crea automáticamente una reserva para un profesor con clase programada
+         * Usa directamente los módulos de la programación sin preguntar al usuario
+         */
+        async function crearReservaAutomaticaProfesor(run, idEspacio) {
+            try {
+                const response = await fetch('/api/crear-reserva-profesor-automatica', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_profesor: String(run),
+                        id_espacio: String(idEspacio)
+                    })
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error al crear reserva automática:', error);
+                return null;
+            }
+        }
+
+
+
+        async function registrarSolicitante(datosSolicitante) {
+            try {
+                const response = await fetch('/api/registrar-solicitante', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(datosSolicitante)
+                });
+
+                if (!response.ok) {
+                    // Si la respuesta no es exitosa, intentar obtener el error del servidor
+                    const errorData = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
+                    };
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error en registrarSolicitante:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
+
+
+        async function crearReservaSolicitante(runSolicitante, idEspacio) {
+            try {
+                // Validar horario académico antes de enviar la solicitud
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+
+                // Verificar si estamos dentro del horario académico (08:10 - 23:00)
+                const hora = parseInt(horaActual.split(':')[0]);
+                const minutos = parseInt(horaActual.split(':')[1]);
+                const horaEnMinutos = hora * 60 + minutos;
+
+                const inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
+                const finAcademico = 23 * 60; // 23:00
+
+                if (horaEnMinutos < inicioAcademico || horaEnMinutos >= finAcademico) {
+                    return {
+                        success: false,
+                        mensaje: 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                    };
+                }
+
+                const response = await fetch('/api/crear-reserva-solicitante', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_solicitante: runSolicitante,
+                        id_espacio: idEspacio,
+                        modulos: 1 // Por defecto 1 módulo para solicitantes
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
+                    };
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error en crearReservaSolicitante:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
+        async function devolverEspacio(runUsuario, idEspacio, tipoDesocupacion = 'normal') {
+            try {
+                const requestBody = {
+                    run_usuario: runUsuario,
+                    id_espacio: idEspacio,
+                    tipo_desocupacion: tipoDesocupacion
+                };
+
+                // Si es una desocupación forzosa, agregar el RUN del administrador
+                if (tipoDesocupacion === 'forzosa') {
+                    requestBody.run_administrador = '{{ auth()->user()->run ?? "admin" }}';
+                }
+
+                const response = await fetch('/api/devolver-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                return await response.json();
+            } catch (error) {
+                // Error
+                return null;
+            }
+        }
+
+        async function verificarEstadoEspacioYReserva(runUsuario, idEspacio) {
+            try {
+                const response = await fetch('/api/verificar-estado-espacio-reserva', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: runUsuario,
+                        id_espacio: idEspacio
+                    })
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                return {
+                    tipo: 'error',
+                    mensaje: 'Error de conexión al verificar el estado del espacio'
+                };
+            }
+        }
+
+        async function forzarCierreYTomarEspacio(runUsuario, idEspacio, idReservaAnterior) {
+            try {
+                const response = await fetch('/api/forzar-cierre-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runUsuario,
+                        id_espacio: idEspacio,
+                        id_reserva_anterior: idReservaAnterior
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error en forzarCierreYTomarEspacio:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
+        let lastScannedBuffer = null;
+        let lastScannedTime = 0;
+        let lastBufferLength = 0;
+        let processingTimeout = null;
+        let errorTimeout = null;
+        let ultimaDevolucionExitosa = 0;
+
+        async function handleScan(event) {
+            // Solo procesar cuando se presiona Enter
+            if (event.key !== 'Enter') {
+                // Acumular caracteres en el buffer
+                if (event.key.length === 1) {
+                    bufferQR += event.key;
+
+                    // Detectar cuando el escaneo se completó (buffer dejó de crecer)
+                    if (bufferQR.length > lastBufferLength) {
+                        lastBufferLength = bufferQR.length;
+
+                        // Limpiar timeout anterior
+                        if (processingTimeout) {
+                            clearTimeout(processingTimeout);
+                        }
+
+                        // Procesar automáticamente después de 100ms sin nuevos caracteres
+                        processingTimeout = setTimeout(async () => {
+                            await procesarQRCompleto();
+                        }, 100);
+
+                        // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
+                        if (errorTimeout) {
+                            clearTimeout(errorTimeout);
+                        }
+                        errorTimeout = setTimeout(() => {
+                            if (bufferQR && bufferQR.trim() !== '' && bufferQR.length > 10) {
+                                limpiarEstadoLectura('Timeout de lectura - QR inválido');
+                                setTimeout(() => {
+                                    if (qrInputManager) {
+                                        qrInputManager.setActiveInput('main');
+                                    }
+                                }, 100);
+                            }
+                        }, 60000);
+                    }
+                }
+                return;
+            }
+
+            // Validar que hay contenido en el buffer antes de procesar
+            if (!bufferQR || bufferQR.trim() === '') {
+                return;
+            }
+
+            await procesarQRCompleto();
+        }
+
+        async function procesarQRCompleto() {
+            // Validar que el buffer no esté vacío
+            if (!bufferQR || bufferQR.trim() === '') {
+                return;
+            }
+
+            // Debounce post-devolución: ignorar escaneos en los primeros 3.5 segundos tras devolver
+            if (Date.now() - ultimaDevolucionExitosa < 3500) {
+                console.log('Escaneo ignorado por tiempo de seguridad post-devolución');
+                bufferQR = '';
+                return;
+            }
+
+            // Debounce cliente: ignorar escaneo idéntico dentro de 3 segundos (evita lecturas dobles de escáneres físicos)
+            const now = Date.now();
+            if (lastScannedBuffer === bufferQR.trim() && (now - lastScannedTime) < 3000) {
+                console.log('Escaneo idéntico ignorado por debounce de escáner (3s):', bufferQR);
+                bufferQR = '';
+                return;
+            }
+
+            // Evitar procesamiento múltiple si ya hay uno en curso
+            if (isProcessingQR) {
+                console.log('Procesamiento en curso, ignorando escaneo actual');
+                return;
+            }
+
+            // Validar que el buffer tenga un tamaño mínimo razonable
+            if (bufferQR.length < 5) {
+                limpiarEstadoLectura();
+                return;
+            }
+
+            lastScannedBuffer = bufferQR.trim();
+            lastScannedTime = now;
+            isProcessingQR = true;
+
+            try {
+                // Validar orden de escaneo
+                if (ordenEscaneo === 'usuario') {
+                    // PASO 1: Escanear usuario (obligatorio primero)
+                    await procesarUsuario();
+                } else if (ordenEscaneo === 'espacio') {
+                    // PASO 2: Escanear espacio (solo después del usuario)
+                    const resultado = await procesarEspacio();
+
+                    // Si la devolución fue exitosa, no continuar con más procesamiento
+                    if (resultado === 'devolucion_exitosa') {
+                        return;
+                    }
+                } else {
+                    // Error: orden incorrecto
+                    limpiarEstadoLectura('Orden de escaneo incorrecto');
+                }
+            } catch (error) {
+                console.error('Error crítico en procesarQRCompleto:', error);
+                limpiarEstadoLectura('Error interno del sistema');
+            } finally {
+                // Liberar el bloqueo y limpiar timeouts
+                isProcessingQR = false;
+
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                }
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                    errorTimeout = null;
+                }
+
+                // Restaurar el input QR activo después de procesar
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.restaurarInputActivo();
+                    }
+                }, 100);
+            }
+        }
+
+        async function procesarUsuario() {
+            // Capturar y limpiar el buffer inmediatamente para evitar lecturas duplicadas
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
+
+            // Extraer RUN del QR - Soportar múltiples formatos
+            let run = null;
+
+            // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=... o /type=...)
+            const runUrlMatch = currentBuffer.match(/[?&]run=([^&/]+)/i);
+            
+            if (runUrlMatch) {
+                run = runUrlMatch[1];
+            } else {
+                // 2. Intentar formato con prefijo "RUN" (ej: RUN 12.345.678-9)
+                const runMatch = currentBuffer.match(/RUN[^0-9]*([0-9.Kk-]+)/i);
+                if (runMatch) {
+                    run = runMatch[1];
+                } else {
+                    // 3. Fallback: buscar secuencia de 7 a 9 números, puntos o guiones
+                    const runMatchAlt = currentBuffer.match(/([0-9]{1,2}(?:\.[0-9]{3}){2}-?[0-9Kk]|[0-9]{7,9}-?[0-9Kk]?)/i);
+                    if (runMatchAlt) {
+                        run = runMatchAlt[1];
+                    }
+                }
+            }
+
+            if (!run) {
+                // Solo mostrar error si el buffer tiene contenido significativo
+                if (currentBuffer.length > 8) {
+                    limpiarEstadoLectura('QR de usuario inválido - No se detectó RUN');
+                } else {
+                    limpiarEstadoSilencioso();
+                }
+                return;
+            }
+
+
+
+        // RUN extraído
+
+            // Mostrar modal de carga inmediatamente para mejorar la percepción de velocidad
+            abrirModalEsperaLlaves('Verificando...');
+
+            try {
+                const response = await fetch(`/api/procesar-primera-lectura/${run}`);
+                if (!response.ok) throw new Error('Error en la comunicación con el servidor');
+                
+                const result = await response.json();
+                
+                if (result.verificado) {
+                    // Usuario verificado exitosamente
+                    // Actualizar el nombre en el modal (ya está abierto)
+                    const nombreTxt = document.getElementById('espera-llaves-nombre');
+                    if (nombreTxt) nombreTxt.textContent = `¡Hola, ${result.usuario.nombre}!`;
+                    
+                    usuarioEscaneado = result.usuario.run || run;
+                    ordenEscaneo = 'espacio';
+                    iniciarWatchdog(); // Iniciar temporizador de espera de espacio
+
+                    const inputEscanner = document.getElementById('qr-input');
+                    if (inputEscanner) inputEscanner.value = '';
+
+                } else {
+                    // Si no está verificado, cerramos el modal de espera y manejamos el error
+                    cerrarModalEsperaLlaves(false);
+                    
+                    if (result.tipo_usuario === 'solicitante_nuevo') {
+                        // Flujo de registro de nuevo solicitante
+                        runSolicitantePendiente = run;
+                        const runElem = document.getElementById('run-solicitante-no-registrado');
+                        if (runElem) runElem.textContent = run;
+                        
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
+                        
+                        setTimeout(() => {
+                            if (qrInputManager) qrInputManager.desactivarTodosLosInputs();
+                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'registro-solicitante' }));
+                        }, 300);
+                    } else {
+                        limpiarEstadoLectura(result.mensaje || 'Usuario no autorizado');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                cerrarModalEsperaLlaves(false);
+                limpiarEstadoLectura('Error de conexión al verificar usuario');
+            }
+        }
+
+        async function continuarReserva(usuarioEscaneado, espacio) {
+            usuarioInfo = await verificarUsuario(usuarioEscaneado);
+
+            if (!usuarioInfo || !usuarioInfo.verificado) {
+                Swal.close();
+                ordenEscaneo = 'usuario';
+                // Restaurar autofocus del qr-input después de error en verificación de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Determinar el flujo según el tipo de usuario
+            if (usuarioInfo.tipo_usuario === 'profesor') {
+                // Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
+                const progVerif = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
+
+                if (progVerif.claseYaFinalizada) {
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Clase ya finalizada',
+                        text: 'Esta clase ya fue finalizada para el bloque actual.',
+                        icon: 'info',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#0066CC',
+                        timer: 3500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                    limpiarEstadoLectura();
+                    ordenEscaneo = 'usuario';
+                    detenerWatchdog();
+                    return;
+                }
+
+                if (progVerif.tieneClase === true) {
+                    const esRecuperacion = Boolean(progVerif.esRecuperacion || progVerif.modulosInfo?.es_recuperacion);
+                    // Mostrar SweetAlert indicando que se está creando el registro de clase
+                    Swal.fire({
+                        title: esRecuperacion ? 'Registrando clase reagendada...' : 'Creando registro de clase...',
+                        text: esRecuperacion
+                            ? 'Por favor, espera un momento mientras registramos tu clase reagendada.'
+                            : 'Por favor, espera un momento mientras registramos tu clase.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
+                    const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
+                    if (resultado && resultado.success) {
+                        const esClaseReagendada = esRecuperacion || resultado.tipo === 'clase_reagendada' || Boolean(resultado.es_recuperacion);
+                        // Mostrar mensaje de proceso
+                        const qrStatusEl = document.getElementById('qr-status');
+                        if (qrStatusEl) {
+                            qrStatusEl.innerHTML = esClaseReagendada ? 'Clase reagendada registrada...' : 'Reserva creada automáticamente...';
+                        }
+
+                        // Actualizar indicador en el mapa
+                        const block = state.indicators.find(b => b.id === espacio);
+                        if (block) {
+                            block.estado = '#FF0000'; // Rojo = Ocupado
+                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            drawIndicators();
+                        }
+
+                        const asigNombre = resultado.reserva?.asignatura || progVerif.modulosInfo?.nombre_asignatura || '';
+                        const textoConfirmacion = esClaseReagendada
+                            ? (asigNombre ? `Se ha registrado la recuperación de clase para ${asigNombre}.` : 'Se ha registrado la clase reagendada exitosamente.')
+                            : 'Se ha registrado la clase automáticamente según tu programación.';
+
+                        // Mostrar Sweet Alert de éxito para reserva automática
+                        Swal.fire({
+                            title: esClaseReagendada ? '¡Clase reagendada registrada!' : '¡Clase registrada!',
+                            text: textoConfirmacion,
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#10B981',
+                            timer: 2500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Mostrar mensaje de reserva creada
+                        if (qrStatusEl) {
+                            qrStatusEl.innerHTML = esClaseReagendada ? 'Clase reagendada' : 'Reserva creada';
+                            qrStatusEl.classList.remove('parpadeo');
+                        }
+
+                        // Limpiar el estado después de un delay para el próximo escaneo
+                        setTimeout(() => {
+                            espacioParaReserva = null;
+                            runParaReserva = null;
+                            bufferQR = '';
+                            limpiarEstadoLectura(); // Esto ya setea ordenEscaneo = 'usuario' y limpia la UI
+
+                            // Restaurar autofocus del qr-input después de crear reserva
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 2500);
+                    } else {
+                        // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
+                        Swal.fire({
+                            title: 'Error',
+                            text: resultado?.mensaje || 'No se pudo crear la reserva automáticamente.',
+                            icon: 'error',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+
+                        limpiarEstadoLectura();
+                        detenerWatchdog();
+                        setTimeout(() => {
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 3000);
+                    }
+                } else {
+                    // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
+                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                    detenerWatchdog();
+                    return; // No continuar, esperar selección de módulos
+                }
+            } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                detenerWatchdog();
+                return; // No continuar, esperar selección de módulos
+            } else {
+                Swal.close();
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                // Restaurar autofocus del qr-input después de error en tipo de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Limpiar buffer después de procesar espacio exitosamente
+            bufferQR = '';
+            lastBufferLength = 0;
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+
+            // Resetear para siguiente usuario
+            setTimeout(() => {
+                limpiarEstadoLectura();
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 3000);
+        }
+
+        async function procesarEspacio() {
+            // Capturar y limpiar el buffer inmediatamente
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
+
+            // Extraer código de espacio - múltiples formatos posibles
+            let espacio = null;
+
+            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+            const espacioMatch = currentBuffer.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+            if (espacioMatch) {
+                espacio = espacioMatch[1];
+            } else {
+                // Patrón 2: 2-3 letras + números (formato compacto)
+                const espacioMatchAlt = currentBuffer.match(/([A-Z]{2,3}[0-9]+)/i);
+                if (espacioMatchAlt) {
+                    espacio = espacioMatchAlt[1];
+                } else {
+                    // Patrón 3: Letras + caracteres especiales + letras/números
+                    const espacioMatchSpecial = currentBuffer.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                    if (espacioMatchSpecial) {
+                        espacio = espacioMatchSpecial[1];
+                    } else {
+                        // Patrón 4: Formato simple letras + números
+                        const espacioMatchSimple = currentBuffer.match(/([A-Z]+[0-9]+)/i);
+                        if (espacioMatchSimple) {
+                            espacio = espacioMatchSimple[1];
+                        } else {
+                            // Solo mostrar error si el buffer tiene contenido significativo
+                            if (currentBuffer.length > 8) {
+                                limpiarEstadoLectura('QR de espacio inválido');
+                            } else {
+                                limpiarEstadoSilencioso();
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+
+
+        // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
+        if (espacio) {
+            // Eliminar espacios y convertir a mayúsculas
+            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '');
+            // Normalizar: insertar guion entre el prefijo de sede (2-3 letras) y el resto del código.
+            // Aplica para TODAS las sedes: TH-30, CH-A1, LA-201, CT-5, CCP-10, etc.
+            if (!espacio.includes('-')) {
+                const prefixMatch = espacio.match(/^([A-Z]{2,3})([A-Z0-9].*)$/);
+                if (prefixMatch) {
+                    espacio = prefixMatch[1] + '-' + prefixMatch[2];
+                }
+            }
+            // Reemplazar comillas por guiones (formato heredado)
+            espacio = espacio.replace(/'/g, '-');
+
+            // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
+            // Ya tenemos un código de espacio válido, el flujo de espera terminó
+            cerrarModalEsperaLlaves(false);
+
+            // Mostrar SweetAlert de procesamiento de lectura para que no quede silencioso
+            Swal.fire({
+                title: 'Verificando...',
+                text: 'Procesando lectura del espacio.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
+                    // Verificar estado del espacio y reservas del usuario
+
+        // Agregar timeout para evitar que se cuelgue
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
+        );
+
+        const resultadoVerificacion = await Promise.race([
+            verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
+            timeoutPromise
+        ]).catch(error => {
+            // Error en verificación de espacio
+            // Restaurar autofocus del qr-input después de timeout en verificación
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return {
+                tipo: 'error',
+                mensaje: 'Timeout al verificar el estado del espacio'
+            };
+        });
+
+            if (resultadoVerificacion.tipo === 'error') {
+                // Error al verificar estado - mostrar SweetAlert prominente
+                Swal.close();
+                Swal.fire({
+                    title: '❌ Error',
+                    text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#D12420',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+                
+                // Resetear flujo y limpiar estado
+                limpiarEstadoLectura();
+                // Restaurar autofocus del qr-input después de error en verificación de espacio
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 500);
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'devolucion') {
+                // Procesando devolución...
+                // Evitar procesamiento múltiple
+                if (procesandoDevolucion) {
+                    return 'devolucion_en_proceso';
+                }
+
+                procesandoDevolucion = true;
+
+                // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
+                Swal.close();
+                // Mostrar modal de devolución en proceso
+                Swal.fire({
+                    title: 'Procesando devolución...',
+                    text: 'Liberando espacio y registrando salida.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
+
+                if (devolucion && devolucion.success) {
+                    // Cerrar el modal de espera de llaves inmediatamente al detectar éxito
+                    cerrarModalEsperaLlaves(false);
+
+                    // Actualizar indicador en el mapa
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00'; // Verde = Disponible
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+
+                    // INVALIDAR CACHE Y REFRESCAR MODAL SI ESTÁ ABIERTO
+                    // Esto asegura que la UI se sincronice inmediatamente con el servidor
+                    sessionStorage.removeItem(`espacio_${espacio}`);
+                    sessionStorage.removeItem(`espacio_${espacio}_time`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
+                    
+                    // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
+                    // NO reabrirlo - solo mostrar el mensaje de éxito
+                    if (state.currentIndicatorId === espacio) {
+                        // Cerrar el modal del espacio para no confundir al usuario
+                        const modal = document.getElementById('modal-espacio');
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            state.currentIndicatorId = null;
+                        }
+                    }
+
+                    // Verificar si es devolución en el primer módulo
+                    if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
+                        Swal.close(); // Cerrar modal de carga
+                        // Mostrar modal para preguntar si hubo asistentes
+                        mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
+                        
+                        // Limpiar estado después de mostrar el modal
+                        setTimeout(() => {
+                            limpiarEstadoLectura();
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 500);
+                    } else {
+                        // Devolución normal - mostrar Sweet Alert de éxito
+                        Swal.close();
+                        Swal.fire({
+                            title: '¡Devolución Exitosa!',
+                            text: 'Las llaves han sido devueltas correctamente.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#10B981',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Mostrar mensaje de éxito
+                        const statusElem = document.getElementById('qr-status');
+                        if (statusElem) statusElem.innerHTML = 'Devolución exitosa';
+
+                        // Limpiar solo el estado de lectura después de un delay
+                        setTimeout(() => {
+                            limpiarEstadoLectura();
+                            // Restaurar autofocus del qr-input después de devolución exitosa
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 2000);
+                    }
+
+                    // IMPORTANTE: Detener completamente el procesamiento aquí y resetear flujo
+                    procesandoDevolucion = false;
+                    ordenEscaneo = 'usuario';
+                    detenerWatchdog();
+                    ultimaDevolucionExitosa = Date.now();
+                    return 'devolucion_exitosa';
+                } else {
+                    // Mostrar error específico de devolución
+                    const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+                    
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Error',
+                        text: mensajeError,
+                        icon: 'error',
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+
+                    // Resetear el estado para permitir nuevo escaneo
+                    procesandoDevolucion = false;
+                    ordenEscaneo = 'usuario';
+                    // Restaurar autofocus del qr-input después de error en devolución
+                    setTimeout(() => {
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                    }, 100);
+                    return;
+                }
+            }
+
+            if (resultadoVerificacion.tipo === 'clase_ya_finalizada') {
+                cerrarModalEsperaLlaves(false);
+                Swal.close();
+                Swal.fire({
+                    title: 'Clase ya finalizada',
+                    text: resultadoVerificacion.mensaje || 'Esta clase ya fue finalizada con éxito para este bloque.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#0066CC',
+                    timer: 4000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                limpiarEstadoLectura();
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 1000);
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'reserva_existente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                // Procesando reserva existente...
+                Swal.close();
+                // Mostrar Sweet Alert de reserva existente
+                Swal.fire({
+                    title: 'Reserva Activa',
+                    text: resultadoVerificacion.mensaje,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#D12420',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                // Limpiar estado después del Sweet Alert
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    // Restaurar autofocus del qr-input después de mostrar reserva existente
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 2500);
+
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'activacion_reserva') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                // La reserva programada fue activada exitosamente por el escaneo
+                const block = state.indicators.find(b => b.id === espacio);
+                if (block) {
+                    block.estado = '#FF0000'; // Rojo = Ocupado
+                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                    drawIndicators();
+                }
+
+                const nombreActividad = resultadoVerificacion.reserva?.nombre_actividad 
+                    ? `<br><small class="text-gray-600">${resultadoVerificacion.reserva.nombre_actividad}</small>` 
+                    : '';
+
+                Swal.close();
+                Swal.fire({
+                    title: '¡Reserva Activada!',
+                    html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#10B981',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3000);
+
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'reserva_fuera_horario') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                // El usuario tiene reserva programada pero no es el horario aún
+                Swal.close();
+                Swal.fire({
+                    title: 'Reserva Programada',
+                    html: `<div class="text-left">
+                        <p class="mb-3">${resultadoVerificacion.mensaje}</p>
+                        ${resultadoVerificacion.reserva?.nombre_actividad 
+                            ? `<p class="mb-2"><strong>Actividad:</strong> ${resultadoVerificacion.reserva.nombre_actividad}</p>` 
+                            : ''}
+                        <p class="mb-2"><strong>Módulos:</strong> ${resultadoVerificacion.reserva?.modulo_inicio || '-'} - ${resultadoVerificacion.reserva?.modulo_fin || '-'}</p>
+                    </div>`,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#D12420',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3500);
+
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'clase_programada_otro_docente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+                Swal.close();
+
+                const clase = resultadoVerificacion.clase || {};
+                const docenteNombre = clase.docente || 'Docente programado';
+                const asignaturaNombre = clase.asignatura || 'Clase regular';
+                const horarioStr = (clase.hora_inicio && clase.hora_termino) ? `${clase.hora_inicio} - ${clase.hora_termino}` : 'Horario programado';
+
+                Swal.fire({
+                    title: 'Clase Programada',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-4 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario.</p>
+                            <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                <p><strong>Docente:</strong> ${docenteNombre}</p>
+                                <p><strong>Asignatura:</strong> ${asignaturaNombre}</p>
+                                <p><strong>Horario:</strong> ${horarioStr}</p>
+                            </div>
+                            <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Reservar Espacio',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#D12420',
+                    cancelButtonColor: '#8D8D8D',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        // Proceder con la reserva
+                        await continuarReserva(usuarioEscaneado, espacio);
+                    } else {
+                        // Cancelado - resetear
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    }
+                });
+
+                detenerWatchdog();
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'espacio_ocupado') {
+                // Procesando espacio ocupado...
+                // Si es el mismo usuario, permitimos que continúe para que pueda "forzar cierre" 
+                // de su propia sesión si esta quedó abierta o tiene una discrepancia de horario.
+
+                // NUEVA LÓGICA: Si puede forzar cierre, mostrar modal con botón de acción
+                if (resultadoVerificacion.puede_forzar_cierre) {
+                    const ocupante = resultadoVerificacion.ocupante || {};
+                    const idReservaAnterior = resultadoVerificacion.id_reserva_anterior;
+                    const esProgramada = resultadoVerificacion.es_reserva_programada || false;
+                    const textoTitulo = esProgramada ? 'Reserva Temporal Programada' : 'Sala Ocupada';
+                    const etiquetaOcupante = esProgramada 
+                        ? (ocupante.tipo === 'profesor' ? 'Docente con reserva' : 'Solicitante con reserva')
+                        : (ocupante.tipo === 'profesor' ? 'Docente anterior' : 'Solicitante anterior');
+                    const subtituloAviso = esProgramada
+                        ? 'La sala tiene una reserva temporal programada en este horario.'
+                        : 'La sala aún figura ocupada por el usuario anterior.';
+                    const textoPregunta = esProgramada
+                        ? 'Usted tiene una clase oficial en este bloque. ¿Desea iniciar su clase oficial ahora?'
+                        : 'Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?';
+                    const botonConfirmar = esProgramada ? 'Sí, Iniciar Clase Oficial' : 'Sí, Forzar Cierre e Iniciar Clase';
+                    
+                    Swal.close();
+                    Swal.fire({
+                        title: textoTitulo,
+                        html: `
+                            <div class="text-left">
+                                <p class="mb-4 text-orange-600 font-semibold">${subtituloAviso}</p>
+                                <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                    <p><strong>${etiquetaOcupante}:</strong> ${ocupante.nombre || 'Usuario'}</p>
+                                    <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio || '-'}</p>
+                                </div>
+                                <p class="text-gray-700">${textoPregunta}</p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: botonConfirmar,
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#10B981',
+                        cancelButtonColor: '#8D8D8D',
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            // Mostrar cargando
+                            Swal.close();
+                            Swal.fire({
+                                title: 'Procesando...',
+                                text: 'Realizando cierre forzado e iniciando su clase',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            const forceResult = await forzarCierreYTomarEspacio(usuarioEscaneado, espacio, idReservaAnterior);
+                            
+                            Swal.close();
+                            if (forceResult && forceResult.success) {
+                                // Éxito
+                                Swal.fire({
+                                    title: '¡Éxito!',
+                                    text: forceResult.mensaje,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Actualizar UI
+                                const block = state.indicators.find(b => b.id === espacio);
+                                if (block) {
+                                    block.estado = '#FF0000'; // Rojo = Ocupado
+                                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                    drawIndicators();
+                                }
+                            } else {
+                                // Error
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: forceResult?.mensaje || 'No se pudo realizar el cierre forzado',
+                                    icon: 'error'
+                                });
+                            }
+                        }
+                        
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    });
+                    
+                    return;
+                }
+
+                // Construir contenido del SweetAlert
+                let htmlContent = `<div class="text-left">
+                    <p class="mb-4 text-lg font-semibold text-red-600">La sala está ocupada por una reserva anterior</p>`;
+                
+                if (resultadoVerificacion.ocupante) {
+                    const ocupante = resultadoVerificacion.ocupante;
+                    const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
+                    htmlContent += `
+                        <div class="p-4 mb-4 bg-red-50 border-l-4 border-red-500 rounded">
+                            <p class="mb-2"><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
+                            <p class="mb-2"><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
+                            <p class="mb-2"><strong>Fecha:</strong> ${ocupante.fecha}</p>
+                        </div>
+                    `;
+                }
+                
+                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Si tienes una clase programada próximamente, recuerda que puedes tomar la sala hasta 15 minutos antes del inicio del módulo.</p></div>`;
+
+                // Mostrar SweetAlert
+                Swal.close();
+                Swal.fire({
+                    title: 'Sala Ocupada',
+                    html: htmlContent,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#D12420',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                // Limpiar estado después de mostrar el mensaje
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    // Restaurar autofocus del qr-input después de mostrar espacio ocupado
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 500);
+
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
+            // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
+            await continuarReserva(usuarioEscaneado, espacio);
+
+        // Limpiar buffer después de procesar espacio exitosamente
+        bufferQR = '';
+        lastBufferLength = 0;
+        const inputEscanner = document.getElementById('qr-input');
+        if (inputEscanner) {
+            inputEscanner.value = '';
+        }
+
+        // Resetear para siguiente usuario
+        setTimeout(() => {
+            limpiarEstadoLectura();
+            // Restaurar autofocus del qr-input después de procesar espacio exitosamente
+            if (qrInputManager) {
+                qrInputManager.setActiveInput('main');
+            }
+        }, 3000);
+
+        return 'procesamiento_completado';
+        }
+
+        function initElements() {
+            elements.mapCanvas = document.getElementById('mapCanvas');
+            elements.mapCtx = elements.mapCanvas.getContext('2d');
+            elements.indicatorsCanvas = document.getElementById('indicatorsCanvas');
+            elements.indicatorsCtx = elements.indicatorsCanvas.getContext('2d');
+        }
+
+        function getHoveredIndicator(mouseX, mouseY) {
+            if (!state.isImageLoaded) return null;
+
+            // Recorrer los indicadores de atrás hacia adelante (para detectar el superior)
+            for (let i = state.indicators.length - 1; i >= 0; i--) {
+                const indicator = state.indicators[i];
+                const position = calculatePosition(indicator);
+
+                // Verificar si el mouse está dentro del indicador (considerando el escalado)
+                const scale = 1.2; // Mismo factor de escala que en dibujarIndicador
+                const scaledWidth = config.indicatorWidth * scale;
+                const scaledHeight = config.indicatorHeight * scale;
+
+                if (mouseX >= position.x - scaledWidth / 2 &&
+                    mouseX <= position.x + scaledWidth / 2 &&
+                    mouseY >= position.y - scaledHeight / 2 &&
+                    mouseY <= position.y + scaledHeight / 2) {
+                    return indicator;
+                }
+            }
+            return null;
+        }
+
+        function handleMouseMove(event) {
+            const rect = elements.indicatorsCanvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            const hoveredIndicator = getHoveredIndicator(mouseX, mouseY);
+
+            // Solo redibujar si el estado de hover cambió
+            if (hoveredIndicator !== state.hoveredIndicator) {
+                state.hoveredIndicator = hoveredIndicator;
+                drawIndicators();
+
+                // Cambiar el cursor
+                elements.indicatorsCanvas.style.cursor = hoveredIndicator ? 'pointer' : 'default';
+            }
+        }
+
+        function handleMouseClick(event) {
+            const rect = elements.indicatorsCanvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+
+            const clickedIndicator = getHoveredIndicator(mouseX, mouseY);
+
+            if (clickedIndicator) {
+                mostrarModalEspacio(clickedIndicator);
+            }
+        }
+
+        function handleMouseLeave() {
+            if (state.hoveredIndicator) {
+                state.hoveredIndicator = null;
+                drawIndicators();
+                elements.indicatorsCanvas.style.cursor = 'default';
+            }
+        }
+
+        function initCanvases() {
+            const container = elements.mapCanvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Establecer dimensiones de los canvas
+            elements.mapCanvas.width = width;
+            elements.mapCanvas.height = height;
+            elements.indicatorsCanvas.width = width;
+            elements.indicatorsCanvas.height = height;
+
+            drawCanvas();
+            drawIndicators(); // Dibujar indicadores inmediatamente
+        }
+
+        function drawCanvas() {
+            elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
+            if (!state.mapImage) return;
+
+            // Calcular proporciones para mantener el aspect ratio
+            const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
+            const imageRatio = state.mapImage.width / state.mapImage.height;
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (imageRatio > canvasRatio) {
+                // La imagen es más ancha que el canvas
+                drawWidth = elements.mapCanvas.width;
+                drawHeight = elements.mapCanvas.width / imageRatio;
+                offsetX = 0;
+                offsetY = (elements.mapCanvas.height - drawHeight) / 2;
+            } else {
+                // La imagen es más alta que el canvas
+                drawHeight = elements.mapCanvas.height;
+                drawWidth = elements.mapCanvas.height * imageRatio;
+                offsetX = (elements.mapCanvas.width - drawWidth) / 2;
+                offsetY = 0;
+            }
+
+            elements.mapCtx.drawImage(state.mapImage, offsetX, offsetY, drawWidth, drawHeight);
+        }
+
+        function calculatePosition(indicator) {
+            if (!state.isImageLoaded || !state.mapImage) return {
+                x: 0,
+                y: 0
+            };
+
+            // Calcular proporciones del canvas
+            const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
+            const imageRatio = state.mapImage.width / state.mapImage.height;
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (imageRatio > canvasRatio) {
+                drawWidth = elements.mapCanvas.width;
+                drawHeight = elements.mapCanvas.width / imageRatio;
+                offsetX = 0;
+                offsetY = (elements.mapCanvas.height - drawHeight) / 2;
+            } else {
+                drawHeight = elements.mapCanvas.height;
+                drawWidth = elements.mapCanvas.height * imageRatio;
+                offsetX = (elements.mapCanvas.width - drawWidth) / 2;
+                offsetY = 0;
+            }
+
+            // Buscar las coordenadas originales del indicador
+            const originalIndicator = state.originalCoordinates.find(i => i.id === indicator.id);
+            if (!originalIndicator) return {
+                x: 0,
+                y: 0
+            };
+
+            // Calcular la posición escalada
+            const x = offsetX + (originalIndicator.x / state.originalImageSize.width) * drawWidth;
+            const y = offsetY + (originalIndicator.y / state.originalImageSize.height) * drawHeight;
+
+            return {
+                x,
+                y
+            };
+        }
+
+        function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
+            moduloActual) {
+            // Calcular el factor de escala para el efecto hover
+            const scale = isHovered ? 1.15 : 1.0;
+            const scaledWidth = finalWidth * scale;
+            const scaledHeight = finalHeight * scale;
+
+            // Calcular la posición para que el escalado sea desde el centro
+            const drawX = position.x - scaledWidth / 2;
+            const drawY = position.y - scaledHeight / 2;
+            const radius = 8;
+
+            // 1. Dibujar Sombra (Efecto Elevación)
+            elements.indicatorsCtx.save();
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            elements.indicatorsCtx.shadowBlur = isHovered ? 15 : 8;
+            elements.indicatorsCtx.shadowOffsetX = 0;
+            elements.indicatorsCtx.shadowOffsetY = 4;
+
+            // 2. Dibujar el rectángulo con bordes redondeados
+            elements.indicatorsCtx.beginPath();
+            elements.indicatorsCtx.roundRect(drawX, drawY, scaledWidth, scaledHeight, radius);
+            
+            // 3. Crear Gradiente Premium
+            const gradient = elements.indicatorsCtx.createLinearGradient(drawX, drawY, drawX, drawY + scaledHeight);
+            
+            // Función para aclarar color (ajustar brillo)
+            const lightenColor = (col, amt) => {
+                let usePound = false;
+                if (col[0] == "#") { col = col.slice(1); usePound = true; }
+                let num = parseInt(col, 16);
+                let r = (num >> 16) + amt;
+                if (r > 255) r = 255; else if (r < 0) r = 0;
+                let b = ((num >> 8) & 0x00FF) + amt;
+                if (b > 255) b = 255; else if (b < 0) b = 0;
+                let g = (num & 0x0000FF) + amt;
+                if (g > 255) g = 255; else if (g < 0) g = 0;
+                return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+            };
+
+            gradient.addColorStop(0, lightenColor(color, 30));
+            gradient.addColorStop(1, color);
+            
+            elements.indicatorsCtx.fillStyle = gradient;
+            elements.indicatorsCtx.fill();
+            elements.indicatorsCtx.restore();
+
+            // 4. Dibujar el texto del indicador (Sin borde blanco por solicitud)
+            elements.indicatorsCtx.font = `bold ${config.fontSize}px 'Inter', system-ui, sans-serif`;
+            elements.indicatorsCtx.fillStyle = '#FFFFFF';
+            elements.indicatorsCtx.textAlign = 'center';
+            elements.indicatorsCtx.textBaseline = 'middle';
+            
+            // Sombra de texto para legibilidad
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            elements.indicatorsCtx.shadowBlur = 4;
+            elements.indicatorsCtx.shadowOffsetX = 1;
+            elements.indicatorsCtx.shadowOffsetY = 1;
+
+            let lines = id.includes('-') ? id.split('-') : [id];
+            const lineHeight = config.fontSize + 2;
+            const totalTextHeight = lines.length * lineHeight;
+            const startY = position.y - (totalTextHeight / 2) + (lineHeight / 2);
+
+            lines.forEach((line, index) => {
+                const y = startY + (index * lineHeight);
+                elements.indicatorsCtx.fillText(line, position.x, y);
+            });
+        }
+
+        function drawIndicators() {
+            if (!state.isImageLoaded || !elements.indicatorsCanvas) {
+                return;
+            }
+
+            const ctx = elements.indicatorsCanvas.getContext('2d');
+            ctx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
+
+            state.indicators.forEach((indicator, index) => {
+                const position = calculatePosition(indicator);
+
+                const size = config.indicatorSize;
+
+                // Determinar color basado en el estado
+                let color = indicator.estado;
+
+                // Normalizar estado para comparación robusta (quitar acentos y pasar a minúsculas)
+                const estadoLower = indicator.estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                if (estadoLower === 'mantencion' || estadoLower === 'mantenimiento') {
+                    color = '#6b7280'; // Gris más intenso - Mantenimiento
+                } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
+                    color = '#10b981'; // Verde vivo - Disponible
+                } else if (estadoLower === 'ocupado' || estadoLower === 'reserva espontanea') {
+                    color = '#ef233c'; // Rojo más intenso - Ocupado / Espontánea
+                } else if (estadoLower === 'programado' || estadoLower === 'reservado') {
+                    color = '#f59e0b'; // Ámbar más intenso - Programado / Reservado
+                } else if (estadoLower === 'clase registrada') {
+                    color = '#dc2626'; // Rojo fuerte - Clase Registrada
+                } else if (estadoLower === 'clase programada') {
+                    color = '#fbbf24'; // Ámbar brillante - Clase Programada
+                } else if (estadoLower === 'proximo') {
+                    color = '#3b82f6'; // Azul más vivo - Próximo
+                } else if (estadoLower === 'clasesinasistentes' || estadoLower === 'clase no registrada') {
+                    color = '#4b5563'; // Gris oscuro - Clase no registrada
+                } else {
+                    color = '#34d399'; // Verde más intenso por defecto
+                }
+
+                // Verificar si este indicador está siendo hover
+                const isHovered = state.hoveredIndicator && state.hoveredIndicator.id === indicator.id;
+
+                // Usar la función dibujarIndicador existente
+                dibujarIndicador(
+                    elements,
+                    position,
+                    size,
+                    size,
+                    color,
+                    indicator.id,
+                    isHovered,
+                    indicator.detalles || {},
+                    null
+                );
+            });
+        }
+
+        async function mostrarModalEspacio(indicator) {
+            console.log('🔍 DEBUG - mostrarModalEspacio llamada para:', indicator.id);
+            console.log('🔍 Estado del indicator:', indicator.estado);
+            console.log('🔍 Indicator completo:', indicator);
+
+            // Verificar si está en mantención
+            const estadoLower = (indicator.estado || '').toLowerCase();
+            if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
+                console.log('⚠️ El espacio está en mantención - Mostrando modal de advertencia');
+                mostrarModalMantención(indicator);
+                return;
+            }
+
+            // Verificar si es una Sala de Estudio
+            if (indicator.tipo && (indicator.tipo.toLowerCase() === 'sala de estudio' || indicator.tipo.toLowerCase() === 'sala estudio')) {
+                console.log('📚 Es una Sala de Estudio - Abriendo modal especial');
+                mostrarModalSalaEstudio(indicator);
+                return;
+            }
+
+                    // Mostrar el modal inmediatamente
+        const modal = document.getElementById('modal-espacio-info');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Desactivar todos los inputs QR cuando se abre el modal
+            qrInputManager.desactivarTodosLosInputs();
+            
+            // Bloquear completamente los clics en el input QR para que no interfiera con el modal
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.style.pointerEvents = 'none';
+                qrInput.blur(); // Remover el focus del input
+                console.log('🔒 Input QR bloqueado - pointer-events: none');
+            }
+            
+            console.log('✅ Modal mostrado correctamente');
+        } else {
+            console.error('❌ No se encontró el modal de espacio');
+            return;
+        }
+
+                // Guardar indicador actual en estado para usos posteriores
+                state.currentIndicatorId = indicator.id;
+
+            // Obtener elementos del modal una sola vez
+            const elements = {
+                modalTitulo: document.getElementById('modalTitulo'),
+                modalSubtitulo: document.getElementById('modalSubtitulo'),
+                modalEstado: document.getElementById('modalEstado'),
+                estadoDetalles: document.getElementById('estadoDetalles'),
+                ocupanteContainer: document.getElementById('ocupanteContainer'),
+                ocupanteInfo: document.getElementById('ocupanteInfo'),
+                claseActualContainer: document.getElementById('claseActualContainer'),
+                claseActualInfo: document.getElementById('claseActualInfo'),
+                proximaClaseContainer: document.getElementById('proximaClaseContainer'),
+                proximaClaseInfo: document.getElementById('proximaClaseInfo'),
+                pasoClasesContainer: document.getElementById('pasoClasesContainer'),
+                pasoClaseAnterior: document.getElementById('pasoClaseAnterior'),
+                pasoEstadoActual: document.getElementById('pasoEstadoActual'),
+                pasoClaseProxima: document.getElementById('pasoClaseProxima'),
+                pasoAhoraIcono: document.getElementById('pasoAhoraIcono'),
+                pasoAhoraEtiqueta: document.getElementById('pasoAhoraEtiqueta'),
+                tipoEspacio: document.getElementById('tipoEspacio'),
+                capacidadEspacio: document.getElementById('capacidadEspacio'),
+                pisoEspacio: document.getElementById('pisoEspacio'),
+                ultimaActualizacion: document.getElementById('ultimaActualizacion'),
+                estadoPill: document.getElementById('estadoPill'),
+                estadoIcon: document.getElementById('estadoIcon')
+            };
+
+            // Configurar información básica del modal inmediatamente (sin esperar)
+            configurarInformacionBasica(elements, indicator);
+
+            // Configurar estado inmediatamente
+            configurarEstado(elements, indicator);
+
+                    // Mostrar loading optimizado
+        mostrarLoadingOptimizado(elements);
+
+        // Cargar información detallada en paralelo con timeout optimizado
+        const dataPromise = cargarInformacionDetallada(indicator.id);
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout')), 5000) // Reducido a 5 segundos
+        );
+
+        try {
+            const data = await Promise.race([dataPromise, timeoutPromise]);
+            console.log('🔍 DEBUG - Datos recibidos de la API:', data);
+
+            if (data.success) {
+                console.log('✅ API respondió correctamente, llamando renderizarInformacionOcupante');
+                // Renderizar información optimizada, pasando también el estado del indicator
+                renderizarInformacionOcupante(elements, data, indicator);
+            } else {
+                console.error('❌ API respondió con error:', data);
+                mostrarErrorCarga(elements, 'Sin información asociada');
+            }
+        } catch (error) {
+            console.error('❌ Error al cargar información:', error);
+            // Error al cargar información
+            mostrarErrorCarga(elements, 'Sin información asociada');
+        }
+        }
+
+        // Función para configurar información básica
+        function configurarInformacionBasica(elements, indicator) {
+            if (elements.modalTitulo) {
+                elements.modalTitulo.textContent = `${indicator.nombre} (${indicator.id})`;
+            }
+
+            if (elements.modalSubtitulo) {
+                elements.modalSubtitulo.textContent = `${indicator.tipo || 'Espacio'}`;
+            }
+
+            if (elements.tipoEspacio) {
+                elements.tipoEspacio.textContent = indicator.tipo || 'No especificado';
+            }
+            if (elements.capacidadEspacio) {
+                elements.capacidadEspacio.textContent = indicator.capacidad || 'No especificada';
+            }
+            if (elements.pisoEspacio) {
+                elements.pisoEspacio.textContent = indicator.piso || 'No especificado';
+            }
+            if (elements.ultimaActualizacion) {
+                elements.ultimaActualizacion.textContent = new Date().toLocaleString('es-CL');
+            }
+        }
+
+        // Función para configurar estado
+        function configurarEstado(elements, indicator) {
+            const estadoReal = indicator.estado;
+            // Estado real del espacio
+
+            const estadoConfig = {
+                'disponible': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'Disponible': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'libre': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                '#059669': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                '#10b981': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'ocupado': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Ocupado': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#FF0000': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#ef4444': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#dc2626': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'reserva espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Reserva Espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                'Reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                '#FFA500': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                '#F59E0B': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                'proximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'Proximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'mantención': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'Mantención': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'Mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                '#6B7280': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'ClaseSinAsistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'clasesinasistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                'Programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                '#818CF8': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' }
+            };
+
+            const config = estadoConfig[estadoReal] || {
+                texto: 'Sin estado',
+                pill: 'border-2 border-gray-400 bg-gray-100 text-gray-700',
+                icon: 'bg-gray-400'
+            };
+
+            if (elements.estadoPill) {
+                elements.estadoPill.className = `inline-flex items-center px-4 py-2 text-sm font-bold rounded-full ${config.pill}`;
+            }
+
+            if (elements.estadoIcon) {
+                elements.estadoIcon.className = `w-3 h-3 mr-2 rounded-full ${config.icon}`;
+            }
+
+            if (elements.modalEstado) {
+                elements.modalEstado.textContent = config.texto;
+            }
+        }
+
+        // Función para mostrar loading optimizado
+        function mostrarLoadingOptimizado(elements) {
+            // NO mostrar contenedores antiguos - solo mostrar cronología con loading
+            if (elements.pasoClasesContainer) {
+                elements.pasoClasesContainer.style.display = 'block';
+                // Mostrar un placeholder de carga
+                if (elements.pasoClaseAnterior) {
+                    elements.pasoClaseAnterior.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
+                }
+                if (elements.pasoEstadoActual) {
+                    elements.pasoEstadoActual.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
+                }
+                if (elements.pasoClaseProxima) {
+                    elements.pasoClaseProxima.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
+                }
+            }
+        }
+
+        // Función para cargar información detallada con cache optimizado para solicitantes
+        async function cargarInformacionDetallada(espacioId) {
+                    // Cache específico para espacios con solicitantes
+        const cacheKey = `espacio_${espacioId}`;
+        const solicitanteCacheKey = `solicitante_espacio_${espacioId}`;
+
+        const cached = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+        const solicitanteCached = sessionStorage.getItem(solicitanteCacheKey);
+        const solicitanteCacheTime = sessionStorage.getItem(`${solicitanteCacheKey}_time`);
+
+        // Cache válido por 30 segundos para espacios normales
+        if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
+            return JSON.parse(cached);
+        }
+
+        // Cache específico para solicitantes (válido por 5 minutos)
+        if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
+            return JSON.parse(solicitanteCached);
+        }
+
+        try {
+            const espacioIdEncoded = encodeURIComponent(String(espacioId));
+            const detalleUrl = `/api/espacio/${espacioIdEncoded}/informacion-detallada`;
+
+            const response = await fetch(detalleUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            if (!response.ok) {
+                console.error('❌ Error HTTP al cargar detalle del espacio:', {
+                    espacioId,
+                    detalleUrl,
+                    status: response.status,
+                    statusText: response.statusText
+                });
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('📦 Datos recibidos del servidor:', data);
+
+            // Guardar en cache según el tipo de ocupación
+            if (data.success && data.tipo_ocupacion === 'solicitante') {
+                // Cache específico para solicitantes (5 minutos)
+                sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
+            } else {
+                // Cache normal para otros tipos (30 segundos)
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+            }
+
+            return data;
+        } catch (error) {
+            console.error('❌ Error en fetch de detalle del espacio:', {
+                espacioId,
+                error: error?.message || error
+            });
+            throw error;
+        }
+        }
+
+        // Función para mostrar error de carga
+        function mostrarErrorCarga(elements, mensaje) {
+            if (elements.ocupanteInfo) {
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="flex items-center justify-center py-4">
+                        <i class="mr-2 text-gray-400 fas fa-info-circle"></i>
+                        <span class="text-sm text-gray-600">${mensaje}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para renderizar información del ocupante optimizada
+        function renderizarInformacionOcupante(elements, data, indicator) {
+            // Debug: Log de los datos recibidos
+            console.log('🔍 DEBUG - renderizarInformacionOcupante llamada');
+            console.log('🔍 Estado del indicator:', indicator?.estado);
+            console.log('🔍 Datos recibidos:', data);
+            console.log('🔍 Tipo de ocupación:', data.tipo_ocupacion);
+
+            // Verificar si el espacio está disponible PRIMERO, sin importar el tipo_ocupacion
+            const espacioDisponible = indicator && (
+                indicator.estado === 'Disponible' ||
+                indicator.estado === 'disponible' ||
+                indicator.estado === '#059669' ||
+                indicator.estado === '#10b981'
+            );
+
+            console.log('🔍 ¿Espacio disponible?:', espacioDisponible);
+
+            // Si el espacio está disponible, forzar renderizado como libre
+            if (espacioDisponible) {
+                console.log('🟢 Espacio disponible - Forzando renderizado libre');
+                renderizarInformacionLibre(elements, data, indicator);
+                return;
+            }
+
+            // Solo si el espacio NO está disponible, mostrar según tipo de ocupación
+            console.log('🔴 Espacio no disponible - Renderizando según tipo');
+
+            // SOLO mostrar botón desocupar si el estado es EXACTAMENTE "Ocupado"
+            const espacioOcupado = indicator && (
+                indicator.estado === 'Ocupado' || 
+                indicator.estado === 'ocupado' ||
+                indicator.estado === '#ef4444' ||
+                indicator.estado === '#dc2626'
+            );
+            
+            // Controlar visibilidad del footer con el botón Desocupar
+            const modalFooter = document.getElementById('modal-footer-actions');
+            
+            console.log('🔍 ¿Espacio realmente ocupado?:', espacioOcupado);
+            
+            if (modalFooter) {
+                if (espacioOcupado) {
+                    modalFooter.classList.remove('hidden');
+                    console.log('🔧 Footer del modal MOSTRADO - Espacio Ocupado');
+                } else {
+                    modalFooter.classList.add('hidden');
+                    console.log('🔧 Footer del modal OCULTO - Espacio NO es Ocupado');
+                }
+            }
+
+            // Asegurar que tengamos un RUN para el botón desocupar
+            let runParaDesocupar = data.run_profesor || data.run_solicitante;
+            
+            // Si no tenemos RUN específico, usar el ID del espacio para desocupación forzosa
+            if (!runParaDesocupar && indicator?.id) {
+                runParaDesocupar = `FORCE_${indicator.id}`;
+                console.log('⚠️ Usando desocupación forzosa para espacio:', indicator.id);
+            }
+
+            console.log('🔍 RUN para desocupar:', runParaDesocupar);
+
+            // Guardar en el state como fuente de verdad principal
+            state.currentOccupantRun = runParaDesocupar || null;
+
+            // Mostrar vista de pasos (SIEMPRE)
+            mostrarVistaPasos(elements, data, indicator);
+
+            // Mostrar información según el tipo de ocupación
+            if (data.tipo_ocupacion === 'profesor') {
+                console.log('📚 Renderizando como profesor');
+                renderizarInformacionProfesor(elements, data, indicator);
+            } else if (data.tipo_ocupacion === 'solicitante') {
+                console.log('👤 Renderizando como solicitante');
+                renderizarInformacionSolicitante(elements, data, indicator);
+            } else if (data.tipo_ocupacion === 'ocupado_sin_info') {
+                console.log('❓ Renderizando como ocupado sin info');
+                renderizarInformacionOcupadoSinInfo(elements, data, indicator);
+            } else {
+                console.log('🆓 Renderizando como libre');
+                renderizarInformacionLibre(elements, data, indicator);
+            }
+        }
+
+        // Handler para los botones Desocupar usando delegación de eventos
+        // Registrar el listener FUERA de DOMContentLoaded para que esté disponible siempre
+        document.addEventListener('click', async function (event) {
+            if (!event.target.matches('.btn-desocupar')) return;
+            
+            const espacioId = state.currentIndicatorId || null;
+            const tipoDesocupacion = event.target.dataset.tipo || 'espacio';
+
+            if (!espacioId) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se encontró el ID del espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Mostrar spinner (máximo 5 segundos, pero desaparece cuando llega la respuesta)
+            Swal.fire({
+                title: 'Desocupando espacio...',
+                html: '<div class="flex justify-center items-center"><svg class="animate-spin h-12 w-12 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                timer: 5000,
+                customClass: {
+                    container: 'swal-high-z-index'
+                },
+                didOpen: () => {
+                    Swal.showLoading();
+                    // Asegurar que el spinner tenga z-index muy alto
+                    const swalContainer = document.querySelector('.swal2-container');
+                    if (swalContainer) {
+                        swalContainer.style.zIndex = '99999';
+                    }
+                }
+            });
+
+            try {
+                // PASO 1: Obtener la información actual del espacio desde el SERVIDOR
+                // Esto asegura que funcione correctamente incluso si la reserva fue creada en otra máquina
+                const resInfo = await fetch('/api/obtener-info-espacio-desocupar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_espacio: espacioId
+                    })
+                });
+
+                const infoData = await resInfo.json();
+
+                if (!infoData.success || !infoData.data) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: infoData.mensaje || 'No se pudo obtener la información del ocupante',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
+
+                // Obtener el RUN del servidor
+                const runOcupante = infoData.data.run_usuario;
+
+                if (!runOcupante) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se encontró el RUN del ocupante en el servidor',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
+
+                // Obtener información del usuario autenticado (administrador)
+                const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
+
+                // PASO 2: Desocupar usando el RUN obtenido del servidor
+                const res = await fetch('/api/devolver-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runOcupante,
+                        run_administrador: administradorRun,
+                        id_espacio: espacioId,
+                        tipo_desocupacion: 'forzosa'
+                    })
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    Swal.fire({
+                        title: 'Espacio desocupado',
+                        text: json.mensaje || 'Espacio desocupado correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        timer: 1500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+
+                    // Invalidar cache local
+                    sessionStorage.removeItem(`espacio_${espacioId}`);
+                    sessionStorage.removeItem(`espacio_${espacioId}_time`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}_time`);
+
+                    // Cerrar modal primero
+                    cerrarModalEspacio();
+
+                    // Forzar actualización inmediata del estado del espacio
+                    const indicatorActual = state.indicators.find(b => b.id === espacioId);
+                    if (indicatorActual) {
+                        indicatorActual.estado = 'libre';
+                        indicatorActual.color = '#10b981'; // Verde para libre
+                    }
+
+                    // Resetear el RUN del ocupante en state
+                    state.currentOccupantRun = null;
+
+                    // Resetear el timestamp para permitir actualización inmediata
+                    state.ultimoCambioLocal = 0;
+
+                    // Actualizar colores del mapa con actualización forzada
+                    await actualizarColoresEspacios(true);
+
+                    // Redibujar los indicadores inmediatamente
+                    drawIndicators();
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: json.mensaje || 'No se pudo desocupar el espacio',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al desocupar el espacio: ' + e.message,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        });
+
+        // Función para mostrar la vista de pasos
+        function mostrarVistaPasos(elements, data, indicator) {
+            if (!elements.pasoClasesContainer) return;
+            
+            console.log('📊 mostrarVistaPasos - Datos recibidos:', data);
+            console.log('📊 Indicator:', indicator);
+            
+            // MOSTRAR la cronología
+            elements.pasoClasesContainer.style.display = 'block';
+            
+            // OCULTAR los contenedores antiguos
+            // Para solicitantes, MOSTRAR el contenedor de ocupante con su info detallada
+            if (elements.ocupanteContainer) {
+                if (data.tipo_ocupacion === 'solicitante') {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+            }
+            if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
+            if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
+            
+            // Determinar si hay una reserva pendiente verificando la HORA
+            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 15 minutos
+            let tieneReservaPendiente = false;
+            let reservaEstaAhora = false;
+            
+            if (data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura) {
+                tieneReservaPendiente = true;
+                
+                // Verificar si la próxima clase está en los próximos 15 minutos
+                if (data.proxima_clase.hora_inicio) {
+                    const ahora = new Date();
+                    const horaActual = ahora.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    // Convertir a minutos para comparación
+                    const [horaAct, minAct, segAct] = horaActual.split(':').map(Number);
+                    const [horaProx, minProx, segProx] = data.proxima_clase.hora_inicio.split(':').map(Number);
+                    
+                    const minutoActual = horaAct * 60 + minAct;
+                    const minutoProximo = horaProx * 60 + minProx;
+                    const diferencia = minutoProximo - minutoActual;
+                    
+                    // La clase está "AHORA" si comienza en los próximos 15 minutos 
+                    // O si ya debería haber comenzado (hasta 90 minutos de margen para cubrir el módulo)
+                    reservaEstaAhora = diferencia <= 15 && diferencia > -90;
+                    
+                    console.log('⏰ Análisis de hora:', {
+                        hora_actual: horaActual,
+                        hora_proxima: data.proxima_clase.hora_inicio,
+                        minutos_diferencia: diferencia,
+                        esta_ahora: reservaEstaAhora
+                    });
+                }
+            }
+            
+            console.log('🟡 ¿Tiene reserva pendiente?:', tieneReservaPendiente, {
+                proxima_clase: data.proxima_clase?.asignatura,
+                asignatura_actual: data.asignatura,
+                esta_en_ahora: reservaEstaAhora
+            });
+            
+            // Actualizar icono y etiqueta del paso "Ahora" según estado
+            if (elements.pasoAhoraIcono) {
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    // Amarillo para reserva pendiente que ESTÁ AHORA (próximos 10 min)
+                    elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-yellow-500 rounded-full';
+                    console.log('🟡 Icono "Ahora" cambiado a AMARILLO - Reserva pendiente EN AHORA (próximos 10 min)');
+                } else {
+                    // Azul por defecto
+                    elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full';
+                    console.log('🔵 Icono "Ahora" mantenido en AZUL - Sin reserva en los próximos 10 minutos');
+                }
+            }
+            
+            if (elements.pasoAhoraEtiqueta) {
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-yellow-600 uppercase mb-3';
+                } else {
+                    elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-blue-600 uppercase mb-3';
+                }
+            }
+            
+            // Clase Anterior
+            if (elements.pasoClaseAnterior) {
+                const anterior = data.clase_anterior;
+                console.log('📊 Clase anterior:', anterior);
+                if (anterior && anterior.asignatura) {
+                    const horarioAnterior = anterior.hora_inicio && anterior.hora_termino ? 
+                        `${anterior.hora_inicio.substring(0, 5)} - ${anterior.hora_termino.substring(0, 5)}` : 
+                        (anterior.hora_inicio ? anterior.hora_inicio.substring(0, 5) : '');
+                    elements.pasoClaseAnterior.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-gray-800 mb-1">${anterior.asignatura}</div>
+                            ${anterior.profesor ? `<div class="text-xs text-gray-600 mb-1">${anterior.profesor}</div>` : ''}
+                            ${horarioAnterior ? `<div class="text-xs text-gray-500">${horarioAnterior}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    elements.pasoClaseAnterior.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+            
+            // Estado Actual (Ahora)
+            if (elements.pasoEstadoActual) {
+                console.log('📊 Estado actual - asignatura:', data.asignatura, 'nombre:', data.nombre);
+                
+                // Actualizar clases del contenedor según estado
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-yellow-50 border border-yellow-200 rounded-lg min-h-[80px] flex items-center justify-center';
+                } else {
+                    elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center';
+                }
+                
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    // Mostrar mensaje de reserva pendiente que ESTÁ AHORA
+                    const proxima = data.proxima_clase;
+                    const horarioInicio = proxima.hora_inicio && proxima.hora_termino ? 
+                        `${proxima.hora_inicio.substring(0, 5)} - ${proxima.hora_termino.substring(0, 5)}` : 
+                        (proxima.hora_inicio ? proxima.hora_inicio.substring(0, 5) : '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-yellow-700 mb-2">Aún no inicia la clase</div>
+                            <div class="text-xs text-gray-600 mb-1">${proxima.asignatura}</div>
+                            ${proxima.profesor ? `<div class="text-xs text-gray-500 mb-1">${proxima.profesor}</div>` : ''}
+                            ${horarioInicio ? `<div class="text-xs text-yellow-600">${horarioInicio}</div>` : ''}
+                        </div>
+                    `;
+                } else if (data.tipo_reserva === 'espontanea') {
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Reserva espontánea'}</div>
+                            <div class="text-xs text-gray-500 mb-1">Reserva espontánea</div>
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
+                } else if (data.asignatura) {
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.asignatura}</div>
+                            ${data.nombre ? `<div class="text-xs text-gray-700 mb-1">${data.nombre}</div>` : ''}
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
+                } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada')) {
+                    // Solicitante (persona externa, no profesor)
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Solicitante'}</div>
+                            <div class="text-xs text-gray-500">${data.tipo_solicitante || 'Solicitante externo'}</div>
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
+                } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada') && data.nombre) {
+                    // Espacio ocupado sin asignatura → reserva espontánea o uso libre (profesor)
+                    let etiqueta = 'En uso';
+                    if (data.tipo_reserva === 'espontanea') etiqueta = 'Reserva espontánea';
+                    if (data.tipo_reserva === 'clase_regular') etiqueta = 'Clase programada';
+                    if (data.tipo_reserva === 'clase_colaborador') etiqueta = 'Clase temporal';
+                    if (data.tipo_reserva === 'programada') etiqueta = 'Reserva programada';
+                    if (data.tipo_reserva === 'programada_docente') etiqueta = 'Clase programada';
+                    if (data.tipo_reserva === 'recuperacion') etiqueta = 'Clase reagendada';
+
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
+                            <div class="text-xs text-gray-500">${etiqueta}</div>
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    elements.pasoEstadoActual.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+            
+            // Próxima Clase
+            if (elements.pasoClaseProxima) {
+                const proxima = data.proxima_clase;
+                console.log('📊 Próxima clase:', proxima, 'reservaEstaAhora:', reservaEstaAhora);
+                
+                // Mostrar próxima clase solo si:
+                // 1. Existe próxima clase Y
+                // 2. NO está siendo mostrada en "Ahora" (es decir, NO está en próximos 10 min) O no hay reserva pendiente
+                if (proxima && proxima.asignatura && (!tieneReservaPendiente || !reservaEstaAhora)) {
+                    const horarioProxima = proxima.hora_inicio && proxima.hora_termino ? 
+                        `${proxima.hora_inicio.substring(0, 5)} - ${proxima.hora_termino.substring(0, 5)}` : 
+                        (proxima.hora_inicio ? proxima.hora_inicio.substring(0, 5) : '');
+                    elements.pasoClaseProxima.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-gray-800 mb-1">${proxima.asignatura}</div>
+                            ${proxima.profesor ? `<div class="text-xs text-gray-600 mb-1">${proxima.profesor}</div>` : ''}
+                            ${horarioProxima ? `<div class="text-xs text-gray-500">${horarioProxima}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    elements.pasoClaseProxima.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+        }
+
+        // Función para renderizar información de profesor
+        function renderizarInformacionProfesor(elements, data, indicator) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según existencia de próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_profesor || null;
+
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
+
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-blue-500 fas fa-user-tie"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Profesor</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-green-500 fas fa-book"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'Sin asignatura'}</div>
+                                <div class="text-sm text-gray-600">Asignatura</div>
+                            </div>
+                        </div>
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-orange-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                <div class="text-sm text-gray-600">Hora inicio</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-red-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                <div class="text-sm text-gray-600">Hora salida</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Mostrar información de la clase actual
+            if (elements.claseActualContainer && elements.claseActualInfo) {
+                // NO mostrar - ahora se usa la cronología
+                // elements.claseActualContainer.style.display = 'block';
+                elements.claseActualInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-blue-500 fas fa-chalkboard"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'Sin asignatura'}</div>
+                                <div class="text-sm text-gray-600">Asignatura actual</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-green-500 fas fa-user-tie"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Profesor a cargo</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Mostrar próxima clase si existe
+            if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                // NO mostrar - ahora se usa la cronología
+                // elements.proximaClaseContainer.style.display = 'block';
+                elements.proximaClaseInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-purple-500 fas fa-calendar"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
+                                <div class="text-sm text-gray-600">Próxima asignatura</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Próximo profesor</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
+        }
+
+        // Función para renderizar información de solicitante optimizada
+        function renderizarInformacionSolicitante(elements, data, indicator) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título si no hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_solicitante || null;
+
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // Crear HTML optimizado usando template literal
+                const html = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-green-500 fas fa-user"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Solicitante</div>
+                                <div class="text-sm text-gray-600">${data.nombre || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-orange-500 fas fa-envelope"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Correo</div>
+                                <div class="text-sm text-gray-600">${data.correo || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-red-500 fas fa-phone"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Teléfono</div>
+                                <div class="text-sm text-gray-600">${data.telefono || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-purple-500 fas fa-tag"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Tipo solicitante</div>
+                                <div class="text-sm text-gray-600">${data.tipo_solicitante || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        ${data.activo !== undefined ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-3 ${data.activo ? 'text-green-500' : 'text-red-500'}"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Estado</div>
+                                <div class="text-sm text-gray-600">${data.activo ? 'Activo' : 'Inactivo'}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.fecha_registro ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-indigo-500 fas fa-calendar"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Fecha registro</div>
+                                <div class="text-sm text-gray-600">${new Date(data.fecha_registro).toLocaleDateString('es-CL')}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                // Aplicar HTML de una sola vez
+                elements.ocupanteInfo.innerHTML = html;
+
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
+            }
+
+            // Ocultar secciones de planificación para solicitantes
+            if (elements.proximaClaseContainer) {
+                elements.proximaClaseContainer.style.display = 'none';
+            }
+            if (elements.claseActualContainer) {
+                elements.claseActualContainer.style.display = 'none';
+            }
+
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
+        }
+
+        // Función para renderizar información ocupado sin info
+        function renderizarInformacionOcupadoSinInfo(elements, data, indicator) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según si hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_profesor || data.run_solicitante || null;
+
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
+
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-user"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Ocupante</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-info-circle"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.tipo_reserva || 'Ocupado'}</div>
+                                <div class="text-sm text-gray-600">Tipo</div>
+                            </div>
+                        </div>
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                <div class="text-sm text-gray-600">Hora inicio</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                <div class="text-sm text-gray-600">Hora salida</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.detalles ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-info"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.detalles}</div>
+                                <div class="text-sm text-gray-600">Detalles</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Ocultar secciones de planificación
+            if (elements.proximaClaseContainer) {
+                elements.proximaClaseContainer.style.display = 'none';
+            }
+
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
+        }
+
+        // Función para renderizar información libre
+        function renderizarInformacionLibre(elements, data, indicator) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+
+            // PRIMERO: Mostrar la cronología (SIEMPRE se debe mostrar)
+            console.log('📊 Espacio disponible - Mostrando cronología');
+            mostrarVistaPasos(elements, data, indicator);
+
+            // Determinar si el espacio está realmente disponible según el indicator
+            const espacioDisponible = indicator && (
+                indicator.estado === 'Disponible' ||
+                indicator.estado === 'disponible' ||
+                indicator.estado === '#059669' ||
+                indicator.estado === '#10b981'
+            );
+
+            console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
+
+            // NUNCA mostrar botón desocupar para espacios no ocupados
+            // SOLO mostrar si el estado es EXACTAMENTE "Ocupado"
+            const espacioOcupado = indicator && (
+                indicator.estado === 'Ocupado' || 
+                indicator.estado === 'ocupado' ||
+                indicator.estado === '#ef4444' ||
+                indicator.estado === '#dc2626'
+            );
+            
+            const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
+            btnsDesocupar.forEach(btn => {
+                if (espacioOcupado) {
+                    btn.classList.remove('hidden');
+                    console.log('🔧 Botón desocupar visible - Espacio Ocupado');
+                } else {
+                    btn.classList.add('hidden');
+                    console.log('🔧 Botón desocupar oculto - Espacio NO es Ocupado (estado: ' + indicator?.estado + ')');
+                }
+            });
+
+            // Si el espacio está ocupado, manejar RUN para desocupación
+            if (espacioOcupado) {
+                const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
+                state.currentOccupantRun = runValue;
+                console.log('🔍 RUN para desocupación configurado:', runValue);
+                
+                // Mostrar información del último ocupante
+                if (tituloEl) tituloEl.textContent = 'Último Ocupante';
+                
+                // Mostrar información del ocupante si está ocupado
+                if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.ocupanteContainer.style.display = 'block';
+                    const infoHtml = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-orange-500 fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">Estado inconsistente</div>
+                                    <div class="text-sm text-gray-600">El espacio requiere desocupación manual</div>
+                                </div>
+                            </div>
+                            ${data.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Última hora de inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    elements.ocupanteInfo.innerHTML = infoHtml;
+                }
+                
+                // Ocultar próxima clase en este caso especial
+                if (elements.proximaClaseContainer) {
+                    elements.proximaClaseContainer.style.display = 'none';
+                }
+                
+                // Retornar aquí para evitar que el código posterior oculte el botón
+                return;
+            } else {
+                // Si el espacio está disponible, asegurar que no hay RUN y el título es correcto
+                if (tituloEl) tituloEl.textContent = 'Estado del Espacio';
+            }
+
+            // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
+            if (espacioDisponible) {
+                console.log('🟢 Espacio disponible - Ocultando ocupante, mostrando próxima clase');
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+
+                // Ocultar completamente el contenedor de ocupante
+                if (elements.ocupanteContainer) {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+
+                // Ocultar botón desocupar
+                const btnsDesocupar2 = document.querySelectorAll('.btn-desocupar');
+                btnsDesocupar2.forEach(btn => btn.classList.add('hidden'));
+
+                // SIEMPRE intentar mostrar próxima clase/reserva si existe
+                if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                    console.log('📅 Mostrando próxima clase:', data.proxima_clase);
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.proximaClaseContainer.style.display = 'block';
+                    elements.proximaClaseInfo.innerHTML = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-purple-500 fas fa-calendar"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
+                                    <div class="text-sm text-gray-600">Próxima asignatura</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                    <div class="text-sm text-gray-600">Próximo profesor</div>
+                                </div>
+                            </div>
+                            ${data.proxima_clase.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-green-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Hora de inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.proxima_clase.modulo ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-blue-500 fas fa-bookmark"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.modulo}</div>
+                                    <div class="text-sm text-gray-600">Módulo</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    // No hay próxima clase - ocultar el contenedor
+                    console.log('❌ No hay próxima clase para mostrar');
+                    if (elements.proximaClaseContainer) {
+                        elements.proximaClaseContainer.style.display = 'none';
+                    }
+                }
+
+                return; // Salir aquí para espacios disponibles
+            }
+
+            // Si llegamos aquí, el espacio NO está disponible, por lo tanto puede mostrar último ocupante
+            if (!data.proxima_clase) {
+                // No mostrar información si es solo informativo o no hay datos relevantes
+                const esInformativo = data.tipo_reserva === 'info' ||
+                                    data.estado === 'info' ||
+                                    (!data.run_profesor && !data.run_solicitante && !data.hora_inicio);
+
+                if (tituloEl) tituloEl.textContent = 'Último Ocupante';
+
+                // Solo mostrar contenedor si hay datos del último ocupante Y no es solo informativo
+                if (elements.ocupanteContainer && !esInformativo &&
+                    (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.ocupanteContainer.style.display = 'block';
+                    // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
+                    elements.ocupanteInfo.innerHTML = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-user"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.nombre || 'Último ocupante'}</div>
+                                    <div class="text-sm text-gray-600">Último registro</div>
+                                </div>
+                            </div>
+                            ${data.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Hora inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.hora_salida ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                    <div class="text-sm text-gray-600">Hora salida</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    // No hay datos históricos válidos; ocultar contenedor
+                    if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+                    if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                }
+            } else {
+                // Hay próxima clase, restaurar título y ocultar contenedor de último ocupante
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+            }
+
+            // Mostrar próxima clase si existe
+            if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                // NO mostrar - ahora se usa la cronología
+                // elements.proximaClaseContainer.style.display = 'block';
+                elements.proximaClaseInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-purple-500 fas fa-calendar"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
+                                <div class="text-sm text-gray-600">Próxima asignatura</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Próximo profesor</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Solo ocultar botón desocupar si el espacio está realmente disponible
+            if (espacioDisponible) {
+                console.log('🔍 Espacio realmente disponible - Ocultando botón desocupar');
+                const btnsDesocupar = document.querySelectorAll('.btn-desocupar');
+                btnsDesocupar.forEach(btn => btn.classList.add('hidden'));
+            } else {
+                console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
+            }
+        }
+
+        // Funciones para el modal de confirmación de asistentes
+        function mostrarModalAsistentes(infoClase, idReserva, idEspacio) {
+            const modal = document.getElementById('modal-confirmar-asistentes');
+            if (!modal) {
+                console.error('❌ Modal no encontrado en el DOM');
+                return;
+            }
+
+            console.log('🎯 Mostrando modal de asistentes', { infoClase, idReserva, idEspacio });
+
+            // Llenar información en el modal
+            document.getElementById('asistentes-espacio').textContent = idEspacio;
+            document.getElementById('asistentes-asignatura').textContent = infoClase.asignatura || 'No especificada';
+            document.getElementById('asistentes-modulos').textContent = `${infoClase.total_modulos} módulos`;
+
+            // Mostrar el modal
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            // Configurar eventos de los botones
+            const btnSinAsistentes = document.getElementById('btn-sin-asistentes');
+            const btnConAsistentes = document.getElementById('btn-con-asistentes');
+
+            // Remover listeners antiguos si existen
+            const newBtnSin = btnSinAsistentes.cloneNode(true);
+            const newBtnCon = btnConAsistentes.cloneNode(true);
+            btnSinAsistentes.parentNode.replaceChild(newBtnSin, btnSinAsistentes);
+            btnConAsistentes.parentNode.replaceChild(newBtnCon, btnConAsistentes);
+
+            // Agregar nuevos listeners
+            newBtnSin.addEventListener('click', () => {
+                registrarAsistencia(idReserva, false);
+                cerrarModalAsistentes();
+            });
+
+            newBtnCon.addEventListener('click', () => {
+                registrarAsistencia(idReserva, true);
+                cerrarModalAsistentes();
+            });
+        }
+
+        function cerrarModalAsistentes() {
+            const modal = document.getElementById('modal-confirmar-asistentes');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+
+            // Mostrar mensaje de éxito de devolución
+            Swal.fire({
+                title: '¡Devolución Exitosa!',
+                text: 'Las llaves han sido devueltas correctamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#10B981',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+
+            // Restaurar el input QR activo
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 300);
+        }
+
+        async function registrarAsistencia(idReserva, huboAsistentes) {
+            try {
+                const response = await fetch('/api/registrar-asistencia-clase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_reserva: idReserva,
+                        hubo_asistentes: huboAsistentes
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Asistencia registrada correctamente');
+                    // Actualizar estado del espacio si es necesario
+                    await actualizarColoresEspacios(true);
+                } else {
+                    console.error('❌ Error al registrar asistencia:', data.mensaje);
+                }
+            } catch (error) {
+                console.error('❌ Error en registrarAsistencia:', error);
+            }
+        }
+
+        // ============================================================================
+        // FUNCIONES PARA MODAL DE MANTENCIÓN
+        // ============================================================================
+
+        function mostrarModalMantención(indicator) {
+            console.log('⚠️ Mostrando modal de mantención para:', indicator.id);
+            
+            // Crear modal dinámicamente
+            const modalHTML = `
+                <div id="modal-mantenimiento" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
+                    <div class="flex flex-col w-full max-w-md mx-2 bg-white rounded-lg shadow-lg overflow-hidden">
+                        <!-- Encabezado con ícono de mantenimiento -->
+                        <div class="flex flex-col items-center gap-4 p-8 bg-gradient-to-r from-gray-600 to-gray-700">
+                            <div class="p-4 bg-white rounded-full bg-opacity-20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <div class="text-center">
+                                <h2 class="text-2xl font-bold text-white mb-2">Espacio en Mantención</h2>
+                                <p class="text-gray-200 text-sm">${indicator.nombre} (${indicator.id})</p>
+                            </div>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div class="p-8">
+                            <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                                <p class="text-gray-800 font-medium">
+                                    Este espacio se encuentra actualmente en mantención y no está disponible para reservas.
+                                </p>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-6">
+                                Por favor, intenta nuevamente en unos momentos o contacta con administración si tienes dudas.
+                            </p>
+                        </div>
+
+                        <!-- Botón de cerrar -->
+                        <div class="flex justify-end px-8 py-4 bg-gray-50 border-t border-gray-200">
+                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-100">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Insertar modal en el DOM
+            const container = document.createElement('div');
+            container.innerHTML = modalHTML;
+            document.body.appendChild(container.querySelector('#modal-mantenimiento'));
+        }
+
+        function cerrarModalMantención() {
+            const modal = document.getElementById('modal-mantenimiento');
+            if (modal) {
+                modal.remove();
+                console.log('✅ Modal de mantención cerrado');
+            }
+        }
+
+        // ============================================================================
+        // FUNCIONES PARA MODAL DE SALA DE ESTUDIO
+        // ============================================================================
+        
+        let salaEstudioActual = {
+            id: null,
+            capacidadMaxima: 0,
+            alumnosRegistrados: [],
+            modalAbierto: false
+        };
+
+        async function mostrarModalSalaEstudio(indicator) {
+            console.log('📚 Abriendo modal de Sala de Estudio para:', indicator.id);
+            
+            // Guardar datos de la sala actual
+            salaEstudioActual.id = indicator.id;
+            salaEstudioActual.capacidadMaxima = indicator.capacidad || 0;
+            salaEstudioActual.alumnosRegistrados = [];
+
+            // Actualizar título del modal
+            const tituloModal = document.getElementById('modalSalaEstudioTitulo');
+            if (tituloModal) {
+                tituloModal.textContent = `${indicator.nombre} (${indicator.id})`;
+            }
+
+            // Actualizar capacidad
+            const capacidadTexto = document.getElementById('modalSalaEstudioCapacidad');
+            if (capacidadTexto) {
+                capacidadTexto.textContent = `Capacidad: ${indicator.capacidad || 0} personas`;
+            }
+
+            // Mostrar modal PRIMERO
+            const modal = document.getElementById('modal-sala-estudio');
+            if (modal) {
+                modal.classList.remove('hidden');
+                salaEstudioActual.modalAbierto = true;
+                bufferSalaEstudio = '';
+                
+                console.log('📚 Modal abierto - captura de teclado activada');
+                
+                // IMPORTANTE: Desactivar COMPLETAMENTE el input principal
+                const inputPrincipal = document.getElementById('qr-input');
+                if (inputPrincipal) {
+                    inputPrincipal.blur();
+                    inputPrincipal.disabled = true;
+                    inputPrincipal.style.display = 'none';
+                }
+                
+                // Desactivar todos los demás inputs
+                qrInputManager.desactivarTodosLosInputs();
+                
+                // Enfocar el input invisible para recibir eventos
+                const inputQR = document.getElementById('qr-input-sala-estudio');
+                if (inputQR) {
+                    inputQR.value = '';
+                    inputQR.disabled = false;
+                    setTimeout(() => {
+                        inputQR.focus();
+                        console.log('📚 Input invisible enfocado');
+                    }, 100);
+                }
+            }
+
+            // Cargar alumnos ya registrados
+            await cargarAlumnosRegistradosSalaEstudio(indicator.id);
+        }
+
+        function cerrarModalSalaEstudio() {
+            const modal = document.getElementById('modal-sala-estudio');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            
+            // Marcar modal como cerrado
+            salaEstudioActual.modalAbierto = false;
+            bufferSalaEstudio = '';
+            
+            console.log('📚 Modal cerrado - captura de teclado desactivada');
+            
+            // Limpiar el input
+            const inputQR = document.getElementById('qr-input-sala-estudio');
+            if (inputQR) {
+                inputQR.value = '';
+                inputQR.blur();
+            }
+            
+            // RESTAURAR el input principal
+            const inputPrincipal = document.getElementById('qr-input');
+            if (inputPrincipal) {
+                inputPrincipal.disabled = false;
+                inputPrincipal.style.display = '';
+            }
+            
+            // Limpiar datos
+            salaEstudioActual = {
+                id: null,
+                capacidadMaxima: 0,
+                alumnosRegistrados: [],
+                modalAbierto: false
+            };
+            
+            // Restaurar el input QR principal
+            setTimeout(() => {
+                qrInputManager.setActiveInput('main');
+            }, 200);
+        }
+
+        let bufferSalaEstudio = '';
+        let processingTimeoutSala = null;
+        let lastKeySalaEstudio = Date.now();
+
+        // Captura global de eventos de teclado para el modal de sala de estudio
+        document.addEventListener('keydown', async function(event) {
+            // Solo procesar si el modal está abierto
+            if (!salaEstudioActual.modalAbierto) {
+                return;
+            }
+
+            const now = Date.now();
+            const timeSinceLastKey = now - lastKeySalaEstudio;
+            lastKeySalaEstudio = now;
+
+            console.log('📚 Tecla capturada en modal:', event.key, 'Buffer actual:', bufferSalaEstudio.substring(0, 20) + '...');
+
+            // Si es Enter, procesar el buffer
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                console.log('📚 Enter detectado - procesando buffer');
+                if (bufferSalaEstudio.length > 0) {
+                    await procesarQRSalaEstudio();
+                }
+                return;
+            }
+
+            // Si pasó más de 100ms desde la última tecla, resetear buffer (nuevo escaneo)
+            if (timeSinceLastKey > 100) {
+                bufferSalaEstudio = '';
+                console.log('📚 Nuevo escaneo detectado - buffer reseteado');
+            }
+
+            // Acumular caracteres imprimibles
+            if (event.key.length === 1) {
+                bufferSalaEstudio += event.key;
+                event.preventDefault();
+                
+                // Limpiar timeout anterior
+                if (processingTimeoutSala) {
+                    clearTimeout(processingTimeoutSala);
+                }
+                
+                // Auto-procesar después de 300ms sin nuevas teclas
+                processingTimeoutSala = setTimeout(async () => {
+                    if (bufferSalaEstudio.length > 10) {
+                        console.log('📚 Timeout - procesando buffer automáticamente');
+                        await procesarQRSalaEstudio();
+                    }
+                }, 300);
+            }
+        });
+
+        async function procesarQRSalaEstudio() {
+            // Validar que el buffer no esté vacío
+            if (!bufferSalaEstudio || bufferSalaEstudio.trim() === '') {
+                return;
+            }
+            
+            // Validar longitud mínima
+            if (bufferSalaEstudio.length < 5) {
+                bufferSalaEstudio = '';
+                return;
+            }
+
+            console.log('📚 Procesando QR de Sala de Estudio:', bufferSalaEstudio);
+
+            // Extraer RUN del QR
+            const runMatch = bufferSalaEstudio.match(/RUN[^0-9]*(\d+)/);
+            let run = null;
+
+            if (!runMatch) {
+                const runMatchAlt = bufferSalaEstudio.match(/(\d{7,8})/);
+                if (!runMatchAlt) {
+                    console.error('❌ No se pudo extraer RUN del QR');
+                    mostrarNotificacionSalaEstudio('QR inválido', 'error');
+                    bufferSalaEstudio = '';
+                    return;
+                }
+                run = runMatchAlt[1];
+            } else {
+                run = runMatch[1];
+            }
+
+            console.log('📚 RUN extraído:', run);
+
+            // El backend manejará si es entrada o salida
+            // No verificamos localmente si ya está registrado
+
+            console.log('✅ Llamando a registrarAccesoSalaEstudio...', salaEstudioActual.id, run);
+            // Registrar acceso del alumno (entrada o salida)
+            const resultado = await registrarAccesoSalaEstudio(salaEstudioActual.id, run);
+            console.log('📨 Resultado del registro:', resultado);
+            
+            if (resultado.success) {
+                if (resultado.accion === 'salida') {
+                    // Es una salida - eliminar de la lista
+                    salaEstudioActual.alumnosRegistrados = salaEstudioActual.alumnosRegistrados.filter(
+                        alumno => alumno.run !== run
+                    );
+
+                    // Actualizar UI
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                    
+                    if (resultado.sancionado) {                         Swal.fire({                             icon: 'warning',                             title: '⚠️ Devolución Fuera de Plazo',                             html: `<div class="text-left text-sm space-y-2"><p>El alumno <b>${resultado.nombre}</b> excedió el límite de 2 horas (tiempo: <b>${resultado.minutos_transcurridos} min</b>).</p><p class="text-red-600 font-bold">🚫 Sancionado con bloqueo de 1 semana para salas de estudio (hasta ${resultado.fecha_fin_veto}).</p></div>`,                             confirmButtonText: 'Entendido',                             confirmButtonColor: '#950101'                         });                     } else {                     mostrarNotificacionSalaEstudio(                         `${resultado.nombre} - Salida registrada (${resultado.hora_entrada} - ${resultado.hora_salida})`,                          'info'                     );                     }
+                } else {
+                    // Es una entrada - agregar a la lista
+                    salaEstudioActual.alumnosRegistrados.push({
+                        run: run,
+                        nombre: resultado.nombre || `Alumno ${run}`,
+                        hora_registro: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+                    });
+
+                    // Actualizar UI
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                    
+                    mostrarNotificacionSalaEstudio(`${resultado.nombre || 'Alumno'} registrado exitosamente`, 'success');
+                }
+            } else {
+                // Verificar si es un veto
+                if (resultado.vetado) {
+                    console.log('🚫 Usuario vetado:', resultado.veto);
+                    
+                    // Mostrar modal con información del veto con z-index superior
+                    const tipoVeto = resultado.veto.tipo === 'grupal' ? 'Grupal' : 'Individual';
+                    const mensaje = `
+                        <div class="text-white">
+                            <div class="mb-6 swal-veto-icon">
+                                <i class="fas fa-ban text-white" style="font-size: 4rem; text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold mb-4 text-white">⚠️ ACCESO VETADO</h2>
+                            <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 text-left">
+                                <div class="space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-user-slash text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Usuario:</p>
+                                            <p class="text-white text-opacity-90">${resultado.veto.solicitante?.nombre || 'Desconocido'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-tag text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Tipo de veto:</p>
+                                            <p class="text-white text-opacity-90">${tipoVeto}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-calendar text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Fecha:</p>
+                                            <p class="text-white text-opacity-90">${resultado.veto.fecha_veto}</p>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t border-white border-opacity-30">
+                                        <div class="flex items-start gap-3">
+                                    ${resultado.veto.fecha_fin_veto ? `                                     <div class="flex items-start gap-3">                                         <i class="fas fa-hourglass-end text-white text-xl mt-1"></i>                                         <div>                                             <p class="font-semibold text-white mb-1">Bloqueado hasta:</p>                                             <p class="text-white text-opacity-90 font-bold">${resultado.veto.fecha_fin_veto}</p>                                         </div>                                     </div>                                     ` : ""}
+                                            <i class="fas fa-exclamation-circle text-white text-xl mt-1"></i>
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-white mb-2">Motivo del veto:</p>
+                                                <p class="text-white text-opacity-90 leading-relaxed">${resultado.veto.motivo}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    Swal.fire({
+                        html: mensaje,
+                        icon: null,
+                        confirmButtonText: '<i class="fas fa-check mr-2"></i>Entendido',
+                        confirmButtonColor: '#D12420',
+                        width: '550px',
+                        background: 'transparent',
+                        customClass: {
+                            container: 'swal-veto-container',
+                            popup: 'swal-veto-popup',
+                            closeButton: 'swal-veto-close',
+                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 shadow-lg'
+                        },
+                        showCloseButton: true,
+                        buttonsStyling: false,
+                        didOpen: () => {
+                            // Asegurar que el SweetAlert esté por encima del modal
+                            const swalContainer = document.querySelector('.swal-veto-container');
+                            if (swalContainer) {
+                                swalContainer.style.zIndex = '99999';
+                            }
+                        }
+                    });
+                    
+                } else if (resultado.mensaje && resultado.mensaje.includes('Usuario no encontrado')) {
+                    // Si el usuario no está registrado, el backend intentará crearlo desde solicitantes
+                    console.log('⚠️ Usuario no encontrado - el backend no pudo crearlo desde solicitantes');
+                    console.log('📝 Abriendo modal de registro para nuevo usuario');
+                    
+                    // Cerrar modal de sala de estudio
+                    cerrarModalSalaEstudio();
+                    
+                    // Abrir modal de registro con el RUN capturado
+                    setTimeout(() => {
+                        abrirModalRegistroConRun(run);
+                    }, 300);
+                } else {
+                    mostrarNotificacionSalaEstudio(resultado.mensaje || 'Error al registrar acceso', 'error');
+                }
+            }
+
+            // Limpiar buffer
+            bufferSalaEstudio = '';
+            
+            // Limpiar input
+            const inputQR = document.getElementById('qr-input-sala-estudio');
+            if (inputQR) {
+                inputQR.value = '';
+            }
+        }
+
+        async function registrarAccesoSalaEstudio(espacioId, run) {
+            try {
+                const response = await fetch('/api/sala-estudio/registrar-acceso', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_espacio: espacioId,
+                        run: run
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    console.error('Error al registrar asistencia:', data.mensaje);
+                }
+                return data;
+            } catch (error) {
+                console.error('Error en registrarAccesoSalaEstudio:', error);
+                return { success: false, mensaje: 'Error de conexión' };
+            }
+        }
+
+        async function verificarSolicitanteExistente(run) {
+            try {
+                const response = await fetch(`/api/verificar-solicitante/${run}`);
+                const data = await response.json();
+                return data.existe;
+            } catch (error) {
+                console.error('❌ Error al verificar solicitante:', error);
+                return false;
+            }
+        }
+
+        async function cargarAlumnosRegistradosSalaEstudio(espacioId) {
+            try {
+                console.log('📚 Cargando alumnos registrados para:', espacioId);
+                
+                const response = await fetch(`/api/sala-estudio/${espacioId}/alumnos-registrados`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.alumnos) {
+                    console.log('📚 Alumnos cargados:', data.alumnos.length);
+                    salaEstudioActual.alumnosRegistrados = data.alumnos;
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                } else {
+                    console.log('📚 No hay alumnos registrados');
+                    salaEstudioActual.alumnosRegistrados = [];
+                    // Si no hay alumnos, mostrar mensaje vacío
+                    const lista = document.getElementById('listaSalaEstudioAlumnos');
+                    if (lista) {
+                        lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                    }
+                    // Actualizar contadores con 0
+                    actualizarContadoresSalaEstudio();
+                }
+            } catch (error) {
+                console.error('❌ Error al cargar alumnos registrados:', error);
+                salaEstudioActual.alumnosRegistrados = [];
+                // Mostrar mensaje de error pero no bloquear la UI
+                const lista = document.getElementById('listaSalaEstudioAlumnos');
+                if (lista) {
+                    lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                }
+                // Actualizar contadores con 0
+                actualizarContadoresSalaEstudio();
+            }
+        }
+
+        function actualizarListaAlumnosSalaEstudio() {
+            const lista = document.getElementById('listaSalaEstudioAlumnos');
+            if (!lista) return;
+
+            if (salaEstudioActual.alumnosRegistrados.length === 0) {
+                lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                return;
+            }
+
+            lista.innerHTML = salaEstudioActual.alumnosRegistrados.map((alumno, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-8 h-8 bg-green-500 text-white rounded-full font-semibold text-sm">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">${alumno.nombre}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-700">${alumno.hora_registro}</p>
+                        <p class="text-xs text-gray-500">Hora registro</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function actualizarContadoresSalaEstudio() {
+            const ocupados = salaEstudioActual.alumnosRegistrados.length;
+            const maxima = salaEstudioActual.capacidadMaxima;
+            const porcentaje = maxima > 0 ? (ocupados / maxima * 100) : 0;
+
+            // Actualizar números
+            const spanOcupados = document.getElementById('salaEstudioOcupados');
+            const spanMaxima = document.getElementById('salaEstudioCapacidadMax');
+            
+            if (spanOcupados) spanOcupados.textContent = ocupados;
+            if (spanMaxima) spanMaxima.textContent = maxima;
+
+            // Actualizar barra de progreso
+            const progressBar = document.getElementById('salaEstudioProgressBar');
+            if (progressBar) {
+                progressBar.style.width = `${porcentaje}%`;
+                
+                // Cambiar color según ocupación
+                if (porcentaje >= 90) {
+                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-150';
+                } else if (porcentaje >= 70) {
+                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-150';
+                } else {
+                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-150';
+                }
+            }
+        }
+
+        function mostrarNotificacionSalaEstudio(mensaje, tipo = 'info') {
+            const colores = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            const iconos = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-150 translate-x-full`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas ${iconos[tipo]}"></i>
+                    <span>${mensaje}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Animar entrada
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // Función para abrir modal de registro desde sala de estudio
+        function abrirModalRegistroConRun(run) {
+            console.log('📝 Abriendo modal de registro para RUN:', run);
+            
+            // Guardar el RUN pendiente
+            runSolicitantePendiente = run;
+            
+            // Actualizar el texto en el modal
+            const runElement = document.getElementById('run-solicitante-no-registrado');
+            if (runElement) {
+                runElement.textContent = run;
+            }
+            
+            // Desactivar todos los inputs QR
+            qrInputManager.desactivarTodosLosInputs();
+            
+            // Abrir el modal de registro
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'registro-solicitante'
+            }));
+            
+            console.log('📝 Modal de registro abierto');
+        }
+
+        // ============================================================================
+        // FIN FUNCIONES PARA MODAL DE SALA DE ESTUDIO
+        // ============================================================================
+
+        function cerrarModalEspacio() {
+            const modal = document.getElementById('modal-espacio-info');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            
+            // Restaurar el input QR (permitir clics nuevamente)
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.style.pointerEvents = 'auto';
+                console.log('🔓 Input QR desbloqueado - pointer-events: auto');
+            }
+            
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+        }
+
+        function cerrarModalesDespuesDeSwal(modales = []) {
+            // Solo cerrar modales sin mostrar SweetAlert (ya se muestra en otro lugar)
+            modales.forEach(nombre => {
+                window.dispatchEvent(new CustomEvent('close-modal', {
+                    detail: nombre
+                }));
+                setTimeout(() => {
+                    document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el
+                        .classList.add('hidden'));
+                }, 200);
+            });
+
+            // Restaurar el input QR activo después de cerrar todos los modales
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 300);
+        }
+
+        async function actualizarColoresEspacios(forzarActualizacion = false) {
+            // Verificar si ha habido cambios locales recientes (salvo si se fuerza)
+            const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
+            if (!forzarActualizacion && tiempoTranscurrido < 10000) { // 10 segundos
+                return;
+            }
+
+            // No consultar mientras la pestaña esté en background.
+            if (!forzarActualizacion && document.hidden) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/plano/${mapaId}/bloques?t=${Date.now()}`); // Cache busting
+                if (!response.ok) {
+                    console.error('Error al obtener bloques actualizados:', response.status);
+                    return;
+                }
+
+                const data = await response.json();
+                if (!data.bloques || !Array.isArray(data.bloques)) {
+                    console.error('Respuesta de bloques inválida:', data);
+                    return;
+                }
+
+                let cambiosDetectados = [];
+
+                data.bloques.forEach(nuevoBloque => {
+                    const bloqueExistente = state.indicators.find(b => b.id === nuevoBloque.id);
+                    if (bloqueExistente && bloqueExistente.estado !== nuevoBloque.estado) {
+                        console.log(`Actualizando espacio ${nuevoBloque.id}: ${bloqueExistente.estado} → ${nuevoBloque.estado}`);
+                        bloqueExistente.estado = nuevoBloque.estado;
+                        bloqueExistente.color = nuevoBloque.color || bloqueExistente.color;
+                        cambiosDetectados.push({
+                            id: nuevoBloque.id,
+                            estadoAnterior: bloqueExistente.estado,
+                            estadoNuevo: nuevoBloque.estado
+                        });
+                    }
+                });
+
+                if (cambiosDetectados.length > 0 || forzarActualizacion) {
+                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                    drawIndicators();
+                }
+
+                // Sincronizar automáticamente las clases del módulo actual sin recargar la página
+                if (data.clasesModuloActual && Array.isArray(data.clasesModuloActual)) {
+                    const nuevoContenidoJson = JSON.stringify(data.clasesModuloActual);
+                    const actualJson = JSON.stringify(window.sidebarModuloActualData || []);
+                    if (nuevoContenidoJson !== actualJson || forzarActualizacion) {
+                        window.sidebarModuloActualData = data.clasesModuloActual;
+                        renderSidebarModuloList();
+                    }
+                }
+            } catch (error) {
+                // Error silencioso para no saturar la consola
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('modal-solicitar-espacio');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function () {
+                    actualizarHora();
+                    actualizarModuloYColores();
+                });
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // Configurar el input del escáner QR
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.addEventListener('keydown', handleScan);
+                document.addEventListener('click', function (event) {
+                    // Solo enfocar si no se está haciendo clic en un modal o formulario
+                    if (!event.target.closest('.modal') &&
+                        !event.target.closest('form') &&
+                        !event.target.closest('input') &&
+                        !event.target.closest('select') &&
+                        !event.target.closest('button')) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                });
+                inputEscanner.focus();
+                document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR';
+                // Asegurar que la interfaz esté en estado inicial
+                limpiarEstadoCompleto();
+                renderSidebarModuloList();
+                setInterval(renderSidebarModuloList, 60000);
+
+                // Sistema QR inicializado
+            }
+            // Inicializar elementos del canvas
+            initElements();
+
+            // Agregar event listeners para los eventos de mouse en el canvas
+            if (elements.indicatorsCanvas) {
+                elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
+                elements.indicatorsCanvas.addEventListener('click', handleMouseClick);
+                elements.indicatorsCanvas.addEventListener('mouseleave', handleMouseLeave);
+            }
+            // Cargar la imagen del mapa
+            const img = new Image();
+            img.onload = function () {
+                state.mapImage = img;
+                state.originalImageSize = {
+                    width: img.width,
+                    height: img.height
+                };
+                state.isImageLoaded = true;
+                initCanvases();
+                drawIndicators();
+                state.updateInterval = setInterval(actualizarColoresEspacios, 5000);
+            };
+            img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
+            window.addEventListener('resize', function () {
+                initCanvases();
+            });
+            window.addEventListener('beforeunload', function () {
+                if (state.updateInterval) {
+                    clearInterval(state.updateInterval);
+                }
+            });
+            // Configurar el formulario de registro de solicitante
+            const formRegistroSolicitante = document.getElementById('form-registro-solicitante');
+            if (formRegistroSolicitante) {
+                formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
+            }
+
+
+
+            // Configurar botón de solicitar llaves para cambiar al input correspondiente
+            const btnSolicitar = document.querySelector('[onclick*="solicitarLlaves"]');
+            if (btnSolicitar) {
+                btnSolicitar.addEventListener('click', function() {
+                    qrInputManager.setActiveInput('solicitud');
+                });
+            }
+
+
+            // Configurar event listeners para los campos del formulario de registro de solicitante
+            const camposSolicitante = [
+                'nombre-solicitante',
+                'email-solicitante',
+                'telefono-solicitante'
+            ];
+
+            camposSolicitante.forEach(campoId => {
+                const campo = document.getElementById(campoId);
+                if (campo) {
+                    // Cuando se haga clic en un campo, desactivar todos los inputs QR
+                    campo.addEventListener('click', function() {
+                        qrInputManager.desactivarTodosLosInputs();
+                    });
+
+                    // Cuando se haga foco en un campo, desactivar todos los inputs QR
+                    campo.addEventListener('focus', function() {
+                        qrInputManager.desactivarTodosLosInputs();
+                    });
+                }
+            });
+
+            // Configurar validación en tiempo real para el teléfono
+            const campoTelefono = document.getElementById('telefono-solicitante');
+            if (campoTelefono) {
+                campoTelefono.addEventListener('input', function(e) {
+                    // Permitir solo números
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+
+                    // Validar longitud y mostrar feedback visual
+                    const valor = e.target.value;
+                    const esValido = /^[0-9]{8,9}$/.test(valor);
+
+                    if (valor.length > 0 && !esValido) {
+                        e.target.classList.add('border-red-500');
+                        e.target.classList.remove('border-gray-300');
+                    } else {
+                        e.target.classList.remove('border-red-500');
+                        e.target.classList.add('border-gray-300');
+                    }
+                });
+
+                // Validación al perder el foco
+                campoTelefono.addEventListener('blur', function(e) {
+                    const valor = e.target.value;
+                    if (valor.length > 0 && !/^[0-9]{8,9}$/.test(valor)) {
+                        e.target.classList.add('border-red-500');
+                        // Opcional: mostrar mensaje de error
+                    }
+                });
+            }
+
+            // Configurar event listener específico para el select de tipo solicitante
+            const selectTipoSolicitante = document.getElementById('tipo-solicitante');
+            if (selectTipoSolicitante) {
+                // Desactivar todos los inputs QR cuando se abra el select
+                selectTipoSolicitante.addEventListener('mousedown', function() {
+                    qrInputManager.desactivarTodosLosInputs();
+                });
+
+                // Prevenir que el select se cierre inmediatamente
+                selectTipoSolicitante.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+
+                // Asegurar que el select mantenga el foco
+                selectTipoSolicitante.addEventListener('focus', function() {
+                    qrInputManager.desactivarTodosLosInputs();
+                });
+            }
+            // Configurar botón devolver
+            const btnDevolver = document.getElementById('btnDevolver');
+            const areaQR = document.getElementById('area-qr-devolucion');
+            const inputQR = document.getElementById('qr-input-devolucion');
+            const lineaDiv = document.getElementById('linea-divisoria-qr');
+            if (btnDevolver && areaQR && inputQR && lineaDiv) {
+                btnDevolver.addEventListener('click', function () {
+                    areaQR.classList.remove('hidden');
+                    lineaDiv.classList.remove('hidden');
+                    // Cambiar al input de devolución
+                    qrInputManager.setActiveInput('devolucion');
+                });
+            }
+            window.actualizarColoresEspacios = actualizarColoresEspacios;
+
+            // Configurar intervalos para actualizar hora y módulo
+            setInterval(actualizarHora, 1000);
+            setInterval(actualizarModalReloj, 1000);
+            actualizarHora();
+            actualizarModalReloj();
+
+            setInterval(actualizarModuloYColores, 5000);
+            actualizarModuloYColores();
+
+            if (localStorage.getItem('dashboard_reloj_minimizado') === '1') {
+                toggleModalReloj(true);
+            }
+
+            // Iniciar Watchdog Anti-Bloqueo (cada 10s) y Keep-Alive (cada 5min)
+            setInterval(ejecutarWatchdogAntiBloqueo, 10000);
+            setInterval(ejecutarKeepAliveSesion, 5 * 60 * 1000);
+            setTimeout(ejecutarKeepAliveSesion, 1000); // Primer ping de verificación
+        });
+
+        async function procesarRegistroSolicitante(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            const datosSolicitante = {
+                run_solicitante: runSolicitantePendiente,
+                nombre: formData.get('nombre'),
+                correo: formData.get('email'),
+                telefono: formData.get('telefono'),
+                tipo_solicitante: formData.get('tipo_solicitante')
+            };
+
+            // Validación básica
+            if (!datosSolicitante.nombre || !datosSolicitante.correo || !datosSolicitante.telefono || !datosSolicitante.tipo_solicitante) {
+                Swal.fire({
+                    title: 'Error de Validación',
+                    text: 'Por favor, complete todos los campos requeridos.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Validación adicional del teléfono
+            const telefonoPattern = /^[0-9]{8,9}$/;
+            if (!telefonoPattern.test(datosSolicitante.telefono)) {
+                Swal.fire({
+                    title: 'Teléfono Inválido',
+                    text: 'Por favor, ingrese un número de teléfono válido (8-9 dígitos, sin el +56).',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Registrando Solicitante',
+                    text: 'Por favor, espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const resultado = await registrarSolicitante(datosSolicitante);
+
+                if (resultado && resultado.success) {
+                    // Mostrar SweetAlert de éxito
+                    Swal.fire({
+                        title: '¡Solicitante Registrado!',
+                        text: `${datosSolicitante.nombre} ha sido registrado exitosamente. Ahora puede escanear el QR del espacio deseado.`,
+                        icon: 'success',
+                        confirmButtonText: 'Continuar',
+                        timer: 3000,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // Cerrar modal de registro después de que termine el SweetAlert
+                        cerrarModalRegistroSolicitante();
+
+                        // Restaurar el input QR activo
+                        qrInputManager.setActiveInput('main');
+
+                        // Actualizar información en la interfaz
+                        document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
+                        // Llamar con el booleano en true para que tenga una pausa y luego aparezca el modal
+                        mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente, true);
+
+                        // Continuar con el flujo - solo necesita escanear espacio
+                        usuarioEscaneado = runSolicitantePendiente;
+                        ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
+
+                        // Limpiar variables
+                        runSolicitantePendiente = null;
+                    });
+
+                } else {
+                    // Error al registrar solicitante
+                    const mensajeError = resultado?.mensaje || 'No se pudo registrar el solicitante. Intente nuevamente.';
+                    Swal.fire({
+                        title: 'Error al Registrar',
+                        text: mensajeError,
+                        icon: 'error',
+                        confirmButtonText: 'Intentar Nuevamente'
+                    }).then(() => {
+                        // Cerrar modal también en caso de error
+                        cerrarModalRegistroSolicitante();
+                    });
+                }
+            } catch (error) {
+                // Error al procesar el registro
+                console.error('Error al procesar registro:', error);
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'Ocurrió un error al comunicarse con el servidor. Verifique su conexión e intente nuevamente.',
+                    icon: 'error',
+                    confirmButtonText: 'Reintentar'
+                }).then(() => {
+                    // Cerrar modal también en caso de error de conexión
+                    cerrarModalRegistroSolicitante();
+                });
+            }
+        }
+
+
+
+        function cancelarRegistroSolicitante() {
+            // Cerrar modal de registro
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-solicitante'
+            }));
+
+            // Método adicional: Forzar cierre si el evento no funciona
+            setTimeout(() => {
+                const modalElement = document.querySelector('[x-data*="modalComponent"]');
+                if (modalElement && modalElement._x_dataStack) {
+                    const alpineData = modalElement._x_dataStack[0];
+                    if (alpineData && typeof alpineData.show !== 'undefined') {
+                        alpineData.show = false;
+                    }
+                }
+            }, 100);
+
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+
+            // Limpiar variables
+            runSolicitantePendiente = null;
+
+            // Resetear estado
+            document.getElementById('qr-status').innerHTML = 'Esperando';
+            limpiarEstadoCompleto();
+        }
+
+        function cerrarModalRegistroSolicitante() {
+            // Disparar evento de cierre del modal
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-solicitante'
+            }));
+
+            // Método adicional: Forzar cierre si el evento no funciona
+            setTimeout(() => {
+                const modalElement = document.querySelector('[x-data*="modalComponent"]');
+                if (modalElement && modalElement._x_dataStack) {
+                    const alpineData = modalElement._x_dataStack[0];
+                    if (alpineData && typeof alpineData.show !== 'undefined') {
+                        alpineData.show = false;
+                    }
+                }
+            }, 100);
+
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+
+            // Limpiar variables
+            runSolicitantePendiente = null;
+
+            // Resetear estado
+            document.getElementById('qr-status').innerHTML = 'Esperando';
+            limpiarEstadoCompleto();
+        }
+
+
+
+
+
+
+        // Asegurar que indicators sea siempre un array
+        if (!state.indicators || !Array.isArray(state.indicators)) {
+            state.indicators = [];
+        }
+        if (!state.originalCoordinates || !Array.isArray(state.originalCoordinates)) {
+            state.originalCoordinates = [];
+        }
+
+        function cerrarModalModulos() {
+            // Ocultar directamente el modal
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+
+            // También intentar con el selector de data-modal
+            const modalAlt = document.querySelector('[data-modal="seleccionar-modulos"]');
+            if (modalAlt) {
+                modalAlt.classList.add('hidden');
+            }
+
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+
+            // Limpiar variables
+            espacioParaReserva = null;
+            runParaReserva = null;
+
+            // Resetear interfaz
+            limpiarEstadoCompleto();
+        }
+
+        async function calcularModulosDisponibles(idEspacio) {
+            try {
+                // Obtener hora y día actual
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const diaActual = obtenerDiaActual();
+
+                // Enviando parámetros al servidor, incluyendo información sobre si estamos en break
+                const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+                const espacioIdEncoded = encodeURIComponent(String(idEspacio));
+                const query = new URLSearchParams({
+                    hora_actual: horaActual,
+                    dia_actual: diaActual,
+                    modulo_solicitado: String(moduloParaReserva),
+                    permitir_breaks: 'true'
+                });
+                const response = await fetch(`/api/espacio/${espacioIdEncoded}/modulos-disponibles?${query.toString()}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                            if (data.success) {
+            // Guardar información adicional para mostrar en el modal
+            window.modulosInfo = {
+                max_modulos: data.max_modulos || 1,
+                modulo_actual: data.modulo_actual,
+                modulos_disponibles: data.modulos_disponibles || [],
+                proxima_clase: data.proxima_clase,
+                clases_proximas: data.clases_proximas || [],
+                detalles: data.detalles
+            };
+
+            return data.max_modulos || 1;
+        } else {
+            // Mostrar información detallada del error
+            if (data.detalles && data.detalles.razon === 'fuera_horario') {
+                // Horario no disponible
+            }
+            return 1;
+        }
+                } else {
+                    // Error en la respuesta del servidor
+                    return 1;
+                }
+            } catch (error) {
+                // Error al calcular módulos disponibles
+                return 1;
+            }
+        }
+
+        async function mostrarModalSeleccionarModulos(idEspacio, run) {
+            Swal.close();
+            const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+
+            // Usar exactamente los módulos disponibles calculados por el servidor (mínimo 1 para reserva espontánea)
+            maxModulosDisponibles = Math.max(1, modulosDisponibles || 1);
+
+            // Actualizar elementos del modal si existen
+            const maxModulosElement = document.getElementById('max-modulos-disponibles');
+            const inputModulos = document.getElementById('input-cantidad-modulos');
+
+            if (maxModulosElement) {
+                maxModulosElement.textContent = maxModulosDisponibles;
+            }
+
+            if (inputModulos) {
+                inputModulos.max = maxModulosDisponibles;
+                inputModulos.value = 1;
+            }
+
+            espacioParaReserva = idEspacio;
+            runParaReserva = run;
+
+            // Mostrar información detallada si está disponible
+            if (window.modulosInfo) {
+                mostrarInformacionModulos(window.modulosInfo);
+            }
+
+            // Mostrar el modal directamente
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
+                modal.classList.remove('hidden');
+                // Desactivar todos los inputs QR cuando se abre el modal
+                qrInputManager.desactivarTodosLosInputs();
+                // Enfocar el input
+                setTimeout(() => {
+                    if (inputModulos) {
+                        inputModulos.focus();
+                    }
+                }, 100);
+            }
+        }
+
+        function mostrarInformacionModulos(info) {
+            const infoContainer = document.getElementById('info-modulos-disponibles');
+            if (!infoContainer) return;
+
+                    // Información de módulos recibida
+
+            let html = '<div class="p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">';
+            html += '<h3 class="mb-3 text-lg font-semibold text-gray-800">Información de Disponibilidad</h3>';
+
+            // Información básica con validación
+            const moduloActual = info.modulo_actual !== null && info.modulo_actual !== undefined ? info.modulo_actual : 'No disponible';
+            const maxModulos = info.max_modulos || 0;
+
+            html += '<div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">';
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="font-semibold text-gray-800">${moduloActual}</p></div>`;
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="font-semibold text-gray-800">${maxModulos}</p></div>`;
+            html += '</div>';
+
+
+        // Clases próximas con información básica
+            if (info.clases_proximas && info.clases_proximas.length > 0) {
+                html += '<div class="p-4 mb-4 border-l-4 border-blue-400 rounded-lg bg-blue-50">';
+                html += '<h4 class="mb-3 text-sm font-semibold text-blue-800">Clases próximas:</h4>';
+                info.clases_proximas.forEach((clase, index) => {
+                    html += `<div class="p-3 mb-3 bg-white border rounded">`;
+                    html += '<div class="grid grid-cols-1 gap-3 md:grid-cols-2">';
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'Sin asignatura'}</p></div>`;
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Profesor:</p><p class="text-blue-800">${clase.profesor || 'No especificado'}</p></div>`;
+                    html += '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+        html += '</div>';
+            infoContainer.innerHTML = html;
+        }
+
+       document.addEventListener('DOMContentLoaded', function () {
+    // Cargar horarios de módulos al inicio
+    cargarHorariosModulos();
+    
+    const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
+
+    if (btnConfirmarModulos) {
+        btnConfirmarModulos.addEventListener('click', async function () {
+            const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
+
+            if (!espacioParaReserva || !runParaReserva) {
+                return;
+            }
+
+
+
+            // Determinar el tipo de usuario y la ruta correcta
+            let apiEndpoint = '/api/crear-reserva-solicitante';
+            let tipoUsuario = 'solicitante';
+
+            // Si tenemos información del usuario escaneado, usar su tipo real
+            if (usuarioEscaneado && typeof usuarioInfo !== 'undefined' && usuarioInfo.tipo_usuario) {
+                if (usuarioInfo.tipo_usuario === 'profesor') {
+                    apiEndpoint = '/api/crear-reserva-profesor';
+                    tipoUsuario = 'profesor';
+                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                    apiEndpoint = '/api/crear-reserva-solicitante';
+                    tipoUsuario = 'solicitante';
+                }
+            }
+
+
+            // Preparar datos para la petición según el tipo de usuario
+            let requestBody = {};
+
+            // Obtener el módulo para la reserva (incluso durante breaks)
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+
+            if (tipoUsuario === 'profesor') {
+                requestBody = {
+                    run_profesor: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    modulo_solicitado: moduloParaReserva, modulos: cantidad
+                };
+            } else {
+                requestBody = {
+                    run_solicitante: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    modulos: cantidad,
+                    modulo_inicio: moduloParaReserva
+                };
+            }
+
+
+            // Mostrar mensaje de proceso
+            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+
+            // Mostrar SweetAlert indicando que se está creando el registro o reserva
+            const loadingTitle = (tipoUsuario === 'profesor') ? 'Creando registro de clase...' : 'Creando reserva...';
+            const loadingText = (tipoUsuario === 'profesor') ? 'Por favor, espera un momento mientras registramos tu clase.' : 'Por favor, espera un momento mientras registramos tu reserva.';
+            Swal.fire({
+                title: loadingTitle,
+                text: loadingText,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+        const data = await response.json();
+
+
+        if (data.success) {
+            // Cerrar el modal inmediatamente
+            cerrarModalModulos();
+            Swal.close();
+
+            // Mostrar Sweet Alert de éxito para reserva creada (Sin programación)
+            Swal.fire({
+                title: '¡Reserva registrada!',
+                text: 'La reserva ha sido creada exitosamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#10B981',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+
+            document.getElementById('qr-status').innerHTML = 'Reserva creada';
+            document.getElementById('qr-status').classList.remove('parpadeo');
+
+            // Limpiar estado después del Sweet Alert
+            setTimeout(() => {
+                limpiarEstadoCompleto();
+                // Restaurar autofocus del qr-input después de crear reserva
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 2000);
+        } else {
+            let mensajeError = data.mensaje || 'No se pudo reservar';
+
+            if (data.errors) {
+                mensajeError = 'Errores de validación:\n';
+                Object.keys(data.errors).forEach(field => {
+                    data.errors[field].forEach(error => {
+                        mensajeError += `• ${field}: ${error}\n`;
+                    });
+                });
+            }
+
+            Swal.close();
+            // Mostrar SweetAlert de error
+            Swal.fire({
+                title: 'Error al Crear Reserva',
+                text: mensajeError,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#D12420'
+            });
+
+            // Cerrar modal en caso de error
+            cerrarModalModulos();
+
+            // Restaurar autofocus del qr-input después de error en reserva
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 300);
+        }
+        });
+    }
+});
+
+
+
+        function obtenerDiaActual() {
+            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            return dias[new Date().getDay()];
+        }
+
+        function obtenerPrefijoDiaActual() {
+            const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            return prefijos[new Date().getDay()];
+        }
+
+        function moduloActualNum(hora) {
+            const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') return null;
+            const horariosDia = horariosModulos[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Buscar en qué módulo estamos según la hora actual
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+
+            // Si no estamos en ningún módulo, buscar el siguiente módulo disponible
+            // Esto permite hacer reservas durante los breaks
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora < horario.inicio) {
+                    return parseInt(modulo); // Retornar el siguiente módulo
+                }
+            }
+
+            return null;
+        }
+
+        function obtenerModuloParaReserva(hora) {
+            const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') return null;
+            const horariosDia = horariosModulos[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Primero verificar si estamos en un módulo activo
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+
+            // Si estamos en break, buscar el siguiente módulo
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora < horario.inicio) {
+                    return parseInt(modulo);
+                }
+            }
+
+            // Si es después del último módulo del día, permitir reserva para el primer módulo del día siguiente
+            return 1;
+        }
+
+        function toggleModalReloj(minimizar) {
+            const expandido = document.getElementById('reloj-expandido');
+            const minimizado = document.getElementById('reloj-minimizado');
+            if (!expandido || !minimizado) return;
+
+            if (minimizar) {
+                expandido.classList.add('hidden');
+                minimizado.classList.remove('hidden');
+                localStorage.setItem('dashboard_reloj_minimizado', '1');
+            } else {
+                expandido.classList.remove('hidden');
+                minimizado.classList.add('hidden');
+                localStorage.setItem('dashboard_reloj_minimizado', '0');
+            }
+        }
+
+        function formatearNombreDocente(nombre) {
+            if (!nombre || nombre === 'Docente no asignado' || nombre === 'Sin docente') {
+                return 'Docente no asignado';
+            }
+            return nombre.toLowerCase().replace(/(?:^|\s|-|,)[a-záéíóúüñ]/g, (match) => match.toUpperCase());
+        }
+
+        function renderSidebarModuloList() {
+            const list = document.getElementById('sidebar-modulo-list');
+            if (!list) return;
+
+            // Limpiar cualquier intervalo anterior de auto-scroll
+            if (list._autoScrollInterval) {
+                clearInterval(list._autoScrollInterval);
+                list._autoScrollInterval = null;
+            }
+
+            const clases = Array.isArray(window.sidebarModuloActualData) && window.sidebarModuloActualData.length
+                ? window.sidebarModuloActualData
+                : [];
+
+            if (!clases.length) {
+                list.innerHTML = `
+                    <div class="rounded-xl border border-white/10 bg-white/5 px-2.5 py-3 text-center text-xs text-red-100/90 font-medium">
+                        No hay clases activas en este módulo.
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = clases.map((clase) => {
+                const espacioId = clase.id_espacio || clase.espacio_id || clase.sala || '—';
+                const docenteNombre = formatearNombreDocente(clase.docente || 'Docente no asignado');
+
+                return `
+                    <div class="flex items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-2 py-1.5 text-white shadow-xs transition-colors hover:bg-white/20">
+                        <span class="inline-flex shrink-0 items-center justify-center rounded bg-white/20 px-2 py-0.5 text-xs font-black tracking-wide text-white border border-white/20 shadow-xs">
+                            ${espacioId}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-xs font-bold text-white leading-tight" title="${docenteNombre}">
+                                ${docenteNombre}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Manejo de hover para pausar si el usuario interactúa
+            if (!list._hoverListenersAttached) {
+                list.addEventListener('mouseenter', () => { list._isPausedByHover = true; });
+                list.addEventListener('mouseleave', () => { list._isPausedByHover = false; });
+                list._hoverListenersAttached = true;
+            }
+
+            // Iniciar en la parte superior
+            list.scrollTop = 0;
+
+            // Gestión del auto-scroll bidireccional fluido (baja y regresa)
+            setTimeout(() => {
+                const initialMax = list.scrollHeight - list.clientHeight;
+                if (initialMax <= 4) return; // Si entra todo en pantalla, no se requiere scroll
+
+                let currentScroll = 0;
+                let direction = 1; // 1 = bajando, -1 = subiendo
+                let isPaused = false;
+                const speed = 0.75; // Velocidad suave en píxeles
+
+                list._autoScrollInterval = setInterval(() => {
+                    if (isPaused || list._isPausedByHover) return;
+
+                    const effectiveMax = Math.max(0, list.scrollHeight - list.clientHeight);
+                    if (effectiveMax <= 4) return;
+
+                    currentScroll += direction * speed;
+
+                    // Al llegar abajo
+                    if (direction === 1 && currentScroll >= effectiveMax) {
+                        currentScroll = effectiveMax;
+                        list.scrollTop = effectiveMax;
+                        direction = -1;
+                        isPaused = true;
+                        setTimeout(() => { isPaused = false; }, 2200); // Pausa de 2.2s para leer al fondo
+                        return;
+                    }
+
+                    // Al llegar arriba
+                    if (direction === -1 && currentScroll <= 0) {
+                        currentScroll = 0;
+                        list.scrollTop = 0;
+                        direction = 1;
+                        isPaused = true;
+                        setTimeout(() => { isPaused = false; }, 2200); // Pausa de 2.2s al volver al inicio
+                        return;
+                    }
+
+                    list.scrollTop = Math.round(currentScroll);
+                }, 30);
+            }, 800);
+        }
+
+        function actualizarModalReloj() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            const horaActualElement = document.getElementById('hora-actual') || document.getElementById('modal-hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = horaActual;
+            }
+
+            const horaMinimizadaElement = document.getElementById('modal-hora-minimizada');
+            if (horaMinimizadaElement) {
+                horaMinimizadaElement.textContent = horaActual;
+            }
+
+            const diaActual = obtenerDiaActual();
+            const moduloActual = moduloActualNum(horaActual);
+            const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
+            if (moduloActualElement) {
+                moduloActualElement.textContent = (diaActual === 'domingo' || !moduloActual) ? 'Módulo actual: -' : `Módulo actual: ${moduloActual}`;
+            }
+        }
+
+        function actualizarHora() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            const horaActualElement = document.getElementById('hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = horaActual;
+            }
+        }
+
+        function formatearHora(horaCompleta) {
+            return horaCompleta ? horaCompleta.slice(0, 5) : '--:--';
+        }
+
+        let ultimaInteraccionUsuario = Date.now();
+        let timestampInicioProcesamiento = null;
+        let ultimoModuloDetectado = null;
+
+        function registrarActividadUsuario() {
+            ultimaInteraccionUsuario = Date.now();
+        }
+
+        // Registrar actividad en cualquier interacción física del usuario
+        ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, registrarActividadUsuario, { passive: true });
+        });
+
+        // Watchdog de auto-recuperación y auto-refresco anti-bloqueo
+        function ejecutarWatchdogAntiBloqueo() {
+            const ahora = Date.now();
+            const tiempoInactivo = ahora - ultimaInteraccionUsuario;
+
+            // 1. Detectar y liberar isProcessingQR trabado (> 8 segundos)
+            if (isProcessingQR) {
+                if (!timestampInicioProcesamiento) {
+                    timestampInicioProcesamiento = ahora;
+                } else if (ahora - timestampInicioProcesamiento > 8000) {
+                    console.warn('⚠ Watchdog: Liberando isProcessingQR trabado (> 8s)');
+                    isProcessingQR = false;
+                    timestampInicioProcesamiento = null;
+                    limpiarEstadoCompleto();
+                }
+            } else {
+                timestampInicioProcesamiento = null;
+            }
+
+            // 2. Si no hay modales de formulario abiertos y lleva > 35s en espera de espacio, resetear a usuario
+            const hayModalesAbiertos = document.querySelectorAll('.swal2-container:not(.swal2-hidden), [data-modal]:not(.hidden), #modal-espacio-info:not(.hidden), #modal-seleccionar-modulos:not(.hidden)').length > 0;
+
+            if (!hayModalesAbiertos) {
+                if (ordenEscaneo === 'espacio' && tiempoInactivo > 35000) {
+                    console.log('Watchdog: Timeout de espera de espacio por inactividad (35s). Regresando a usuario.');
+                    limpiarEstadoCompleto();
+                }
+
+                // 3. Garantizar foco en el input QR si no hay modales ni campos de texto activos
+                const elementoActivo = document.activeElement;
+                const esCampoTexto = elementoActivo && (elementoActivo.tagName === 'INPUT' || elementoActivo.tagName === 'TEXTAREA' || elementoActivo.tagName === 'SELECT');
+                const esInputQR = elementoActivo && (elementoActivo.id === 'qr-input' || elementoActivo.id === 'qr-input-solicitud' || elementoActivo.id === 'qr-input-devolucion');
+
+                if (!esCampoTexto || esInputQR) {
+                    if (qrInputManager) {
+                        qrInputManager.restaurarInputActivo();
+                    }
+                }
+            }
+
+            // 4. Si el sistema lleva más de 20 minutos en inactividad total y sin modales abiertos, recargar suavemente la página
+            if (!hayModalesAbiertos && !isProcessingQR && ordenEscaneo === 'usuario' && tiempoInactivo > 20 * 60 * 1000) {
+                console.log('Auto-Refresco: Recarga preventiva por inactividad prolongada (20 min)');
+                window.location.reload();
+            }
+        }
+
+        // Keep-Alive y refresco de CSRF token
+        async function ejecutarKeepAliveSesion() {
+            try {
+                const response = await fetch('/keep-alive?t=' + Date.now(), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.csrf_token) {
+                        const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+                        if (metaCsrf) {
+                            metaCsrf.setAttribute('content', data.csrf_token);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Keep-Alive falló temporalmente:', err);
+            }
+        }
+
+        function actualizarModuloYColores() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            // Determinar el módulo actual
+            const moduloActual = moduloActualNum(horaActual);
+            const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+            const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
+            const moduloHorarioElement = document.getElementById('horario-actual');
+
+            // Detectar cambio de módulo para sincronizar espacios inmediatamente
+            if (moduloActual !== ultimoModuloDetectado) {
+                ultimoModuloDetectado = moduloActual;
+                if (typeof actualizarColoresEspacios === 'function') {
+                    actualizarColoresEspacios(true);
+                }
+            }
+
+            const diaActual = obtenerDiaActual();
+            if (diaActual === 'domingo') {
+                if (moduloActualElement) {
+                    moduloActualElement.textContent = 'Módulo actual: -';
+                }
+                if (moduloHorarioElement) {
+                    moduloHorarioElement.textContent = 'Sin actividades';
+                }
+            } else if (moduloActual && moduloActualElement && moduloHorarioElement) {
+                moduloActualElement.textContent = `Módulo actual: ${moduloActual}`;
+
+                const horarioModulo = horariosModulos[diaActual]?.[moduloActual];
+                const horarioTexto = horarioModulo ? `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}` : '';
+                moduloHorarioElement.textContent = horarioTexto;
+            } else {
+                if (moduloActualElement) {
+                    if (moduloParaReserva) {
+                        moduloActualElement.textContent = `Módulo actual: ${moduloParaReserva} (próximo)`;
+                    } else {
+                        moduloActualElement.textContent = 'Módulo actual: -';
+                    }
+                }
+                if (moduloHorarioElement) {
+                    moduloHorarioElement.textContent = 'Reservas disponibles';
+                }
+            }
+        }
+
+    // Agregar funcionalidad para cerrar modales con la tecla Escape
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            // Cerrar modal de espacio si está abierto
+            const modalEspacio = document.getElementById('modal-espacio-info');
+            if (modalEspacio && !modalEspacio.classList.contains('hidden')) {
+                cerrarModalEspacio();
+                return;
+            }
+
+            // Cerrar modal de módulos si está abierto
+            const modalModulos = document.getElementById('modal-seleccionar-modulos');
+            if (modalModulos && !modalModulos.classList.contains('hidden')) {
+                cerrarModalModulos();
+                return;
+            }
+
+            // Cerrar modal de registro de solicitante si está abierto
+            const modalRegistro = document.querySelector('[data-modal="registro-solicitante"]');
+            if (modalRegistro && !modalRegistro.classList.contains('hidden')) {
+                cerrarModalRegistroSolicitante();
+                return;
+            }
+
+            // Cerrar modal de sala de estudio si está abierto
+            if (typeof salaEstudioActual !== 'undefined' && salaEstudioActual.modalAbierto) {
+                cerrarModalSalaEstudio();
+                return;
+            }
+
+            // Cerrar modales de Livewire si están abiertos
+            const modalesLivewire = document.querySelectorAll('[data-modal]');
+            modalesLivewire.forEach(modal => {
+                if (!modal.classList.contains('hidden')) {
+                    // Disparar evento para cerrar modal de Livewire
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: modal.getAttribute('data-modal')
+                    }));
+                }
+            });
+        }
+    });
+
+    // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
+    window.addEventListener('storage', function (event) {
+        if (!event.key) return;
+        
+        if (event.key === 'reserva_eliminada') {
+            try {
+                const payload = JSON.parse(event.newValue);
+                const espacioKey = `espacio_${payload.id_espacio}`;
+                sessionStorage.removeItem(espacioKey);
+                sessionStorage.removeItem(`${espacioKey}_time`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}_time`);
+
+                if (typeof actualizarModuloYColores === 'function') {
+                    actualizarModuloYColores();
+                }
+            } catch (err) {
+                console.error('Error procesando evento storage reserva_eliminada', err);
+            }
+        } else if (event.key === 'reserva_cambiada' || event.key === 'espacio_cambiado') {
+            console.log('🔄 Cambio detectado en localStorage, actualizando mapa...');
+            if (typeof actualizarColoresEspacios === 'function') {
+                actualizarColoresEspacios(true); // forzar
+            }
+            if (typeof actualizarModuloYColores === 'function') {
+                actualizarModuloYColores();
+            }
+        }
+    });
+
+
+    </script>
+
+    <!-- Modales del Panel de Administración -->
+    <x-modal-agregar-reserva />
+    <x-modal-editar />
+    <x-modal-editar-reservas />
+    <x-modal-editar-espacios />
+
+    <!-- JavaScript del Panel de Administración -->
+    <script>
+        window.horariosModulos = @json($horariosModulos ?? []);
+    </script>
+    <script src="{{ asset('js/admin-panel.js') }}"></script>
+
+</x-show-layout>
