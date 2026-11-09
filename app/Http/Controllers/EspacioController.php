@@ -429,12 +429,14 @@ class EspacioController extends Controller
      */
     public function modulosDisponibles(Request $request, $espacioId)
     {
-        // Obtener día y módulo actual
+        // Obtener día y módulo actual (normalizando tildes como miércoles -> miercoles, sábado -> sabado)
         $horaActual = $request->input('hora_actual', now()->format('H:i:s'));
-        $diaActual = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
+        $diaRaw = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
+        $diaActual = ModulosHelper::normalizarDia($diaRaw);
 
-        // Log para debugging
-
+        $sedePrefix = \App\Models\Tenant::current()?->prefijo_espacios;
+        $espacioId = \App\Helpers\EspacioAliasHelper::normalizar($espacioId, $sedePrefix);
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacioId, $sedePrefix);
 
         // Mapeo de días a códigos
         $codigosDias = [
@@ -475,7 +477,7 @@ class EspacioController extends Controller
 
         // Obtener todas las planificaciones para este espacio en este día en el período actual
         $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
-        $planificaciones = Planificacion_Asignatura::where('id_espacio', $espacioId)
+        $planificaciones = Planificacion_Asignatura::whereIn('id_espacio', $espaciosEquiv)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->whereHas('horario', function ($q) use ($periodoActual) {
                 $q->where('periodo', $periodoActual);
@@ -485,7 +487,7 @@ class EspacioController extends Controller
 
         // Obtener reservas activas para este espacio en este día
         $fechaActual = now()->toDateString();
-        $reservasActivas = Reserva::where('id_espacio', $espacioId)
+        $reservasActivas = Reserva::whereIn('id_espacio', $espaciosEquiv)
             ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
             ->get();
@@ -584,7 +586,8 @@ class EspacioController extends Controller
      */
     private function determinarModuloActual($horaActual, $diaActual)
     {
-        $horariosDia = ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
+        $diaNorm = ModulosHelper::normalizarDia($diaActual);
+        $horariosDia = ModulosHelper::getHorariosModulos()[$diaNorm] ?? null;
 
         if (!$horariosDia) {
             Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
@@ -632,8 +635,9 @@ class EspacioController extends Controller
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
         $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacioId);
         $planificacion = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
-            ->where('id_espacio', $espacioId)
+            ->whereIn('id_espacio', $espaciosEquiv)
             ->where('id_modulo', $moduloCodigo)
             ->whereHas('horario', function ($q) use ($periodoActual) {
                 $q->where('periodo', $periodoActual);

@@ -1698,15 +1698,25 @@ class PlanoDigitalController extends Controller
             $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRawInput));
             $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runUsuario;
             $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
+            $espacioLimpioLookup = str_replace(['-', ' '], '', $idEspacio);
 
-            // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
-            $espacio = Espacio::withoutGlobalScopes()->where('id_espacio', $idEspacio)->first();
+            // Verificar que el espacio existe (ignorar scopes globales y soportar alias como TH-30 -> TH-L09)
+            $espacio = Espacio::withoutGlobalScopes()
+                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpioLookup) {
+                    $q->where('id_espacio', $idEspacio)
+                      ->orWhereIn('id_espacio', $espaciosEquiv)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioLookup]);
+                })
+                ->first();
             if (!$espacio) {
                 return response()->json([
                     'tipo' => 'error',
                     'mensaje' => 'Espacio no encontrado: ' . $idEspacio
                 ], 404);
             }
+            $idEspacio = $espacio->id_espacio;
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
             // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
             $reservaExistente = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
@@ -1799,7 +1809,10 @@ class PlanoDigitalController extends Controller
                         $qPrincipal->whereHas('asignatura', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
                             $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                         })->orWhereHas('horario', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
                             $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
@@ -1992,7 +2005,10 @@ class PlanoDigitalController extends Controller
                     $qPrincipal->whereHas('asignatura', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
                         $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                     })->orWhereHas('horario', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
                         $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
@@ -2087,21 +2103,68 @@ class PlanoDigitalController extends Controller
                     $reservaFinalizadaHoy = $reservaColabFinalizada;
                     $tieneClaseAhora = true;
                 } else {
-                    $recScanner = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
-                        $idEspacio,
-                        $runUsuario,
-                        $hoyFechaScanner,
-                        $horaActualStr,
-                        60
-                    );
-                    if ($recScanner) {
-                        $tieneClaseAhora = true;
-                        $resFinRec = $verificarReservaFinalizadaScanner(
-                            $recScanner['id_asignatura'] ?? null,
-                            $recScanner['id_modulo'] ?? null
+                    // 1.c Fallback: Profesor colaborador activo asociado a una asignatura planificada en este espacio
+                    $asigIdsColabScanner = \App\Models\ProfesorColaborador::where('estado', 'activo')
+                        ->where('fecha_inicio', '<=', $hoyFechaScanner)
+                        ->where('fecha_termino', '>=', $hoyFechaScanner)
+                        ->whereNotNull('id_asignatura')
+                        ->where(function ($sq) use ($runUsuario, $runLimpio, $runSinDv) {
+                            $sq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        })
+                        ->pluck('id_asignatura')
+                        ->unique()
+                        ->values()
+                        ->all();
+
+                    if (!empty($asigIdsColabScanner)) {
+                        $candidatosAsigColabScanner = Planificacion_Asignatura::with(['modulo', 'asignatura'])
+                            ->where(function ($eq) use ($idEspacio, $espaciosEquiv, $espacioLimpioCheck) {
+                                $eq->where('id_espacio', $idEspacio)
+                                   ->orWhereIn('id_espacio', $espaciosEquiv)
+                                   ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioCheck]);
+                            })
+                            ->whereIn('id_asignatura', $asigIdsColabScanner)
+                            ->whereHas('modulo', function ($q) use ($diasCheck, $horaActualStr, $ahora) {
+                                $q->whereIn('dia', $diasCheck)
+                                  ->where('hora_inicio', '<=', $ahora->copy()->addMinutes(15)->toTimeString())
+                                  ->where('hora_termino', '>=', $horaActualStr);
+                            })
+                            ->get();
+
+                        foreach ($candidatosAsigColabScanner as $candACS) {
+                            $resFinACS = $verificarReservaFinalizadaScanner($candACS->id_asignatura, $candACS->id_modulo, $candACS->modulo);
+                            if (!$resFinACS) {
+                                if (!$claseProgramadaScanner) {
+                                    $claseProgramadaScanner = $candACS;
+                                    $tieneClaseAhora = true;
+                                }
+                            } elseif (!$reservaFinalizadaHoy) {
+                                $claseProgramadaScanner = $candACS;
+                                $reservaFinalizadaHoy = $resFinACS;
+                                $tieneClaseAhora = true;
+                            }
+                        }
+                    }
+
+                    if (!$tieneClaseAhora) {
+                        $recScanner = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                            $idEspacio,
+                            $runUsuario,
+                            $hoyFechaScanner,
+                            $horaActualStr,
+                            60
                         );
-                        if ($resFinRec) {
-                            $reservaFinalizadaHoy = $resFinRec;
+                        if ($recScanner) {
+                            $tieneClaseAhora = true;
+                            $resFinRec = $verificarReservaFinalizadaScanner(
+                                $recScanner['id_asignatura'] ?? null,
+                                $recScanner['id_modulo'] ?? null
+                            );
+                            if ($resFinRec) {
+                                $reservaFinalizadaHoy = $resFinRec;
+                            }
                         }
                     }
                 }
@@ -2384,15 +2447,19 @@ class PlanoDigitalController extends Controller
                     $periodoActual = SemesterHelper::getCurrentPeriod();
                     $idEspacioLimpio = str_replace(['-', ' '], '', $idEspacio);
                     $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
-                        ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
+                        ->where(function ($eq) use ($idEspacio, $espaciosEquiv, $idEspacioLimpio) {
+                            $eq->where('id_espacio', $idEspacio)
+                               ->orWhereIn('id_espacio', $espaciosEquiv)
+                               ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio]);
+                        })
                         ->whereHas('horario', function ($query) use ($periodoActual) {
                             $query->where('periodo', $periodoActual);
                         })
                         ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
                             $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
                         })
-                        ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr) {
-                            $query->where('dia', $diaActual)
+                        ->whereHas('modulo', function ($query) use ($diasCheck, $horaActualStr) {
+                            $query->whereIn('dia', $diasCheck)
                                   ->where('hora_inicio', '<=', $horaActualStr)
                                   ->where('hora_termino', '>', $horaActualStr);
                         })
@@ -2402,15 +2469,19 @@ class PlanoDigitalController extends Controller
                         // Si no hay clase en curso, buscar si hay una clase que empiece en los próximos 15 minutos
                         $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
                         $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
-                            ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
+                            ->where(function ($eq) use ($idEspacio, $espaciosEquiv, $idEspacioLimpio) {
+                                $eq->where('id_espacio', $idEspacio)
+                                   ->orWhereIn('id_espacio', $espaciosEquiv)
+                                   ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio]);
+                            })
                             ->whereHas('horario', function ($query) use ($periodoActual) {
                                 $query->where('periodo', $periodoActual);
                             })
                             ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
                                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
                             })
-                            ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimiteAnticipada) {
-                                $query->where('dia', $diaActual)
+                            ->whereHas('modulo', function ($query) use ($diasCheck, $horaActualStr, $horaLimiteAnticipada) {
+                                $query->whereIn('dia', $diasCheck)
                                       ->where('hora_inicio', '>', $horaActualStr)
                                       ->where('hora_inicio', '<=', $horaLimiteAnticipada);
                             })
@@ -2440,6 +2511,7 @@ class PlanoDigitalController extends Controller
                 // El espacio está disponible para crear una nueva reserva
                 return response()->json([
                     'tipo' => 'nueva_reserva',
+                    'id_espacio' => $espacio->id_espacio,
                     'mensaje' => 'Espacio disponible para reservar',
                     'espacio_disponible' => true
                 ]);
@@ -2824,10 +2896,13 @@ class PlanoDigitalController extends Controller
             $this->establecerContextoTenant();
 
             $idEspacioNorm = $this->normalizeEspacioId($idEspacio);
-            $espacio = Espacio::with(['piso.facultad.sede'])
-                ->where(function ($q) use ($idEspacio, $idEspacioNorm) {
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacioNorm);
+            $espacio = Espacio::withoutGlobalScopes()
+                ->with(['piso.facultad.sede'])
+                ->where(function ($q) use ($idEspacio, $idEspacioNorm, $espaciosEquiv) {
                     $q->where('id_espacio', $idEspacio)
-                      ->orWhere('id_espacio', $idEspacioNorm);
+                      ->orWhere('id_espacio', $idEspacioNorm)
+                      ->orWhereIn('id_espacio', $espaciosEquiv);
                 })
                 ->first();
 
@@ -3485,24 +3560,28 @@ class PlanoDigitalController extends Controller
      */
     private function establecerContextoTenant()
     {
-        $tenantId = tenant_id() ?? session('tenant_id') ?? null;
+        if (Tenant::current()) {
+            return;
+        }
 
-        if (!$tenantId) {
-            $host = request()->getHost();
-            $tenant = Tenant::where('domain', $host)
-                ->orWhere('domain', 'LIKE', '%' . $host . '%')
-                ->first();
-
+        $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
             if ($tenant) {
                 $tenant->makeCurrent();
-
+                return;
             }
-        } elseif (session()->has('tenant_id')) {
-            $tenant = Tenant::find(session('tenant_id'));
-            if ($tenant) {
-                $tenant->makeCurrent();
+        }
 
-            }
+        $host = request()->getHost();
+        $subdomain = explode('.', $host)[0] ?? $host;
+        $tenant = Tenant::where('domain', $host)
+            ->orWhere('domain', $subdomain)
+            ->orWhere('domain', 'LIKE', '%' . $host . '%')
+            ->first();
+
+        if ($tenant) {
+            $tenant->makeCurrent();
         }
     }
 
@@ -3529,25 +3608,29 @@ class PlanoDigitalController extends Controller
             return $idEspacio;
         }
 
-        // Convertir a mayúsculas y quitar espacios
-        $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
+        // Convertir a mayúsculas, quitar espacios y normalizar comillas/guiones bajos
+        $idEspacio = strtoupper(trim(str_replace([' ', "'", '_'], ['', '-', '-'], $idEspacio)));
+
+        // Corregir formato partido como THL-01 -> TH-L01, THC-1 -> TH-C1
+        if (preg_match('/^(TH|LA|CH|CT)([A-Z])-([A-Z0-9]+)$/', $idEspacio, $mCorr)) {
+            $idEspacio = "{$mCorr[1]}-{$mCorr[2]}{$mCorr[3]}";
+        }
 
         // Obtener el prefijo del tenant actual (ej: "CH", "LA", "CT", "TH")
         $tenant = Tenant::current();
-        if (!$tenant) {
-            return $idEspacio;
-        }
-        $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
-
-        // Remover todos los guiones temporalmente para unificar el formato
-        $normalizedInput = str_replace('-', '', $idEspacio);
-
-        // Si el código normalizado comienza con el prefijo del tenant, lo removemos para obtener el "core"
-        if (strpos($normalizedInput, $prefix) === 0) {
-            $normalizedInput = substr($normalizedInput, strlen($prefix));
+        $prefix = $tenant ? strtoupper($tenant->prefijo_espacios ?: $tenant->domain) : null;
+        if (!$prefix && preg_match('/^(CCP|TH|LA|CH|CT)-/', $idEspacio, $mPref)) {
+            $prefix = $mPref[1];
         }
 
-        // El ID final en base de datos tiene la estructura: PREFIX-CORE
-        return $prefix . '-' . $normalizedInput;
+        if ($prefix) {
+            $normalizedInput = str_replace('-', '', $idEspacio);
+            if (strpos($normalizedInput, $prefix) === 0) {
+                $normalizedInput = substr($normalizedInput, strlen($prefix));
+            }
+            $idEspacio = $prefix . '-' . $normalizedInput;
+        }
+
+        return \App\Helpers\EspacioAliasHelper::normalizar($idEspacio, $prefix);
     }
 }

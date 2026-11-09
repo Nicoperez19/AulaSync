@@ -1019,6 +1019,15 @@
             }
 
             restaurarInputActivo() {
+                if (!this.activeInput) {
+                    const modalModulos = document.getElementById('modal-seleccionar-modulos');
+                    const modalEstudio = document.getElementById('modal-sala-estudio');
+                    const modulosAbierto = modalModulos && !modalModulos.classList.contains('hidden');
+                    const estudioAbierto = modalEstudio && !modalEstudio.classList.contains('hidden');
+                    if (!modulosAbierto && !estudioAbierto) {
+                        this.activeInput = 'main';
+                    }
+                }
                 if (this.activeInput && this.qrInputs[this.activeInput]) {
                     const input = this.qrInputs[this.activeInput];
                     input.setAttribute('autofocus', '');
@@ -1756,9 +1765,12 @@
                 return;
             }
 
-            // Validar que el buffer tenga un tamaño mínimo razonable
-            if (bufferQR.length < 5) {
-                limpiarEstadoLectura();
+            // Validar que el buffer tenga un tamaño mínimo razonable (permitir códigos cortos de sala como TH01, L01, 30 en paso 2)
+            const minLengthRequerido = (ordenEscaneo === 'espacio') ? 2 : 5;
+            if (bufferQR.trim().length < minLengthRequerido) {
+                if (ordenEscaneo === 'usuario') {
+                    limpiarEstadoLectura();
+                }
                 return;
             }
 
@@ -2071,56 +2083,53 @@
             bufferQR = '';
             lastBufferLength = 0;
 
-            // Extraer código de espacio - múltiples formatos posibles
+            // Extraer código de espacio - soportando URLs, prefijos de cualquier sede (TH, CCP, LA, CH, CT), comillas de lector QR y códigos cortos
             let espacio = null;
+            let rawEspacioInput = currentBuffer.trim();
 
-            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
-            const espacioMatch = currentBuffer.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
-            if (espacioMatch) {
-                espacio = espacioMatch[1];
-            } else {
-                // Patrón 2: 2-3 letras + números (formato compacto)
-                const espacioMatchAlt = currentBuffer.match(/([A-Z]{2,3}[0-9]+)/i);
-                if (espacioMatchAlt) {
-                    espacio = espacioMatchAlt[1];
+            // Si el QR contiene una URL o ruta con '/', extraer el último segmento válido (evita confundir th.aulasync.cl con TH-AULASYNC)
+            if (rawEspacioInput.includes('/') || rawEspacioInput.includes('http')) {
+                const urlEspacioMatch = rawEspacioInput.match(/(?:espacios?|salas?|qr)[\/=]([A-Za-z0-9'_\-]+)/i);
+                if (urlEspacioMatch) {
+                    rawEspacioInput = urlEspacioMatch[1];
                 } else {
-                    // Patrón 3: Letras + caracteres especiales + letras/números
-                    const espacioMatchSpecial = currentBuffer.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
-                    if (espacioMatchSpecial) {
-                        espacio = espacioMatchSpecial[1];
-                    } else {
-                        // Patrón 4: Formato simple letras + números
-                        const espacioMatchSimple = currentBuffer.match(/([A-Z]+[0-9]+)/i);
-                        if (espacioMatchSimple) {
-                            espacio = espacioMatchSimple[1];
-                        } else {
-                            // Solo mostrar error si el buffer tiene contenido significativo
-                            if (currentBuffer.length > 8) {
-                                limpiarEstadoLectura('QR de espacio inválido');
-                            } else {
-                                limpiarEstadoSilencioso();
-                            }
-                            return;
-                        }
+                    const segments = rawEspacioInput.split(/[\/?#&]+/).filter(Boolean);
+                    if (segments.length > 0) {
+                        rawEspacioInput = segments[segments.length - 1];
                     }
                 }
             }
 
+            // Normalizar comillas (teclado español de lector QR) y guiones bajos antes de evaluar patrones
+            rawEspacioInput = rawEspacioInput.replace(/['`´_]+/g, '-').toUpperCase().trim();
 
-        // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
-        if (espacio) {
-            // Eliminar espacios y convertir a mayúsculas
-            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '');
-            // Normalizar: insertar guion entre el prefijo de sede (2-3 letras) y el resto del código.
-            // Aplica para TODAS las sedes: TH-30, CH-A1, LA-201, CT-5, CCP-10, etc.
-            if (!espacio.includes('-')) {
-                const prefixMatch = espacio.match(/^([A-Z]{2,3})([A-Z0-9].*)$/);
-                if (prefixMatch) {
-                    espacio = prefixMatch[1] + '-' + prefixMatch[2];
+            // Patrón 1: Prefijo de sede explícito (CCP, TH, LA, CH, CT) seguido de código alfanumérico (ej: TH-01, TH-L01, TH-LA10, TH-C1, TH-AUD, TH-LAB, THL01, TH-L-01)
+            const sedePrefixMatch = rawEspacioInput.match(/\b(CCP|TH|LA|CH|CT)-?([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
+            if (sedePrefixMatch) {
+                espacio = `${sedePrefixMatch[1].toUpperCase()}-${sedePrefixMatch[2].toUpperCase().replace(/-/g, '')}`;
+            } else {
+                // Patrón 2: Código de aula/laboratorio sin prefijo de sede (ej: L01, LA10, LAB09, C1, SR1, AUD, LAB, 30, 01)
+                const codigoSinSedeMatch = rawEspacioInput.match(/\b([A-Z]{1,3}-?[0-9]{1,3}[A-Z]?|AUD|LAB|[0-9]{1,3})\b/i);
+                if (codigoSinSedeMatch) {
+                    espacio = codigoSinSedeMatch[1].toUpperCase().replace(/-/g, '');
+                } else {
+                    if (currentBuffer.length > 8) {
+                        limpiarEstadoLectura('QR de espacio inválido');
+                    } else {
+                        limpiarEstadoSilencioso();
+                    }
+                    return;
                 }
             }
-            // Reemplazar comillas por guiones (formato heredado)
-            espacio = espacio.replace(/'/g, '-');
+
+        // Normalizar el formato del espacio para que coincida con la BD (ej: TH-L01, TH-C1, TH-01)
+        if (espacio) {
+            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '').replace(/'/g, '-');
+            // Insertar guion únicamente después de un prefijo de sede conocido (CCP, TH, LA, CH, CT), evitando partir THL01 en THL-01
+            const knownSedeMatch = espacio.match(/^(CCP|TH|LA|CH|CT)-?([A-Z0-9]+)$/);
+            if (knownSedeMatch) {
+                espacio = knownSedeMatch[1] + '-' + knownSedeMatch[2];
+            }
 
             // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
             // Ya tenemos un código de espacio válido, el flujo de espera terminó
@@ -2139,9 +2148,7 @@
             });
         }
 
-                    // Verificar estado del espacio y reservas del usuario
-
-        // Agregar timeout para evitar que se cuelgue
+        // Verificar estado del espacio y reservas del usuario
         const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
         );
@@ -2150,8 +2157,6 @@
             verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
             timeoutPromise
         ]).catch(error => {
-            // Error en verificación de espacio
-            // Restaurar autofocus del qr-input después de timeout en verificación
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
@@ -2162,6 +2167,10 @@
                 mensaje: 'Timeout al verificar el estado del espacio'
             };
         });
+
+            if (resultadoVerificacion && resultadoVerificacion.id_espacio) {
+                espacio = resultadoVerificacion.id_espacio;
+            }
 
             if (resultadoVerificacion.tipo === 'error') {
                 // Error al verificar estado - mostrar SweetAlert prominente
@@ -2643,8 +2652,12 @@
             inputEscanner.value = '';
         }
 
-        // Resetear para siguiente usuario
+        // Resetear para siguiente usuario solo si no se abrió el modal de selección de módulos
         setTimeout(() => {
+            const modalModulos = document.getElementById('modal-seleccionar-modulos');
+            if (modalModulos && !modalModulos.classList.contains('hidden')) {
+                return;
+            }
             limpiarEstadoLectura();
             // Restaurar autofocus del qr-input después de procesar espacio exitosamente
             if (qrInputManager) {

@@ -58,25 +58,17 @@ class ProfesorController extends Controller
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
-            if (!empty($idEspacio)) {
-                $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
-                $tenant = Tenant::current() ?? Tenant::find(tenant_id());
-                if ($tenant) {
-                    $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
-                    $normalizedInput = str_replace('-', '', $idEspacio);
-                    if (strpos($normalizedInput, $prefix) === 0) {
-                        $normalizedInput = substr($normalizedInput, strlen($prefix));
-                    }
-                    $idEspacio = $prefix . '-' . $normalizedInput;
-                }
-            }
+            $idEspacio = $this->normalizeEspacioId($idEspacio);
 
             // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
             $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $espacio = Espacio::where('id_espacio', $idEspacio)
-                ->orWhereIn('id_espacio', $espaciosEquiv)
-                ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+            $espacio = Espacio::withoutGlobalScopes()
+                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpio) {
+                    $q->where('id_espacio', $idEspacio)
+                      ->orWhereIn('id_espacio', $espaciosEquiv)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
                 ->first();
             if (!$espacio) {
                 return response()->json([
@@ -86,13 +78,15 @@ class ProfesorController extends Controller
             }
 
             // Verificar si el profesor existe (soportando RUN con o sin DV)
-            $profesor = Profesor::where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                $q->where('run_profesor', $runProfesor)
-                  ->orWhere('run_profesor', $runLimpio)
-                  ->orWhere('run_profesor', $runSinDv)
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-            })->first();
+            $profesor = Profesor::withoutGlobalScopes()
+                ->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $runProfesor)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->first();
             if (!$profesor) {
                 return response()->json([
                     'success' => false,
@@ -163,21 +157,50 @@ class ProfesorController extends Controller
             // Verificar si ya tiene una reserva activa
             $reservaExistente = Reserva::where('run_profesor', $profesor->run_profesor)
                 ->where('estado', 'activa')
-                ->whereNull('hora_salida')
                 ->first();
 
             if ($reservaExistente) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa en otro espacio'
-                ], 400);
+                $fechaResExistente = $reservaExistente->fecha_reserva instanceof \Carbon\Carbon
+                    ? $reservaExistente->fecha_reserva->toDateString()
+                    : substr((string) $reservaExistente->fecha_reserva, 0, 10);
+                $esExpirada = ($fechaResExistente && $fechaResExistente < $fechaActual)
+                    || ($reservaExistente->hora_salida && $reservaExistente->hora_salida <= $horaActual);
+
+                if ($esExpirada || $reservaExistente->id_espacio === $espacio->id_espacio) {
+                    $reservaExistente->estado = 'finalizada';
+                    if (!$reservaExistente->hora_salida || $esExpirada) {
+                        $reservaExistente->hora_salida = $horaActual;
+                    }
+                    $reservaExistente->observaciones = trim(($reservaExistente->observaciones ?? '') . ' | Auto-finalizada al registrar nueva reserva en ' . $espacio->id_espacio);
+                    $reservaExistente->save();
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                    ], 400);
+                }
             }
 
-            // Encontrar el módulo actual para asignar como inicio/fin
+            // Encontrar el módulo actual para asignar como inicio/fin (incluyendo soporte para breaks y modulo_solicitado)
             $diaSemanaStr = strtolower(\Carbon\Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
             $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaSemanaStr);
             $moduloActual = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActual, $diaNormalizado);
             $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+
+            if (!$moduloActual && $request->filled('modulo_solicitado')) {
+                $modSol = (int) $request->input('modulo_solicitado');
+                if (isset($horarios[$modSol])) {
+                    $moduloActual = $modSol;
+                }
+            }
+            if (!$moduloActual && !empty($horarios)) {
+                foreach ($horarios as $modNum => $hMod) {
+                    if ($horaActual < $hMod['inicio']) {
+                        $moduloActual = (int) $modNum;
+                        break;
+                    }
+                }
+            }
 
             // Verificar si el profesor tiene una recuperación de clase reagendada para este horario/espacio
             $infoRecEspontanea = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
@@ -278,18 +301,7 @@ class ProfesorController extends Controller
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
-            if (!empty($idEspacio)) {
-                $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
-                $tenant = Tenant::current() ?? Tenant::find(tenant_id());
-                if ($tenant) {
-                    $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
-                    $normalizedInput = str_replace('-', '', $idEspacio);
-                    if (strpos($normalizedInput, $prefix) === 0) {
-                        $normalizedInput = substr($normalizedInput, strlen($prefix));
-                    }
-                    $idEspacio = $prefix . '-' . $normalizedInput;
-                }
-            }
+            $idEspacio = $this->normalizeEspacioId($idEspacio);
 
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
@@ -301,9 +313,12 @@ class ProfesorController extends Controller
             // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
             $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $espacio = Espacio::where('id_espacio', $idEspacio)
-                ->orWhereIn('id_espacio', $espaciosEquiv)
-                ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+            $espacio = Espacio::withoutGlobalScopes()
+                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpio) {
+                    $q->where('id_espacio', $idEspacio)
+                      ->orWhereIn('id_espacio', $espaciosEquiv)
+                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                })
                 ->first();
             if (!$espacio) {
                 return response()->json([
@@ -313,13 +328,15 @@ class ProfesorController extends Controller
             }
 
             // Verificar si el profesor existe (soportando RUN con o sin DV)
-            $profesor = Profesor::where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                $q->where('run_profesor', $runProfesor)
-                  ->orWhere('run_profesor', $runLimpio)
-                  ->orWhere('run_profesor', $runSinDv)
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-            })->first();
+            $profesor = Profesor::withoutGlobalScopes()
+                ->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $runProfesor)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
+                ->first();
             
             if (!$profesor) {
                 return response()->json([
@@ -481,7 +498,13 @@ class ProfesorController extends Controller
                           ->orWhere('run_profesor', $runLimpio)
                           ->orWhere('run_profesor', $runSinDv)
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                          ->orWhere('run_profesor_reemplazo', $profesor->run_profesor)
+                          ->orWhere('run_profesor_reemplazo', $runProfesor)
+                          ->orWhere('run_profesor_reemplazo', $runLimpio)
+                          ->orWhere('run_profesor_reemplazo', $runSinDv)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                     })->orWhereHas('horario', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
                         $q->where('run_profesor', $profesor->run_profesor)
                           ->orWhere('run_profesor', $runProfesor)
@@ -602,6 +625,67 @@ class ProfesorController extends Controller
 
                 if ($planColaborador) {
                     $esTemporal = true;
+                }
+            }
+
+            // 1.c Fallback: Profesor colaborador activo asociado a la asignatura de una Planificacion_Asignatura en este espacio
+            if (!$programacion && !$planColaborador) {
+                $hoyFecha = $fechaActual;
+                $asigIdsColab = \App\Models\ProfesorColaborador::where('estado', 'activo')
+                    ->where('fecha_inicio', '<=', $hoyFecha)
+                    ->where('fecha_termino', '>=', $hoyFecha)
+                    ->whereNotNull('id_asignatura')
+                    ->where(function ($subQ) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                        $subQ->where('run_profesor_colaborador', $profesor->run_profesor)
+                             ->orWhere('run_profesor_colaborador', $runProfesor)
+                             ->orWhere('run_profesor_colaborador', $runLimpio)
+                             ->orWhere('run_profesor_colaborador', $runSinDv)
+                             ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                             ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })
+                    ->pluck('id_asignatura')
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                if (!empty($asigIdsColab)) {
+                    $candidatosAsigColab = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+                        ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
+                            $eq->where('id_espacio', $espacio->id_espacio)
+                               ->orWhereIn('id_espacio', $espaciosEquiv)
+                               ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                        })
+                        ->whereIn('id_asignatura', $asigIdsColab)
+                        ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActual, $horaConAnticipacion) {
+                            $q->whereIn('dia', $diasPosibles)
+                              ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
+                                  $subQ->where(function ($sq1) use ($horaActual) {
+                                      $sq1->where('hora_inicio', '<=', $horaActual)
+                                          ->where('hora_termino', '>=', $horaActual);
+                                  })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
+                                      $sq2->where('hora_inicio', '>', $horaActual)
+                                          ->where('hora_inicio', '<=', $horaConAnticipacion);
+                                  });
+                              });
+                        })
+                        ->get();
+
+                    foreach ($candidatosAsigColab as $candAC) {
+                        $resFinAC = $verificarReservaFinalizadaProf($candAC->id_asignatura, $candAC->id_modulo, $candAC->modulo);
+                        if (!$resFinAC) {
+                            if (!$programacion) {
+                                $programacion = $candAC;
+                            }
+                        } elseif (!$candidatoRegFinalizado) {
+                            $candidatoRegFinalizado = $candAC;
+                            $reservaRegFinalizada = $resFinAC;
+                        }
+                    }
+
+                    if (!$programacion && $candidatoRegFinalizado && !$reservaFinalizadaHoy) {
+                        $programacion = $candidatoRegFinalizado;
+                        $reservaFinalizadaHoy = $reservaRegFinalizada;
+                    }
                 }
             }
 
@@ -913,6 +997,7 @@ class ProfesorController extends Controller
                 'id_area_academica' => 'nullable|exists:area_academicas,id_area_academica',
             ]);
 
+            $validatedData['sede_id'] = $request->input('sede_id') ?? (\App\Models\Tenant::current()?->sede_id);
             Profesor::create($validatedData);
 
             return redirect()->route('professors.index')->with('success', 'Profesor creado exitosamente.');
@@ -1176,19 +1261,58 @@ class ProfesorController extends Controller
      */
     private function establecerContextoTenant()
     {
-        $tenantId = tenant_id() ?? null;
-        
-        if (!$tenantId) {
-            $host = request()->getHost();
-            $tenant = Tenant::where('domain', $host)
-                ->orWhere('domain', 'LIKE', '%' . $host . '%')
-                ->first();
-            
-            if ($tenant) {
-                Config::set('database.connections.tenant.database', $tenant->database);
-                DB::purge('tenant');
+        if (Tenant::current()) {
+            return;
+        }
 
+        $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
             }
         }
+
+        $host = request()->getHost();
+        $subdomain = explode('.', $host)[0] ?? $host;
+        $tenant = Tenant::where('domain', $host)
+            ->orWhere('domain', $subdomain)
+            ->orWhere('domain', 'LIKE', '%' . $host . '%')
+            ->first();
+
+        if ($tenant) {
+            $tenant->makeCurrent();
+        }
+    }
+
+    /**
+     * Normaliza el ID de espacio soportando formatos compactos, comillas de lector QR y alias por sede.
+     */
+    private function normalizeEspacioId(?string $idEspacio): ?string
+    {
+        if (empty($idEspacio)) {
+            return $idEspacio;
+        }
+
+        $idEspacio = strtoupper(trim(str_replace([' ', "'", '_'], ['', '-', '-'], $idEspacio)));
+
+        // Corregir formato partido como THL-01 -> TH-L01, THC-1 -> TH-C1
+        if (preg_match('/^(TH|LA|CH|CT)([A-Z])-([A-Z0-9]+)$/', $idEspacio, $mCorr)) {
+            $idEspacio = "{$mCorr[1]}-{$mCorr[2]}{$mCorr[3]}";
+        }
+
+        $tenant = Tenant::current() ?? Tenant::find(tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null));
+        $prefix = $tenant ? strtoupper($tenant->prefijo_espacios ?: $tenant->domain) : null;
+
+        if ($prefix) {
+            $normalizedInput = str_replace('-', '', $idEspacio);
+            if (strpos($normalizedInput, $prefix) === 0) {
+                $normalizedInput = substr($normalizedInput, strlen($prefix));
+            }
+            $idEspacio = $prefix . '-' . $normalizedInput;
+        }
+
+        return \App\Helpers\EspacioAliasHelper::normalizar($idEspacio, $prefix);
     }
 }

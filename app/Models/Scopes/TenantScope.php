@@ -86,18 +86,30 @@ class TenantScope implements Scope
 
         // 3. Si el modelo tiene sede_id o id_sede directa
         if ($hasColumn('sede_id') && $tenant->sede_id) {
-            $builder->where($table . '.sede_id', $tenant->sede_id);
+            $builder->where(function ($query) use ($table, $tenant) {
+                $query->where($table . '.sede_id', $tenant->sede_id)
+                      ->orWhereNull($table . '.sede_id');
+            });
             return;
         }
         if ($hasColumn('id_sede') && $tenant->sede_id) {
-            $builder->where($table . '.id_sede', $tenant->sede_id);
+            $builder->where(function ($query) use ($table, $tenant) {
+                $query->where($table . '.id_sede', $tenant->sede_id)
+                      ->orWhereNull($table . '.id_sede');
+            });
             return;
         }
 
         // 4. Filtrar por relación con profesor (si tiene run_profesor)
         if (method_exists($model, 'profesor') && $hasColumn('run_profesor') && $tenant->sede_id) {
-            $builder->whereHas('profesor', function ($query) use ($tenant) {
-                $query->where('sede_id', $tenant->sede_id);
+            $builder->where(function ($outer) use ($table, $tenant) {
+                $outer->whereNull($table . '.run_profesor')
+                      ->orWhereHas('profesor', function ($query) use ($tenant) {
+                          $query->where(function ($pq) use ($tenant) {
+                              $pq->where('sede_id', $tenant->sede_id)
+                                 ->orWhereNull('sede_id');
+                          });
+                      });
             });
             return;
         }

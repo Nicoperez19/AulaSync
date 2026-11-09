@@ -267,7 +267,12 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                       ->orWhere('run_profesor', $runLimpio)
                       ->orWhere('run_profesor', $runSinDv)
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                      ->orWhere('run_profesor_reemplazo', $usuario)
+                      ->orWhere('run_profesor_reemplazo', $runLimpio)
+                      ->orWhere('run_profesor_reemplazo', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_reemplazo, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 })->orWhereHas('horario', function ($q) use ($usuario, $runLimpio, $runSinDv) {
                     $q->where('run_profesor', $usuario)
                       ->orWhere('run_profesor', $runLimpio)
@@ -403,7 +408,71 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                     'nombre_asignatura' => $planColaborador->profesorColaborador->nombre_asignatura_temporal ?? null,
                 ];
             } else {
-                $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
+                // 1.c Fallback: Profesor colaborador activo asociado a una asignatura planificada en este espacio
+                $asigIdsColabApi = \App\Models\ProfesorColaborador::where('estado', 'activo')
+                    ->where('fecha_inicio', '<=', $hoyFecha)
+                    ->where('fecha_termino', '>=', $hoyFecha)
+                    ->whereNotNull('id_asignatura')
+                    ->where(function ($subQ) use ($usuario, $runLimpio, $runSinDv) {
+                        $subQ->where('run_profesor_colaborador', $usuario)
+                             ->orWhere('run_profesor_colaborador', $runLimpio)
+                             ->orWhere('run_profesor_colaborador', $runSinDv)
+                             ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                             ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })
+                    ->pluck('id_asignatura')
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $planAsigColab = null;
+                if (!empty($asigIdsColabApi)) {
+                    $candidatosAsigColabApi = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+                        ->where(function ($eq) use ($espacio, $espacioLimpio, $espaciosEquiv) {
+                            $eq->where('id_espacio', $espacio)
+                               ->orWhereIn('id_espacio', $espaciosEquiv)
+                               ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+                        })
+                        ->whereIn('id_asignatura', $asigIdsColabApi)
+                        ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
+                            $q->whereIn('dia', $diasPosibles)
+                              ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                                  $subQ->where(function ($sq1) use ($horaActualStr) {
+                                      $sq1->where('hora_inicio', '<=', $horaActualStr)
+                                          ->where('hora_termino', '>=', $horaActualStr);
+                                  })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                                      $sq2->where('hora_inicio', '>', $horaActualStr)
+                                          ->where('hora_inicio', '<=', $horaConAnticipacion);
+                                  });
+                              });
+                        })
+                        ->get();
+
+                    foreach ($candidatosAsigColabApi as $candACA) {
+                        $resFinACA = $verificarReservaFinalizada($candACA->id_asignatura, $candACA->id_modulo, $candACA->modulo);
+                        if (!$resFinACA) {
+                            if (!$planAsigColab) {
+                                $planAsigColab = $candACA;
+                            }
+                        } elseif (!$reservaFinalizada) {
+                            $planAsigColab = $candACA;
+                            $reservaFinalizada = $resFinACA;
+                        }
+                    }
+                }
+
+                if ($planAsigColab && $planAsigColab->modulo) {
+                    $tieneProgramacion = !$reservaFinalizada;
+                    $modulosInfo = [
+                        'id_modulo' => $planAsigColab->id_modulo,
+                        'hora_inicio' => $planAsigColab->modulo->hora_inicio,
+                        'hora_termino' => $planAsigColab->modulo->hora_termino,
+                        'id_asignatura' => $planAsigColab->id_asignatura,
+                        'es_temporal' => false,
+                        'nombre_asignatura' => $planAsigColab->asignatura->nombre_asignatura ?? null,
+                    ];
+                } else {
+                    $recProg = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada(
                     $espacio,
                     $usuario,
                     $hoyFecha,
@@ -431,6 +500,7 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                         'nombre_asignatura' => $recProg['nombre_asignatura'] ?? 'Recuperación de Clase',
                         'seccion' => $recProg['seccion'] ?? null,
                     ];
+                }
                 }
             }
         }
