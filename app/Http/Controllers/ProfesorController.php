@@ -53,6 +53,8 @@ class ProfesorController extends Controller
             ]);
 
             $runProfesor = $this->normalizeRun($request->input('run_profesor'));
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $request->input('run_profesor')));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
@@ -83,6 +85,21 @@ class ProfesorController extends Controller
                 ], 404);
             }
 
+            // Verificar si el profesor existe (soportando RUN con o sin DV)
+            $profesor = Profesor::where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
+                $q->where('run_profesor', $runProfesor)
+                  ->orWhere('run_profesor', $runLimpio)
+                  ->orWhere('run_profesor', $runSinDv)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            })->first();
+            if (!$profesor) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Profesor no encontrado'
+                ], 404);
+            }
+
             // Verificar que el espacio esté disponible (o auto-finalizar sesión previa del mismo docente / sesión expirada)
             if ($espacio->estado !== 'Disponible') {
                 $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
@@ -91,32 +108,37 @@ class ProfesorController extends Controller
                     ->latest('updated_at')
                     ->first();
 
-                $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
-                $runOcupanteLimpio = $reservaActivaEnEspacio ? strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? '')) : '';
-
-                $esMismoProfesor = ($runOcupanteLimpio !== '' && $runProfLimpio === $runOcupanteLimpio);
-                $horaActualStr = now()->format('H:i:s');
-                $fechaResStr = $reservaActivaEnEspacio && $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
-                    ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
-                    : ($reservaActivaEnEspacio ? substr($reservaActivaEnEspacio->fecha_reserva, 0, 10) : null);
-                $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
-                    || ($reservaActivaEnEspacio && $reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
-
-                if ($reservaActivaEnEspacio && ($esMismoProfesor || $esReservaAntigua)) {
-                    $reservaActivaEnEspacio->estado = 'finalizada';
-                    if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
-                        $reservaActivaEnEspacio->hora_salida = $horaActualStr;
-                    }
-                    $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
-                    $reservaActivaEnEspacio->save();
-
+                if (!$reservaActivaEnEspacio) {
                     $espacio->estado = 'Disponible';
                     $espacio->save();
                 } else {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'El espacio no está disponible'
-                    ], 400);
+                    $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
+                    $runOcupanteLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? ''));
+
+                    $esMismoProfesor = ($runOcupanteLimpio !== '' && ($runProfLimpio === $runOcupanteLimpio || $runSinDv === $runOcupanteLimpio));
+                    $horaActualStr = now()->format('H:i:s');
+                    $fechaResStr = $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
+                        ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
+                        : substr((string) $reservaActivaEnEspacio->fecha_reserva, 0, 10);
+                    $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
+                        || ($reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
+
+                    if ($esMismoProfesor || $esReservaAntigua) {
+                        $reservaActivaEnEspacio->estado = 'finalizada';
+                        if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
+                            $reservaActivaEnEspacio->hora_salida = $horaActualStr;
+                        }
+                        $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
+                        $reservaActivaEnEspacio->save();
+
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'mensaje' => 'El espacio no está disponible'
+                        ], 400);
+                    }
                 }
             }
 
@@ -138,17 +160,8 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
-            // Verificar si el profesor existe
-            $profesor = Profesor::where('run_profesor', $runProfesor)->first();
-            if (!$profesor) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
-                ], 404);
-            }
-
             // Verificar si ya tiene una reserva activa
-            $reservaExistente = Reserva::where('run_profesor', $runProfesor)
+            $reservaExistente = Reserva::where('run_profesor', $profesor->run_profesor)
                 ->where('estado', 'activa')
                 ->whereNull('hora_salida')
                 ->first();
@@ -282,8 +295,8 @@ class ProfesorController extends Controller
             $fechaActual = now()->format('Y-m-d');
 
             // Normalizar el RUN para búsqueda (preservando K/k)
-            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runProfesor));
-            $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $request->input('run_profesor')));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
 
             // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
             $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
@@ -299,6 +312,22 @@ class ProfesorController extends Controller
                 ], 404);
             }
 
+            // Verificar si el profesor existe (soportando RUN con o sin DV)
+            $profesor = Profesor::where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
+                $q->where('run_profesor', $runProfesor)
+                  ->orWhere('run_profesor', $runLimpio)
+                  ->orWhere('run_profesor', $runSinDv)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            })->first();
+            
+            if (!$profesor) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Profesor no encontrado'
+                ], 404);
+            }
+
             // Verificar que el espacio esté disponible (o auto-finalizar sesión previa del mismo docente / sesión expirada)
             if ($espacio->estado !== 'Disponible') {
                 $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
@@ -307,32 +336,37 @@ class ProfesorController extends Controller
                     ->latest('updated_at')
                     ->first();
 
-                $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
-                $runOcupanteLimpio = $reservaActivaEnEspacio ? strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? '')) : '';
-
-                $esMismoProfesor = ($runOcupanteLimpio !== '' && $runProfLimpio === $runOcupanteLimpio);
-                $horaActualStr = now()->format('H:i:s');
-                $fechaResStr = $reservaActivaEnEspacio && $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
-                    ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
-                    : ($reservaActivaEnEspacio ? substr($reservaActivaEnEspacio->fecha_reserva, 0, 10) : null);
-                $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
-                    || ($reservaActivaEnEspacio && $reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
-
-                if ($reservaActivaEnEspacio && ($esMismoProfesor || $esReservaAntigua)) {
-                    $reservaActivaEnEspacio->estado = 'finalizada';
-                    if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
-                        $reservaActivaEnEspacio->hora_salida = $horaActualStr;
-                    }
-                    $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
-                    $reservaActivaEnEspacio->save();
-
+                if (!$reservaActivaEnEspacio) {
                     $espacio->estado = 'Disponible';
                     $espacio->save();
                 } else {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'El espacio no está disponible'
-                    ], 400);
+                    $runProfLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $profesor->run_profesor));
+                    $runOcupanteLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $reservaActivaEnEspacio->run_profesor ?? ''));
+
+                    $esMismoProfesor = ($runOcupanteLimpio !== '' && ($runProfLimpio === $runOcupanteLimpio || $runSinDv === $runOcupanteLimpio));
+                    $horaActualStr = now()->format('H:i:s');
+                    $fechaResStr = $reservaActivaEnEspacio->fecha_reserva instanceof \Carbon\Carbon
+                        ? $reservaActivaEnEspacio->fecha_reserva->toDateString()
+                        : substr((string) $reservaActivaEnEspacio->fecha_reserva, 0, 10);
+                    $esReservaAntigua = ($fechaResStr && $fechaResStr < now()->toDateString())
+                        || ($reservaActivaEnEspacio->hora_salida && $reservaActivaEnEspacio->hora_salida <= $horaActualStr);
+
+                    if ($esMismoProfesor || $esReservaAntigua) {
+                        $reservaActivaEnEspacio->estado = 'finalizada';
+                        if (!$reservaActivaEnEspacio->hora_salida || $esReservaAntigua) {
+                            $reservaActivaEnEspacio->hora_salida = $horaActualStr;
+                        }
+                        $reservaActivaEnEspacio->observaciones = trim(($reservaActivaEnEspacio->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase programada');
+                        $reservaActivaEnEspacio->save();
+
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    } else {
+                        return response()->json([
+                            'success' => false,
+                            'mensaje' => 'El espacio no está disponible'
+                        ], 400);
+                    }
                 }
             }
 
@@ -349,19 +383,6 @@ class ProfesorController extends Controller
                     'success' => false,
                     'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
                 ], 400);
-            }
-
-            // Verificar si el profesor existe
-            $profesor = Profesor::where('run_profesor', $runProfesor)
-                ->orWhere('run_profesor', $runLimpio)
-                ->orWhere('run_profesor', $runSinDv)
-                ->first();
-            
-            if (!$profesor) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Profesor no encontrado'
-                ], 404);
             }
 
             // Verificar si ya tiene una reserva activa
@@ -388,15 +409,17 @@ class ProfesorController extends Controller
             // Obtener la programación del profesor para este espacio (usando Eloquent para respetar la conexión 'tenant')
             $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
             $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
-            $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
+            $diasPosibles = array_values(array_unique([$diaActual, $diaNormalizado]));
             $horaConAnticipacion = now()->copy()->addMinutes(30)->format('H:i:s');
             $espacioLimpio = str_replace(['-', ' '], '', $espacio->id_espacio);
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
 
+            $reservaReactivable = null;
+
             // Helper para verificar si un bloque/asignatura específico ya fue finalizado hoy
-            $verificarReservaFinalizadaProf = function ($idAsig, $idMod) use ($fechaActual, $espacio, $espaciosEquiv, $espacioLimpio, $profesor, $runProfesor, $runLimpio, $runSinDv) {
+            $verificarReservaFinalizadaProf = function ($idAsig, $idMod, $moduloObj = null) use ($fechaActual, $horaActual, $espacio, $espaciosEquiv, $espacioLimpio, $profesor, $runProfesor, $runLimpio, $runSinDv, &$reservaReactivable) {
                 $numModulo = \App\Helpers\ModulosHelper::getNumeroModulo($idMod);
-                return Reserva::where('fecha_reserva', $fechaActual)
+                $res = Reserva::where('fecha_reserva', $fechaActual)
                     ->where('estado', 'finalizada')
                     ->where(function ($eq) use ($espacio, $espaciosEquiv, $espacioLimpio) {
                         $eq->where('id_espacio', $espacio->id_espacio)
@@ -422,6 +445,27 @@ class ProfesorController extends Controller
                     })
                     ->latest('updated_at')
                     ->first();
+
+                if ($res && $moduloObj) {
+                    $horaInicioMod = $moduloObj->hora_inicio ?? null;
+                    $horaTerminoMod = $moduloObj->hora_termino ?? null;
+                    $cerradaAntesDeIniciar = ($horaInicioMod && $res->hora_salida && $res->hora_salida <= $horaInicioMod);
+                    $duracionCortaEnCurso = false;
+                    if ($horaTerminoMod && $horaActual < $horaTerminoMod && $res->hora && $res->hora_salida) {
+                        $duracionSeg = abs(strtotime($res->hora_salida) - strtotime($res->hora));
+                        if ($duracionSeg < 300) {
+                            $duracionCortaEnCurso = true;
+                        }
+                    }
+                    if ($cerradaAntesDeIniciar || $duracionCortaEnCurso) {
+                        if ($numModulo !== null && (int) $res->modulo_inicio === (int) $numModulo) {
+                            $reservaReactivable = $res;
+                        }
+                        return null;
+                    }
+                }
+
+                return $res;
             };
 
             $candidatosRegulares = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
@@ -463,10 +507,11 @@ class ProfesorController extends Controller
 
             $programacion = null;
             $candidatoRegFinalizado = null;
+            $reservaRegFinalizada = null;
             $reservaFinalizadaHoy = null;
 
             foreach ($candidatosRegulares as $candReg) {
-                $resFin = $verificarReservaFinalizadaProf($candReg->id_asignatura, $candReg->id_modulo);
+                $resFin = $verificarReservaFinalizadaProf($candReg->id_asignatura, $candReg->id_modulo, $candReg->modulo);
                 if (!$resFin) {
                     if (!$programacion) {
                         $programacion = $candReg;
@@ -480,13 +525,14 @@ class ProfesorController extends Controller
                 } else {
                     if (!$candidatoRegFinalizado) {
                         $candidatoRegFinalizado = $candReg;
-                        $reservaFinalizadaHoy = $resFin;
+                        $reservaRegFinalizada = $resFin;
                     }
                 }
             }
 
             if (!$programacion && $candidatoRegFinalizado) {
                 $programacion = $candidatoRegFinalizado;
+                $reservaFinalizadaHoy = $reservaRegFinalizada;
             }
 
             $esTemporal = false;
@@ -529,11 +575,13 @@ class ProfesorController extends Controller
                     ->get();
 
                 $candidatoColabFinalizado = null;
+                $reservaColabFinalizada = null;
 
                 foreach ($candidatosColaborador as $candColab) {
                     $resFinColab = $verificarReservaFinalizadaProf(
                         $candColab->profesorColaborador->id_asignatura ?? null,
-                        $candColab->id_modulo
+                        $candColab->id_modulo,
+                        $candColab->modulo
                     );
                     if (!$resFinColab) {
                         if (!$planColaborador) {
@@ -542,13 +590,14 @@ class ProfesorController extends Controller
                     } else {
                         if (!$candidatoColabFinalizado) {
                             $candidatoColabFinalizado = $candColab;
-                            $reservaFinalizadaHoy = $resFinColab;
+                            $reservaColabFinalizada = $resFinColab;
                         }
                     }
                 }
 
                 if (!$planColaborador && $candidatoColabFinalizado) {
                     $planColaborador = $candidatoColabFinalizado;
+                    $reservaFinalizadaHoy = $reservaColabFinalizada;
                 }
 
                 if ($planColaborador) {
@@ -712,8 +761,9 @@ class ProfesorController extends Controller
                 ->first();
 
             // Crear o actualizar la reserva con la programación encontrada
-            $reserva = $reservaProgramadaExistente ?? new Reserva();
-            if (!$reservaProgramadaExistente) {
+            $reservaPrevia = $reservaProgramadaExistente ?? $reservaReactivable;
+            $reserva = $reservaPrevia ?? new Reserva();
+            if (!$reservaPrevia) {
                 $reserva->id_reserva = Reserva::generarIdUnico();
             }
             $reserva->run_profesor = $profesor->run_profesor;
@@ -728,6 +778,7 @@ class ProfesorController extends Controller
             $reserva->modulo_fin = $moduloFin;
             $reserva->modulos = $cantidadModulos; // Calculado basado en la programación consecuente
             $reserva->estado = 'activa'; // Creada automáticamente pero activa
+            $reserva->clase_finalizada_anticipadamente = false;
             $reserva->tipo_reserva = $infoRecuperacion ? 'recuperacion' : 'clase'; // Marcado como recuperación o clase programada
             $reserva->save();
 

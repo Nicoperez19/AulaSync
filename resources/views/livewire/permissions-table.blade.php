@@ -113,18 +113,18 @@
     @foreach ($allPermissions as $permission)
         <x-modal name="edit-permission-{{ $permission->id }}" :show="$errors->any()" focusable>
             @slot('title')
-            <div class="relative flex items-center justify-between p-4 bg-[#D12420] rounded-t-lg">
-                <div class="flex items-center gap-3">
-                    <div class="p-3 bg-white/20 rounded-full text-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            <div class="relative flex items-center justify-between px-3 py-1.5 bg-red-700 rounded-t-lg">
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full shrink-0">
+                        <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-white">
+                    <h2 class="text-lg font-bold text-white">
                         Editar Permiso
                     </h2>
                 </div>
-                <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                <button @click="show = false" class="ml-2 text-xl font-bold text-white hover:text-gray-200 leading-none">&times;</button>
             </div>
             @endslot
 

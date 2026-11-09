@@ -24,25 +24,25 @@
         <livewire:campus-table />
         <x-modal name="add-campus" :show="$errors->any()" focusable>
             @slot('title')
-            <div class="relative flex items-center justify-between p-2 bg-red-700">
-                <div class="flex items-center gap-3">
-                    <div class="p-4 bg-red-100 rounded-full">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            <div class="relative flex items-center justify-between px-3 py-1.5 bg-red-700">
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full shrink-0">
+                        <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                     </div>
-                    <h2 class="text-2xl font-bold text-white">
+                    <h2 class="text-lg font-bold text-white">
                         Agregar Campus
                     </h2>
                 </div>
                 <button @click="show = false"
-                    class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                    class="ml-2 text-xl font-bold text-white hover:text-gray-200 leading-none">&times;</button>
                 <!-- Círculos decorativos -->
                 <span
-                    class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    class="absolute top-0 left-0 w-16 h-16 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                 <span
-                    class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    class="absolute top-0 right-0 w-16 h-16 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
             </div>
             @endslot
 

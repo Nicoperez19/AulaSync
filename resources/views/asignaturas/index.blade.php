@@ -28,23 +28,22 @@
         <!-- Modal -->
         <x-modal name="add-asignatura" :show="$errors->any()" focusable>
             @slot('title')
-            <div class="relative flex items-center justify-between p-2 bg-red-700">
-                <div class="flex items-center gap-3">
-                    <div class="p-4 bg-red-100 rounded-full">
-                        <x-icons.add-subject class="w-6 h-6 text-red-600" aria-hidden="true" rt />
-
+            <div class="relative flex items-center justify-between px-3 py-1.5 bg-red-700">
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full shrink-0">
+                        <x-icons.add-subject class="w-3.5 h-3.5 text-red-600" aria-hidden="true" rt />
                     </div>
-                    <h2 class="text-2xl font-bold text-white">
+                    <h2 class="text-lg font-bold text-white">
                         Agregar Asignatura
                     </h2>
                 </div>
                 <button @click="show = false"
-                    class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                    class="ml-2 text-xl font-bold text-white hover:text-gray-200 leading-none">&times;</button>
                 <!-- Círculos decorativos -->
                 <span
-                    class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    class="absolute top-0 left-0 w-16 h-16 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                 <span
-                    class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    class="absolute top-0 right-0 w-16 h-16 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
             </div>
             @endslot
 

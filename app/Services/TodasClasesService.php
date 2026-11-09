@@ -2370,6 +2370,59 @@ class TodasClasesService
      */
     public function resolverDatosEscuela($asignatura, $profesor = null): array
     {
+        $info = $this->resolverDatosEscuelaBase($asignatura, $profesor);
+
+        // El mapeo de abajo solo decide A QUÉ escuela pertenece (por ID). El NOMBRE visible se toma siempre
+        // de la tabla de Escuelas (area_academicas), para que un cambio de nombre hecho en el mantenedor
+        // se refleje en KPI, reportes y documentos sin tocar código.
+        $nombres = $this->nombresEscuelasBd();
+        if (!empty($info['id']) && isset($nombres[$info['id']])) {
+            $info['nombre'] = $nombres[$info['id']];
+        }
+
+        return $info;
+    }
+
+    /**
+     * Nombres actuales de las escuelas registradas en BD (id_area_academica => nombre), cacheado 60s por tenant.
+     */
+    private function nombresEscuelasBd(): array
+    {
+        // Cache en memoria por 60s (sirve también para procesos largos como colas, sin quedar desactualizado)
+        // Se separa por tenant para no mezclar sedes en un mismo proceso.
+        static $cache = [];
+        $tenantKey = 'global';
+        try {
+            $tenant = class_exists(\App\Models\Tenant::class) ? \App\Models\Tenant::current() : null;
+            $tenantKey = $tenant ? (string) $tenant->getKey() : 'global';
+        } catch (\Throwable $e) {
+        }
+
+        if (isset($cache[$tenantKey]) && (time() - $cache[$tenantKey]['t']) < 60) {
+            return $cache[$tenantKey]['nombres'];
+        }
+
+        try {
+            $nombres = \App\Models\AreaAcademica::query()
+                ->whereNotNull('nombre_area_academica')
+                ->pluck('nombre_area_academica', 'id_area_academica')
+                ->map(fn ($nombre) => trim((string) $nombre))
+                ->filter()
+                ->all();
+        } catch (\Throwable $e) {
+            $nombres = [];
+        }
+
+        $cache[$tenantKey] = ['t' => time(), 'nombres' => $nombres];
+
+        return $nombres;
+    }
+
+    /**
+     * Determina la escuela (ID + nombre por defecto) a partir de la carrera / asignatura / profesor.
+     */
+    private function resolverDatosEscuelaBase($asignatura, $profesor = null): array
+    {
         // 1. Mapeo oficial de Carreras a Escuelas del Instituto Tecnológico
         static $carrerasMap = [
             1200 => ['id' => 'ESC_INGPRO', 'nombre' => 'Escuela de Ingeniería, Procesos Industriales y Medio Ambiente'],

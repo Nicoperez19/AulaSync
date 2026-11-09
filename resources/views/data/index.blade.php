@@ -35,22 +35,22 @@
 
     <x-modal name="add-data" :show="$errors->any()" focusable x-on:close="limpiarFormulario()">
         @slot('title')
-        <div class="relative flex items-center justify-between p-2 bg-red-700">
-            <div class="flex items-center gap-3">
-                <div class="p-4 bg-red-100 rounded-full">
-                    <i class="text-xl text-red-600 fa-solid fa-upload"></i>
+        <div class="relative flex items-center justify-between px-3 py-1.5 bg-red-700">
+            <div class="flex items-center gap-2">
+                <div class="flex items-center justify-center w-6 h-6 bg-red-100 rounded-full shrink-0">
+                    <i class="text-xs text-red-600 fa-solid fa-upload"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-white">
+                <h2 class="text-lg font-bold text-white">
                     Cargar Archivo de Datos
                 </h2>
             </div>
             <button @click="show = false"
-                class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                class="ml-2 text-xl font-bold text-white hover:text-gray-200 leading-none">&times;</button>
             <!-- Círculos decorativos -->
             <span
-                class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                class="absolute top-0 left-0 w-16 h-16 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
             <span
-                class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                class="absolute top-0 right-0 w-16 h-16 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
         </div>
         @endslot
         <form id="upload-form" action="{{ route('data.upload') }}" method="POST" enctype="multipart/form-data">

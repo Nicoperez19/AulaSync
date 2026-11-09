@@ -1135,13 +1135,22 @@ class PlanoDigitalController extends Controller
                 ], 400);
             }
 
-            // Protección contra escaneo doble rápido (debounce de 45 segundos)
+            // Protección contra escaneo doble o segundo escaneo durante cambio de sección (3 minutos o antes de que inicie el nuevo módulo)
             $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
-            if ($tipoDesocupacion !== 'forzosa' && $segundosDesdeActivacion < 45) {
+            $ahoraDev = Carbon::now();
+            $horaActualDevStr = $ahoraDev->format('H:i:s');
+            $diaDevNorm = ModulosHelper::normalizarDia($ahoraDev->locale('es')->isoFormat('dddd'));
+            $horariosDev = ModulosHelper::getHorariosModulos()[$diaDevNorm] ?? [];
+            $horaInicioModuloActiva = ($reservaActiva->modulo_inicio && isset($horariosDev[$reservaActiva->modulo_inicio]['inicio']))
+                ? $horariosDev[$reservaActiva->modulo_inicio]['inicio']
+                : null;
+            $aunEnRecesoDeInicio = ($reservaActiva->tipo_reserva === 'clase' && $horaInicioModuloActiva && $horaActualDevStr < $horaInicioModuloActiva);
+
+            if ($tipoDesocupacion !== 'forzosa' && ($segundosDesdeActivacion < 180 || $aunEnRecesoDeInicio)) {
                 return response()->json([
                     'success' => true,
                     'devolucion_bloqueada' => true,
-                    'mensaje' => 'La sala ya fue registrada exitosamente hace unos instantes. No se realizó la devolución por seguridad de doble escaneo.',
+                    'mensaje' => 'Tu clase/sección en esta sala ya se encuentra activa y registrada exitosamente.',
                     'espacio' => [
                         'id' => $espacio->id_espacio,
                         'nombre' => $espacio->nombre_espacio,
@@ -1655,11 +1664,14 @@ class PlanoDigitalController extends Controller
             // Registro de diagnóstico: confirmar que la función fue invocada (opcional)
 
             $request->validate([
-                'run' => 'required|numeric',
+                'run' => 'required',
                 'id_espacio' => 'required|string'
             ]);
 
-            $runUsuario = $this->normalizeRun($request->input('run'));
+            $runRawInput = (string) $request->input('run');
+            $runUsuario = $this->normalizeRun($runRawInput);
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRawInput));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runUsuario;
             $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
 
             // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
@@ -1672,9 +1684,13 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
-            $reservaExistente = Reserva::where(function ($query) use ($runUsuario) {
+            $reservaExistente = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
             })
                 ->where('id_espacio', '!=', $idEspacio)
                 ->where('estado', 'activa')
@@ -1714,9 +1730,13 @@ class PlanoDigitalController extends Controller
             // Verificar si el usuario tiene una reserva activa en este espacio
             // Usamos una comparación robusta para el RUN y equivalentes de espacio (LA-1 vs LA-01)
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $reservaActiva = Reserva::where(function ($query) use ($runUsuario) {
+            $reservaActiva = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
             })
                 ->whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
@@ -1728,6 +1748,7 @@ class PlanoDigitalController extends Controller
                 $ahoraCheck = Carbon::now();
                 $horaActualCheckStr = $ahoraCheck->format('H:i:s');
                 $diaActualCheck = strtolower($ahoraCheck->locale('es')->isoFormat('dddd'));
+                $diasCheckActiva = array_values(array_unique([$diaActualCheck, ModulosHelper::normalizarDia($diaActualCheck)]));
                 $periodoCheckActiva = SemesterHelper::getCurrentPeriod();
                 $espacioLimpioCheckActiva = str_replace(['-', ' '], '', $idEspacio);
 
@@ -1744,14 +1765,24 @@ class PlanoDigitalController extends Controller
                        ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioCheckActiva]);
                 })
-                    ->whereHas('horario', function ($q) use ($periodoCheckActiva) {
-                        $q->where('periodo', $periodoCheckActiva);
+                    ->where(function ($q) use ($periodoCheckActiva) {
+                        $q->whereHas('horario', function ($hq) use ($periodoCheckActiva) {
+                            $hq->where('periodo', $periodoCheckActiva);
+                        })->orDoesntHave('horario');
                     })
-                    ->whereHas('asignatura', function ($q) use ($runUsuario) {
-                        $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                    ->where(function ($qPrincipal) use ($runUsuario, $runLimpio, $runSinDv) {
+                        $qPrincipal->whereHas('asignatura', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
+                            $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        })->orWhereHas('horario', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
+                            $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        });
                     })
-                    ->whereHas('modulo', function ($q) use ($diaActualCheck, $horaActualCheckStr, $ahoraCheck) {
-                        $q->where('dia', $diaActualCheck)
+                    ->whereHas('modulo', function ($q) use ($diasCheckActiva, $horaActualCheckStr, $ahoraCheck) {
+                        $q->whereIn('dia', $diasCheckActiva)
                           ->where('hora_inicio', '<=', $ahoraCheck->copy()->addMinutes(15)->toTimeString())
                           ->where('hora_termino', '>=', $horaActualCheckStr);
                     })
@@ -1763,14 +1794,18 @@ class PlanoDigitalController extends Controller
                            ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioCheckActiva]);
                     })
-                        ->whereHas('profesorColaborador', function ($q) use ($runUsuario) {
+                        ->whereHas('profesorColaborador', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
                             $q->where('estado', 'activo')
                               ->where('fecha_inicio', '<=', Carbon::today()->toDateString())
                               ->where('fecha_termino', '>=', Carbon::today()->toDateString())
-                              ->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                              ->where(function ($sq) use ($runUsuario, $runLimpio, $runSinDv) {
+                                  $sq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                                     ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                     ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                              });
                         })
-                        ->whereHas('modulo', function ($q) use ($diaActualCheck, $horaActualCheckStr, $ahoraCheck) {
-                            $q->where('dia', $diaActualCheck)
+                        ->whereHas('modulo', function ($q) use ($diasCheckActiva, $horaActualCheckStr, $ahoraCheck) {
+                            $q->whereIn('dia', $diasCheckActiva)
                               ->where('hora_inicio', '<=', $ahoraCheck->copy()->addMinutes(15)->toTimeString())
                               ->where('hora_termino', '>=', $horaActualCheckStr);
                         })
@@ -1802,14 +1837,22 @@ class PlanoDigitalController extends Controller
             $espacioDisponible = $espacio->estado === 'Disponible';
 
             if ($reservaActiva) {
-                // Protección contra escaneo doble rápido (debounce de 45 segundos)
+                // Protección contra escaneo doble rápido o segundo escaneo al cambiar de sección en la misma sala
                 $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
+                $ahoraAct = Carbon::now();
+                $horaActualActStr = $ahoraAct->format('H:i:s');
+                $diaActNorm = ModulosHelper::normalizarDia($ahoraAct->locale('es')->isoFormat('dddd'));
+                $horariosAct = ModulosHelper::getHorariosModulos()[$diaActNorm] ?? [];
+                $horaInicioModAct = ($reservaActiva->modulo_inicio && isset($horariosAct[$reservaActiva->modulo_inicio]['inicio']))
+                    ? $horariosAct[$reservaActiva->modulo_inicio]['inicio']
+                    : null;
+                $aunAntesDelModulo = ($reservaActiva->tipo_reserva === 'clase' && $horaInicioModAct && $horaActualActStr < $horaInicioModAct);
 
-                if ($segundosDesdeActivacion < 45) {
+                if ($segundosDesdeActivacion < 180 || $aunAntesDelModulo) {
                     return response()->json([
                         'tipo' => 'activacion_reciente',
                         'success' => true,
-                        'mensaje' => 'La sala ya fue registrada exitosamente. Por seguridad, espere 45 segundos antes de realizar la devolución.',
+                        'mensaje' => 'Tu nueva clase/sección en esta sala ya fue registrada exitosamente y se encuentra activa.',
                         'reserva' => [
                             'id_reserva' => $reservaActiva->id_reserva,
                             'hora_inicio' => $reservaActiva->hora,
@@ -1820,7 +1863,7 @@ class PlanoDigitalController extends Controller
                     ]);
                 }
 
-                // El usuario tiene una reserva activa en este espacio (más de 45 segundos)
+                // El usuario tiene una reserva activa en este espacio (más de 3 minutos y módulo en curso)
                 return response()->json([
                     'tipo' => 'devolucion',
                     'mensaje' => 'Tienes una reserva activa en este espacio. ¿Deseas devolver las llaves?',
@@ -1841,15 +1884,20 @@ class PlanoDigitalController extends Controller
             $horarioModulos = ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
             $periodoCheck = SemesterHelper::getCurrentPeriod();
             $diaCheck = strtolower($ahora->locale('es')->isoFormat('dddd'));
+            $diasCheck = array_values(array_unique([$diaCheck, $diaActualNormalizado]));
             $espacioLimpioCheck = str_replace(['-', ' '], '', $idEspacio);
             $hoyFechaScanner = Carbon::today()->toDateString();
 
             // Helper para verificar si un bloque/asignatura específico ya fue finalizado hoy
-            $verificarReservaFinalizadaScanner = function ($idAsig, $idMod) use ($runUsuario, $espaciosEquiv, $idEspacio, $hoyFechaScanner) {
+            $verificarReservaFinalizadaScanner = function ($idAsig, $idMod, $moduloObj = null) use ($runUsuario, $runLimpio, $runSinDv, $espaciosEquiv, $idEspacio, $hoyFechaScanner, $horaActualStr, $horarioModulos) {
                 $numModulo = ModulosHelper::getNumeroModulo($idMod);
-                return Reserva::where(function ($query) use ($runUsuario) {
+                $resFin = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
                     $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
                 })
                     ->where(function ($eq) use ($espaciosEquiv, $idEspacio) {
                         $eq->whereIn('id_espacio', $espaciosEquiv)
@@ -1868,6 +1916,33 @@ class PlanoDigitalController extends Controller
                     })
                     ->latest('updated_at')
                     ->first();
+
+                if ($resFin) {
+                    $horaInicioMod = $moduloObj->hora_inicio ?? ($numModulo && isset($horarioModulos[$numModulo]['inicio']) ? $horarioModulos[$numModulo]['inicio'] : null);
+                    $horaTerminoMod = $moduloObj->hora_termino ?? ($numModulo && isset($horarioModulos[$numModulo]['fin']) ? $horarioModulos[$numModulo]['fin'] : null);
+
+                    // Si la reserva finalizada comenzó en un módulo anterior y fue cerrada antes o justo al inicio de este nuevo módulo,
+                    // corresponde al bloque anterior y NO debe bloquear el inicio de la nueva sección.
+                    if ($numModulo !== null && $resFin->modulo_inicio !== null && $resFin->modulo_inicio < $numModulo) {
+                        if (!$horaInicioMod || !$resFin->hora_salida || $resFin->hora_salida <= $horaInicioMod) {
+                            return null;
+                        }
+                    }
+
+                    // Si la reserva fue cerrada por doble escaneo accidental en el receso antes de que inicie el módulo (ej. 16:09 < 16:10),
+                    // o duró menos de 5 minutos mientras el módulo sigue vigente, reactivarla automáticamente en lugar de bloquear al docente.
+                    $cerradaAntesDelInicio = ($horaInicioMod && $resFin->hora_salida && $resFin->hora_salida <= $horaInicioMod);
+                    $duracionSegundos = ($resFin->hora && $resFin->hora_salida)
+                        ? abs(strtotime($resFin->hora_salida) - strtotime($resFin->hora))
+                        : 999;
+                    $moduloSigueVigente = (!$horaTerminoMod || $horaActualStr <= $horaTerminoMod);
+
+                    if ($cerradaAntesDelInicio || ($duracionSegundos < 300 && $moduloSigueVigente)) {
+                        return null;
+                    }
+                }
+
+                return $resFin;
             };
 
             // Verificar con anticipación (hasta 15 minutos antes) si el usuario tiene una clase regular o temporal en este espacio AHORA
@@ -1883,14 +1958,24 @@ class PlanoDigitalController extends Controller
                        ->orWhereIn('id_espacio', $espaciosEquiv)
                        ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioCheck]);
                 })
-                ->whereHas('horario', function ($q) use ($periodoCheck) {
-                    $q->where('periodo', $periodoCheck);
+                ->where(function ($q) use ($periodoCheck) {
+                    $q->whereHas('horario', function ($hq) use ($periodoCheck) {
+                        $hq->where('periodo', $periodoCheck);
+                    })->orDoesntHave('horario');
                 })
-                ->whereHas('asignatura', function ($q) use ($runUsuario) {
-                    $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                ->where(function ($qPrincipal) use ($runUsuario, $runLimpio, $runSinDv) {
+                    $qPrincipal->whereHas('asignatura', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
+                        $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })->orWhereHas('horario', function ($q) use ($runUsuario, $runLimpio, $runSinDv) {
+                        $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    });
                 })
-                ->whereHas('modulo', function ($q) use ($diaCheck, $horaActualStr, $ahora) {
-                    $q->where('dia', $diaCheck)
+                ->whereHas('modulo', function ($q) use ($diasCheck, $horaActualStr, $ahora) {
+                    $q->whereIn('dia', $diasCheck)
                       ->where('hora_inicio', '<=', $ahora->copy()->addMinutes(15)->toTimeString())
                       ->where('hora_termino', '>=', $horaActualStr);
                 })
@@ -1900,7 +1985,7 @@ class PlanoDigitalController extends Controller
             $reservaRegFinalizada = null;
 
             foreach ($candidatosRegularesScanner as $candReg) {
-                $resFin = $verificarReservaFinalizadaScanner($candReg->id_asignatura, $candReg->id_modulo);
+                $resFin = $verificarReservaFinalizadaScanner($candReg->id_asignatura, $candReg->id_modulo, $candReg->modulo);
                 if (!$resFin) {
                     if (!$claseProgramadaScanner) {
                         $claseProgramadaScanner = $candReg;
@@ -1932,14 +2017,18 @@ class PlanoDigitalController extends Controller
                            ->orWhereIn('id_espacio', $espaciosEquiv)
                            ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioCheck]);
                     })
-                    ->whereHas('profesorColaborador', function ($q) use ($runUsuario, $hoyFechaScanner) {
+                    ->whereHas('profesorColaborador', function ($q) use ($runUsuario, $runLimpio, $runSinDv, $hoyFechaScanner) {
                         $q->where('estado', 'activo')
                           ->where('fecha_inicio', '<=', $hoyFechaScanner)
                           ->where('fecha_termino', '>=', $hoyFechaScanner)
-                          ->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                          ->where(function ($sq) use ($runUsuario, $runLimpio, $runSinDv) {
+                              $sq->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                                 ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                                 ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                          });
                     })
-                    ->whereHas('modulo', function ($q) use ($diaCheck, $horaActualStr, $ahora) {
-                        $q->where('dia', $diaCheck)
+                    ->whereHas('modulo', function ($q) use ($diasCheck, $horaActualStr, $ahora) {
+                        $q->whereIn('dia', $diasCheck)
                           ->where('hora_inicio', '<=', $ahora->copy()->addMinutes(15)->toTimeString())
                           ->where('hora_termino', '>=', $horaActualStr);
                     })
@@ -1951,7 +2040,8 @@ class PlanoDigitalController extends Controller
                 foreach ($candidatosColabScanner as $candColab) {
                     $resFinColab = $verificarReservaFinalizadaScanner(
                         $candColab->profesorColaborador->id_asignatura ?? null,
-                        $candColab->id_modulo
+                        $candColab->id_modulo,
+                        $candColab->modulo
                     );
                     if (!$resFinColab) {
                         if (!$claseColabScanner) {
@@ -2089,11 +2179,15 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene reservas PROGRAMADAS en este espacio hoy
-            $reservasProgramadasUsuario = Reserva::where(function ($query) use ($runUsuario) {
+            $reservasProgramadasUsuario = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
                 $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
             })
-                ->where('id_espacio', $idEspacio)
+                ->whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'programada')
                 ->where('fecha_reserva', Carbon::today()->toDateString())
                 ->get();
@@ -2165,6 +2259,39 @@ class PlanoDigitalController extends Controller
                     ],
                     'espacio_disponible' => false
                 ]);
+            }
+
+            // Si el espacio figuraba como no disponible pero no tiene reserva activa vigente (o la última ya expiró), liberarlo
+            if (!$espacioDisponible) {
+                $reservaOcupanteCheck = Reserva::whereIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'activa')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+
+                if (!$reservaOcupanteCheck) {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                    $espacioDisponible = true;
+                } else {
+                    $fechaResOcStr = $reservaOcupanteCheck->fecha_reserva instanceof Carbon
+                        ? $reservaOcupanteCheck->fecha_reserva->toDateString()
+                        : (is_string($reservaOcupanteCheck->fecha_reserva) ? substr($reservaOcupanteCheck->fecha_reserva, 0, 10) : null);
+                    $esExpiradaOc = ($fechaResOcStr && $fechaResOcStr < Carbon::today()->toDateString())
+                        || ($reservaOcupanteCheck->hora_salida && $reservaOcupanteCheck->hora_salida <= $horaActualStr);
+
+                    if ($esExpiradaOc) {
+                        $reservaOcupanteCheck->estado = 'finalizada';
+                        if (!$reservaOcupanteCheck->hora_salida) {
+                            $reservaOcupanteCheck->hora_salida = $horaActualStr;
+                        }
+                        $reservaOcupanteCheck->observaciones = trim(($reservaOcupanteCheck->observaciones ?? '') . ' | Auto-finalizada por término de horario');
+                        $reservaOcupanteCheck->save();
+
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                        $espacioDisponible = true;
+                    }
+                }
             }
 
             if ($espacioDisponible) {
@@ -2490,19 +2617,29 @@ class PlanoDigitalController extends Controller
     public function procesarPrimeraLectura($run)
     {
         try {
-            $run = $this->normalizeRun($run);
+            $runRaw = (string) $run;
+            $run = $this->normalizeRun($runRaw);
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRaw));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $run;
             $this->establecerContextoTenant();
 
-            // 1. Intentar verificar como Profesor
+            // 1. Intentar verificar como Profesor (soportando RUN con o sin DV)
             $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
-                ->where('run_profesor', $run)
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $run)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$run])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
                 ->first();
 
             if ($profesor) {
                 // Es profesor - verificar clases programadas inmediatamente
                 $horaActual = now()->format('H:i:s');
                 $diaActual = now()->dayOfWeek;
-                $clasesResponse = $this->verificarClasesProgramadas($run, $horaActual, $diaActual);
+                $clasesResponse = $this->verificarClasesProgramadas($profesor->run_profesor, $horaActual, $diaActual);
                 $clasesInfo = $clasesResponse instanceof \Illuminate\Http\JsonResponse 
                     ? $clasesResponse->getData(true) 
                     : (is_array($clasesResponse) ? $clasesResponse : []);
@@ -2523,10 +2660,17 @@ class PlanoDigitalController extends Controller
                 ]);
             }
 
-            // 2. Intentar verificar como Solicitante Registrado (BD tenant)
+            // 2. Intentar verificar como Solicitante Registrado (BD tenant, soportando RUN con o sin DV)
             $solicitante = Solicitante::on('tenant')
-                ->where('run_solicitante', $run)
                 ->where('activo', true)
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_solicitante', $run)
+                      ->orWhere('run_solicitante', $runLimpio)
+                      ->orWhere('run_solicitante', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$run])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
                 ->first();
 
             if ($solicitante) {
@@ -2567,14 +2711,24 @@ class PlanoDigitalController extends Controller
     public function verificarUsuario($run)
     {
         try {
-            $run = $this->normalizeRun($run);
+            $runRaw = (string) $run;
+            $run = $this->normalizeRun($runRaw);
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRaw));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $run;
             // Establecer contexto del tenant desde el request
 
             $this->establecerContextoTenant();
 
-            // CASO 1: Verificar si es profesor registrado
+            // CASO 1: Verificar si es profesor registrado (soportando RUN con o sin DV)
             $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
-                ->where('run_profesor', $run)
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $run)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$run])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
                 ->first();
 
             if ($profesor) {
@@ -2592,10 +2746,17 @@ class PlanoDigitalController extends Controller
                 ]);
             }
 
-            // CASO 2: Verificar si es solicitante registrado (BD tenant)
+            // CASO 2: Verificar si es solicitante registrado (BD tenant, soportando RUN con o sin DV)
             $solicitante = Solicitante::on('tenant')
-                ->where('run_solicitante', $run)
                 ->where('activo', true)
+                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
+                    $q->where('run_solicitante', $run)
+                      ->orWhere('run_solicitante', $runLimpio)
+                      ->orWhere('run_solicitante', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$run])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })
                 ->first();
 
             if ($solicitante) {
@@ -2704,7 +2865,7 @@ class PlanoDigitalController extends Controller
 
             $nombreDia = $diasSemana[$diaActual] ?? 'lunes';
             $diaNormalizado = ModulosHelper::normalizarDia($nombreDia);
-            $diasPosibles = array_unique([$nombreDia, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
+            $diasPosibles = array_values(array_unique([$nombreDia, $diaNormalizado]));
 
             // Obtener período actual
             $periodo = SemesterHelper::getCurrentPeriod();
