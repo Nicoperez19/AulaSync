@@ -37,16 +37,12 @@
         </x-sidebar.link>
     @endauth
 
-    @hasrole('Soporte')
-        <x-sidebar.link title="Reportes de Soporte" href="{{ route('soporte.reportes') }}" :isActive="request()->routeIs('soporte.reportes*')">
-            <x-slot name="icon">
-                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-chart-column text-lg flex items-center justify-center" aria-hidden="true"></i>
-            </x-slot>
-        </x-sidebar.link>
-    @endhasrole
+    <!-- Monitoreo de Espacios - Todos los roles -->
+    @can('monitoreo de espacios')
 
     <!-- Monitoreo de Espacios - Todos los roles autorizados -->
     @if(auth()->user()->can('monitoreo de espacios') || auth()->user()->hasRole('Director'))
+
         <x-sidebar.link title="Monitoreo de Espacios"
             href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : '#' }}"
             :isActive="request()->routeIs('plano.show')"

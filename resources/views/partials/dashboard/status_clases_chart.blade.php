@@ -157,7 +157,7 @@
                     <p class="text-xs text-slate-500 font-medium">Comparativo de clases impartidas vs no registradas</p>
                 </div>
                 @can('reportes')
-                <a href="{{ route('reportes.cumplimiento-escuelas', ['fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin]) }}" 
+                <a href="{{ route('reportes.cumplimiento-escuelas', ['fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin]) }}"
                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#D12420] text-slate-700 hover:text-white text-[11px] font-bold transition shadow-2xs group shrink-0 cursor-pointer">
                     <span>Ver Reporte</span>
                     <i class="fas fa-arrow-right text-[9px] group-hover:translate-x-0.5 transition-transform"></i>
@@ -246,6 +246,21 @@
         };
     }
 
+
+            <!-- Etiqueta flotante central -->
+            <div id="status-clases-center-label" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
+                <span id="center-label-valor" class="text-3xl font-black text-slate-800 tracking-tight leading-none">{{ $pct_impartidas }}%</span>
+                <span id="center-label-sub" class="text-[11px] font-extrabold text-[#10B981] uppercase tracking-wide mt-1">Cumplimiento</span>
+                <span id="center-label-detail" class="text-[10px] font-medium text-slate-400 tracking-tight mt-0.5 hidden"></span>
+            </div>
+        </div>
+        @if($total_clases === 0)
+            <p class="text-[11px] font-semibold text-slate-400 mt-3 text-center">Sin registros de clases para el período seleccionado (0 clases)</p>
+        @else
+            <p class="text-[11px] font-semibold text-slate-400 mt-2 text-center">Pasa el cursor sobre el gráfico para ver el desglose</p>
+        @endif
+    </div>
+
     if (typeof window.irAControlDocentePorEscuela !== 'function') {
         window.irAControlDocentePorEscuela = function(escuela, estado = '') {
             const inicio = document.getElementById('status-fecha-inicio')?.value || '';
@@ -260,6 +275,7 @@
             window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
         };
     }
+
 
     if (typeof window.irAControlDocenteConBusqueda !== 'function') {
         window.irAControlDocenteConBusqueda = function(search, estado = '') {

@@ -32,7 +32,7 @@
         </div>
 
         <!-- Estado Minimizado -->
-        <div id="reloj-minimizado" 
+        <div id="reloj-minimizado"
             onclick="toggleModalReloj(false)"
             title="Mostrar reloj y módulo actual"
             class="hidden cursor-pointer bg-gradient-to-br from-[#D12420]/95 to-[#950101]/95 backdrop-blur-md shadow-xl hover:shadow-2xl rounded-full border border-white/20 px-3.5 py-2 flex items-center gap-2 text-white hover:scale-105 transition-all duration-200">
@@ -49,7 +49,7 @@
                 <i class="fas fa-percent mr-2 text-[#950101]"></i>
                 Porcentaje de Ocupación Semanal
             </h3>
-            
+
             <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6">
                 <!-- Nav Pills + Leyenda -->
                 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
@@ -76,7 +76,24 @@
                             <span>Salas de Estudio</span>
                         </button>
                     </div>
-                    
+
+
+                    <!-- Leyenda (Niveles de Ocupación) -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm bg-slate-50 border border-slate-200/80 rounded-xl px-3 sm:px-4 py-2 shadow-xs shrink-0">
+                        <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold whitespace-nowrap">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span>0% - 35%</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-200 text-amber-900 font-bold whitespace-nowrap">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span>35% - 75%</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-100 border border-red-200 text-red-800 font-bold whitespace-nowrap">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                            <span>75% - 100%</span>
+                        </span>
+
                     <!-- Acciones: Leyenda + Exportar & Histórico -->
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Leyenda (Niveles de Ocupación) -->
@@ -119,7 +136,7 @@
                         </div>
                     </div>
                 </div>
-                               
+
                 <!-- Contenedor dinámico de la grilla -->
                 <div id="ocupacion-grid-container" class="overflow-x-auto relative min-h-[200px]">
                     <div class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -130,15 +147,23 @@
             </div>
         </div>
 
-        <!-- Sección: Estado y Cumplimiento de Clases (Fila con 2 Gráficos en DIVs separados) -->
-        <div class="mb-8">
-            <div id="status-clases-container">
-                <div class="flex flex-col items-center justify-center py-16 text-slate-400 bg-white rounded-2xl shadow-md border border-gray-100">
-                    <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
-                    <p class="text-sm font-medium">Cargando estado y cumplimiento de clases...</p>
+        <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
+            <!-- Widget Izquierda: Estado de Clases (Control de Registro) -->
+            <div class="{{ auth()->user()->can('reportes') ? 'lg:col-span-7' : 'lg:col-span-12' }} flex flex-col">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-[#950101]"></i>
+                    Estado de Clases (Control de Registro)
+                </h3>
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1">
+                    <div id="status-clases-container">
+                        <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                            <div class="inline-block w-8 h-8 border-4 border-[#D12420] border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p class="text-sm">Cargando estado de clases...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
         <!-- Sección: Reportes de Uso de Espacios (ordenados alfabéticamente) -->
         @can('reportes')
@@ -155,15 +180,10 @@
                         <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition duration-200 shrink-0">
                             <i class="fas fa-qrcode text-lg"></i>
                         </div>
-                        <div class="min-w-0">
-                            <h4 class="font-bold text-gray-800 text-sm truncate">Accesos registrados (QR)</h4>
-                            <p class="text-xs text-gray-500 truncate">Escaneados por código QR</p>
+                        <div class="text-gray-400 group-hover:text-purple-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
                         </div>
-                    </div>
-                    <div class="text-gray-400 group-hover:text-purple-600 group-hover:translate-x-0.5 transition duration-200 ml-2 shrink-0">
-                        <i class="fas fa-chevron-right text-xs"></i>
-                    </div>
-                </a>
+                    </a>
 
                 <!-- 2. Auditoría de Clases y Justificaciones -->
                 <a href="{{ route('reportes.auditoria-clases.index') }}"
@@ -306,7 +326,7 @@
     </div>
 
     <!-- Script de Chart.js -->
-    
+
     <!-- Configuración para el script JS externo -->
     <div id="dashboard-config"
          data-horarios-actual-route="{{ route('dashboard.horarios-actual') }}"

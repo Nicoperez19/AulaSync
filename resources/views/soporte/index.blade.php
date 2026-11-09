@@ -151,7 +151,6 @@
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Tipo de problema</th>
                                 @if($isTecnico)
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Solicitante</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Sede</th>
                                 @endif
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Prioridad</th>
                                 <th class="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wide">Estado</th>
