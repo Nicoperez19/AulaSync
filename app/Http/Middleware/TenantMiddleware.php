@@ -34,6 +34,7 @@ class TenantMiddleware
     protected $excludedPaths = [
         'sedes/selection',
         'sedes/redirect',
+        'soporte',
         'tenant/initialization',
         'docente/sede-no-inicializada',
         'login',

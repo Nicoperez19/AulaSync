@@ -431,3 +431,79 @@
     position: relative;
     z-index: 2;
 }
+
+/* Estilo común de tablas de datos del sistema. Las tablas tipo grilla (horarios
+   y ocupación) se excluyen para conservar sus celdas y colores funcionales. */
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) {
+    border: 1px solid #e5e7eb;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 0.75rem;
+    background: #f8fafc;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) thead th {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #7b0101;
+    background: #a00000 !important;
+    color: #fff !important;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    letter-spacing: 0.025em;
+    text-align: center;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) thead th:first-child {
+    border-top-left-radius: 0.7rem;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) thead th:last-child {
+    border-top-right-radius: 0.7rem;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody tr {
+    background: #f8fafc;
+    transition: background-color 150ms ease;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody tr:hover {
+    background: #eef2f7;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+html.dark body main table:not([data-table-style="grid"]):not([data-table-style="none"]) {
+    border-color: #374151;
+    background: #1f2937;
+}
+
+html.dark body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody tr {
+    background: #1f2937;
+}
+
+html.dark body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody tr:hover {
+    background: #273449;
+}
+
+html.dark body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody td {
+    border-bottom-color: #374151;
+}
+
+@media (max-width: 640px) {
+    body main table:not([data-table-style="grid"]):not([data-table-style="none"]) thead th,
+    body main table:not([data-table-style="grid"]):not([data-table-style="none"]) tbody td {
+        padding: 0.7rem 0.75rem;
+    }
+}

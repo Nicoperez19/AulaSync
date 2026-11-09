@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // RUNs de usuarios base del sistema que no deben ser modificados
-        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867', '10044790', '10813458', '12769832', '19405833'];
+        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867', '10044790', '10813458', '12769832', '19405833', '90000001'];
 
         // Crear usuarios base del sistema (siempre se crean/actualizan)
         User::updateOrCreate(
@@ -106,6 +106,15 @@ class UserSeeder extends Seeder
                 'fecha_nacimiento' => '1992-08-15',
             ]
         )->assignRole('Usuario');
+
+        User::updateOrCreate(
+            ['run' => '90000001'],
+            [
+                'name' => 'Soporte',
+                'email' => 'soporte.sia@ucsc.cl',
+                'password' => bcrypt('passwordsoporte'),
+            ]
+        )->assignRole('Soporte');
 
         User::updateOrCreate(
             ['run' => '00000000'],

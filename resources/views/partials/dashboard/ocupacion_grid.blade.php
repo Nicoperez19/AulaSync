@@ -1,5 +1,5 @@
 <div class="overflow-x-auto w-full pb-2">
-    <table class="w-full min-w-[720px] md:min-w-[780px] table-fixed border-separate border-spacing-1.5">
+    <table data-table-style="grid" class="w-full min-w-[720px] md:min-w-[780px] table-fixed border-separate border-spacing-1.5">
         <thead>
             <tr class="text-xs font-extrabold text-slate-600 uppercase tracking-wider">
                 <th class="py-2.5 px-2 text-center bg-slate-100 border border-slate-200 rounded-lg w-[19%] sm:w-[17%] md:w-[16%]">Módulo</th>

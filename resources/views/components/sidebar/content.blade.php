@@ -37,6 +37,14 @@
         </x-sidebar.link>
     @endauth
 
+    @hasrole('Soporte')
+        <x-sidebar.link title="Reportes de Soporte" href="{{ route('soporte.reportes') }}" :isActive="request()->routeIs('soporte.reportes*')">
+            <x-slot name="icon">
+                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-chart-column text-lg flex items-center justify-center" aria-hidden="true"></i>
+            </x-slot>
+        </x-sidebar.link>
+    @endhasrole
+
     <!-- Monitoreo de Espacios - Todos los roles autorizados -->
     @if(auth()->user()->can('monitoreo de espacios') || auth()->user()->hasRole('Director'))
         <x-sidebar.link title="Monitoreo de Espacios"
@@ -106,44 +114,6 @@
             :isActive="request()->routeIs('quick-actions.*')">
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-            </x-slot>
-        </x-sidebar.link>
-    @endcan
-
-    <!-- Control Docente - Dropdown con sublinks (ordenados alfabéticamente) -->
-    @canany(['gestionar licencias profesores', 'gestionar recuperacion clases', 'reportes', 'mantenedor de reservas'])
-        <x-sidebar.dropdown title="Control Docente" :active="request()->routeIs('control-docente.*') || request()->routeIs('clases-no-realizadas.*') || request()->routeIs('clases-temporales.*') || request()->routeIs('reportes.cumplimiento-escuelas') || request()->routeIs('solicitudes-reservas.*') || request()->routeIs('reservas.index')">
-            <x-slot name="icon">
-                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-clipboard-check" aria-hidden="true"></i>
-            </x-slot>
-
-            @canany(['gestionar licencias profesores', 'gestionar recuperacion clases'])
-                <x-sidebar.sublink title="Ausencias y Recuperación" href="{{ route('control-docente.ausencias-recuperacion') }}"
-                    :isActive="request()->routeIs('control-docente.ausencias-recuperacion')" />
-            @endcanany
-            @role('Administrador|Supervisor')
-                <x-sidebar.sublink title="Clases Temporales" href="{{ route('clases-temporales.index') }}"
-                    :isActive="request()->routeIs('clases-temporales.*')" />
-            @endrole
-            @can('reportes')
-                <x-sidebar.sublink title="Control de Clases" href="{{ route('clases-no-realizadas.index') }}"
-                    :isActive="request()->routeIs('clases-no-realizadas.*')" />
-                <x-sidebar.sublink title="Cumplimiento por Escuela" href="{{ route('reportes.cumplimiento-escuelas') }}"
-                    :isActive="request()->routeIs('reportes.cumplimiento-escuelas')" />
-            @endcan
-            @canany(['reportes', 'mantenedor de reservas'])
-                <x-sidebar.sublink title="Solicitudes y Reservas" href="{{ route('solicitudes-reservas.index') }}"
-                    :isActive="request()->routeIs('solicitudes-reservas.*') || request()->routeIs('reservas.index')" />
-            @endcanany
-        </x-sidebar.dropdown>
-    @endcanany
-
-    <!-- Auditorías - Link particular con navpills para todas las auditorías -->
-    @can('reportes')
-        <x-sidebar.link title="Auditorías" href="{{ route('reportes.auditoria-clases.index') }}"
-            :isActive="request()->routeIs('reportes.auditoria-clases.*') || request()->routeIs('reportes.auditoria-reagendamientos.*')">
-            <x-slot name="icon">
-                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-clipboard-user" aria-hidden="true"></i>
             </x-slot>
         </x-sidebar.link>
     @endcan

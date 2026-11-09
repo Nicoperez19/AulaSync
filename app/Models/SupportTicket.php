@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SupportTicket extends Model
 {
+    public const CATEGORIES = [
+        'access' => 'Acceso y cuenta',
+        'connectivity' => 'Red y conectividad',
+        'hardware' => 'Equipos y hardware',
+        'software' => 'Software y plataforma',
+        'reservations' => 'Reservas y espacios',
+        'other' => 'Otro',
+    ];
+
     /**
      * Stored in the central database, shared across all tenants.
      */
@@ -18,6 +27,7 @@ class SupportTicket extends Model
         'id_sede',
         'title',
         'description',
+        'category',
         'status',
         'priority',
         'assigned_to',
@@ -73,6 +83,11 @@ class SupportTicket extends Model
             'high'   => 'Alta',
             default  => $this->priority,
         };
+    }
+
+    public function categoryLabel(): string
+    {
+        return self::CATEGORIES[$this->category] ?? self::CATEGORIES['other'];
     }
 
     public function priorityColor(): string

@@ -83,7 +83,7 @@ class RoleSeeder extends Seeder
             $permission10, $permission12, $permission15, $permission22,
         ]);
 
-        $roleSoporte->syncPermissions([$permissionSoporte]);
+        $roleSoporte->syncPermissions([$permissionSoporte, $permission14]);
         // Estudiante en Práctica: acceso a dashboard, reportes, monitoreo, horarios, tablero y visor
         $roleEstudiantePractica->syncPermissions([
             $permission1,  // dashboard

@@ -33,6 +33,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        // El equipo de soporte utiliza su propio dashboard, no el académico.
+        if ($user->hasRole('Soporte')) {
+            return redirect()->route('soporte.dashboard');
+        }
+
         // Verificar si hay una URL guardada por expiración de sesión
         $intendedUrl = $request->session()->get('url.intended');
         
@@ -47,9 +54,6 @@ class AuthenticatedSessionController extends Controller
         if ($formIntendedUrl && filter_var($formIntendedUrl, FILTER_VALIDATE_URL)) {
             return redirect($formIntendedUrl);
         }
-
-        // Obtener el usuario autenticado
-        $user = Auth::user();
 
         // DEBUG: Log de valores del usuario para diagnosticar redirección
         Log::info('🔐 Login - Datos del usuario', [

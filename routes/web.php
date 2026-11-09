@@ -115,14 +115,27 @@ Route::middleware(['auth'])->group(function () {
 
 // Soporte Técnico (sistema de tickets)
 Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')->group(function () {
-    Route::get('/dashboard', [SupportTicketController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [SupportTicketController::class, 'dashboard'])
+        ->middleware(['role:Soporte|Administrador|Supervisor|Super Admin', 'permission:reportes'])
+        ->name('dashboard');
+    Route::get('/reportes', [SupportTicketController::class, 'reportes'])
+        ->middleware(['role:Soporte|Administrador|Supervisor|Super Admin', 'permission:reportes'])
+        ->name('reportes');
+    Route::get('/reportes/exportar/{formato}', [SupportTicketController::class, 'exportReportes'])
+        ->where('formato', 'excel|pdf')
+        ->middleware(['role:Soporte|Administrador|Supervisor|Super Admin', 'permission:reportes'])
+        ->name('reportes.export');
     Route::get('/', [SupportTicketController::class, 'index'])->name('index');
     Route::get('/nuevo', [SupportTicketController::class, 'create'])->name('create');
     Route::post('/', [SupportTicketController::class, 'store'])->name('store');
     Route::get('/{ticket}', [SupportTicketController::class, 'show'])->name('show');
     Route::post('/{ticket}/responder', [SupportTicketController::class, 'reply'])->name('reply');
-    Route::patch('/{ticket}/estado', [SupportTicketController::class, 'updateStatus'])->name('status');
-    Route::patch('/{ticket}/asignar', [SupportTicketController::class, 'assign'])->name('assign');
+    Route::patch('/{ticket}/estado', [SupportTicketController::class, 'updateStatus'])
+        ->middleware('role:Soporte|Técnico|Administrador|Supervisor|Super Admin')
+        ->name('status');
+    Route::patch('/{ticket}/asignar', [SupportTicketController::class, 'assign'])
+        ->middleware('role:Soporte|Técnico|Administrador|Supervisor|Super Admin')
+        ->name('assign');
     Route::post('/{ticket}/cerrar', [SupportTicketController::class, 'close'])->name('close');
     Route::post('/{ticket}/reabrir', [SupportTicketController::class, 'reopen'])->name('reopen');
 });

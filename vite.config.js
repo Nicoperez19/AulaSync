@@ -50,6 +50,9 @@ export default defineConfig({
     esbuild: {
         drop: ['console', 'debugger'],
     },
+    server: {
+        host: '127.0.0.1',
+    },
     plugins: [
         manualProcessorPlugin(),
         laravel({

@@ -1,0 +1,32 @@
+diff --git a/database/seeders/UserSeeder.php b/database/seeders/UserSeeder.php
+index 63932162..57f22f64 100644
+--- a/database/seeders/UserSeeder.php
++++ b/database/seeders/UserSeeder.php
+@@ -17,6 +17,19 @@ class UserSeeder extends Seeder
+         $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867', '10044790', '10813458', '12769832'];
+ 
+         // Crear usuarios base del sistema (siempre se crean/actualizan)
++
++        User::updateOrCreate(
++            ['run' => '77777777'],
++            [
++                'name' => 'Soporte',
++                'email' => 'soporte@ucsc.cl',
++                'password' => bcrypt('passwordsoporte'),
++                'celular' => '932543452',
++                'direccion' => 'Calle Falsa 123',
++                'fecha_nacimiento' => '1985-05-20',
++            ]
++        )->assignRole('Soporte');
++
+         User::updateOrCreate(
+             ['run' => '19716146'],
+             [
+@@ -29,6 +42,7 @@ class UserSeeder extends Seeder
+                 'is_superuser' => true,
+             ]
+         )->assignRole('Administrador');
++
+         User::updateOrCreate(
+             ['run' => '10044790'],
+             [

@@ -13,6 +13,11 @@ trait RedirectByRole
     protected function redirectByRole()
     {
         $user = Auth::user();
+
+        // Soporte utiliza su propio dashboard de tickets.
+        if ($user->hasRole('Soporte')) {
+            return redirect()->route('soporte.dashboard');
+        }
         
         // Administradores, supervisores y directores siempre redirigen al Dashboard (KPIs)
         if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor') || $user->hasRole('Director')) {

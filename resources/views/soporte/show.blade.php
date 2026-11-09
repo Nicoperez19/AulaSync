@@ -21,6 +21,7 @@
                         {{ $pc === 'red' ? 'bg-red-100 text-red-700' : ($pc === 'yellow' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
                         {{ $ticket->priorityLabel() }}
                     </span>
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $ticket->categoryLabel() }}</span>
                 </div>
                 <h2 class="text-xl font-bold text-gray-800 truncate">{{ $ticket->title }}</h2>
             </div>
@@ -41,13 +42,41 @@
             </div>
         @endif
 
+        {{-- Resumen en un solo lugar, antes de la conversación y las acciones --}}
+        <section class="mb-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+            <h3 class="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500">
+                <i class="fas fa-circle-info text-[#950101]"></i>Resumen del ticket #{{ $ticket->id }}
+            </h3>
+            <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="min-w-0 rounded-xl bg-gray-50 p-3">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Solicitante</dt>
+                    <dd class="mt-1 truncate text-sm font-semibold text-gray-800">{{ $ticket->user?->name ?? 'Usuario desconocido' }}</dd>
+                </div>
+                <div class="min-w-0 rounded-xl bg-gray-50 p-3">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Creado</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-800">{{ $ticket->created_at->format('d/m/Y H:i') }}</dd>
+                </div>
+                <div class="min-w-0 rounded-xl bg-gray-50 p-3">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Asignado a</dt>
+                    <dd class="mt-1 truncate text-sm font-semibold text-gray-800">{{ $ticket->assignedTo?->name ?? 'Sin asignar' }}</dd>
+                </div>
+                <div class="min-w-0 rounded-xl bg-gray-50 p-3">
+                    <dt class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Última actividad</dt>
+                    <dd class="mt-1 text-sm font-semibold text-gray-800">{{ $ticket->updated_at->diffForHumans() }}</dd>
+                </div>
+            </dl>
+            @if($ticket->closed_at)
+                <p class="mt-3 text-xs text-gray-500"><i class="fas fa-lock mr-1"></i>Cerrado el {{ $ticket->closed_at->format('d/m/Y H:i') }}</p>
+            @endif
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {{-- ── Columna principal: descripción + conversación ──────────────── --}}
-            <div class="lg:col-span-2 space-y-4">
+            <div class="lg:col-span-2 space-y-5">
 
                 {{-- Descripción del ticket --}}
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                     <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
@@ -60,14 +89,20 @@
                         </div>
                         <span class="text-xs text-gray-400">Descripción inicial</span>
                     </div>
-                    <div class="px-5 py-4">
+                    <div class="px-5 py-5 sm:px-6">
                         <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $ticket->description }}</p>
                     </div>
-                </div>
+                </section>
 
                 {{-- Hilo de respuestas --}}
+                <div class="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <h3 class="text-sm font-bold uppercase tracking-wide text-gray-700">
+                        <i class="fas fa-comments mr-2 text-[#950101]"></i>Conversación
+                    </h3>
+                    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">{{ $ticket->replies->count() }} respuestas</span>
+                </div>
                 @forelse($ticket->replies as $reply)
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden {{ $reply->is_staff_reply ? 'border-l-4 border-blue-400' : '' }}">
+                    <article class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm {{ $reply->is_staff_reply ? 'border-l-4 border-l-[#950101]' : '' }}">
                         <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100
                                     {{ $reply->is_staff_reply ? 'bg-blue-50' : 'bg-gray-50' }}">
                             <div class="flex items-center gap-2">
@@ -86,10 +121,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="px-5 py-4">
+                        <div class="px-5 py-5 sm:px-6">
                             <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{{ $reply->message }}</p>
                         </div>
-                    </div>
+                    </article>
                 @empty
                     <div class="text-center py-6 text-sm text-gray-400">
                         <i class="fas fa-comments text-2xl mb-2 block"></i>
@@ -99,10 +134,11 @@
 
                 {{-- Formulario de respuesta --}}
                 @if(!$ticket->isClosed())
-                    <div class="bg-white rounded-xl shadow-sm p-5">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-3">
-                            <i class="fas fa-reply mr-1 text-blue-500"></i> Agregar respuesta
+                    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+                        <h3 class="mb-1 text-sm font-bold text-gray-800">
+                            <i class="fas fa-reply mr-2 text-[#950101]"></i>Agregar respuesta
                         </h3>
+                        <p class="mb-4 text-xs text-gray-500">La respuesta quedará registrada en el historial del ticket.</p>
                         <form method="POST" action="{{ route('soporte.reply', $ticket) }}">
                             @csrf
                             @if($errors->has('message'))
@@ -140,49 +176,13 @@
             </div>
 
             {{-- ── Columna lateral: metadatos y acciones ─────────────────────── --}}
-            <div class="space-y-4">
-
-                {{-- Info del ticket --}}
-                <div class="bg-white rounded-xl shadow-sm p-5 space-y-4">
-                    <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">Detalles</h3>
-
-                    <dl class="space-y-3 text-sm">
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Creado por</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->user?->name ?? '—' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Fecha de creación</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->created_at->format('d/m/Y H:i') }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Última actualización</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->updated_at->diffForHumans() }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Respuestas</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->replies->count() }}</dd>
-                        </div>
-                        @if($ticket->assignedTo)
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Técnico asignado</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->assignedTo->name }}</dd>
-                        </div>
-                        @endif
-                        @if($ticket->closed_at)
-                        <div>
-                            <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Cerrado el</dt>
-                            <dd class="text-gray-700 mt-0.5">{{ $ticket->closed_at->format('d/m/Y H:i') }}</dd>
-                        </div>
-                        @endif
-                    </dl>
-                </div>
+            <div class="space-y-5 lg:sticky lg:top-24 lg:self-start">
 
                 {{-- Acciones del técnico --}}
                 @if($isTecnico)
-                <div class="bg-white rounded-xl shadow-sm p-5 space-y-4">
-                    <h3 class="text-sm font-semibold text-gray-700 border-b border-gray-100 pb-2">
-                        <i class="fas fa-tools mr-1 text-blue-500"></i> Acciones de técnico
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                    <h3 class="mb-4 flex items-center gap-2 border-b border-gray-100 pb-3 text-sm font-bold text-gray-800">
+                        <i class="fas fa-screwdriver-wrench text-[#950101]"></i>Acciones de soporte
                     </h3>
 
                     {{-- Cambiar estado --}}
@@ -232,7 +232,7 @@
 
                 {{-- Acción: cerrar ticket (dueño) --}}
                 @if(!$ticket->isClosed() && $ticket->user_id === Auth::id())
-                <div class="bg-white rounded-xl shadow-sm p-4">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                     <p class="text-xs text-gray-500 mb-2">¿Se resolvió el problema?</p>
                     <form method="POST" action="{{ route('soporte.close', $ticket) }}">
                         @csrf

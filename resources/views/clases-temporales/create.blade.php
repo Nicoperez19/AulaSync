@@ -273,7 +273,7 @@
                         </div>
                         <div class="p-6">
                             <div class="overflow-x-auto">
-                                <table class="w-full border-collapse" id="horario-grid">
+                                <table data-table-style="grid" class="w-full border-collapse" id="horario-grid">
                                     <thead>
                                         <tr>
                                             <th class="border border-gray-300 p-2 bg-gray-100 w-32">Módulo</th>
