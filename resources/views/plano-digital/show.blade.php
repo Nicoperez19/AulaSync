@@ -912,6 +912,30 @@
         window.tenantPrefix = '{{ $__prefRaw }}';
         window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
 
+        function ensureSwalAvailable() {
+            if (typeof window.Swal !== 'undefined') {
+                return window.Swal;
+            }
+            const fallbackSwal = {
+                fire: (opts) => {
+                    const cfg = typeof opts === 'string' ? { title: opts } : (opts || {});
+                    const msg = [cfg.title, cfg.text].filter(Boolean).join(': ');
+                    if (msg && typeof getQrStatus === 'function') {
+                        const qs = getQrStatus();
+                        if (qs) qs.textContent = msg;
+                    }
+                    return Promise.resolve({ isConfirmed: true, isDismissed: false, value: true });
+                },
+                close: () => {},
+                isVisible: () => false,
+                showLoading: () => {},
+                hideLoading: () => {},
+                mixin: () => fallbackSwal
+            };
+            window.Swal = fallbackSwal;
+            return fallbackSwal;
+        }
+
         let qrDiagCount = 0;
         function getQrApiHeaders(extra = {}) {
             const headers = { ...extra };
@@ -2339,6 +2363,7 @@
             cerrarModalEsperaLlaves(false);
 
             // Mostrar SweetAlert de procesamiento de lectura para que no quede silencioso
+            ensureSwalAvailable();
             Swal.fire({
                 title: 'Verificando...',
                 text: 'Procesando lectura del espacio.',
@@ -5185,6 +5210,10 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
+            if (typeof window.Swal === 'undefined') {
+                reportarDiagnosticoQR('swal_missing_on_load', { error_message: 'Swal no cargó al iniciar el plano' });
+                ensureSwalAvailable();
+            }
 
             // Mantener foco en el lector QR si se hace clic dentro del modal de espera de llaves
             const modalEspera = document.getElementById('modal-espera-llaves');

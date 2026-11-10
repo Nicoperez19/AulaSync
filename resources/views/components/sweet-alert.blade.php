@@ -1,7 +1,7 @@
 @props(['type' => 'success', 'title' => '', 'message' => ''])
 
-<!-- SweetAlert2 CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- SweetAlert2 Local (sin dependencia externa CDN para intranets aisladas) -->
+<script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
 
 <style>
     /* Animaciones fluidas de entrada y salida */
