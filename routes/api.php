@@ -169,11 +169,14 @@ Route::get('/keep-alive', function () {
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
-        $tenantId = tenant_id() ?? session('tenant_id') ?? null;
+        $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
         if (!$tenantId) {
             $host = request()->getHost();
+            $subdomain = explode('.', $host)[0] ?? $host;
             $t = \App\Models\Tenant::where('domain', $host)
-                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->orWhere('domain', $subdomain)
+                ->orWhere('domain', 'LIKE', '%' . $subdomain . '%')
+                ->orWhere('sede_id', strtoupper($subdomain))
                 ->first();
             if ($t) {
                 $t->makeCurrent();
@@ -181,16 +184,7 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         }
 
         if (!empty($espacio)) {
-            $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
-            $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
-            if ($tenant) {
-                $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
-                $normalizedInput = str_replace('-', '', $espacio);
-                if (strpos($normalizedInput, $prefix) === 0) {
-                    $normalizedInput = substr($normalizedInput, strlen($prefix));
-                }
-                $espacio = $prefix . '-' . $normalizedInput;
-            }
+            $espacio = \App\Helpers\EspacioAliasHelper::normalizar($espacio);
         }
 
         $horaActual = \Carbon\Carbon::now();

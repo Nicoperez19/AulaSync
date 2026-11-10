@@ -44,8 +44,14 @@ class Planificacion_Asignatura extends Model
         try {
             $dbName = config('database.connections.tenant.database') ?? 'default';
             if (!array_key_exists($dbName, static::$vigenciaColumnCache)) {
-                static::$vigenciaColumnCache[$dbName] = \Illuminate\Support\Facades\Schema::connection('tenant')
-                    ->hasColumn('planificacion_asignaturas', 'fecha_fin_vigencia');
+                static::$vigenciaColumnCache[$dbName] = \Illuminate\Support\Facades\Cache::remember(
+                    "has_col_vigencia_plan_{$dbName}",
+                    86400,
+                    function () {
+                        return \Illuminate\Support\Facades\Schema::connection('tenant')
+                            ->hasColumn('planificacion_asignaturas', 'fecha_fin_vigencia');
+                    }
+                );
             }
             return static::$vigenciaColumnCache[$dbName];
         } catch (\Throwable $e) {

@@ -105,6 +105,30 @@ class Solicitante extends Model
     }
 
     /**
+     * Buscar solicitante tolerante a formatos de RUN (con/sin puntos, guión, DV)
+     */
+    public static function buscarSolicitante($run): ?self
+    {
+        if (empty($run)) {
+            return null;
+        }
+
+        $runRaw = (string) $run;
+        $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRaw));
+        $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
+
+        return self::withoutGlobalScopes()
+            ->where(function ($q) use ($runRaw, $runLimpio, $runSinDv) {
+                $q->where('run_solicitante', $runRaw)
+                  ->orWhere('run_solicitante', $runLimpio)
+                  ->orWhere('run_solicitante', $runSinDv)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            })
+            ->first();
+    }
+
+    /**
      * Limpiar cache de un solicitante específico
      */
     public static function limpiarCache($runSolicitante)

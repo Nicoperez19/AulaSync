@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use App\Helpers\ModulosHelper;
+use App\Models\Tenant;
 
 class EspacioController extends Controller
 {
@@ -429,14 +430,15 @@ class EspacioController extends Controller
      */
     public function modulosDisponibles(Request $request, $espacioId)
     {
+        $this->establecerContextoTenant();
+
         // Obtener día y módulo actual (normalizando tildes como miércoles -> miercoles, sábado -> sabado)
         $horaActual = $request->input('hora_actual', now()->format('H:i:s'));
         $diaRaw = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
         $diaActual = ModulosHelper::normalizarDia($diaRaw);
 
-        $sedePrefix = \App\Models\Tenant::current()?->prefijo_espacios;
-        $espacioId = \App\Helpers\EspacioAliasHelper::normalizar($espacioId, $sedePrefix);
-        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacioId, $sedePrefix);
+        $espacioId = \App\Helpers\EspacioAliasHelper::normalizar($espacioId);
+        $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($espacioId);
 
         // Mapeo de días a códigos
         $codigosDias = [
@@ -1812,5 +1814,56 @@ class EspacioController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Establecer el contexto del tenant para las consultas de espacios y módulos
+     */
+    private function establecerContextoTenant(): void
+    {
+        if (Tenant::current()) {
+            return;
+        }
+
+        // 1. Detectar sede desde parámetro de request o header
+        $sede = request('sede_id') ?? request('sede') ?? request()->header('X-Sede-ID');
+        if ($sede) {
+            $tenant = Tenant::where('sede_id', strtoupper($sede))->orWhere('domain', strtolower($sede))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT-)
+        $idEspacio = request('id_espacio') ?? request('espacio');
+        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)[-_]/i', $idEspacio, $mPref)) {
+            $tenant = Tenant::where('sede_id', strtoupper($mPref[1]))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        $host = request()->getHost();
+        $subdomain = explode('.', $host)[0] ?? $host;
+        $tenant = Tenant::where('domain', $host)
+            ->orWhere('domain', $subdomain)
+            ->orWhere('domain', 'LIKE', '%' . $host . '%')
+            ->orWhere('sede_id', strtoupper($subdomain))
+            ->first();
+
+        if ($tenant) {
+            $tenant->makeCurrent();
+        }
     }
 }

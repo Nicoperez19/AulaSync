@@ -1131,6 +1131,8 @@
         let runParaReserva = null;
         let usuarioInfo = null; // Variable global para almacenar la información del usuario
         let isProcessingQR = false; // Bloqueo para evitar procesamiento múltiple
+        const QR_PROCESSING_TIMEOUT_MS = 30000;
+        let timestampInicioProcesamiento = null;
         let watchdogTimer = null; // Temporizador para resetear el flujo por inactividad
 
         
@@ -1261,6 +1263,7 @@
         function limpiarEstadoCompleto() {
             detenerWatchdog();
             isProcessingQR = false;
+            timestampInicioProcesamiento = null;
 
             // Resetear variables globales
             ordenEscaneo = 'usuario';
@@ -1456,8 +1459,13 @@
 
 
         async function verificarProgramacionEnEspacio(espacio, run) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000);
             try {
-                const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
+                const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
                 const result = await response.json();
                 return {
                     tieneClase: Boolean(result.success && (result.tieneProgramacion === true || result.tiene_clase === true)),
@@ -1467,6 +1475,7 @@
                     esRecuperacion: Boolean(result.es_recuperacion || result.modulosInfo?.es_recuperacion || result.tipo === 'clase_reagendada')
                 };
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error('Error al verificar programación en espacio:', error);
                 return { tieneClase: false, claseYaFinalizada: false };
             }
@@ -1498,9 +1507,12 @@
          * Usa directamente los módulos de la programación sin preguntar al usuario
          */
         async function crearReservaAutomaticaProfesor(run, idEspacio) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
             try {
                 const response = await fetch('/api/crear-reserva-profesor-automatica', {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
@@ -1510,11 +1522,18 @@
                         id_espacio: String(idEspacio)
                     })
                 });
+                clearTimeout(timeoutId);
                 const result = await response.json();
                 return result;
             } catch (error) {
+                clearTimeout(timeoutId);
                 console.error('Error al crear reserva automática:', error);
-                return null;
+                return {
+                    success: false,
+                    mensaje: error.name === 'AbortError'
+                        ? 'El servidor tardó demasiado en responder al registrar la clase.'
+                        : (error.message || 'Error de conexión con el servidor')
+                };
             }
         }
 
@@ -1777,6 +1796,7 @@
             lastScannedBuffer = bufferQR.trim();
             lastScannedTime = now;
             isProcessingQR = true;
+            timestampInicioProcesamiento = now;
 
             try {
                 // Validar orden de escaneo
@@ -1801,6 +1821,7 @@
             } finally {
                 // Liberar el bloqueo y limpiar timeouts
                 isProcessingQR = false;
+                timestampInicioProcesamiento = null;
 
                 if (processingTimeout) {
                     clearTimeout(processingTimeout);
@@ -1917,8 +1938,16 @@
             if (!usuarioInfo || !usuarioInfo.verificado) {
                 Swal.close();
                 ordenEscaneo = 'usuario';
+                Swal.fire({
+                    title: 'Usuario no verificado',
+                    text: (usuarioInfo && usuarioInfo.mensaje) ? usuarioInfo.mensaje : 'No se pudo verificar la identidad del usuario.',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    timer: 4000
+                });
                 // Restaurar autofocus del qr-input después de error en verificación de usuario
                 setTimeout(() => {
+                    limpiarEstadoLectura();
                     if (qrInputManager) {
                         qrInputManager.setActiveInput('main');
                     }
@@ -1988,6 +2017,9 @@
                             ? (asigNombre ? `Se ha registrado la recuperación de clase para ${asigNombre}.` : 'Se ha registrado la clase reagendada exitosamente.')
                             : 'Se ha registrado la clase automáticamente según tu programación.';
 
+                        // Cerrar modal de carga previo
+                        Swal.close();
+
                         // Mostrar Sweet Alert de éxito para reserva automática
                         Swal.fire({
                             title: esClaseReagendada ? '¡Clase reagendada registrada!' : '¡Clase registrada!',
@@ -2019,6 +2051,9 @@
                             }
                         }, 2500);
                     } else {
+                        // Cerrar modal de carga previo
+                        Swal.close();
+
                         // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
                         Swal.fire({
                             title: 'Error',
@@ -2087,13 +2122,15 @@
             let espacio = null;
             let rawEspacioInput = currentBuffer.trim();
 
-            // Si el QR contiene una URL o ruta con '/', extraer el último segmento válido (evita confundir th.aulasync.cl con TH-AULASYNC)
+            // Si el QR contiene una URL o ruta con '/', extraer el segmento del espacio evitando endpoints como download-qr
             if (rawEspacioInput.includes('/') || rawEspacioInput.includes('http')) {
-                const urlEspacioMatch = rawEspacioInput.match(/(?:espacios?|salas?|qr)[\/=]([A-Za-z0-9'_\-]+)/i);
-                if (urlEspacioMatch) {
+                const urlEspacioMatch = rawEspacioInput.match(/(?:espacios?|salas?|qr|space)[\/=]([A-Za-z0-9'_\-]+)/i);
+                if (urlEspacioMatch && !['download-qr', 'download-all-qr', 'download-all-qr-pdf'].includes(urlEspacioMatch[1].toLowerCase())) {
                     rawEspacioInput = urlEspacioMatch[1];
                 } else {
-                    const segments = rawEspacioInput.split(/[\/?#&]+/).filter(Boolean);
+                    const segments = rawEspacioInput.split(/[\/?#&]+/).filter(s =>
+                        Boolean(s) && !['download-qr', 'download-all-qr', 'download-all-qr-pdf'].includes(s.toLowerCase())
+                    );
                     if (segments.length > 0) {
                         rawEspacioInput = segments[segments.length - 1];
                     }
@@ -2102,16 +2139,24 @@
 
             // Normalizar comillas (teclado español de lector QR) y guiones bajos antes de evaluar patrones
             rawEspacioInput = rawEspacioInput.replace(/['`´_]+/g, '-').toUpperCase().trim();
+            const currentTenantPrefix = (typeof window !== 'undefined' && window.tenantPrefix) ? window.tenantPrefix.toUpperCase().trim() : '';
 
-            // Patrón 1: Prefijo de sede explícito (CCP, TH, LA, CH, CT) seguido de código alfanumérico (ej: TH-01, TH-L01, TH-LA10, TH-C1, TH-AUD, TH-LAB, THL01, TH-L-01)
-            const sedePrefixMatch = rawEspacioInput.match(/\b(CCP|TH|LA|CH|CT)-?([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
+            // Patrón 1: Prefijo de sede explícito con guion obligatorio (evita que LAB en TH coincida con LA-B)
+            const sedePrefixMatch = rawEspacioInput.match(/\b(CCP|TH|LA|CH|CT)-([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
             if (sedePrefixMatch) {
                 espacio = `${sedePrefixMatch[1].toUpperCase()}-${sedePrefixMatch[2].toUpperCase().replace(/-/g, '')}`;
+            } else if (currentTenantPrefix && rawEspacioInput.startsWith(currentTenantPrefix) && /^([A-Z]{2,3})([0-9]+)/.test(rawEspacioInput)) {
+                // Formato compacto tipo TH01 -> TH-01, CCP01 -> CCP-01
+                espacio = `${currentTenantPrefix}-${rawEspacioInput.substring(currentTenantPrefix.length)}`;
+            } else if (currentTenantPrefix && rawEspacioInput.startsWith(currentTenantPrefix + 'L') && /^([A-Z]{2,3})L([0-9]+)/.test(rawEspacioInput)) {
+                // Formato compacto tipo THL01 -> TH-L01
+                espacio = `${currentTenantPrefix}-${rawEspacioInput.substring(currentTenantPrefix.length)}`;
             } else {
-                // Patrón 2: Código de aula/laboratorio sin prefijo de sede (ej: L01, LA10, LAB09, C1, SR1, AUD, LAB, 30, 01)
-                const codigoSinSedeMatch = rawEspacioInput.match(/\b([A-Z]{1,3}-?[0-9]{1,3}[A-Z]?|AUD|LAB|[0-9]{1,3})\b/i);
+                // Patrón 2: Código sin prefijo de sede (ej: 01, 1, 30, L01, LAB, AUD, C1, GIM, INV, LSC, TP)
+                const codigoSinSedeMatch = rawEspacioInput.match(/\b([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
                 if (codigoSinSedeMatch) {
-                    espacio = codigoSinSedeMatch[1].toUpperCase().replace(/-/g, '');
+                    const coreCodigo = codigoSinSedeMatch[1].toUpperCase().replace(/-/g, '');
+                    espacio = currentTenantPrefix ? `${currentTenantPrefix}-${coreCodigo}` : coreCodigo;
                 } else {
                     if (currentBuffer.length > 8) {
                         limpiarEstadoLectura('QR de espacio inválido');
@@ -2122,14 +2167,14 @@
                 }
             }
 
-        // Normalizar el formato del espacio para que coincida con la BD (ej: TH-L01, TH-C1, TH-01)
-        if (espacio) {
-            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '').replace(/'/g, '-');
-            // Insertar guion únicamente después de un prefijo de sede conocido (CCP, TH, LA, CH, CT), evitando partir THL01 en THL-01
-            const knownSedeMatch = espacio.match(/^(CCP|TH|LA|CH|CT)-?([A-Z0-9]+)$/);
-            if (knownSedeMatch) {
-                espacio = knownSedeMatch[1] + '-' + knownSedeMatch[2];
-            }
+            // Normalizar el formato del espacio para que coincida con la BD (ej: TH-L01, TH-C1, TH-01)
+            if (espacio) {
+                espacio = espacio.toUpperCase().trim().replace(/\s+/g, '').replace(/'/g, '-');
+                // Insertar guion únicamente después de un prefijo de sede conocido (CCP, TH, LA, CH, CT), evitando partir THL01 en THL-01
+                const knownSedeMatch = espacio.match(/^(CCP|TH|LA|CH|CT)-?([A-Z0-9]+)$/);
+                if (knownSedeMatch) {
+                    espacio = knownSedeMatch[1] + '-' + knownSedeMatch[2];
+                }
 
             // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
             // Ya tenemos un código de espacio válido, el flujo de espera terminó
@@ -2197,7 +2242,36 @@
             }
 
             if (resultadoVerificacion.tipo === 'devolucion') {
-                // Procesando devolución...
+                if (resultadoVerificacion.espacio_disponible) {
+                    // El servidor ya confirmó la devolución y liberó el espacio directamente
+                    cerrarModalEsperaLlaves(false);
+                    Swal.close();
+                    Swal.fire({
+                        title: '¡Devolución Exitosa!',
+                        text: resultadoVerificacion.mensaje || 'Las llaves han sido devueltas correctamente.',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#10B981',
+                        timer: 2000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00';
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+
+                    sessionStorage.removeItem(`espacio_${espacio}`);
+                    sessionStorage.removeItem(`espacio_${espacio}_time`);
+                    limpiarEstadoLectura();
+                    ordenEscaneo = 'usuario';
+                    detenerWatchdog();
+                    return 'devolucion_exitosa';
+                }
+
                 // Evitar procesamiento múltiple
                 if (procesandoDevolucion) {
                     return 'devolucion_en_proceso';
@@ -2327,16 +2401,36 @@
             if (resultadoVerificacion.tipo === 'clase_ya_finalizada') {
                 cerrarModalEsperaLlaves(false);
                 Swal.close();
-                Swal.fire({
-                    title: 'Clase ya finalizada',
-                    text: resultadoVerificacion.mensaje || 'Esta clase ya fue finalizada con éxito para este bloque.',
-                    icon: 'info',
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#0066CC',
-                    timer: 4000,
-                    timerProgressBar: true,
-                    showConfirmButton: false
-                });
+
+                if (resultadoVerificacion.espacio_disponible) {
+                    Swal.fire({
+                        title: '¡Clase Finalizada!',
+                        text: resultadoVerificacion.mensaje || 'La clase fue finalizada y el espacio se encuentra disponible.',
+                        icon: 'success',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#10B981',
+                        timer: 2500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00';
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+                } else {
+                    Swal.fire({
+                        title: 'Clase ya finalizada',
+                        text: resultadoVerificacion.mensaje || 'Esta clase ya fue finalizada con éxito para este bloque.',
+                        icon: 'info',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#0066CC',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                }
 
                 limpiarEstadoLectura();
                 ordenEscaneo = 'usuario';
@@ -2345,7 +2439,7 @@
                     if (qrInputManager) {
                         qrInputManager.setActiveInput('main');
                     }
-                }, 1000);
+                }, 500);
                 return;
             }
 
@@ -5569,16 +5663,35 @@
                 }
             });
 
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(requestBody)
-            });
+            const abortController = new AbortController();
+            const fetchTimeout = setTimeout(() => abortController.abort(), 8000);
+            let response, data;
 
-        const data = await response.json();
+            try {
+                response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    signal: abortController.signal,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                clearTimeout(fetchTimeout);
+                data = await response.json();
+            } catch (fetchError) {
+                clearTimeout(fetchTimeout);
+                Swal.close();
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: fetchError.name === 'AbortError'
+                        ? 'El servidor tardó demasiado en responder al crear la reserva.'
+                        : (fetchError.message || 'Error de conexión con el servidor'),
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
 
 
         if (data.success) {
@@ -5871,7 +5984,6 @@
         }
 
         let ultimaInteraccionUsuario = Date.now();
-        let timestampInicioProcesamiento = null;
         let ultimoModuloDetectado = null;
 
         function registrarActividadUsuario() {
@@ -5888,12 +6000,12 @@
             const ahora = Date.now();
             const tiempoInactivo = ahora - ultimaInteraccionUsuario;
 
-            // 1. Detectar y liberar isProcessingQR trabado (> 8 segundos)
+            // 1. Detectar y liberar isProcessingQR trabado (> 30 segundos)
             if (isProcessingQR) {
                 if (!timestampInicioProcesamiento) {
                     timestampInicioProcesamiento = ahora;
-                } else if (ahora - timestampInicioProcesamiento > 8000) {
-                    console.warn('⚠ Watchdog: Liberando isProcessingQR trabado (> 8s)');
+                } else if (ahora - timestampInicioProcesamiento > QR_PROCESSING_TIMEOUT_MS) {
+                    console.warn('⚠ Watchdog: Liberando isProcessingQR trabado (> 30s)');
                     isProcessingQR = false;
                     timestampInicioProcesamiento = null;
                     limpiarEstadoCompleto();

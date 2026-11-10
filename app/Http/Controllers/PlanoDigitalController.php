@@ -34,23 +34,30 @@ class PlanoDigitalController extends Controller
 
     public function index()
     {
-        $sedes = Sede::with([
-            'universidad',
-            'facultades.pisos.mapas' => function ($query) {
-                // Solo cargar mapas con ruta válida
-                $query
-                    ->where('ruta_mapa', '!=', '0')
-                    ->whereNotNull('ruta_mapa')
-                    ->where('ruta_mapa', '!=', '');
-            }
-        ])->get();
+        $sedes = Sede::with(['universidad', 'facultades'])->get();
+        $mapasDisponibles = 0;
 
-        // Verificar si hay mapas disponibles con rutas válidas
-        $mapasDisponibles = Mapa::withoutGlobalScopes()
-            ->where('ruta_mapa', '!=', '0')
-            ->whereNotNull('ruta_mapa')
-            ->where('ruta_mapa', '!=', '')
-            ->count();
+        foreach ($sedes as $sede) {
+            $tenant = Tenant::where('sede_id', $sede->id_sede)->orWhere('domain', strtolower($sede->id_sede))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                $pisos = Piso::with([
+                    'mapas' => function ($query) {
+                        $query->where('ruta_mapa', '!=', '0')
+                              ->whereNotNull('ruta_mapa')
+                              ->where('ruta_mapa', '!=', '');
+                    }
+                ])->get();
+
+                foreach ($sede->facultades as $facultad) {
+                    $facultad->setRelation('pisos', $pisos->where('id_facultad', $facultad->id_facultad)->values());
+                }
+
+                $mapasTenant = $pisos->flatMap->mapas->count();
+                $mapasDisponibles += $mapasTenant;
+            }
+        }
+
         $tieneMapas = $mapasDisponibles > 0;
 
         return view('plano-digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
@@ -80,17 +87,19 @@ class PlanoDigitalController extends Controller
             $bloques = $this->prepararBloques($mapa, $estadoActual);
 
             // Obtener todos los pisos de la misma facultad con sus mapas
-            $pisos = Piso::with([
+            $idFacultad = $mapa->piso ? $mapa->piso->id_facultad : null;
+            $pisosQuery = Piso::with([
                 'mapas' => function ($query) {
                     $query
                         ->where('ruta_mapa', '!=', '0')
                         ->whereNotNull('ruta_mapa')
                         ->where('ruta_mapa', '!=', '');
                 }
-            ])
-                ->where('id_facultad', $mapa->piso->id_facultad)
-                ->orderBy('numero_piso')
-                ->get();
+            ]);
+            if ($idFacultad) {
+                $pisosQuery->where('id_facultad', $idFacultad);
+            }
+            $pisos = $pisosQuery->orderBy('numero_piso')->get();
 
             // Formatear los pisos con sus mapas
             $pisosFormateados = $pisos->map(function ($piso) {
@@ -133,6 +142,7 @@ class PlanoDigitalController extends Controller
     public function bloques($id)
     {
         try {
+            $this->establecerContextoTenant();
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
@@ -143,7 +153,7 @@ class PlanoDigitalController extends Controller
                 'clasesModuloActual' => $clasesModuloActual,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al obtener los bloques'], 500);
+            return response()->json(['error' => 'Error al obtener los bloques: ' . $e->getMessage()], 500);
         }
     }
 
@@ -213,10 +223,28 @@ class PlanoDigitalController extends Controller
 
     private function obtenerMapa($id)
     {
-        return Mapa::withoutGlobalScopes()
+        $mapa = Mapa::withoutGlobalScopes()
             ->with(['bloques.espacio', 'piso.facultad.sede.universidad'])
             ->where('id_mapa', $id)
-            ->firstOrFail();
+            ->first();
+
+        if ($mapa) {
+            return $mapa;
+        }
+
+        // Si no se encuentra en la conexión actual, buscar en todos los tenants
+        foreach (Tenant::all() as $t) {
+            $t->makeCurrent();
+            $mapa = Mapa::withoutGlobalScopes()
+                ->with(['bloques.espacio', 'piso.facultad.sede.universidad'])
+                ->where('id_mapa', $id)
+                ->first();
+            if ($mapa) {
+                return $mapa;
+            }
+        }
+
+        abort(404, "Mapa no encontrado: {$id}");
     }
 
     private function obtenerEstadoActual(Carbon $horaActual)
@@ -281,26 +309,39 @@ class PlanoDigitalController extends Controller
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $reservasFinalizadasAnticipadamente, $mapa, $horaActualStr, $fechaActual, $moduloActual) {
+        $espacioIds = $mapa->bloques->pluck('id_espacio')->filter()->unique()->values();
+
+        // [OPTIMIZACIÓN DE RENDIMIENTO] Pre-cargar todas las reservas y clases en UNA sola consulta
+        // eliminando el problema N+1 que ralentizaba la actualización del plano digital
+        $reservasActivasMap = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
+            ->whereIn('id_espacio', $espacioIds)
+            ->where('fecha_reserva', $fechaActual)
+            ->whereIn('estado', ['activa', 'programada'])
+            ->get()
+            ->groupBy('id_espacio');
+
+        $clasesNoRealizadasMap = ClaseNoRealizada::with('modulo')
+            ->whereIn('id_espacio', $espacioIds)
+            ->where('fecha_clase', $fechaActual)
+            ->where('estado', 'no_realizada')
+            ->get()
+            ->groupBy('id_espacio');
+
+        return $mapa->bloques->map(function ($bloque) use (
+            $planificacionesActivas, $planificacionesProximas, $reservasProximas,
+            $reservasFinalizadasAnticipadamente, $reservasActivasMap, $clasesNoRealizadasMap,
+            $mapa, $horaActualStr, $fechaActual, $moduloActual
+        ) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
-            // Verificar si hay una reserva activa en este espacio
-            // Obtener la reserva completa con relaciones para mostrar la información correcta
-            $reservaActiva = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
-                ->where('id_espacio', $idEspacio)
-                ->where('estado', 'activa')
-                ->where('fecha_reserva', $fechaActual)
-                ->first();
-
-            // Verificar si hay una reserva PROGRAMADA (creada con antelación, aún no activada)
+            // Obtener reservas pre-cargadas en memoria sin consultar la BD
+            $reservasDelEspacio = $reservasActivasMap->get($idEspacio, collect());
+            $reservaActiva = $reservasDelEspacio->firstWhere('estado', 'activa');
             $reservaProgramada = null;
+
             if (!$reservaActiva) {
-                $reservaProgramada = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
-                    ->where('id_espacio', $idEspacio)
-                    ->where('estado', 'programada')
-                    ->where('fecha_reserva', $fechaActual)
-                    ->first();
+                $reservaProgramada = $reservasDelEspacio->firstWhere('estado', 'programada');
 
                 // Solo considerar la reserva programada si el módulo actual está dentro de su rango
                 if ($reservaProgramada && $moduloActual) {
@@ -315,18 +356,11 @@ class PlanoDigitalController extends Controller
                 }
             }
 
-            // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
-            $clasesNoRealizadasHoy = ClaseNoRealizada::with('modulo')
-                ->where('id_espacio', $idEspacio)
-                ->where('fecha_clase', $fechaActual)
-                ->where('estado', 'no_realizada')
-                ->get();
-
-            // Verificar si hay alguna clase no realizada cuyo módulo AÚN NO HA TERMINADO
+            // Obtener clases no realizadas pre-cargadas en memoria
+            $clasesNoRealizadasHoy = $clasesNoRealizadasMap->get($idEspacio, collect());
             $claseSinAsistentesActiva = false;
             foreach ($clasesNoRealizadasHoy as $clase) {
                 if ($clase->modulo && $clase->modulo->hora_termino > $horaActualStr) {
-                    // El módulo aún no ha terminado, mostrar como no realizada
                     $claseSinAsistentesActiva = true;
                     break;
                 }
@@ -634,21 +668,13 @@ class PlanoDigitalController extends Controller
                     'profesor' => ucwords($planificacion->horario?->profesor?->name ?? $planificacion->asignatura?->profesor?->name ?? 'No asignado'),
                     'carrera' => $planificacion->asignatura?->carrera?->nombre ?? '-',
                     'es_reserva_activa' => false,
-                    'modulos' => $planificacion
-                        ->asignatura
-                        ->planificaciones()
-                        ->where('id_horario', $planificacion->id_horario)
-                        ->where('id_espacio', $espacio->id_espacio)
-                        ->with('modulo')
-                        ->get()
-                        ->map(function ($plan) {
-                            return [
-                                'dia' => $plan->modulo->dia ?? 'No especificado',
-                                'hora_inicio' => $plan->modulo->hora_inicio ?? '00:00:00',
-                                'hora_termino' => $plan->modulo->hora_termino ?? '00:00:00'
-                            ];
-                        })
-                        ->toArray()
+                    'modulos' => $planificacion->modulo ? [
+                        [
+                            'dia' => $planificacion->modulo->dia ?? 'No especificado',
+                            'hora_inicio' => $planificacion->modulo->hora_inicio ?? '00:00:00',
+                            'hora_termino' => $planificacion->modulo->hora_termino ?? '00:00:00'
+                        ]
+                    ] : []
                 ];
             }
         }
@@ -1036,6 +1062,10 @@ class PlanoDigitalController extends Controller
             // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
 
+            if (!$request->has('run_usuario') && $request->has('run')) {
+                $request->merge(['run_usuario' => $request->input('run')]);
+            }
+
             $request->validate([
                 'id_espacio' => 'required|string',
                 'run_usuario' => 'required',
@@ -1043,14 +1073,12 @@ class PlanoDigitalController extends Controller
                 'run_administrador' => 'required_if:tipo_desocupacion,forzosa'
             ]);
 
-            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
             $runUsuario = $request->input('run_usuario');
             $tipoDesocupacion = $request->input('tipo_desocupacion', 'normal');
             $runAdministrador = $request->input('run_administrador');
 
-            // Buscar el espacio
-            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-
+            // Buscar el espacio soportando alias y scopes de tenant
+            $espacio = \App\Helpers\EspacioAliasHelper::buscarEspacio($request->input('id_espacio'));
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -1058,109 +1086,93 @@ class PlanoDigitalController extends Controller
                 ], 404);
             }
 
-            // Verificar si el usuario tiene una reserva activa en este espacio
-            $reservaActiva = null;
-
+            $idEspacio = $espacio->id_espacio;
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
-            // Si el run_usuario indica desocupación forzosa por falta de info (empieza con FORCE_)
+            // Normalizar RUNs del usuario (incluyendo formato exacto de DB si existe profesor o solicitante)
+            $runUsuarioRaw = (string) $runUsuario;
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runUsuarioRaw));
+            $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
+            $profesorDoc = Profesor::buscarProfesor($runUsuarioRaw);
+            $solicitanteDoc = Solicitante::buscarSolicitante($runUsuarioRaw);
+            $runsUsuario = array_values(array_unique(array_filter([
+                $profesorDoc ? $profesorDoc->run_profesor : null,
+                $solicitanteDoc ? $solicitanteDoc->run_solicitante : null,
+                $runUsuarioRaw,
+                $runLimpio,
+                $runSinDv
+            ])));
+
+            // Verificar si el usuario tiene una reserva activa en este espacio (usando búsqueda indexada rápida)
+            $reservaActiva = null;
+
             if (strpos($runUsuario, 'FORCE_') === 0) {
-                // Buscar cualquier reserva activa en este espacio
                 $reservaActiva = Reserva::whereIn('id_espacio', $espaciosEquiv)
                     ->where('estado', 'activa')
+                    ->latest('updated_at')
                     ->first();
             } else {
-                // Búsqueda normal por RUN de usuario (soportando alias y ceros a la izquierda)
-                $reservaActiva = Reserva::where(function ($query) use ($runUsuario) {
-                    $query
-                        ->where('run_profesor', $runUsuario)
-                        ->orWhere('run_solicitante', $runUsuario)
-                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)])
-                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)]);
+                $reservaActiva = Reserva::where(function ($query) use ($runsUsuario) {
+                    $query->whereIn('run_profesor', $runsUsuario)
+                          ->orWhereIn('run_solicitante', $runsUsuario);
                 })
                     ->whereIn('id_espacio', $espaciosEquiv)
                     ->where('estado', 'activa')
+                    ->latest('updated_at')
                     ->first();
             }
 
+            // Si no hay reserva activa para el usuario, verificar si tiene una reserva de HOY que ya fue finalizada
             if (!$reservaActiva) {
-                // Verificar si es una devolución tardía de una reserva auto-finalizada por el sistema
-                $reservaAutoFinalizada = Reserva::where(function ($query) use ($runUsuario) {
-                    $query
-                        ->where('run_profesor', $runUsuario)
-                        ->orWhere('run_solicitante', $runUsuario)
-                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)])
-                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [preg_replace('/[^0-9kK]/', '', $runUsuario)]);
+                $reservaHoy = Reserva::where(function ($query) use ($runsUsuario) {
+                    $query->whereIn('run_profesor', $runsUsuario)
+                          ->orWhereIn('run_solicitante', $runsUsuario);
                 })
                     ->whereIn('id_espacio', $espaciosEquiv)
-                    ->where('estado', 'finalizada')
                     ->where('fecha_reserva', now()->toDateString())
-                    ->whereNotNull('observaciones')
-                    ->where(function ($q) {
-                        $q->where('observaciones', 'LIKE', '%finalizó automáticamente%')
-                          ->orWhere('observaciones', 'LIKE', '%Finalizada automáticamente%')
-                          ->orWhere('observaciones', 'LIKE', '%Llave no devuelta%')
-                          ->orWhere('observaciones', 'LIKE', '%tiempo límite excedido%');
-                    })
-                    ->orderBy('updated_at', 'desc')
+                    ->latest('updated_at')
                     ->first();
 
-                if ($reservaAutoFinalizada) {
-                    $horaActualSalida = now()->format('H:i:s');
-                    $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
-                    if (!str_contains($observacionActual, 'Devolución de llave registrada') && !str_contains($observacionActual, 'devolvió llave de acceso')) {
-                        $nuevaObservacion = "\nDevolución de llave registrada por el docente a las {$horaActualSalida} (devolución tardía tras auto-cierre).";
-                        $reservaAutoFinalizada->observaciones = trim($observacionActual . $nuevaObservacion);
-                        $reservaAutoFinalizada->save();
-                    }
-
-                    // Asegurar que el espacio esté disponible
-                    $espacio->estado = 'Disponible';
-                    $espacio->save();
-
-                    return response()->json([
-                        'success' => true,
-                        'mensaje' => 'Devolución de llave registrada exitosamente (devolución tardía tras auto-cierre)',
-                        'tardia' => true,
-                        'espacio' => [
-                            'id' => $espacio->id_espacio,
-                            'nombre' => $espacio->nombre_espacio,
-                            'estado' => $espacio->estado
-                        ]
-                    ]);
+                if (!$reservaHoy && ($runLimpio || $runSinDv)) {
+                    $reservaHoy = Reserva::where(function ($query) use ($runLimpio, $runSinDv) {
+                        $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                        if ($runSinDv) {
+                            $query->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                        }
+                    })
+                        ->whereIn('id_espacio', $espaciosEquiv)
+                        ->where('fecha_reserva', now()->toDateString())
+                        ->latest('updated_at')
+                        ->first();
                 }
 
-                // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
-                if ($espacio->estado === 'Disponible') {
-                    return response()->json([
-                        'success' => true,
-                        'mensaje' => 'El espacio ya está disponible',
-                        'espacio' => [
-                            'id' => $espacio->id_espacio,
-                            'nombre' => $espacio->nombre_espacio,
-                            'estado' => $espacio->estado
-                        ]
-                    ]);
+                // Asegurar siempre que el espacio quede en Disponible
+                $espacio->estado = 'Disponible';
+                $espacio->save();
+
+                if ($reservaHoy && !str_contains($reservaHoy->observaciones ?? '', 'Devolución de llave')) {
+                    $reservaHoy->observaciones = trim(($reservaHoy->observaciones ?? '') . "\nDevolución de llave registrada a las " . now()->format('H:i:s'));
+                    $reservaHoy->save();
                 }
+
+                $this->limpiarCacheEstadosEspacios();
 
                 return response()->json([
-                    'success' => false,
-                    'mensaje' => 'No tienes una reserva activa en este espacio'
-                ], 400);
+                    'success' => true,
+                    'mensaje' => 'Devolución de llave registrada exitosamente. El espacio se encuentra disponible.',
+                    'espacio' => [
+                        'id' => $espacio->id_espacio,
+                        'nombre' => $espacio->nombre_espacio,
+                        'estado' => 'Disponible'
+                    ]
+                ]);
             }
 
-            // Protección contra escaneo doble o segundo escaneo durante cambio de sección (3 minutos o antes de que inicie el nuevo módulo)
+            // Protección de 10 segundos contra rebotes involuntarios del lector de código de barras
             $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
-            $ahoraDev = Carbon::now();
-            $horaActualDevStr = $ahoraDev->format('H:i:s');
-            $diaDevNorm = ModulosHelper::normalizarDia($ahoraDev->locale('es')->isoFormat('dddd'));
-            $horariosDev = ModulosHelper::getHorariosModulos()[$diaDevNorm] ?? [];
-            $horaInicioModuloActiva = ($reservaActiva->modulo_inicio && isset($horariosDev[$reservaActiva->modulo_inicio]['inicio']))
-                ? $horariosDev[$reservaActiva->modulo_inicio]['inicio']
-                : null;
-            $aunEnRecesoDeInicio = ($reservaActiva->tipo_reserva === 'clase' && $horaInicioModuloActiva && $horaActualDevStr < $horaInicioModuloActiva);
-
-            if ($tipoDesocupacion !== 'forzosa' && ($segundosDesdeActivacion < 180 || $aunEnRecesoDeInicio)) {
+            if ($tipoDesocupacion !== 'forzosa' && $segundosDesdeActivacion < 10) {
                 return response()->json([
                     'success' => true,
                     'devolucion_bloqueada' => true,
@@ -1473,22 +1485,30 @@ class PlanoDigitalController extends Controller
                 $idReservaAnterior = $request->input('id_reserva_anterior');
 
                 // 1. Obtener datos de los involucrados
-                $docenteNuevo = Profesor::where(function ($q) use ($runNuevo, $runLimpioNuevo, $runSinDvNuevo) {
-                    $q->where('run_profesor', $runNuevo)
-                      ->orWhere('run_profesor', $runLimpioNuevo)
-                      ->orWhere('run_profesor', $runSinDvNuevo)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runNuevo])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpioNuevo])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDvNuevo]);
-                })->first();
+                $docenteNuevo = Profesor::buscarProfesor($runRawNuevo);
+                if (!$docenteNuevo) {
+                    $docenteNuevo = Profesor::withoutGlobalScopes()->where(function ($q) use ($runNuevo, $runLimpioNuevo, $runSinDvNuevo) {
+                        $q->where('run_profesor', $runNuevo)
+                          ->orWhere('run_profesor', $runLimpioNuevo)
+                          ->orWhere('run_profesor', $runSinDvNuevo)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runNuevo])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpioNuevo])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDvNuevo]);
+                    })->first();
+                }
                 if (!$docenteNuevo) {
                     return response()->json(['success' => false, 'mensaje' => 'Docente nuevo no encontrado (' . $runNuevo . ')'], 404);
                 }
                 $runNuevo = $docenteNuevo->run_profesor;
 
+                $espacioObj = \App\Helpers\EspacioAliasHelper::buscarEspacio($idEspacio);
+                if ($espacioObj) {
+                    $idEspacio = $espacioObj->id_espacio;
+                }
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
                 $reservaAnterior = Reserva::with(['profesor', 'solicitante'])->find($idReservaAnterior);
-                if (!$reservaAnterior || $reservaAnterior->id_espacio !== $idEspacio) {
+                if (!$reservaAnterior || (!in_array($reservaAnterior->id_espacio, $espaciosEquiv) && $reservaAnterior->id_espacio !== $idEspacio)) {
                     return response()->json(['success' => false, 'mensaje' => 'Reserva anterior no válida'], 400);
                 }
 
@@ -1497,8 +1517,8 @@ class PlanoDigitalController extends Controller
 
                 // 2. Finalizar/cancelar reserva anterior
                 $reservaAnterior->hora_salida = now()->format('H:i:s');
-                $reservaAnterior->estado = 'finalizada';
                 $accionDesc = $reservaAnterior->estado === 'programada' ? 'RESERVA PROGRAMADA CANCELADA' : 'CIERRE FORZADO';
+                $reservaAnterior->estado = 'finalizada';
                 $reservaAnterior->observaciones = ($reservaAnterior->observaciones ?? '')
                     . "; {$accionDesc} por el docente titular: {$docenteNuevo->name} ({$runNuevo}) el " . now()->format('Y-m-d H:i:s');
                 $reservaAnterior->save();
@@ -1644,7 +1664,24 @@ class PlanoDigitalController extends Controller
                             $nuevaReserva->modulo_inicio = $numModuloActual;
                             $nuevaReserva->modulo_fin = $moduloFin;
                             $nuevaReserva->hora_salida = $moduloFinalObj->hora_termino ?? null;
-                            $nuevaReserva->modulos = $cantidadModulos; } elseif ($infoRecForzado = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada($idEspacio, $runNuevo, Carbon::today()->toDateString(), $horaActualStr, 30)) { $nuevaReserva->id_asignatura = $infoRecForzado['id_asignatura']; $nuevaReserva->modulo_inicio = $infoRecForzado['modulo_inicio']; $nuevaReserva->modulo_fin = $infoRecForzado['modulo_fin']; $nuevaReserva->hora_salida = $infoRecForzado['hora_termino']; $nuevaReserva->modulos = $infoRecForzado['cantidad_modulos']; $nuevaReserva->tipo_reserva = 'recuperacion';
+                            $nuevaReserva->modulos = $cantidadModulos;
+                        } elseif ($infoRecForzado = \App\Models\ClaseNoRealizada::obtenerRecuperacionProgramada($idEspacio, $runNuevo, Carbon::today()->toDateString(), $horaActualStr, 30)) {
+                            $nuevaReserva->id_asignatura = $infoRecForzado['id_asignatura'];
+                            $nuevaReserva->modulo_inicio = $infoRecForzado['modulo_inicio'];
+                            $nuevaReserva->modulo_fin = $infoRecForzado['modulo_fin'];
+                            $nuevaReserva->hora_salida = $infoRecForzado['hora_termino'];
+                            $nuevaReserva->modulos = $infoRecForzado['cantidad_modulos'];
+                            $nuevaReserva->tipo_reserva = 'recuperacion';
+                        } else {
+                            $diaNormalizado = ModulosHelper::normalizarDia($diaActual);
+                            $numModActual = ModulosHelper::obtenerModuloActual($horaActualStr, $diaNormalizado);
+                            if ($numModActual) {
+                                $horarioMod = ModulosHelper::getHorarioModulo($diaNormalizado, $numModActual);
+                                $nuevaReserva->modulo_inicio = $numModActual;
+                                $nuevaReserva->modulo_fin = $numModActual;
+                                $nuevaReserva->hora_salida = $horarioMod['fin'] ?? null;
+                                $nuevaReserva->modulos = 1;
+                            }
                         }
                     }
 
@@ -1697,37 +1734,33 @@ class PlanoDigitalController extends Controller
             $runUsuario = $this->normalizeRun($runRawInput);
             $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRawInput));
             $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runUsuario;
-            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
-            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $espacioLimpioLookup = str_replace(['-', ' '], '', $idEspacio);
-
-            // Verificar que el espacio existe (ignorar scopes globales y soportar alias como TH-30 -> TH-L09)
-            $espacio = Espacio::withoutGlobalScopes()
-                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpioLookup) {
-                    $q->where('id_espacio', $idEspacio)
-                      ->orWhereIn('id_espacio', $espaciosEquiv)
-                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpioLookup]);
-                })
-                ->first();
+            $profesorDoc = Profesor::buscarProfesor($runRawInput);
+            $solicitanteDoc = Solicitante::buscarSolicitante($runRawInput);
+            $espacio = \App\Helpers\EspacioAliasHelper::buscarEspacio($request->input('id_espacio'));
             if (!$espacio) {
                 return response()->json([
                     'tipo' => 'error',
-                    'mensaje' => 'Espacio no encontrado: ' . $idEspacio
+                    'mensaje' => 'Espacio no encontrado: ' . $request->input('id_espacio')
                 ], 404);
             }
             $idEspacio = $espacio->id_espacio;
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
-            // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
-            $reservaExistente = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
-                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            $runsUsuario = array_values(array_unique(array_filter([
+                $profesorDoc ? $profesorDoc->run_profesor : null,
+                $solicitanteDoc ? $solicitanteDoc->run_solicitante : null,
+                $runRawInput,
+                $runUsuario,
+                $runLimpio,
+                $runSinDv
+            ])));
+
+            // Verificar si el usuario tiene una reserva activa en otro espacio (usando búsqueda indexada rápida)
+            $reservaExistente = Reserva::where(function ($query) use ($runsUsuario) {
+                $query->whereIn('run_profesor', $runsUsuario)
+                      ->orWhereIn('run_solicitante', $runsUsuario);
             })
-                ->where('id_espacio', '!=', $idEspacio)
+                ->whereNotIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
                 ->whereNull('hora_salida')
                 ->first();
@@ -1757,24 +1790,20 @@ class PlanoDigitalController extends Controller
                 // El usuario ya tiene una reserva activa en otro espacio
                 return response()->json([
                     'tipo' => 'reserva_existente',
+                    'id_espacio' => $espacio->id_espacio,
                     'mensaje' => 'Ya tienes una reserva activa en otro espacio. Debes finalizarla antes de solicitar una nueva.',
                     'espacio_disponible' => false
                 ]);
             }
 
-            // Verificar si el usuario tiene una reserva activa en este espacio
-            // Usamos una comparación robusta para el RUN y equivalentes de espacio (LA-1 vs LA-01)
-            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $reservaActiva = Reserva::where(function ($query) use ($runUsuario, $runLimpio, $runSinDv) {
-                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            // Verificar si el usuario tiene una reserva activa en este espacio (usando búsqueda indexada rápida)
+            $reservaActiva = Reserva::where(function ($query) use ($runsUsuario) {
+                $query->whereIn('run_profesor', $runsUsuario)
+                      ->orWhereIn('run_solicitante', $runsUsuario);
             })
                 ->whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
+                ->latest('updated_at')
                 ->first();
 
             // Si el usuario tiene una reserva activa en este espacio, verificar si corresponde a un bloque/módulo anterior
@@ -1875,20 +1904,12 @@ class PlanoDigitalController extends Controller
             $espacioDisponible = $espacio->estado === 'Disponible';
 
             if ($reservaActiva) {
-                // Protección contra escaneo doble rápido o segundo escaneo al cambiar de sección en la misma sala
+                // Protección de 10 segundos contra rebote involuntario del lector físico de código de barras
                 $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
-                $ahoraAct = Carbon::now();
-                $horaActualActStr = $ahoraAct->format('H:i:s');
-                $diaActNorm = ModulosHelper::normalizarDia($ahoraAct->locale('es')->isoFormat('dddd'));
-                $horariosAct = ModulosHelper::getHorariosModulos()[$diaActNorm] ?? [];
-                $horaInicioModAct = ($reservaActiva->modulo_inicio && isset($horariosAct[$reservaActiva->modulo_inicio]['inicio']))
-                    ? $horariosAct[$reservaActiva->modulo_inicio]['inicio']
-                    : null;
-                $aunAntesDelModulo = ($reservaActiva->tipo_reserva === 'clase' && $horaInicioModAct && $horaActualActStr < $horaInicioModAct);
-
-                if ($segundosDesdeActivacion < 180 || $aunAntesDelModulo) {
+                if ($segundosDesdeActivacion < 10) {
                     return response()->json([
                         'tipo' => 'activacion_reciente',
+                        'id_espacio' => $espacio->id_espacio,
                         'success' => true,
                         'mensaje' => 'Tu nueva clase/sección en esta sala ya fue registrada exitosamente y se encuentra activa.',
                         'reserva' => [
@@ -1901,9 +1922,10 @@ class PlanoDigitalController extends Controller
                     ]);
                 }
 
-                // El usuario tiene una reserva activa en este espacio (más de 3 minutos y módulo en curso)
+                // El usuario tiene una reserva activa en este espacio -> Devolución
                 return response()->json([
                     'tipo' => 'devolucion',
+                    'id_espacio' => $espacio->id_espacio,
                     'mensaje' => 'Tienes una reserva activa en este espacio. ¿Deseas devolver las llaves?',
                     'reserva' => [
                         'id_reserva' => $reservaActiva->id_reserva,
@@ -1912,6 +1934,54 @@ class PlanoDigitalController extends Controller
                         'espacio' => $espacio->nombre_espacio
                     ],
                     'espacio_disponible' => false
+                ]);
+            }
+
+            // Si el usuario NO tiene una reserva activa, pero sí tuvo una reserva HOY en este espacio que ya fue finalizada
+            // y está escaneando el espacio, procesar la devolución de llaves directamente sin error
+            $reservaFinalizadaHoyUsuario = Reserva::where(function ($query) use ($runsUsuario) {
+                $query->whereIn('run_profesor', $runsUsuario)
+                      ->orWhereIn('run_solicitante', $runsUsuario);
+            })
+                ->whereIn('id_espacio', $espaciosEquiv)
+                ->where('fecha_reserva', Carbon::today()->toDateString())
+                ->where('estado', 'finalizada')
+                ->latest('updated_at')
+                ->first();
+
+            if (!$reservaFinalizadaHoyUsuario && ($runLimpio || $runSinDv)) {
+                $reservaFinalizadaHoyUsuario = Reserva::where(function ($query) use ($runLimpio, $runSinDv) {
+                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                    if ($runSinDv) {
+                        $query->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    }
+                })
+                    ->whereIn('id_espacio', $espaciosEquiv)
+                    ->where('fecha_reserva', Carbon::today()->toDateString())
+                    ->where('estado', 'finalizada')
+                    ->latest('updated_at')
+                    ->first();
+            }
+
+            if ($reservaFinalizadaHoyUsuario) {
+                // Asegurar que el espacio esté Disponible
+                if ($espacio->estado !== 'Disponible') {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                }
+
+                return response()->json([
+                    'tipo' => 'devolucion',
+                    'id_espacio' => $espacio->id_espacio,
+                    'mensaje' => 'Devolución de llave confirmada exitosamente. El espacio se encuentra disponible.',
+                    'espacio_disponible' => true,
+                    'reserva' => [
+                        'id_reserva' => $reservaFinalizadaHoyUsuario->id_reserva,
+                        'hora_salida' => $reservaFinalizadaHoyUsuario->hora_salida ?? now()->format('H:i:s'),
+                        'espacio' => $espacio->nombre_espacio
+                    ]
                 ]);
             }
 
@@ -2196,7 +2266,8 @@ class PlanoDigitalController extends Controller
                         }
 
                         return response()->json([
-                            'tipo' => 'clase_ya_finalizada',
+                            'tipo' => 'devolucion',
+                            'id_espacio' => $espacio->id_espacio,
                             'mensaje' => 'Devolución de llave registrada exitosamente a las ' . substr($horaActualStr, 0, 5) . '. (La sala había sido cerrada automáticamente por el sistema al término del módulo).',
                             'espacio_disponible' => true,
                             'reserva' => [
@@ -2207,13 +2278,20 @@ class PlanoDigitalController extends Controller
                         ]);
                     }
 
+                    // Asegurar que el espacio esté disponible
+                    if ($espacio->estado !== 'Disponible') {
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    }
+
                     return response()->json([
-                        'tipo' => 'clase_ya_finalizada',
-                        'mensaje' => 'Esta clase ya fue finalizada con éxito' . ($reservaFinalizadaHoy->hora_salida ? ' a las ' . substr($reservaFinalizadaHoy->hora_salida, 0, 5) : '') . '. El registro para este bloque ya se encuentra completado.',
-                        'espacio_disponible' => false,
+                        'tipo' => 'devolucion',
+                        'id_espacio' => $espacio->id_espacio,
+                        'mensaje' => 'Devolución de llave confirmada exitosamente a las ' . substr($horaActualStr, 0, 5) . '. La clase ya se encontraba finalizada y el espacio se encuentra disponible.',
+                        'espacio_disponible' => true,
                         'reserva' => [
                             'id_reserva' => $reservaFinalizadaHoy->id_reserva,
-                            'hora_salida' => $reservaFinalizadaHoy->hora_salida,
+                            'hora_salida' => $reservaFinalizadaHoy->hora_salida ?? $horaActualStr,
                             'espacio' => $espacio->nombre_espacio
                         ]
                     ]);
@@ -2255,6 +2333,7 @@ class PlanoDigitalController extends Controller
 
                     return response()->json([
                         'tipo' => 'clase_ya_finalizada',
+                        'id_espacio' => $espacio->id_espacio,
                         'mensaje' => 'Devolución de llave registrada exitosamente a las ' . substr($horaActualStr, 0, 5) . '. (La sala había sido cerrada automáticamente por el sistema).',
                         'espacio_disponible' => true,
                         'reserva' => [
@@ -2319,6 +2398,7 @@ class PlanoDigitalController extends Controller
 
                 return response()->json([
                     'tipo' => 'activacion_reserva',
+                    'id_espacio' => $espacio->id_espacio,
                     'success' => true,
                     'mensaje' => 'Reserva programada activada exitosamente. El espacio ha sido asignado.',
                     'reserva' => [
@@ -2336,6 +2416,7 @@ class PlanoDigitalController extends Controller
             if ($reservaFueraHorario && !$tieneClaseAhora) {
                 return response()->json([
                     'tipo' => 'reserva_fuera_horario',
+                    'id_espacio' => $espacio->id_espacio,
                     'success' => false,
                     'mensaje' => 'Tienes una reserva programada para este espacio, pero aún no es el horario correspondiente. La reserva se activará cuando llegue el momento.',
                     'reserva' => [
@@ -2417,6 +2498,7 @@ class PlanoDigitalController extends Controller
 
                     return response()->json([
                         'tipo' => 'espacio_ocupado',
+                        'id_espacio' => $espacio->id_espacio,
                         'mensaje' => $tieneClaseAhora 
                             ? "El espacio tiene una reserva temporal programada por {$nombreOcupante}, pero usted tiene clase programada en este bloque."
                             : "El espacio tiene una reserva programada por {$nombreOcupante} en este horario.",
@@ -2497,6 +2579,7 @@ class PlanoDigitalController extends Controller
 
                     return response()->json([
                         'tipo' => 'clase_programada_otro_docente',
+                        'id_espacio' => $espacio->id_espacio,
                         'mensaje' => "Esta sala tiene una clase programada de {$nombreDocente} ({$nombreAsignatura}) en el bloque {$horaInicio} - {$horaTermino}, pero el docente aún no ha asistido.",
                         'espacio_disponible' => false,
                         'clase' => [
@@ -2649,8 +2732,8 @@ class PlanoDigitalController extends Controller
                     $espacio->save();
 
                     return response()->json([
-                        
                         'tipo' => 'nueva_reserva',
+                        'id_espacio' => $espacio->id_espacio,
                         'mensaje' => 'Espacio disponible para reservar',
                         'espacio_disponible' => true
                     ]);
@@ -2687,6 +2770,7 @@ class PlanoDigitalController extends Controller
 
                 return response()->json([
                     'tipo' => 'espacio_ocupado',
+                    'id_espacio' => $espacio->id_espacio,
                     'mensaje' => $mensaje,
                     'espacio_disponible' => false,
                     'ocupante' => $informacionOcupante,
@@ -2720,17 +2804,8 @@ class PlanoDigitalController extends Controller
             $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $run;
             $this->establecerContextoTenant();
 
-            // 1. Intentar verificar como Profesor (soportando RUN con o sin DV)
-            $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
-                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $run)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$run])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->first();
+            // 1. Intentar verificar como Profesor (tenant actual o cross-tenant, soportando RUN con o sin DV)
+            $profesor = Profesor::buscarProfesor($runRaw);
 
             if ($profesor) {
                 // Es profesor - verificar clases programadas inmediatamente
@@ -2816,17 +2891,8 @@ class PlanoDigitalController extends Controller
 
             $this->establecerContextoTenant();
 
-            // CASO 1: Verificar si es profesor registrado (soportando RUN con o sin DV)
-            $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
-                ->where(function ($q) use ($run, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $run)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$run])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->first();
+            // CASO 1: Verificar si es profesor registrado (tenant actual o cross-tenant, soportando RUN con o sin DV)
+            $profesor = Profesor::buscarProfesor($runRaw);
 
             if ($profesor) {
                 return response()->json([
@@ -3468,20 +3534,17 @@ class PlanoDigitalController extends Controller
                 'id_espacio' => 'required|string'
             ]);
 
-            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
-            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-
-            // Buscar el espacio
-            $espacio = Espacio::whereIn('id_espacio', $espaciosEquiv)
-                ->orWhere('id_espacio', $idEspacio)
-                ->first();
-
+            // Buscar el espacio con soporte para alias y scopes
+            $espacio = \App\Helpers\EspacioAliasHelper::buscarEspacio($request->input('id_espacio'));
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
+
+            $idEspacio = $espacio->id_espacio;
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
             // Obtener la reserva activa actual en este espacio
             $reservaActiva = Reserva::whereIn('id_espacio', $espaciosEquiv)
@@ -3526,19 +3589,21 @@ class PlanoDigitalController extends Controller
     }
 
     /**
-     * Envía el correo de confirmación de devolución al profesor o solicitante.
+     * Envía el correo de confirmación de devolución al profesor o solicitante en background tras responder al cliente.
      */
     private function enviarCorreoDevolucion(Reserva $reserva): void
     {
-        try {
-            $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
-            $email = app(\App\Services\ReservaService::class)->resolverEmailReserva($reserva) ?: $this->resolverEmailReserva($reserva);
-            if ($email) {
-                Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
+        dispatch(function () use ($reserva) {
+            try {
+                $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
+                $email = app(\App\Services\ReservaService::class)->resolverEmailReserva($reserva) ?: $this->resolverEmailReserva($reserva);
+                if ($email) {
+                    Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("⚠️ No se pudo enviar correo de devolución para reserva {$reserva->id_reserva}: " . $e->getMessage());
             }
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning("⚠️ No se pudo enviar correo de devolución para reserva {$reserva->id_reserva}: " . $e->getMessage());
-        }
+        })->afterResponse();
     }
 
     /**
@@ -3562,6 +3627,26 @@ class PlanoDigitalController extends Controller
     {
         if (Tenant::current()) {
             return;
+        }
+
+        // 1. Detectar sede desde parámetro de request o header
+        $sede = request('sede_id') ?? request('sede') ?? request()->header('X-Sede-ID');
+        if ($sede) {
+            $tenant = Tenant::where('sede_id', strtoupper($sede))->orWhere('domain', strtolower($sede))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT-)
+        $idEspacio = request('id_espacio') ?? request('espacio');
+        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)(?:[-_]|\d)/i', $idEspacio, $mPref)) {
+            $tenant = Tenant::where('sede_id', strtoupper($mPref[1]))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
         }
 
         $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
@@ -3599,38 +3684,10 @@ class PlanoDigitalController extends Controller
     }
 
     /**
-     * Normalizar el ID del espacio para soportar diferentes formatos de escaneo.
-     * Ej: "LA-1" o "LA1" en la sede "CH" se normalizará a "CH-LA1"
+     * Normalizar el ID del espacio usando el helper centralizado
      */
     private function normalizeEspacioId(?string $idEspacio): ?string
     {
-        if (empty($idEspacio)) {
-            return $idEspacio;
-        }
-
-        // Convertir a mayúsculas, quitar espacios y normalizar comillas/guiones bajos
-        $idEspacio = strtoupper(trim(str_replace([' ', "'", '_'], ['', '-', '-'], $idEspacio)));
-
-        // Corregir formato partido como THL-01 -> TH-L01, THC-1 -> TH-C1
-        if (preg_match('/^(TH|LA|CH|CT)([A-Z])-([A-Z0-9]+)$/', $idEspacio, $mCorr)) {
-            $idEspacio = "{$mCorr[1]}-{$mCorr[2]}{$mCorr[3]}";
-        }
-
-        // Obtener el prefijo del tenant actual (ej: "CH", "LA", "CT", "TH")
-        $tenant = Tenant::current();
-        $prefix = $tenant ? strtoupper($tenant->prefijo_espacios ?: $tenant->domain) : null;
-        if (!$prefix && preg_match('/^(CCP|TH|LA|CH|CT)-/', $idEspacio, $mPref)) {
-            $prefix = $mPref[1];
-        }
-
-        if ($prefix) {
-            $normalizedInput = str_replace('-', '', $idEspacio);
-            if (strpos($normalizedInput, $prefix) === 0) {
-                $normalizedInput = substr($normalizedInput, strlen($prefix));
-            }
-            $idEspacio = $prefix . '-' . $normalizedInput;
-        }
-
-        return \App\Helpers\EspacioAliasHelper::normalizar($idEspacio, $prefix);
+        return !empty($idEspacio) ? \App\Helpers\EspacioAliasHelper::normalizar($idEspacio) : $idEspacio;
     }
 }

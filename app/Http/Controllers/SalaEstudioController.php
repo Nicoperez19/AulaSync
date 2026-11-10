@@ -6,6 +6,7 @@ use App\Models\Espacio;
 use App\Models\User;
 use App\Models\Reserva;
 use App\Models\Solicitante;
+use App\Models\Tenant;
 use App\Models\VetoSalaEstudio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,8 @@ class SalaEstudioController extends Controller
     public function registrarAcceso(Request $request)
     {
         try {
+            $this->establecerContextoTenant($request->input('id_espacio'));
+
             $request->validate([
                 'id_espacio' => 'required|string',
                 'run' => 'required|string'
@@ -264,6 +267,8 @@ class SalaEstudioController extends Controller
     public function obtenerAlumnosRegistrados($idEspacio)
     {
         try {
+            $this->establecerContextoTenant($idEspacio);
+
             // Obtener reservas activas del día de hoy
             $reservas = Reserva::where('id_espacio', $idEspacio)
                 ->where('estado', 'activa')
@@ -591,6 +596,56 @@ class SalaEstudioController extends Controller
                 'success' => false,
                 'message' => 'Error al exportar la lista de vetados'
             ], 500);
+        }
+    }
+
+    /**
+     * Establecer el contexto del tenant según la sede o el prefijo del espacio
+     */
+    private function establecerContextoTenant(?string $idEspacio = null)
+    {
+        if (Tenant::current()) {
+            return;
+        }
+
+        // 1. Detectar sede desde parámetro de request o header
+        $sede = request('sede_id') ?? request('sede') ?? request()->header('X-Sede-ID');
+        if ($sede) {
+            $tenant = Tenant::where('sede_id', strtoupper($sede))->orWhere('domain', strtolower($sede))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT-)
+        $idEspacio = $idEspacio ?? request('id_espacio') ?? request('espacio');
+        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)(?:[-_]|\d)/i', $idEspacio, $mPref)) {
+            $tenant = Tenant::where('sede_id', strtoupper($mPref[1]))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
+        if ($tenantId) {
+            $tenant = Tenant::find($tenantId);
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        $host = request()->getHost();
+        $subdomain = explode('.', $host)[0] ?? $host;
+        $tenant = Tenant::where('domain', $host)
+            ->orWhere('domain', $subdomain)
+            ->orWhere('domain', 'LIKE', '%' . $host . '%')
+            ->first();
+
+        if ($tenant) {
+            $tenant->makeCurrent();
         }
     }
 }

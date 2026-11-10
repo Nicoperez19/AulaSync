@@ -846,21 +846,23 @@ class ReservaService
      */
     public function enviarCorreoReserva(Reserva $reserva, ?string $emailFallback = null): void
     {
-        try {
-            $reserva->loadMissing(['profesor', 'solicitante', 'espacio', 'asignatura']);
+        dispatch(function () use ($reserva, $emailFallback) {
+            try {
+                $reserva->loadMissing(['profesor', 'solicitante', 'espacio', 'asignatura']);
 
-            $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
+                $destinatario = $this->resolverEmailReserva($reserva) ?: $emailFallback;
 
-            if (!$destinatario) {
-                Log::info("ℹ️ Reserva {$reserva->id_reserva}: no se encontró correo para enviar comprobante.");
-                return;
+                if (!$destinatario) {
+                    Log::info("ℹ️ Reserva {$reserva->id_reserva}: no se encontró correo para enviar comprobante.");
+                    return;
+                }
+
+                Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
+                Log::info("📧 Comprobante de reserva {$reserva->id_reserva} enviado a {$destinatario}");
+            } catch (\Throwable $e) {
+                Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
             }
-
-            Mail::to($destinatario)->send(new \App\Mail\ConfirmacionReserva($reserva));
-            Log::info("📧 Comprobante de reserva {$reserva->id_reserva} enviado a {$destinatario}");
-        } catch (\Throwable $e) {
-            Log::warning("⚠️ No se pudo enviar el correo de la reserva {$reserva->id_reserva}: " . $e->getMessage());
-        }
+        })->afterResponse();
     }
 
     /**

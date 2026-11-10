@@ -144,5 +144,64 @@ class Profesor extends Model
         return $this->esTipo('Ayudante');
     }
 
-  
+    /**
+     * Busca un profesor por su RUN en el tenant actual o mediante fallback cross-tenant.
+     * Soporta formatos con o sin dígito verificador, puntos y guiones.
+     */
+    public static function buscarProfesor($run): ?self
+    {
+        if (empty($run)) {
+            return null;
+        }
+
+        $runRaw = (string) $run;
+        $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runRaw));
+        $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
+
+        // 1. Buscar en el tenant actual
+        $profesor = self::withoutGlobalScopes()
+            ->where(function ($q) use ($runRaw, $runLimpio, $runSinDv) {
+                $q->where('run_profesor', $runRaw)
+                  ->orWhere('run_profesor', $runLimpio)
+                  ->orWhere('run_profesor', $runSinDv)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+            })
+            ->first();
+
+        if ($profesor) {
+            return $profesor;
+        }
+
+        // 2. Fallback cross-tenant: buscar en las bases de datos de otros tenants
+        if (class_exists(Tenant::class)) {
+            $currentId = Tenant::current()?->id ?? 0;
+            $otherTenants = Tenant::where('id', '!=', $currentId)->get();
+            foreach ($otherTenants as $ot) {
+                if (empty($ot->database)) {
+                    continue;
+                }
+                try {
+                    $row = \Illuminate\Support\Facades\DB::connection('mysql')
+                        ->table("{$ot->database}.profesors")
+                        ->where(function ($q) use ($runRaw, $runLimpio, $runSinDv) {
+                            $q->where('run_profesor', $runRaw)
+                              ->orWhere('run_profesor', $runLimpio)
+                              ->orWhere('run_profesor', $runSinDv);
+                        })
+                        ->first();
+                    if ($row) {
+                        $prof = new self();
+                        $prof->forceFill((array) $row);
+                        $prof->exists = true;
+                        return $prof;
+                    }
+                } catch (\Throwable $e) {
+                    // ignorar errores si no existe la base de datos o tabla
+                }
+            }
+        }
+
+        return null;
+    }
 }

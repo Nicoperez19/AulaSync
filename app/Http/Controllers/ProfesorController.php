@@ -47,6 +47,10 @@ class ProfesorController extends Controller
             // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
 
+            if (!$request->has('run_profesor') && $request->has('run')) {
+                $request->merge(['run_profesor' => $request->input('run')]);
+            }
+
             $request->validate([
                 'run_profesor' => 'required',
                 'id_espacio' => 'required|string'
@@ -55,38 +59,20 @@ class ProfesorController extends Controller
             $runProfesor = $this->normalizeRun($request->input('run_profesor'));
             $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $request->input('run_profesor')));
             $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
-            $idEspacio = $request->input('id_espacio');
 
-            // Normalizar el ID del espacio usando la lógica del tenant actual
-            $idEspacio = $this->normalizeEspacioId($idEspacio);
-
-            // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
-            $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
-            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $espacio = Espacio::withoutGlobalScopes()
-                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpio) {
-                    $q->where('id_espacio', $idEspacio)
-                      ->orWhereIn('id_espacio', $espaciosEquiv)
-                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
-                })
-                ->first();
+            // Buscar y normalizar espacio (soporta alias y scopes de tenant)
+            $espacio = \App\Helpers\EspacioAliasHelper::buscarEspacio($request->input('id_espacio'));
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
+            $idEspacio = $espacio->id_espacio;
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
-            // Verificar si el profesor existe (soportando RUN con o sin DV)
-            $profesor = Profesor::withoutGlobalScopes()
-                ->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->first();
+            // Verificar si el profesor existe (tenant actual o cross-tenant, soportando RUN con o sin DV)
+            $profesor = Profesor::buscarProfesor($request->input('run_profesor'));
             if (!$profesor) {
                 return response()->json([
                     'success' => false,
@@ -244,13 +230,21 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
-            // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
-                $espacio->id_espacio,
-                $fechaActual,
-                $horaActual,
-                $profesor->run_profesor
-            );
+            // Limpiar registros incorrectos de clases no realizadas de forma asíncrona tras responder al cliente
+            $idEspacioAsync = $espacio->id_espacio;
+            $runProfesorAsync = $profesor->run_profesor;
+            dispatch(function () use ($idEspacioAsync, $fechaActual, $horaActual, $runProfesorAsync) {
+                try {
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacioAsync,
+                        $fechaActual,
+                        $horaActual,
+                        $runProfesorAsync
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Error en limpiarRegistrosIncorrectos diferido: ' . $e->getMessage());
+                }
+            })->afterResponse();
 
             // Enviar comprobante de reserva por correo
             app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
@@ -292,17 +286,16 @@ class ProfesorController extends Controller
         try {
             $this->establecerContextoTenant();
 
+            if (!$request->has('run_profesor') && $request->has('run')) {
+                $request->merge(['run_profesor' => $request->input('run')]);
+            }
+
             $request->validate([
                 'run_profesor' => 'required',
                 'id_espacio' => 'required|string'
             ]);
 
             $runProfesor = $this->normalizeRun($request->input('run_profesor'));
-            $idEspacio = $request->input('id_espacio');
-
-            // Normalizar el ID del espacio usando la lógica del tenant actual
-            $idEspacio = $this->normalizeEspacioId($idEspacio);
-
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
 
@@ -310,33 +303,19 @@ class ProfesorController extends Controller
             $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $request->input('run_profesor')));
             $runSinDv = strlen($runLimpio) > 7 ? substr($runLimpio, 0, -1) : $runLimpio;
 
-            // Verificar que el espacio existe (soportando alias y con/sin prefijo de sede)
-            $espacioLimpio = str_replace(['-', ' '], '', $idEspacio);
-            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
-            $espacio = Espacio::withoutGlobalScopes()
-                ->where(function ($q) use ($idEspacio, $espaciosEquiv, $espacioLimpio) {
-                    $q->where('id_espacio', $idEspacio)
-                      ->orWhereIn('id_espacio', $espaciosEquiv)
-                      ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
-                })
-                ->first();
+            // Buscar y normalizar espacio (soporta alias y scopes de tenant)
+            $espacio = \App\Helpers\EspacioAliasHelper::buscarEspacio($request->input('id_espacio'));
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
+            $idEspacio = $espacio->id_espacio;
+            $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
-            // Verificar si el profesor existe (soportando RUN con o sin DV)
-            $profesor = Profesor::withoutGlobalScopes()
-                ->where(function ($q) use ($runProfesor, $runLimpio, $runSinDv) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhere('run_profesor', $runSinDv)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
-                })
-                ->first();
+            // Verificar si el profesor existe (tenant actual o cross-tenant, soportando RUN con o sin DV)
+            $profesor = Profesor::buscarProfesor($request->input('run_profesor'));
             
             if (!$profesor) {
                 return response()->json([
@@ -931,13 +910,22 @@ class ProfesorController extends Controller
                 }
             }
 
-            // Limpiar registros incorrectos de clases no realizadas con hora real de ingreso
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
-                $espacio->id_espacio,
-                $fechaActual,
-                now()->format('H:i:s'),
-                $profesor->run_profesor
-            );
+            // Limpiar registros incorrectos de clases no realizadas de forma asíncrona tras responder al cliente
+            $idEspacioAsync = $espacio->id_espacio;
+            $runProfesorAsync = $profesor->run_profesor;
+            $horaIngresoAsync = now()->format('H:i:s');
+            dispatch(function () use ($idEspacioAsync, $fechaActual, $horaIngresoAsync, $runProfesorAsync) {
+                try {
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacioAsync,
+                        $fechaActual,
+                        $horaIngresoAsync,
+                        $runProfesorAsync
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Error en limpiarRegistrosIncorrectos diferido: ' . $e->getMessage());
+                }
+            })->afterResponse();
 
             $esClaseReagendada = (bool) $infoRecuperacion;
 
@@ -1168,13 +1156,21 @@ class ProfesorController extends Controller
             // Enviar correo de confirmación de uso de sala
             app(\App\Services\ReservaService::class)->enviarCorreoReserva($reserva, $profesor->email ?? null);
 
-            // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
-            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
-                $espacio->id_espacio,
-                $fechaActual,
-                $horaActual,
-                $profesor->run_profesor
-            );
+            // Limpiar registros incorrectos de clases no realizadas de forma asíncrona tras responder al cliente
+            $idEspacioAsync = $espacio->id_espacio;
+            $runProfesorAsync = $profesor->run_profesor;
+            dispatch(function () use ($idEspacioAsync, $fechaActual, $horaActual, $runProfesorAsync) {
+                try {
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacioAsync,
+                        $fechaActual,
+                        $horaActual,
+                        $runProfesorAsync
+                    );
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Error en limpiarRegistrosIncorrectos diferido: ' . $e->getMessage());
+                }
+            })->afterResponse();
 
             return response()->json([
                 'success' => true,
@@ -1265,6 +1261,26 @@ class ProfesorController extends Controller
             return;
         }
 
+        // 1. Detectar sede desde parámetro de request o header
+        $sede = request('sede_id') ?? request('sede') ?? request()->header('X-Sede-ID');
+        if ($sede) {
+            $tenant = Tenant::where('sede_id', strtoupper($sede))->orWhere('domain', strtolower($sede))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
+        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT-)
+        $idEspacio = request('id_espacio') ?? request('espacio');
+        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)[-_]/i', $idEspacio, $mPref)) {
+            $tenant = Tenant::where('sede_id', strtoupper($mPref[1]))->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                return;
+            }
+        }
+
         $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
         if ($tenantId) {
             $tenant = Tenant::find($tenantId);
@@ -1287,32 +1303,10 @@ class ProfesorController extends Controller
     }
 
     /**
-     * Normaliza el ID de espacio soportando formatos compactos, comillas de lector QR y alias por sede.
+     * Normalizar el ID del espacio usando el helper centralizado
      */
     private function normalizeEspacioId(?string $idEspacio): ?string
     {
-        if (empty($idEspacio)) {
-            return $idEspacio;
-        }
-
-        $idEspacio = strtoupper(trim(str_replace([' ', "'", '_'], ['', '-', '-'], $idEspacio)));
-
-        // Corregir formato partido como THL-01 -> TH-L01, THC-1 -> TH-C1
-        if (preg_match('/^(TH|LA|CH|CT)([A-Z])-([A-Z0-9]+)$/', $idEspacio, $mCorr)) {
-            $idEspacio = "{$mCorr[1]}-{$mCorr[2]}{$mCorr[3]}";
-        }
-
-        $tenant = Tenant::current() ?? Tenant::find(tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null));
-        $prefix = $tenant ? strtoupper($tenant->prefijo_espacios ?: $tenant->domain) : null;
-
-        if ($prefix) {
-            $normalizedInput = str_replace('-', '', $idEspacio);
-            if (strpos($normalizedInput, $prefix) === 0) {
-                $normalizedInput = substr($normalizedInput, strlen($prefix));
-            }
-            $idEspacio = $prefix . '-' . $normalizedInput;
-        }
-
-        return \App\Helpers\EspacioAliasHelper::normalizar($idEspacio, $prefix);
+        return !empty($idEspacio) ? \App\Helpers\EspacioAliasHelper::normalizar($idEspacio) : $idEspacio;
     }
 }
