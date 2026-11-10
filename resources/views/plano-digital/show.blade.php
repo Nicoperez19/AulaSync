@@ -1908,7 +1908,11 @@
                 }
             } catch (error) {
                 console.error('Error crítico en procesarQRCompleto:', error);
-                limpiarEstadoLectura('Error interno del sistema');
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                    Swal.close();
+                }
+                const detalleErr = error && error.message ? ` (${error.message})` : '';
+                limpiarEstadoLectura(`Error interno del sistema${detalleErr}`);
             } finally {
                 // Liberar el bloqueo y limpiar timeouts
                 isProcessingQR = false;
@@ -2282,11 +2286,11 @@
                 espacio = resultadoVerificacion.id_espacio;
             }
 
-            if (resultadoVerificacion.tipo === 'error') {
+            if (!resultadoVerificacion || resultadoVerificacion.tipo === 'error') {
                 finalizarFlujoVisualPlano(espacio, null);
                 mostrarAlertaFlujo({
                     title: '❌ Error',
-                    text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
+                    text: (resultadoVerificacion && resultadoVerificacion.mensaje) || 'Error al verificar el estado del espacio',
                     icon: 'error',
                     confirmButtonText: 'Entendido',
                     confirmButtonColor: '#D12420',
@@ -3017,7 +3021,7 @@
                 let color = indicator.estado;
 
                 // Normalizar estado para comparación robusta (quitar acentos y pasar a minúsculas)
-                const estadoLower = indicator.estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const estadoLower = String(indicator.estado || 'Disponible').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
                 if (estadoLower === 'mantencion' || estadoLower === 'mantenimiento') {
                     color = '#6b7280'; // Gris más intenso - Mantenimiento
