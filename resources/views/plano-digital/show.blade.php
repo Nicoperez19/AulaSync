@@ -1081,9 +1081,13 @@
 
                         if (result && typeof result.then === 'function') {
                             result.then(() => {
-                                this.restaurarInputActivo();
+                                if (!Swal.isVisible()) {
+                                    this.restaurarInputActivo();
+                                }
                             }).catch(() => {
-                                this.restaurarInputActivo();
+                                if (!Swal.isVisible()) {
+                                    this.restaurarInputActivo();
+                                }
                             });
                         }
 
@@ -1232,15 +1236,80 @@
             if (modal && content && !modal.classList.contains('hidden')) {
                 content.classList.remove('scale-100', 'opacity-100');
                 content.classList.add('scale-95', 'opacity-0');
-                
+
+                if (!manual) {
+                    modal.classList.add('hidden');
+                    return;
+                }
+
                 setTimeout(() => {
                     modal.classList.add('hidden');
                     // Si es manual (botón X), limpiamos todo el estado para permitir nuevo escaneo de RUN
-                    if (manual) {
-                        limpiarEstadoLectura();
-                    }
+                    limpiarEstadoLectura();
                 }, 150);
             }
+        }
+
+        function finalizarFlujoVisualPlano(espacio = null, nuevoEstado = null) {
+            cerrarModalEsperaLlaves(false);
+            detenerWatchdog();
+
+            if (espacio) {
+                sessionStorage.removeItem(`espacio_${espacio}`);
+                sessionStorage.removeItem(`espacio_${espacio}_time`);
+                sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
+                sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
+
+                if (state.currentIndicatorId === espacio) {
+                    cerrarModalEspacio();
+                    state.currentIndicatorId = null;
+                }
+
+                if (nuevoEstado) {
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = nuevoEstado;
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+                }
+            }
+
+            usuarioEscaneado = null;
+            espacioEscaneado = null;
+            espacioParaReserva = null;
+            runParaReserva = null;
+            usuarioInfo = null;
+            limpiarEstadoLectura();
+            ordenEscaneo = 'usuario';
+
+            if (typeof actualizarColoresEspacios === 'function') {
+                actualizarColoresEspacios(true);
+            }
+        }
+
+        function mostrarAlertaFlujo(swalConfig, onAfterClose = null) {
+            if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                Swal.hideLoading();
+            }
+
+            const configFinal = {
+                allowOutsideClick: true,
+                allowEscapeKey: true,
+                showConfirmButton: true,
+                confirmButtonText: 'Entendido',
+                ...swalConfig
+            };
+
+            return Swal.fire(configFinal).then((res) => {
+                if (typeof onAfterClose === 'function') {
+                    onAfterClose(res);
+                }
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+                return res;
+            });
         }
 
         function iniciarWatchdog() {
@@ -1961,20 +2030,16 @@
                 const progVerif = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
                 if (progVerif.claseYaFinalizada) {
-                    Swal.close();
-                    Swal.fire({
+                    finalizarFlujoVisualPlano(espacio, 'Disponible');
+                    mostrarAlertaFlujo({
                         title: 'Clase ya finalizada',
-                        text: 'Esta clase ya fue finalizada para el bloque actual.',
+                        text: progVerif.mensaje || 'Esta clase ya fue finalizada para el bloque actual.',
                         icon: 'info',
                         confirmButtonText: 'Entendido',
                         confirmButtonColor: '#0066CC',
                         timer: 3500,
-                        timerProgressBar: true,
-                        showConfirmButton: false
+                        timerProgressBar: true
                     });
-                    limpiarEstadoLectura();
-                    ordenEscaneo = 'usuario';
-                    detenerWatchdog();
                     return;
                 }
 
@@ -2004,32 +2069,22 @@
                             qrStatusEl.innerHTML = esClaseReagendada ? 'Clase reagendada registrada...' : 'Reserva creada automáticamente...';
                         }
 
-                        // Actualizar indicador en el mapa
-                        const block = state.indicators.find(b => b.id === espacio);
-                        if (block) {
-                            block.estado = '#FF0000'; // Rojo = Ocupado
-                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                            drawIndicators();
-                        }
-
                         const asigNombre = resultado.reserva?.asignatura || progVerif.modulosInfo?.nombre_asignatura || '';
                         const textoConfirmacion = esClaseReagendada
                             ? (asigNombre ? `Se ha registrado la recuperación de clase para ${asigNombre}.` : 'Se ha registrado la clase reagendada exitosamente.')
                             : 'Se ha registrado la clase automáticamente según tu programación.';
 
-                        // Cerrar modal de carga previo
-                        Swal.close();
+                        finalizarFlujoVisualPlano(espacio, 'Ocupado');
 
                         // Mostrar Sweet Alert de éxito para reserva automática
-                        Swal.fire({
+                        mostrarAlertaFlujo({
                             title: esClaseReagendada ? '¡Clase reagendada registrada!' : '¡Clase registrada!',
                             text: textoConfirmacion,
                             icon: 'success',
                             confirmButtonText: 'Aceptar',
                             confirmButtonColor: '#10B981',
                             timer: 2500,
-                            timerProgressBar: true,
-                            showConfirmButton: false
+                            timerProgressBar: true
                         });
 
                         // Mostrar mensaje de reserva creada
@@ -2244,31 +2299,17 @@
             if (resultadoVerificacion.tipo === 'devolucion') {
                 if (resultadoVerificacion.espacio_disponible) {
                     // El servidor ya confirmó la devolución y liberó el espacio directamente
-                    cerrarModalEsperaLlaves(false);
-                    Swal.close();
-                    Swal.fire({
+                    finalizarFlujoVisualPlano(espacio, 'Disponible');
+                    ultimaDevolucionExitosa = Date.now();
+                    mostrarAlertaFlujo({
                         title: '¡Devolución Exitosa!',
                         text: resultadoVerificacion.mensaje || 'Las llaves han sido devueltas correctamente.',
                         icon: 'success',
                         confirmButtonText: 'Aceptar',
                         confirmButtonColor: '#10B981',
-                        timer: 2000,
-                        timerProgressBar: true,
-                        showConfirmButton: false
+                        timer: 2500,
+                        timerProgressBar: true
                     });
-
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#00FF00';
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
-
-                    sessionStorage.removeItem(`espacio_${espacio}`);
-                    sessionStorage.removeItem(`espacio_${espacio}_time`);
-                    limpiarEstadoLectura();
-                    ordenEscaneo = 'usuario';
-                    detenerWatchdog();
                     return 'devolucion_exitosa';
                 }
 
@@ -2302,7 +2343,7 @@
                     // Actualizar indicador en el mapa
                     const block = state.indicators.find(b => b.id === espacio);
                     if (block) {
-                        block.estado = '#00FF00'; // Verde = Disponible
+                        block.estado = 'Disponible';
                         state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                         drawIndicators();
                     }
@@ -2313,16 +2354,15 @@
                     sessionStorage.removeItem(`espacio_${espacio}_time`);
                     sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
                     sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
-                    
+
                     // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
-                    // NO reabrirlo - solo mostrar el mensaje de éxito
                     if (state.currentIndicatorId === espacio) {
-                        // Cerrar el modal del espacio para no confundir al usuario
-                        const modal = document.getElementById('modal-espacio');
-                        if (modal) {
-                            modal.classList.add('hidden');
-                            state.currentIndicatorId = null;
-                        }
+                        cerrarModalEspacio();
+                        state.currentIndicatorId = null;
+                    }
+
+                    if (typeof actualizarColoresEspacios === 'function') {
+                        actualizarColoresEspacios(true);
                     }
 
                     // Verificar si es devolución en el primer módulo
@@ -2399,48 +2439,34 @@
             }
 
             if (resultadoVerificacion.tipo === 'clase_ya_finalizada') {
-                cerrarModalEsperaLlaves(false);
-                Swal.close();
+                finalizarFlujoVisualPlano(
+                    espacio,
+                    resultadoVerificacion.espacio_disponible ? 'Disponible' : null
+                );
 
                 if (resultadoVerificacion.espacio_disponible) {
-                    Swal.fire({
+                    mostrarAlertaFlujo({
                         title: '¡Clase Finalizada!',
                         text: resultadoVerificacion.mensaje || 'La clase fue finalizada y el espacio se encuentra disponible.',
                         icon: 'success',
                         confirmButtonText: 'Entendido',
                         confirmButtonColor: '#10B981',
                         timer: 2500,
-                        timerProgressBar: true,
-                        showConfirmButton: false
+                        timerProgressBar: true
                     });
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#00FF00';
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
                 } else {
-                    Swal.fire({
+                    mostrarAlertaFlujo({
                         title: 'Clase ya finalizada',
                         text: resultadoVerificacion.mensaje || 'Esta clase ya fue finalizada con éxito para este bloque.',
                         icon: 'info',
                         confirmButtonText: 'Entendido',
                         confirmButtonColor: '#0066CC',
                         timer: 3000,
-                        timerProgressBar: true,
-                        showConfirmButton: false
+                        timerProgressBar: true
                     });
                 }
 
-                limpiarEstadoLectura();
-                ordenEscaneo = 'usuario';
-                detenerWatchdog();
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 500);
-                return;
+                return 'devolucion_exitosa';
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
@@ -2475,42 +2501,22 @@
             }
 
             if (resultadoVerificacion.tipo === 'activacion_reserva') {
-                // Cerrar el modal de espera de llaves inmediatamente
-                cerrarModalEsperaLlaves(false);
-
-                // La reserva programada fue activada exitosamente por el escaneo
-                const block = state.indicators.find(b => b.id === espacio);
-                if (block) {
-                    block.estado = '#FF0000'; // Rojo = Ocupado
-                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                    drawIndicators();
-                }
-
                 const nombreActividad = resultadoVerificacion.reserva?.nombre_actividad 
                     ? `<br><small class="text-gray-600">${resultadoVerificacion.reserva.nombre_actividad}</small>` 
                     : '';
 
-                Swal.close();
-                Swal.fire({
+                finalizarFlujoVisualPlano(espacio, 'Ocupado');
+
+                mostrarAlertaFlujo({
                     title: '¡Reserva Activada!',
                     html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
                     confirmButtonColor: '#10B981',
                     timer: 2500,
-                    timerProgressBar: true,
-                    showConfirmButton: false
+                    timerProgressBar: true
                 });
 
-                setTimeout(() => {
-                    limpiarEstadoLectura();
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 3000);
-
-                ordenEscaneo = 'usuario';
-                detenerWatchdog();
                 return;
             }
 
