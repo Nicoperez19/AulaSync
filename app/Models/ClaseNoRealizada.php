@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\UniqueConstraintViolationException;
 use App\Traits\BelongsToTenant;
 
 class ClaseNoRealizada extends Model
@@ -80,22 +81,43 @@ class ClaseNoRealizada extends Model
     }
 
     // Métodos estáticos
+    private static function buscarExistente(array $datosClase, bool $incluirProfesor = true): ?self
+    {
+        $fechaClase = Carbon::parse($datosClase['fecha_clase'])->toDateString();
+
+        $query = static::where('id_asignatura', $datosClase['id_asignatura'])
+            ->where('id_espacio', $datosClase['id_espacio'])
+            ->where('id_modulo', $datosClase['id_modulo'])
+            ->whereDate('fecha_clase', $fechaClase);
+
+        if ($incluirProfesor) {
+            $query->where('run_profesor', $datosClase['run_profesor']);
+        }
+
+        return $query->first();
+    }
+
+    private static function crearODevolverExistente(array $atributos, array $datosClase): ?self
+    {
+        try {
+            return static::create($atributos);
+        } catch (UniqueConstraintViolationException $e) {
+            return static::buscarExistente($datosClase, true)
+                ?? static::buscarExistente($datosClase, false);
+        }
+    }
+
     public static function registrarClaseNoRealizada($datosClase)
     {
         // Verificar si la fecha es un día feriado o sin actividades
         if (\App\Models\DiaFeriado::esFeriado($datosClase['fecha_clase'])) {
             // Si es feriado, registrar como justificado automáticamente
-            $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
-                ->where('id_espacio', $datosClase['id_espacio'])
-                ->where('id_modulo', $datosClase['id_modulo'])
-                ->where('fecha_clase', $datosClase['fecha_clase'])
-                ->where('run_profesor', $datosClase['run_profesor'])
-                ->first();
+            $registroExistente = static::buscarExistente($datosClase);
 
             if (! $registroExistente) {
                 $feriado = \App\Models\DiaFeriado::obtenerFeriadoEnFecha($datosClase['fecha_clase']);
 
-                return static::create([
+                return static::crearODevolverExistente([
                     'id_asignatura' => $datosClase['id_asignatura'],
                     'id_espacio' => $datosClase['id_espacio'],
                     'id_modulo' => $datosClase['id_modulo'],
@@ -106,19 +128,14 @@ class ClaseNoRealizada extends Model
                     'observaciones' => 'Justificado automáticamente - '.($feriado ? ($feriado->descripcion ?? 'Sin descripción') : 'Periodo sin actividad universitaria'),
                     'estado' => 'justificado',
                     'hora_deteccion' => Carbon::now(),
-                ]);
+                ], $datosClase);
             }
 
             return $registroExistente;
         }
 
         // Verificar si ya existe un registro para esta clase HOY
-        $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
-            ->where('id_espacio', $datosClase['id_espacio'])
-            ->where('id_modulo', $datosClase['id_modulo'])
-            ->where('fecha_clase', $datosClase['fecha_clase'])
-            ->where('run_profesor', $datosClase['run_profesor'])
-            ->first();
+        $registroExistente = static::buscarExistente($datosClase);
 
         // Si ya existe, no crear duplicado
         if ($registroExistente) {
@@ -214,7 +231,7 @@ class ClaseNoRealizada extends Model
         }
 
         // Crear el nuevo registro
-        return static::create([
+        return static::crearODevolverExistente([
             'id_asignatura' => $datosClase['id_asignatura'],
             'id_espacio' => $datosClase['id_espacio'],
             'id_modulo' => $datosClase['id_modulo'],
@@ -225,7 +242,7 @@ class ClaseNoRealizada extends Model
             'observaciones' => $datosClase['observaciones'] ?? null,
             'estado' => 'no_realizada',
             'hora_deteccion' => Carbon::now(),
-        ]);
+        ], $datosClase);
     }
 
     /**
@@ -793,18 +810,20 @@ class ClaseNoRealizada extends Model
                         ->first();
 
                     if (!$existenteIndividual) {
-                        static::create([
+                        $datosModulo = [
                             'id_asignatura' => $cnrComa->id_asignatura,
                             'id_espacio' => $cnrComa->id_espacio,
                             'id_modulo' => $modId,
                             'run_profesor' => $cnrComa->run_profesor,
                             'fecha_clase' => $fechaCnrStr,
+                        ];
+                        static::crearODevolverExistente(array_merge($datosModulo, [
                             'periodo' => $cnrComa->periodo,
                             'motivo' => $cnrComa->motivo,
                             'observaciones' => $cnrComa->observaciones,
                             'estado' => $cnrComa->estado,
                             'hora_deteccion' => $cnrComa->hora_deteccion ?? now(),
-                        ]);
+                        ]), $datosModulo);
                     } elseif ($cnrComa->estado === 'recuperada' && $existenteIndividual->estado !== 'recuperada') {
                         $existenteIndividual->estado = 'recuperada';
                         if (!empty($cnrComa->observaciones)) {
@@ -1010,7 +1029,11 @@ class ClaseNoRealizada extends Model
 
                     // 1. Actualizar la Reserva del lector QR si quedó como espontánea o de 1 solo módulo
                     $reservaCambios = false;
-                    if (empty($reservaMatch->id_asignatura) && !empty($grupo['id_asignatura'])) {
+                    if (
+                        empty($reservaMatch->id_asignatura)
+                        && !empty($grupo['id_asignatura'])
+                        && \App\Models\Asignatura::where('id_asignatura', $grupo['id_asignatura'])->exists()
+                    ) {
                         $reservaMatch->id_asignatura = $grupo['id_asignatura'];
                         $reservaCambios = true;
                     }
