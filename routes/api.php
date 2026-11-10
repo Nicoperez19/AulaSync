@@ -166,9 +166,46 @@ Route::get('/keep-alive', function () {
     ]);
 });
 
+// Diagnóstico remoto de errores JS / lector QR en tótems
+Route::post('/qr-client-log', function (\Illuminate\Http\Request $request) {
+    try {
+        $payload = [
+            'stage' => substr((string) $request->input('stage', 'unknown'), 0, 80),
+            'tenant_prefix' => substr((string) $request->input('tenant_prefix', ''), 0, 16),
+            'orden_escaneo' => substr((string) $request->input('orden_escaneo', ''), 0, 32),
+            'error_message' => substr((string) $request->input('error_message', ''), 0, 400),
+            'error_stack' => substr((string) $request->input('error_stack', ''), 0, 600),
+            'espacio_norm' => substr((string) $request->input('espacio_norm', ''), 0, 64),
+            'raw_preview' => substr((string) $request->input('raw_preview', ''), 0, 120),
+            'active_element' => substr((string) $request->input('active_element', ''), 0, 64),
+            'page_path' => substr((string) $request->input('page_path', ''), 0, 200),
+            'ip' => $request->ip(),
+        ];
+        \Illuminate\Support\Facades\Log::warning('QR Client Diagnostic', $payload);
+    } catch (\Throwable $e) {
+        // Silencioso para no afectar el flujo del tótem
+    }
+    return response()->json(['ok' => true]);
+});
+
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
+        $sedeHeader = request()->header('X-Sede-ID') ?? request('sede_id') ?? request('sede');
+        if ($sedeHeader) {
+            $tHeader = \App\Models\Tenant::where('sede_id', strtoupper($sedeHeader))
+                ->orWhere('domain', strtolower($sedeHeader))
+                ->first();
+            if ($tHeader) {
+                $tHeader->makeCurrent();
+            }
+        } elseif (!empty($espacio) && preg_match('/^(CCP|TH|LA|CH|CT)(?:[-_\']|\d)/i', $espacio, $mEspPref)) {
+            $tEsp = \App\Models\Tenant::where('sede_id', strtoupper($mEspPref[1]))->first();
+            if ($tEsp) {
+                $tEsp->makeCurrent();
+            }
+        }
+
         $tenantId = tenant_id() ?? (request()->hasSession() ? session('tenant_id') : null);
         if (!$tenantId) {
             $host = request()->getHost();

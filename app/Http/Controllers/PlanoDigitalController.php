@@ -240,6 +240,9 @@ class PlanoDigitalController extends Controller
                 ->where('id_mapa', $id)
                 ->first();
             if ($mapa) {
+                if (request()->hasSession()) {
+                    session(['tenant_id' => $t->id]);
+                }
                 return $mapa;
             }
         }

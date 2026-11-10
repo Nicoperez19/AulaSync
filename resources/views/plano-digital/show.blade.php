@@ -912,6 +912,72 @@
         window.tenantPrefix = '{{ $__prefRaw }}';
         window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
 
+        let qrDiagCount = 0;
+        function getQrApiHeaders(extra = {}) {
+            const headers = { ...extra };
+            if (typeof window !== 'undefined' && window.tenantPrefix) {
+                headers['X-Sede-ID'] = window.tenantPrefix;
+            }
+            return headers;
+        }
+
+        function sanitizeQrPreview(raw) {
+            if (!raw) return '';
+            const trimmed = String(raw).trim();
+            // Ocultar dígitos si parece RUN completo en texto plano
+            if (/^[0-9.\-Kk]{7,14}$/.test(trimmed)) {
+                return `RUN_LEN_${trimmed.length}`;
+            }
+            return trimmed.slice(0, 120);
+        }
+
+        function reportarDiagnosticoQR(stage, details = {}) {
+            try {
+                if (qrDiagCount >= 10) return;
+                qrDiagCount++;
+                const payload = {
+                    stage: String(stage || 'unknown'),
+                    tenant_prefix: (typeof window !== 'undefined' && window.tenantPrefix) ? window.tenantPrefix : '',
+                    orden_escaneo: typeof ordenEscaneo !== 'undefined' ? String(ordenEscaneo) : '',
+                    error_message: details.error_message ? String(details.error_message).slice(0, 400) : '',
+                    error_stack: details.error_stack ? String(details.error_stack).slice(0, 600) : '',
+                    espacio_norm: details.espacio_norm ? String(details.espacio_norm).slice(0, 64) : '',
+                    raw_preview: details.raw_preview ? sanitizeQrPreview(details.raw_preview) : '',
+                    active_element: document.activeElement ? `${document.activeElement.tagName || ''}#${document.activeElement.id || ''}` : '',
+                    page_path: window.location ? window.location.pathname : ''
+                };
+                const jsonStr = JSON.stringify(payload);
+                if (navigator.sendBeacon) {
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    if (navigator.sendBeacon('/api/qr-client-log', blob)) {
+                        return;
+                    }
+                }
+                fetch('/api/qr-client-log', {
+                    method: 'POST',
+                    keepalive: true,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: jsonStr
+                }).catch(() => {});
+            } catch (_) {
+                // Ignorar fallos de telemetría
+            }
+        }
+
+        window.addEventListener('error', (ev) => {
+            reportarDiagnosticoQR('window_error', {
+                error_message: ev?.message || 'Script error',
+                error_stack: ev?.error?.stack || `${ev?.filename || ''}:${ev?.lineno || ''}`
+            });
+        });
+        window.addEventListener('unhandledrejection', (ev) => {
+            const reason = ev?.reason;
+            reportarDiagnosticoQR('unhandled_rejection', {
+                error_message: reason?.message || String(reason || 'Unhandled rejection'),
+                error_stack: reason?.stack || ''
+            });
+        });
+
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
         document.addEventListener('open-modal', (event) => {
             if (event.detail === 'registro-solicitante') {
@@ -1324,6 +1390,9 @@
             watchdogTimer = setTimeout(() => {
                 if (ordenEscaneo === 'espacio') {
                     console.log('Watchdog: Reiniciando flujo por inactividad');
+                    reportarDiagnosticoQR('watchdog_timeout', {
+                        raw_preview: bufferQR || (document.getElementById('qr-input')?.value || '')
+                    });
                     limpiarEstadoLectura('Tiempo de espera agotado');
                 }
             }, 60000); // 60 segundos de espera para el espacio
@@ -1517,7 +1586,9 @@
 
         async function verificarUsuario(run) {
             try {
-                const response = await fetch(`/api/verificar-usuario/${run}`);
+                const response = await fetch(`/api/verificar-usuario/${run}`, {
+                    headers: getQrApiHeaders()
+                });
                 if (!response.ok) {
                     // Error en respuesta del servidor
                     return null;
@@ -1539,7 +1610,8 @@
             const timeoutId = setTimeout(() => controller.abort(), 6000);
             try {
                 const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`, {
-                    signal: controller.signal
+                    signal: controller.signal,
+                    headers: getQrApiHeaders()
                 });
                 clearTimeout(timeoutId);
                 const result = await response.json();
@@ -1589,10 +1661,10 @@
                 const response = await fetch('/api/crear-reserva-profesor-automatica', {
                     method: 'POST',
                     signal: controller.signal,
-                    headers: {
+                    headers: getQrApiHeaders({
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }),
                     body: JSON.stringify({
                         run_profesor: String(run),
                         id_espacio: String(idEspacio)
@@ -1718,10 +1790,10 @@
 
                 const response = await fetch('/api/devolver-espacio', {
                     method: 'POST',
-                    headers: {
+                    headers: getQrApiHeaders({
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }),
                     body: JSON.stringify(requestBody)
                 });
                 return await response.json();
@@ -1735,10 +1807,10 @@
             try {
                 const response = await fetch('/api/verificar-estado-espacio-reserva', {
                     method: 'POST',
-                    headers: {
+                    headers: getQrApiHeaders({
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    }),
                     body: JSON.stringify({
                         run: runUsuario,
                         id_espacio: idEspacio
@@ -1747,6 +1819,11 @@
                 const result = await response.json();
                 return result;
             } catch (error) {
+                reportarDiagnosticoQR('verificar_espacio_error', {
+                    espacio_norm: idEspacio,
+                    error_message: error?.message || 'Fetch error',
+                    error_stack: error?.stack || ''
+                });
                 return {
                     tipo: 'error',
                     mensaje: 'Error de conexión al verificar el estado del espacio'
@@ -1858,6 +1935,7 @@
             if (Date.now() - ultimaDevolucionExitosa < 3500) {
                 console.log('Escaneo ignorado por tiempo de seguridad post-devolución');
                 bufferQR = '';
+                if (qrInputSync) qrInputSync.value = '';
                 return;
             }
 
@@ -1866,6 +1944,7 @@
             if (lastScannedBuffer === bufferQR.trim() && (now - lastScannedTime) < 3000) {
                 console.log('Escaneo idéntico ignorado por debounce de escáner (3s):', bufferQR);
                 bufferQR = '';
+                if (qrInputSync) qrInputSync.value = '';
                 return;
             }
 
@@ -1908,6 +1987,11 @@
                 }
             } catch (error) {
                 console.error('Error crítico en procesarQRCompleto:', error);
+                reportarDiagnosticoQR('procesar_qr_error', {
+                    error_message: error?.message || String(error),
+                    error_stack: error?.stack || '',
+                    raw_preview: lastScannedBuffer || bufferQR || ''
+                });
                 if (typeof Swal !== 'undefined' && Swal.isVisible()) {
                     Swal.close();
                 }
@@ -1995,7 +2079,9 @@
             abrirModalEsperaLlaves('Verificando...');
 
             try {
-                const response = await fetch(`/api/procesar-primera-lectura/${run}`);
+                const response = await fetch(`/api/procesar-primera-lectura/${run}`, {
+                    headers: getQrApiHeaders()
+                });
                 if (!response.ok) throw new Error('Error en la comunicación con el servidor');
                 
                 const result = await response.json();
@@ -2224,6 +2310,9 @@
                     const coreCodigo = codigoSinSedeMatch[1].toUpperCase().replace(/-/g, '');
                     espacio = currentTenantPrefix ? `${currentTenantPrefix}-${coreCodigo}` : coreCodigo;
                 } else {
+                    reportarDiagnosticoQR('espacio_no_reconocido', {
+                        raw_preview: currentBuffer.trim()
+                    });
                     limpiarEstadoLectura('QR de espacio inválido');
                     mostrarAlertaFlujo({
                         title: 'QR de espacio no reconocido',
@@ -2271,6 +2360,10 @@
             verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
             timeoutPromise
         ]).catch(error => {
+            reportarDiagnosticoQR('verificar_espacio_timeout', {
+                espacio_norm: espacio,
+                error_message: error?.message || 'Timeout'
+            });
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
