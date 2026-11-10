@@ -902,7 +902,14 @@
     </x-modal>
 
     <script>
-        window.tenantPrefix = '{{ strtoupper(tenant_prefijo() ?: tenant_domain() ?: "") }}';
+        @php
+            $__tenantObj = tenant();
+            $__prefRaw = strtoupper(trim($__tenantObj?->sede_id ?: tenant_prefijo() ?: ''));
+            if (!$__prefRaw && ($__dom = strtoupper(trim(tenant_domain() ?: '')))) {
+                $__prefRaw = explode('.', $__dom)[0] ?? $__dom;
+            }
+        @endphp
+        window.tenantPrefix = '{{ $__prefRaw }}';
         window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
 
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
@@ -1779,6 +1786,10 @@
         let ultimaDevolucionExitosa = 0;
 
         async function handleScan(event) {
+            if (event.ctrlKey || event.metaKey || event.altKey) {
+                return;
+            }
+
             // Solo procesar cuando se presiona Enter
             if (event.key !== 'Enter') {
                 // Acumular caracteres en el buffer
@@ -1794,10 +1805,10 @@
                             clearTimeout(processingTimeout);
                         }
 
-                        // Procesar automáticamente después de 100ms sin nuevos caracteres
+                        // Procesar automáticamente después de 180ms sin nuevos caracteres (evita partir lecturas HID)
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
-                        }, 100);
+                        }, 180);
 
                         // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
                         if (errorTimeout) {
@@ -1818,6 +1829,11 @@
                 return;
             }
 
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+
             // Validar que hay contenido en el buffer antes de procesar
             if (!bufferQR || bufferQR.trim() === '') {
                 return;
@@ -1827,6 +1843,12 @@
         }
 
         async function procesarQRCompleto() {
+            // Sincronizar con el valor real del input si composición/dead-key de Windows aportó caracteres
+            const qrInputSync = document.getElementById('qr-input');
+            if (qrInputSync && qrInputSync.value && qrInputSync.value.trim().length > (bufferQR || '').trim().length) {
+                bufferQR = qrInputSync.value;
+            }
+
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
                 return;
@@ -1853,8 +1875,8 @@
                 return;
             }
 
-            // Validar que el buffer tenga un tamaño mínimo razonable (permitir códigos cortos de sala como TH01, L01, 30 en paso 2)
-            const minLengthRequerido = (ordenEscaneo === 'espacio') ? 2 : 5;
+            // Validar que el buffer tenga un tamaño mínimo razonable (permitir códigos cortos de sala en paso 2)
+            const minLengthRequerido = (ordenEscaneo === 'espacio') ? 1 : 5;
             if (bufferQR.trim().length < minLengthRequerido) {
                 if (ordenEscaneo === 'usuario') {
                     limpiarEstadoLectura();
@@ -1911,10 +1933,12 @@
         }
 
         async function procesarUsuario() {
-            // Capturar y limpiar el buffer inmediatamente para evitar lecturas duplicadas
+            // Capturar y limpiar el buffer e input inmediatamente para evitar lecturas duplicadas
             const currentBuffer = bufferQR;
             bufferQR = '';
             lastBufferLength = 0;
+            const qrInputLimpiarUsr = document.getElementById('qr-input');
+            if (qrInputLimpiarUsr) qrInputLimpiarUsr.value = '';
 
             // Extraer RUN del QR - Soportar múltiples formatos
             let run = null;
@@ -1939,8 +1963,19 @@
             }
 
             if (!run) {
-                // Solo mostrar error si el buffer tiene contenido significativo
-                if (currentBuffer.length > 8) {
+                const posibleQrEspacio = /\b(CCP|TH|LA|CH|CT)['`´_\-\s]*[A-Z0-9]+/i.test(currentBuffer.trim());
+                if (posibleQrEspacio) {
+                    limpiarEstadoLectura('Primero escanea tu credencial o carnet antes de escanear la sala');
+                    mostrarAlertaFlujo({
+                        title: 'Escanea tu carnet primero',
+                        text: 'Para registrar o devolver un espacio, primero debes escanear tu credencial/RUN y luego el QR de la sala.',
+                        icon: 'info',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#0066CC',
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                } else if (currentBuffer.length > 8) {
                     limpiarEstadoLectura('QR de usuario inválido - No se detectó RUN');
                 } else {
                     limpiarEstadoSilencioso();
@@ -2093,38 +2128,16 @@
                             qrStatusEl.classList.remove('parpadeo');
                         }
 
-                        // Limpiar el estado después de un delay para el próximo escaneo
-                        setTimeout(() => {
-                            espacioParaReserva = null;
-                            runParaReserva = null;
-                            bufferQR = '';
-                            limpiarEstadoLectura(); // Esto ya setea ordenEscaneo = 'usuario' y limpia la UI
-
-                            // Restaurar autofocus del qr-input después de crear reserva
-                            if (qrInputManager) {
-                                qrInputManager.setActiveInput('main');
-                            }
-                        }, 2500);
                     } else {
-                        // Cerrar modal de carga previo
-                        Swal.close();
+                        finalizarFlujoVisualPlano(espacio, null);
 
-                        // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
-                        Swal.fire({
+                        mostrarAlertaFlujo({
                             title: 'Error',
                             text: resultado?.mensaje || 'No se pudo crear la reserva automáticamente.',
                             icon: 'error',
                             timer: 3000,
-                            showConfirmButton: false
+                            timerProgressBar: true
                         });
-
-                        limpiarEstadoLectura();
-                        detenerWatchdog();
-                        setTimeout(() => {
-                            if (qrInputManager) {
-                                qrInputManager.setActiveInput('main');
-                            }
-                        }, 3000);
                     }
                 } else {
                     // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
@@ -2138,48 +2151,40 @@
                 detenerWatchdog();
                 return; // No continuar, esperar selección de módulos
             } else {
-                Swal.close();
-                ordenEscaneo = 'usuario';
-                detenerWatchdog();
-                // Restaurar autofocus del qr-input después de error en tipo de usuario
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 100);
+                finalizarFlujoVisualPlano(espacio, null);
+                mostrarAlertaFlujo({
+                    title: 'Usuario no autorizado',
+                    text: 'El tipo de usuario escaneado no puede reservar en el plano digital.',
+                    icon: 'warning',
+                    timer: 3000
+                });
                 return;
             }
 
-            // Limpiar buffer después de procesar espacio exitosamente
+            // Limpiar buffer inmediatamente para el siguiente escaneo
             bufferQR = '';
             lastBufferLength = 0;
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.value = '';
             }
-
-            // Resetear para siguiente usuario
-            setTimeout(() => {
-                limpiarEstadoLectura();
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 3000);
         }
 
         async function procesarEspacio() {
-            // Capturar y limpiar el buffer inmediatamente
+            // Capturar y limpiar el buffer e input inmediatamente
             const currentBuffer = bufferQR;
             bufferQR = '';
             lastBufferLength = 0;
+            const qrInputLimpiarEsp = document.getElementById('qr-input');
+            if (qrInputLimpiarEsp) qrInputLimpiarEsp.value = '';
 
             // Extraer código de espacio - soportando URLs, prefijos de cualquier sede (TH, CCP, LA, CH, CT), comillas de lector QR y códigos cortos
             let espacio = null;
             let rawEspacioInput = currentBuffer.trim();
 
-            // Si el QR contiene una URL o ruta con '/', extraer el segmento del espacio evitando endpoints como download-qr
-            if (rawEspacioInput.includes('/') || rawEspacioInput.includes('http')) {
-                const urlEspacioMatch = rawEspacioInput.match(/(?:espacios?|salas?|qr|space)[\/=]([A-Za-z0-9'_\-]+)/i);
+            // Si el QR contiene una URL (incluyendo '/' convertido a '-' por teclado español), extraer segmento final del espacio
+            if (rawEspacioInput.includes('/') || /https?/i.test(rawEspacioInput)) {
+                const urlEspacioMatch = rawEspacioInput.match(/(?:espacios?|salas?|qr|spaces?)[\/=\-]([A-Za-z0-9'_\-]+)$/i);
                 if (urlEspacioMatch && !['download-qr', 'download-all-qr', 'download-all-qr-pdf'].includes(urlEspacioMatch[1].toLowerCase())) {
                     rawEspacioInput = urlEspacioMatch[1];
                 } else {
@@ -2192,20 +2197,22 @@
                 }
             }
 
-            // Normalizar comillas (teclado español de lector QR) y guiones bajos antes de evaluar patrones
-            rawEspacioInput = rawEspacioInput.replace(/['`´_]+/g, '-').toUpperCase().trim();
+            // Normalizar comillas (teclado español de lector QR), signos '?' de shift, espacios y guiones bajos antes de evaluar patrones
+            rawEspacioInput = rawEspacioInput.replace(/['`´’_\s?]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toUpperCase().trim();
             const currentTenantPrefix = (typeof window !== 'undefined' && window.tenantPrefix) ? window.tenantPrefix.toUpperCase().trim() : '';
 
             // Patrón 1: Prefijo de sede explícito con guion obligatorio (evita que LAB en TH coincida con LA-B)
-            const sedePrefixMatch = rawEspacioInput.match(/\b(CCP|TH|LA|CH|CT)-([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
+            const sedePrefixMatch = rawEspacioInput.match(/(?:^|[^A-Z0-9])(CCP|TH|LA|CH|CT)-([A-Z0-9]+(?:-[A-Z0-9]+)*)$/i)
+                || rawEspacioInput.match(/\b(CCP|TH|LA|CH|CT)-([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
+            const compactoSedeMatch = rawEspacioInput.match(/^(CCP|TH|LA|CH|CT)([A-Z0-9]+)$/i);
+
             if (sedePrefixMatch) {
                 espacio = `${sedePrefixMatch[1].toUpperCase()}-${sedePrefixMatch[2].toUpperCase().replace(/-/g, '')}`;
-            } else if (currentTenantPrefix && rawEspacioInput.startsWith(currentTenantPrefix) && /^([A-Z]{2,3})([0-9]+)/.test(rawEspacioInput)) {
-                // Formato compacto tipo TH01 -> TH-01, CCP01 -> CCP-01
-                espacio = `${currentTenantPrefix}-${rawEspacioInput.substring(currentTenantPrefix.length)}`;
-            } else if (currentTenantPrefix && rawEspacioInput.startsWith(currentTenantPrefix + 'L') && /^([A-Z]{2,3})L([0-9]+)/.test(rawEspacioInput)) {
-                // Formato compacto tipo THL01 -> TH-L01
-                espacio = `${currentTenantPrefix}-${rawEspacioInput.substring(currentTenantPrefix.length)}`;
+            } else if (compactoSedeMatch && (!currentTenantPrefix || compactoSedeMatch[1].toUpperCase() === currentTenantPrefix)) {
+                // Formato compacto tipo TH01, THL01, THC1, THLA08, THAUD, CCP01
+                espacio = `${compactoSedeMatch[1].toUpperCase()}-${compactoSedeMatch[2].toUpperCase()}`;
+            } else if (currentTenantPrefix && rawEspacioInput.startsWith(currentTenantPrefix) && rawEspacioInput.length > currentTenantPrefix.length) {
+                espacio = `${currentTenantPrefix}-${rawEspacioInput.substring(currentTenantPrefix.length).replace(/^-+/, '')}`;
             } else {
                 // Patrón 2: Código sin prefijo de sede (ej: 01, 1, 30, L01, LAB, AUD, C1, GIM, INV, LSC, TP)
                 const codigoSinSedeMatch = rawEspacioInput.match(/\b([A-Z0-9]+(?:-[A-Z0-9]+)*)\b/i);
@@ -2213,11 +2220,14 @@
                     const coreCodigo = codigoSinSedeMatch[1].toUpperCase().replace(/-/g, '');
                     espacio = currentTenantPrefix ? `${currentTenantPrefix}-${coreCodigo}` : coreCodigo;
                 } else {
-                    if (currentBuffer.length > 8) {
-                        limpiarEstadoLectura('QR de espacio inválido');
-                    } else {
-                        limpiarEstadoSilencioso();
-                    }
+                    limpiarEstadoLectura('QR de espacio inválido');
+                    mostrarAlertaFlujo({
+                        title: 'QR de espacio no reconocido',
+                        text: `No se pudo interpretar el código escaneado (${currentBuffer.trim()}).`,
+                        icon: 'warning',
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
                     return;
                 }
             }
@@ -2273,9 +2283,8 @@
             }
 
             if (resultadoVerificacion.tipo === 'error') {
-                // Error al verificar estado - mostrar SweetAlert prominente
-                Swal.close();
-                Swal.fire({
+                finalizarFlujoVisualPlano(espacio, null);
+                mostrarAlertaFlujo({
                     title: '❌ Error',
                     text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
                     icon: 'error',
@@ -2284,15 +2293,6 @@
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 });
-                
-                // Resetear flujo y limpiar estado
-                limpiarEstadoLectura();
-                // Restaurar autofocus del qr-input después de error en verificación de espacio
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 500);
                 return;
             }
 
@@ -2436,6 +2436,20 @@
                     }, 100);
                     return;
                 }
+            }
+
+            if (resultadoVerificacion.tipo === 'activacion_reciente') {
+                finalizarFlujoVisualPlano(espacio, 'Ocupado');
+                mostrarAlertaFlujo({
+                    title: 'Clase ya registrada',
+                    text: resultadoVerificacion.mensaje || 'Tu clase en esta sala ya fue registrada exitosamente y se encuentra activa.',
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#0066CC',
+                    timer: 2500,
+                    timerProgressBar: true
+                });
+                return 'devolucion_exitosa';
             }
 
             if (resultadoVerificacion.tipo === 'clase_ya_finalizada') {
@@ -5074,6 +5088,38 @@
         });
 
         document.addEventListener("DOMContentLoaded", function () {
+
+            // Mantener foco en el lector QR si se hace clic dentro del modal de espera de llaves
+            const modalEspera = document.getElementById('modal-espera-llaves');
+            if (modalEspera) {
+                modalEspera.addEventListener('click', function (e) {
+                    if (!e.target.closest('button') && qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                });
+            }
+
+            // Captura global de respaldo cuando #modal-espera-llaves está abierto o #qr-input perdió el foco sin otro input activo
+            document.addEventListener('keydown', function (event) {
+                if (event.ctrlKey || event.metaKey || event.altKey) {
+                    return;
+                }
+                const inputPrincipal = document.getElementById('qr-input');
+                if (!inputPrincipal || event.target === inputPrincipal) {
+                    return;
+                }
+                const tag = event.target?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || event.target?.isContentEditable) {
+                    return;
+                }
+                const modalEsperaEl = document.getElementById('modal-espera-llaves');
+                const esperaAbierta = modalEsperaEl && !modalEsperaEl.classList.contains('hidden');
+                const hayOtroModal = document.querySelectorAll('.swal2-container:not(.swal2-hidden), #modal-espacio-info:not(.hidden), #modal-seleccionar-modulos:not(.hidden), #modal-sala-estudio:not(.hidden)').length > 0;
+                if (esperaAbierta || (!hayOtroModal && !isProcessingQR)) {
+                    inputPrincipal.focus();
+                    handleScan(event);
+                }
+            });
 
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
