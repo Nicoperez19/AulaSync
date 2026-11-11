@@ -113,9 +113,9 @@
             {{-- Barra Inferior de Guardado Fija / Sticky --}}
             @if(!$bloqueadoPorIngreso)
                 <div class="sticky bottom-4 z-20 bg-white/95 dark:bg-dark-eval-1/95 backdrop-blur-md p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div class="text-xs text-gray-500 dark:text-gray-400 text-center sm:text-left flex items-center gap-1.5">
-                        <i class="fa-solid fa-circle-info text-light-cloud-blue"></i>
-                        <span>Puedes volver a editar y actualizar la asistencia durante el transcurso del día.</span>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 text-center sm:text-left flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                        <span id="estado-sync-en-vivo">Los escaneos QR del estudiante se registran y guardan automáticamente sin recargar.</span>
                     </div>
 
                     <div class="flex items-center gap-3 w-full sm:w-auto">
@@ -127,7 +127,7 @@
                                   variant="ucsc"
                                   class="flex-1 sm:flex-initial justify-center gap-2 px-6 py-2.5 text-xs font-bold shadow-md">
                             <i class="fa-solid fa-floppy-disk"></i>
-                            <span>{{ $sesion ? 'Guardar Modificaciones' : 'Confirmar y Guardar Asistencia' }}</span>
+                            <span id="btn-guardar-asistencia-label">{{ $sesion ? 'Guardar Modificaciones' : 'Confirmar y Guardar Asistencia' }}</span>
                         </x-button>
                     </div>
                 </div>
@@ -147,10 +147,22 @@
             window.location.href = baseUrl + '?fecha=' + encodeURIComponent(nuevaFecha);
         }
 
-        // Sincronizar el contexto de asistencia con el agente sin intervenir en los checks.
+        // Sincronizar el contexto con el agente local y reflejar en vivo los escaneos QR guardados en el servidor.
         (function iniciarSincronizacionAsistencia() {
             const idAsignaturaActual = "{{ $id }}";
-            const tenantIdActual = @json(session('tenant_id'));
+            const tenantIdActual = @json(session('tenant_id') ?? tenant_id());
+            const urlEstadoEnVivo = @json(route('docente.asistencia.en-vivo', $id)) + '?fecha=' + encodeURIComponent(@json($fechaConsulta->format('Y-m-d')));
+            const runsSincronizados = new Map();
+            let consultaEnCurso = false;
+            let formularioEnviando = false;
+
+            const formAsistencia = document.querySelector('form[action*="asistencia"]');
+            if (formAsistencia) {
+                formAsistencia.addEventListener('submit', () => {
+                    formularioEnviando = true;
+                });
+            }
+
             async function notificarAgente() {
                 try {
                     await fetch(`http://127.0.0.1:8181/set-asignatura?id=${encodeURIComponent(idAsignaturaActual)}&tenant_id=${encodeURIComponent(tenantIdActual || '')}`, {
@@ -162,8 +174,63 @@
                 }
             }
 
+            async function sincronizarDesdeServidor() {
+                if (consultaEnCurso || formularioEnviando || document.hidden) return;
+                consultaEnCurso = true;
+                try {
+                    const res = await fetch(urlEstadoEnVivo + '&t=' + Date.now(), {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (!data || !data.ok) return;
+
+                    if (Array.isArray(data.presentes)) {
+                        for (const p of data.presentes) {
+                            const key = String(p.run || p.estudiante_id || '').toUpperCase().replace(/[^0-9K]/g, '');
+                            if (!key) continue;
+                            const horaMarca = p.hora || '';
+                            const horaAnterior = runsSincronizados.get(key);
+                            if (horaAnterior === undefined || (horaMarca && horaAnterior !== horaMarca)) {
+                                runsSincronizados.set(key, horaMarca);
+                                if (typeof window.asistenciaMarcarRun === 'function') {
+                                    window.asistenciaMarcarRun(p.run, p.nombre, p.metodo || 'qr', p.hora || null);
+                                }
+                            }
+                        }
+                    }
+
+                    const statusEl = document.getElementById('estado-sync-en-vivo');
+                    const btnLabelEl = document.getElementById('btn-guardar-asistencia-label');
+                    if (data.hay_sesion) {
+                        if (btnLabelEl) {
+                            btnLabelEl.textContent = 'Guardar Modificaciones';
+                        }
+                        if (statusEl) {
+                            statusEl.textContent = `Sincronizado en vivo (${data.total_presentes || 0} presente(s) guardado(s) automáticamente).`;
+                        }
+                    }
+                } catch (e) {
+                    // Error de red transitorio: reintentará en el próximo ciclo
+                } finally {
+                    consultaEnCurso = false;
+                }
+            }
+
             notificarAgente();
+            sincronizarDesdeServidor();
             setInterval(notificarAgente, 15000);
+            setInterval(sincronizarDesdeServidor, 2000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    sincronizarDesdeServidor();
+                }
+            });
         })();
     </script>
     @endpush

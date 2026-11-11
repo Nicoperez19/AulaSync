@@ -1758,48 +1758,7 @@ class PlanoDigitalController extends Controller
                 $runSinDv
             ])));
 
-            // Verificar si el usuario tiene una reserva activa en otro espacio (usando búsqueda indexada rápida)
-            $reservaExistente = Reserva::where(function ($query) use ($runsUsuario) {
-                $query->whereIn('run_profesor', $runsUsuario)
-                      ->orWhereIn('run_solicitante', $runsUsuario);
-            })
-                ->whereNotIn('id_espacio', $espaciosEquiv)
-                ->where('estado', 'activa')
-                ->whereNull('hora_salida')
-                ->first();
-
-            // Si la reserva en el otro espacio ya expiró (hora de salida o fecha anterior), auto-finalizarla
-            if ($reservaExistente) {
-                $esAnterior = false;
-                $fechaResStr = $reservaExistente->fecha_reserva instanceof Carbon 
-                    ? $reservaExistente->fecha_reserva->toDateString() 
-                    : (is_string($reservaExistente->fecha_reserva) ? substr($reservaExistente->fecha_reserva, 0, 10) : null);
-                if ($fechaResStr && $fechaResStr < Carbon::today()->toDateString()) {
-                    $esAnterior = true;
-                }
-                if ($reservaExistente->hora_salida && $reservaExistente->hora_salida < Carbon::now()->format('H:i:s')) {
-                    $esAnterior = true;
-                }
-
-                if ($esAnterior) {
-                    $reservaExistente->estado = 'finalizada';
-                    $reservaExistente->observaciones = ($reservaExistente->observaciones ?? '') . ' | Auto-finalizada al ingresar a ' . $idEspacio;
-                    $reservaExistente->save();
-                    $reservaExistente = null;
-                }
-            }
-
-            if ($reservaExistente) {
-                // El usuario ya tiene una reserva activa en otro espacio
-                return response()->json([
-                    'tipo' => 'reserva_existente',
-                    'id_espacio' => $espacio->id_espacio,
-                    'mensaje' => 'Ya tienes una reserva activa en otro espacio. Debes finalizarla antes de solicitar una nueva.',
-                    'espacio_disponible' => false
-                ]);
-            }
-
-            // Verificar si el usuario tiene una reserva activa en este espacio (usando búsqueda indexada rápida)
+            // Verificar primero si el usuario tiene una reserva activa en ESTE espacio (priorizar devolución)
             $reservaActiva = Reserva::where(function ($query) use ($runsUsuario) {
                 $query->whereIn('run_profesor', $runsUsuario)
                       ->orWhereIn('run_solicitante', $runsUsuario);
@@ -1903,6 +1862,47 @@ class PlanoDigitalController extends Controller
                 }
             }
 
+            // Si no está devolviendo una reserva activa en este espacio, verificar si tiene reserva activa en otro espacio
+            if (!$reservaActiva) {
+                $reservaExistente = Reserva::where(function ($query) use ($runsUsuario) {
+                    $query->whereIn('run_profesor', $runsUsuario)
+                          ->orWhereIn('run_solicitante', $runsUsuario);
+                })
+                    ->whereNotIn('id_espacio', $espaciosEquiv)
+                    ->where('estado', 'activa')
+                    ->whereNull('hora_salida')
+                    ->first();
+
+                if ($reservaExistente) {
+                    $esAnterior = false;
+                    $fechaResStr = $reservaExistente->fecha_reserva instanceof Carbon 
+                        ? $reservaExistente->fecha_reserva->toDateString() 
+                        : (is_string($reservaExistente->fecha_reserva) ? substr($reservaExistente->fecha_reserva, 0, 10) : null);
+                    if ($fechaResStr && $fechaResStr < Carbon::today()->toDateString()) {
+                        $esAnterior = true;
+                    }
+                    if ($reservaExistente->hora_salida && $reservaExistente->hora_salida < Carbon::now()->format('H:i:s')) {
+                        $esAnterior = true;
+                    }
+
+                    if ($esAnterior) {
+                        $reservaExistente->estado = 'finalizada';
+                        $reservaExistente->observaciones = ($reservaExistente->observaciones ?? '') . ' | Auto-finalizada al ingresar a ' . $idEspacio;
+                        $reservaExistente->save();
+                        $reservaExistente = null;
+                    }
+                }
+
+                if ($reservaExistente) {
+                    return response()->json([
+                        'tipo' => 'reserva_existente',
+                        'id_espacio' => $espacio->id_espacio,
+                        'mensaje' => 'Ya tienes una reserva activa en otro espacio. Debes finalizarla antes de solicitar una nueva.',
+                        'espacio_disponible' => false
+                    ]);
+                }
+            }
+
             // Verificar si el espacio está disponible
             $espacioDisponible = $espacio->estado === 'Disponible';
 
@@ -1969,23 +1969,33 @@ class PlanoDigitalController extends Controller
             }
 
             if ($reservaFinalizadaHoyUsuario) {
-                // Asegurar que el espacio esté Disponible
-                if ($espacio->estado !== 'Disponible') {
-                    $espacio->estado = 'Disponible';
-                    $espacio->save();
-                }
+                $segundosDesdeCierre = $reservaFinalizadaHoyUsuario->updated_at
+                    ? $reservaFinalizadaHoyUsuario->updated_at->diffInSeconds(now())
+                    : 9999;
+                $espacioAtascadoOcupado = $espacio->estado !== 'Disponible'
+                    && !Reserva::whereIn('id_espacio', $espaciosEquiv)->where('estado', 'activa')->exists();
 
-                return response()->json([
-                    'tipo' => 'devolucion',
-                    'id_espacio' => $espacio->id_espacio,
-                    'mensaje' => 'Devolución de llave confirmada exitosamente. El espacio se encuentra disponible.',
-                    'espacio_disponible' => true,
-                    'reserva' => [
-                        'id_reserva' => $reservaFinalizadaHoyUsuario->id_reserva,
-                        'hora_salida' => $reservaFinalizadaHoyUsuario->hora_salida ?? now()->format('H:i:s'),
-                        'espacio' => $espacio->nombre_espacio
-                    ]
-                ]);
+                // Solo tratar como confirmación idempotente de devolución si se cerró recién (<= 3 min)
+                // o si la sala quedó pegada en Ocupado sin otra reserva activa.
+                // Si cerró hace más tiempo y el espacio está Disponible, permitir continuar hacia un nuevo bloque/reserva.
+                if ($segundosDesdeCierre <= 180 || $espacioAtascadoOcupado) {
+                    if ($espacio->estado !== 'Disponible') {
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                    }
+
+                    return response()->json([
+                        'tipo' => 'devolucion',
+                        'id_espacio' => $espacio->id_espacio,
+                        'mensaje' => 'Devolución de llave confirmada exitosamente. El espacio se encuentra disponible.',
+                        'espacio_disponible' => true,
+                        'reserva' => [
+                            'id_reserva' => $reservaFinalizadaHoyUsuario->id_reserva,
+                            'hora_salida' => $reservaFinalizadaHoyUsuario->hora_salida ?? now()->format('H:i:s'),
+                            'espacio' => $espacio->nombre_espacio
+                        ]
+                    ]);
+                }
             }
 
             // Datos temporales actuales
@@ -2249,6 +2259,7 @@ class PlanoDigitalController extends Controller
                     $esAutoFinalizada = (
                         str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Finalizada automáticamente') ||
                         str_contains($reservaFinalizadaHoy->observaciones ?? '', 'finalizó automáticamente') ||
+                        str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Auto-finalizada') ||
                         str_contains($reservaFinalizadaHoy->observaciones ?? '', 'Llave no devuelta') ||
                         str_contains($reservaFinalizadaHoy->observaciones ?? '', 'tiempo límite excedido')
                     );
@@ -2313,8 +2324,16 @@ class PlanoDigitalController extends Controller
                     ->where(function ($q) {
                         $q->where('observaciones', 'LIKE', '%Finalizada automáticamente%')
                           ->orWhere('observaciones', 'LIKE', '%finalizó automáticamente%')
+                          ->orWhere('observaciones', 'LIKE', '%Auto-finalizada%')
                           ->orWhere('observaciones', 'LIKE', '%Llave no devuelta%')
                           ->orWhere('observaciones', 'LIKE', '%tiempo límite excedido%');
+                    })
+                    ->where(function ($q) {
+                        $q->whereNull('observaciones')
+                          ->orWhere(function ($sq) {
+                              $sq->where('observaciones', 'NOT LIKE', '%Devolución de llave registrada%')
+                                 ->where('observaciones', 'NOT LIKE', '%devolvió llave de acceso%');
+                          });
                     })
                     ->latest('updated_at')
                     ->first();

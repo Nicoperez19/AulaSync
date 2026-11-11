@@ -298,8 +298,11 @@ class AsistenciaController extends Controller
                 $sesionData
             );
 
-            // 2. Procesar marcas de asistencia de estudiantes existentes
+            // 2. Procesar marcas de asistencia de estudiantes existentes (preservando método 'qr' si ya fue escaneado)
             $asistenciasInput = $request->input('asistencia', []); // array [estudiante_id => 1 / 0]
+            $asistenciasPrevias = AsistenciaEstudiante::where('sesion_id', $sesion->id)
+                ->get()
+                ->keyBy('estudiante_id');
 
             foreach ($asistenciasInput as $estudianteId => $valor) {
                 $presente = (bool) $valor;
@@ -309,6 +312,10 @@ class AsistenciaController extends Controller
                 }
 
                 $estaInscrito = $asignatura ? $asignatura->estudiantes()->where('estudiantes.id', $estudianteId)->exists() : false;
+                $previa = $asistenciasPrevias->get((int) $estudianteId);
+                $metodoGuardar = ($previa && $previa->presente && $presente && $previa->metodo === 'qr')
+                    ? 'qr'
+                    : 'checkbox';
 
                 AsistenciaEstudiante::updateOrCreate(
                     [
@@ -318,7 +325,7 @@ class AsistenciaController extends Controller
                     [
                         'presente' => $presente,
                         'inscrito' => $estaInscrito,
-                        'metodo' => 'checkbox',
+                        'metodo' => $metodoGuardar,
                     ]
                 );
             }
@@ -543,7 +550,6 @@ class AsistenciaController extends Controller
 
         if ($runLimpio === null && preg_match('/(?:RUN|RUT)[^0-9]{0,8}(\d{1,2}\.?\d{3}\.?\d{3}|\d{7,8})/i', $rawInput, $matches)) {
             $runLimpio = preg_replace('/\D/', '', $matches[1]);
-            $runLimpio = $matches[1];
         } elseif ($runLimpio === null && preg_match('/[?&](?:run|rut|alumno|estudiante|id)=([^\s&]+)/i', $rawInput, $matches)) {
             $parametro = preg_replace('/\D/', '', $matches[1]);
             if (strlen($parametro) === 9) {

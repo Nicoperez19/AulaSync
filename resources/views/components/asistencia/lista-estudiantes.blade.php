@@ -197,8 +197,8 @@ function asistenciaListHandler() {
 
         init() {
             // Exponer método global para permitir marcado en tiempo real desde WebSocket, Polling o Lector QR
-            window.asistenciaMarcarRun = (run, nombre, metodo) => {
-                this.marcarPorRun(run, nombre, metodo);
+            window.asistenciaMarcarRun = (run, nombre, metodo, hora) => {
+                return this.marcarPorRun(run, nombre, metodo, hora);
             };
         },
 
@@ -221,35 +221,41 @@ function asistenciaListHandler() {
             return false;
         },
 
-        marcarPorRun(runBuscado, nombreOpcional = null, metodo = 'QR') {
-            if (!runBuscado) return;
+        marcarPorRun(runBuscado, nombreOpcional = null, metodo = 'QR', horaOpcional = null) {
+            if (!runBuscado) return false;
             const runNorm = this.normalizarRun(runBuscado);
+            const horaMostrar = horaOpcional || new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
             // 1. Buscar en lista oficial de estudiantes
             let est = this.estudiantes.find(e => this.coincideRun(e.run, runNorm));
             if (est) {
-                if (!est.presente) {
-                    est.presente = true;
+                const estabaPresente = Boolean(est.presente);
+                est.presente = true;
+                if (!estabaPresente) {
                     this.destacarEstudiante(est.id || est.run);
+                    this.ultimoEscaneado = {
+                        nombre: est.nombre,
+                        run: est.run,
+                        hora: horaMostrar
+                    };
                 }
-                this.ultimoEscaneado = {
-                    nombre: est.nombre,
-                    run: est.run,
-                    hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                };
-                return;
+                return !estabaPresente;
             }
 
             // 2. Buscar en estudiantes agregados en caliente
             let nuevo = this.nuevosEstudiantes.find(n => this.coincideRun(n.run, runNorm));
             if (nuevo) {
+                const estabaPresente = Boolean(nuevo.presente);
                 nuevo.presente = true;
-                this.ultimoEscaneado = {
-                    nombre: nuevo.nombre,
-                    run: nuevo.run,
-                    hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                };
-                return;
+                if (!estabaPresente) {
+                    this.destacarEstudiante(runNorm);
+                    this.ultimoEscaneado = {
+                        nombre: nuevo.nombre,
+                        run: nuevo.run,
+                        hora: horaMostrar
+                    };
+                }
+                return !estabaPresente;
             }
 
             // 3. Estudiante no listado: agregar automáticamente a la lista y marcar presente
@@ -264,8 +270,9 @@ function asistenciaListHandler() {
             this.ultimoEscaneado = {
                 nombre: nuevoEst.nombre,
                 run: nuevoEst.run,
-                hora: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                hora: horaMostrar
             };
+            return true;
         },
 
         destacarEstudiante(identificador) {
