@@ -490,8 +490,8 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
                     title: '¡Éxito!',
                     text: data.mensaje,
                     icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
+                    confirmButtonColor: '#10B981',
+                    confirmButtonText: 'Aceptar'
                 });
                 
                 // Recargar la tabla

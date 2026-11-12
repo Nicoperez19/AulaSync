@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\IncidenciasEspaciosExport;
 use App\Http\Requests\ReportarIncidenciaEspacioRequest;
 use App\Models\Espacio;
 use App\Models\IncidenciaEspacio;
 use App\Services\IncidenciaEspacioService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * Reporte y seguimiento de fallas e incidencias en espacios.
@@ -37,11 +40,94 @@ class IncidenciaEspacioController extends Controller
             'incidencias' => $this->incidencias->listar($filtros),
             'stats' => $this->incidencias->estadisticas(),
             'filtros' => $filtros,
+            // Filtros activos que viajan a la exportación (Excel/PDF) para que coincida con lo que se ve.
+            'exportParams' => array_filter($filtros, fn ($v) => $v !== null && $v !== ''),
             'categorias' => IncidenciaEspacio::CATEGORIAS,
             'severidades' => IncidenciaEspacio::SEVERIDADES,
             'estados' => IncidenciaEspacio::ESTADOS,
             'espacios' => Espacio::orderBy('id_espacio')->get(['id_espacio', 'nombre_espacio', 'estado']),
         ]);
+    }
+
+    /**
+     * Exportar el reporte de incidencias a Excel o PDF, respetando los filtros del tablero.
+     */
+    public function export(Request $request, string $format)
+    {
+        $format = strtolower($format);
+
+        if (! in_array($format, ['excel', 'xlsx', 'pdf'], true)) {
+            abort(404, 'Formato no soportado');
+        }
+
+        $filtros = $request->only(['estado', 'categoria', 'severidad', 'espacio', 'desde', 'hasta', 'buscar']);
+        $query = $this->incidencias->consultaFiltrada($filtros);
+        $nombre = 'incidencias_espacios_' . now()->format('Y-m-d_His');
+
+        if ($format !== 'pdf') {
+            return Excel::download(new IncidenciasEspaciosExport($query), "{$nombre}.xlsx");
+        }
+
+        $limite = 500;
+        $total = (clone $query)->reorder()->count();
+
+        $porEstado = (clone $query)->reorder()
+            ->select('estado', \Illuminate\Support\Facades\DB::raw('COUNT(*) as total'))
+            ->groupBy('estado')
+            ->pluck('total', 'estado');
+
+        $resumen = [
+            'abiertas' => (int) ($porEstado['abierta'] ?? 0),
+            'en_proceso' => (int) ($porEstado['en_proceso'] ?? 0),
+            'resueltas' => (int) ($porEstado['resuelta'] ?? 0),
+            'descartadas' => (int) ($porEstado['descartada'] ?? 0),
+            'bloqueantes' => (clone $query)->reorder()->where('bloquea_uso', true)->count(),
+        ];
+
+        $pdf = Pdf::loadView('pdf.incidencias-espacios', [
+            'incidencias' => $query->limit($limite)->get(),
+            'resumen' => $resumen,
+            'truncado' => $total > $limite,
+            'limite' => $limite,
+            'descripcionFiltros' => $this->describirFiltros($filtros),
+        ]);
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download("{$nombre}.pdf");
+    }
+
+    /**
+     * Texto legible con los filtros aplicados (para el encabezado del PDF).
+     */
+    protected function describirFiltros(array $filtros): string
+    {
+        $partes = [];
+
+        if (! empty($filtros['estado'])) {
+            $partes[] = 'Estado: ' . ($filtros['estado'] === 'pendientes'
+                ? 'Pendientes (abiertas y en proceso)'
+                : (IncidenciaEspacio::ESTADOS[$filtros['estado']] ?? $filtros['estado']));
+        }
+        if (! empty($filtros['categoria'])) {
+            $partes[] = 'Falla: ' . (IncidenciaEspacio::CATEGORIAS[$filtros['categoria']]['label'] ?? $filtros['categoria']);
+        }
+        if (! empty($filtros['severidad'])) {
+            $partes[] = 'Severidad: ' . (IncidenciaEspacio::SEVERIDADES[$filtros['severidad']] ?? $filtros['severidad']);
+        }
+        if (! empty($filtros['espacio'])) {
+            $partes[] = 'Espacio: ' . $filtros['espacio'];
+        }
+        if (! empty($filtros['desde'])) {
+            $partes[] = 'Desde: ' . $filtros['desde'];
+        }
+        if (! empty($filtros['hasta'])) {
+            $partes[] = 'Hasta: ' . $filtros['hasta'];
+        }
+        if (! empty($filtros['buscar'])) {
+            $partes[] = 'Búsqueda: "' . $filtros['buscar'] . '"';
+        }
+
+        return implode(' · ', $partes);
     }
 
     /**

@@ -510,6 +510,7 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
 
     // Fallas e incidencias en espacios (trazabilidad de Mantenimiento)
     Route::get('/incidencias', [IncidenciaEspacioController::class, 'index'])->name('incidencias.index');
+    Route::get('/incidencias/export/{format}', [IncidenciaEspacioController::class, 'export'])->whereIn('format', ['excel', 'xlsx', 'pdf'])->name('incidencias.export');
     Route::post('/api/incidencias', [IncidenciaEspacioController::class, 'store'])->name('api.incidencias.store');
     Route::get('/api/incidencias/{id}', [IncidenciaEspacioController::class, 'show'])->whereNumber('id')->name('api.incidencias.show');
     Route::put('/api/incidencias/{id}/estado', [IncidenciaEspacioController::class, 'cambiarEstado'])->whereNumber('id')->name('api.incidencias.estado');

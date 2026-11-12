@@ -7,6 +7,7 @@ use App\Models\IncidenciaEspacio;
 use App\Models\IncidenciaEspacioEvento;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -252,11 +253,11 @@ class IncidenciaEspacioService
     }
 
     /**
-     * Listado paginado con filtros.
+     * Consulta base con los filtros aplicados (la comparten el listado y las exportaciones).
      *
      * @param  array{estado?:string,categoria?:string,severidad?:string,espacio?:string,desde?:string,hasta?:string,buscar?:string}  $filtros
      */
-    public function listar(array $filtros = [], int $porPagina = 15): LengthAwarePaginator
+    public function consultaFiltrada(array $filtros = []): Builder
     {
         $query = IncidenciaEspacio::with('espacio:id_espacio,nombre_espacio,tipo_espacio,estado')
             ->orderByRaw("FIELD(estado, 'abierta', 'en_proceso', 'resuelta', 'descartada')")
@@ -292,7 +293,15 @@ class IncidenciaEspacioService
             });
         }
 
-        return $query->paginate($porPagina)->withQueryString();
+        return $query;
+    }
+
+    /**
+     * Listado paginado con filtros.
+     */
+    public function listar(array $filtros = [], int $porPagina = 15): LengthAwarePaginator
+    {
+        return $this->consultaFiltrada($filtros)->paginate($porPagina)->withQueryString();
     }
 
     /**

@@ -147,10 +147,10 @@
 
                 const titleLower = (options.title || '').toString().toLowerCase();
                 const textLower = (options.text || '').toString().toLowerCase();
-                const isDelete = options.isDelete || 
-                                 titleLower.includes('eliminar') || 
-                                 titleLower.includes('borrar') || 
-                                 textLower.includes('eliminar') || 
+                const isDelete = options.isDelete ||
+                                 titleLower.includes('eliminar') ||
+                                 titleLower.includes('borrar') ||
+                                 textLower.includes('eliminar') ||
                                  textLower.includes('borrar') ||
                                  options.confirmButtonColor === '#d33';
 
@@ -386,7 +386,7 @@
         }
 
         // Manejar mensajes de sesión Flash
-        @if (session('success'))
+            @if (session('success'))
             Swal.fire({
                 title: '¡Éxito!',
                 text: @json(session('success')),
