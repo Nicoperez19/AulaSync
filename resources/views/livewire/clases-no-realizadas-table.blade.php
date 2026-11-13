@@ -234,18 +234,21 @@
 
             {{-- Barra de Acciones Masivas + Tabla con selección instantánea en cliente --}}
             <div x-data="{
+                selected: @entangle('selectedClases'),
                 get pageKeys() {
-                    return Array.from(this.$el.querySelectorAll('input[data-clase-checkbox]')).map(el => el.value);
+                    const tabla = this.$refs.tablaClases;
+                    if (!tabla) return [];
+                    return Array.from(tabla.querySelectorAll('input[data-clase-checkbox]')).map(el => el.value);
                 },
                 get totalSelected() {
                     if ($wire.selectAllFiltered) {
                         return Math.max(0, {{ (int) $totalFiltradasSeleccionables }} - ($wire.excludedClases ? $wire.excludedClases.length : 0));
                     }
-                    return $wire.selectedClases ? $wire.selectedClases.length : 0;
+                    return Array.isArray(this.selected) ? this.selected.length : 0;
                 },
                 get allPageChecked() {
                     const keys = this.pageKeys;
-                    const sel = $wire.selectedClases || [];
+                    const sel = Array.isArray(this.selected) ? this.selected : [];
                     return keys.length > 0 && keys.every(k => sel.includes(k));
                 },
                 togglePage(checked) {
@@ -254,8 +257,8 @@
                         return;
                     }
                     const keys = this.pageKeys;
-                    const current = Array.isArray($wire.selectedClases) ? [...$wire.selectedClases] : [];
-                    $wire.selectedClases = checked
+                    const current = Array.isArray(this.selected) ? [...this.selected] : [];
+                    this.selected = checked
                         ? Array.from(new Set([...current, ...keys]))
                         : current.filter(k => !keys.includes(k));
                 }
@@ -296,7 +299,7 @@
 
                     <div class="flex flex-wrap items-center gap-2">
                         <button type="button"
-                                x-on:click="if ($wire.selectAllFiltered) { $wire.limpiarSeleccion(); } else { $wire.selectedClases = []; }"
+                                x-on:click="if ($wire.selectAllFiltered) { $wire.limpiarSeleccion(); } else { selected = []; }"
                                 class="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-300 rounded-md font-medium text-sm gap-2 inline-flex items-center justify-center shadow-sm px-4 py-2 cursor-pointer transition-all duration-150">
                             <i class="fas fa-times"></i>
                             <span>Cancelar</span>
@@ -378,7 +381,7 @@
 
             <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table x-ref="tablaClases" class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-[#950101] text-white border-b border-[#7B0101]">
                             <tr>
                                 @if($this->puedeGestionarClases)
@@ -428,7 +431,7 @@
                                         <input type="checkbox" 
                                                data-clase-checkbox
                                                wire:key="clase-check-{{ $clase['unique_key'] }}"
-                                               wire:model="selectedClases" 
+                                               x-model="selected" 
                                                x-on:change="if ($wire.selectAllFiltered) $wire.$commit()"
                                                value="{{ $clase['unique_key'] }}" 
                                                class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
