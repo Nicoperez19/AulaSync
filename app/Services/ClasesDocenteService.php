@@ -121,10 +121,14 @@ class ClasesDocenteService
      */
     protected function formatearClaseAsignatura(Asignatura $asig, string $rol, string $diaSemana, Collection $reservasActivas, Carbon $hoy, bool $tieneTablas = true): array
     {
-        // Buscar planificación para el día de hoy
-        $planHoy = $asig->planificaciones->first(function ($p) use ($diaSemana) {
-            return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
-        });
+        // Buscar todas las planificaciones para el día de hoy ordenadas por hora de inicio
+        $planificacionesHoy = $asig->planificaciones
+            ->filter(function ($p) use ($diaSemana) {
+                return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
+            })
+            ->sortBy(fn($p) => $p->modulo->hora_inicio ?? '')
+            ->values();
+        $planHoy = $planificacionesHoy->first();
 
         // Si hoy no tiene planificación habitual, verificar si tiene una clase reagendada para hoy
         $recuperacionHoy = null;
@@ -142,7 +146,6 @@ class ClasesDocenteService
         });
 
         $espacioPlanificado = $planHoy?->espacio ?? ($recuperacionHoy?->espacioReagendado ?: ($recuperacionHoy?->espacio ?? $planHabitual?->espacio));
-        $moduloPlanificado = $planHoy?->modulo ?? $recuperacionHoy?->moduloReagendado;
 
         // Verificar si el docente está en la sala (reserva activa para este espacio o asignatura)
         $reservaActiva = $reservasActivas->first(function ($r) use ($asig, $espacioPlanificado) {
@@ -180,7 +183,7 @@ class ClasesDocenteService
             'tiene_clase_hoy' => ($planHoy !== null) || ($recuperacionHoy !== null),
             'espacio_planificado' => $this->obtenerEspacioFormateado($espacioPlanificado),
             'espacio_id' => $espacioPlanificado?->id_espacio,
-            'modulo_planificado' => $moduloPlanificado ? ((!$planHoy && $recuperacionHoy ? "Reagendada - " : "") . "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})") : ((!$planHoy && $recuperacionHoy) ? "Clase Reagendada" : null),
+            'modulo_planificado' => $this->formatearHorarioHoy($planificacionesHoy, $recuperacionHoy),
             'en_sala' => $reservaActiva !== null,
             'reserva_activa' => $reservaActiva,
             'espacio_actual' => $this->obtenerEspacioFormateado($reservaActiva?->espacio),
@@ -195,9 +198,13 @@ class ClasesDocenteService
      */
     protected function formatearClaseColaborador(ProfesorColaborador $colab, string $diaSemana, Collection $reservasActivas, Carbon $hoy, bool $tieneTablas = true): array
     {
-        $planHoy = $colab->planificaciones->first(function ($p) use ($diaSemana) {
-            return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
-        });
+        $planificacionesHoy = $colab->planificaciones
+            ->filter(function ($p) use ($diaSemana) {
+                return $p->modulo && strcasecmp(ModulosHelper::normalizarDia($p->modulo->dia), $diaSemana) === 0;
+            })
+            ->sortBy(fn($p) => $p->modulo->hora_inicio ?? '')
+            ->values();
+        $planHoy = $planificacionesHoy->first();
 
         $recuperacionHoyColab = null;
         if (!$planHoy && $colab->id_asignatura) {
@@ -213,7 +220,6 @@ class ClasesDocenteService
         });
 
         $espacioPlanificado = $planHoy?->espacio ?? ($recuperacionHoyColab?->espacioReagendado ?: ($recuperacionHoyColab?->espacio ?? $planHabitual?->espacio));
-        $moduloPlanificado = $planHoy?->modulo ?? $recuperacionHoyColab?->moduloReagendado;
 
         $reservaActiva = $reservasActivas->first(function ($r) use ($colab, $espacioPlanificado) {
             if ($colab->id_asignatura && $r->id_asignatura === $colab->id_asignatura) {
@@ -254,7 +260,7 @@ class ClasesDocenteService
             'tiene_clase_hoy' => ($planHoy !== null) || ($recuperacionHoyColab !== null),
             'espacio_planificado' => $this->obtenerEspacioFormateado($espacioPlanificado),
             'espacio_id' => $espacioPlanificado?->id_espacio,
-            'modulo_planificado' => $moduloPlanificado ? ((!$planHoy && $recuperacionHoyColab ? "Reagendada - " : "") . "Módulo {$moduloPlanificado->numero_modulo} ({$moduloPlanificado->hora_inicio} - {$moduloPlanificado->hora_termino})") : ((!$planHoy && $recuperacionHoyColab) ? "Clase Reagendada" : null),
+            'modulo_planificado' => $this->formatearHorarioHoy($planificacionesHoy, $recuperacionHoyColab),
             'en_sala' => $reservaActiva !== null,
             'reserva_activa' => $reservaActiva,
             'espacio_actual' => $this->obtenerEspacioFormateado($reservaActiva?->espacio),
@@ -262,6 +268,57 @@ class ClasesDocenteService
             'sesion_hoy_id' => $sesionHoy?->id,
             'asistencia_presentes' => $sesionHoy?->totalPresentes() ?? 0,
         ];
+    }
+
+    /**
+     * Formatea los módulos y el rango horario (HH:MM - HH:MM) de la clase de hoy.
+     */
+    protected function formatearHorarioHoy(Collection $planificacionesHoy, ?RecuperacionClase $recuperacionHoy = null): ?string
+    {
+        $esReagendada = $planificacionesHoy->isEmpty() && $recuperacionHoy !== null;
+
+        if ($planificacionesHoy->isNotEmpty()) {
+            $modulos = $planificacionesHoy
+                ->pluck('modulo')
+                ->filter()
+                ->unique('id_modulo')
+                ->sortBy('hora_inicio')
+                ->values();
+        } elseif ($recuperacionHoy) {
+            $idsModulo = array_filter(array_map('trim', explode(',', (string) $recuperacionHoy->id_modulo_reagendado)));
+            $modulos = count($idsModulo) > 1
+                ? Modulo::whereIn('id_modulo', $idsModulo)->orderBy('hora_inicio')->get()
+                : collect([$recuperacionHoy->moduloReagendado])->filter();
+        } else {
+            return null;
+        }
+
+        if ($modulos->isEmpty()) {
+            return $esReagendada ? 'Clase Reagendada' : null;
+        }
+
+        $primerModulo = $modulos->first();
+        $ultimoModulo = $modulos->last();
+        $horaInicio = substr((string) $primerModulo->hora_inicio, 0, 5);
+        $horaTermino = substr((string) $ultimoModulo->hora_termino, 0, 5);
+
+        $numeros = $modulos
+            ->map(fn($m) => ModulosHelper::getNumeroModulo($m->id_modulo))
+            ->filter(fn($n) => $n !== null)
+            ->values();
+
+        if ($numeros->count() <= 1) {
+            $etiquetaModulos = $numeros->count() === 1 ? "Módulo {$numeros->first()}" : 'Módulo';
+        } else {
+            $esConsecutivo = $numeros->last() - $numeros->first() === $numeros->count() - 1;
+            $etiquetaModulos = $esConsecutivo
+                ? "Módulos {$numeros->first()} - {$numeros->last()}"
+                : 'Módulos ' . $numeros->implode(', ');
+        }
+
+        $prefijo = $esReagendada ? 'Reagendada - ' : '';
+
+        return "{$prefijo}{$etiquetaModulos} ({$horaInicio} - {$horaTermino})";
     }
 
     /**

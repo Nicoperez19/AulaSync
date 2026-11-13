@@ -375,10 +375,7 @@ class AsistenciaController extends Controller
                 $mensajeExito .= " (Registrado en MODO PRUEBA por el superadministrador).";
             }
 
-            return redirect()->route('docente.asistencia.show', [
-                'id' => $id,
-                'fecha' => $fechaGuardar->format('Y-m-d'),
-            ])->with('success', $mensajeExito);
+            return redirect()->route('docente.dashboard')->with('success', $mensajeExito);
         } catch (\Exception $e) {
             DB::connection('tenant')->rollBack();
             Log::error('Error guardando asistencia docente', [
