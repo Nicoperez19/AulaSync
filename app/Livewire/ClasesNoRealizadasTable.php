@@ -179,6 +179,18 @@ class ClasesNoRealizadasTable extends Component
         return 'clases_no_realizadas_meta_v1_' . $this->getTenantCachePrefix();
     }
 
+    protected function getStatsCacheKey(): string
+    {
+        return 'clases_no_realizadas_stats_v1_' . $this->getTenantCachePrefix() . '_' . md5(json_encode([
+            $this->fecha_inicio,
+            $this->fecha_fin,
+            $this->periodo,
+            $this->ua,
+            $this->escuela,
+            trim((string) $this->search),
+        ]));
+    }
+
     protected function safeCacheGet(string $key, mixed $default = null): mixed
     {
         try {
@@ -265,6 +277,7 @@ class ClasesNoRealizadasTable extends Component
 
         $this->todasLasClasesBaseCache = $actualizada;
         $this->safeCachePut($baseKey, $actualizada, 600);
+        $this->safeCacheForget($this->getStatsCacheKey());
     }
 
     /**
@@ -288,6 +301,7 @@ class ClasesNoRealizadasTable extends Component
         $this->limpiarCacheMemoria(true);
         $this->safeCacheForget($this->getBaseCacheKey());
         $this->safeCacheForget($this->getMetadataCacheKey());
+        $this->safeCacheForget($this->getStatsCacheKey());
     }
 
     public function getEstadoNombreProperty()
@@ -1781,9 +1795,19 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $todasLasClases = $this->getClasesFiltradasCollection();
-        $todasLasClasesBase = $this->getClasesBaseCollection();
-        if ($todasLasClasesBase->isNotEmpty()) {
-            $escuelasDisponibles = $escuelasDisponibles->merge($todasLasClasesBase->pluck('escuela')->filter())->unique()->sort()->values();
+        if ($escuelasDisponibles->isEmpty()) {
+            $todasLasClasesBase = $this->getClasesBaseCollection();
+            if ($todasLasClasesBase->isNotEmpty()) {
+                $escuelasDisponibles = $todasLasClasesBase->pluck('escuela')->filter()->unique()->sort()->values();
+            }
+        }
+
+        if ($this->cachedEstadisticas === null) {
+            $statsCacheKey = $this->getStatsCacheKey();
+            $statsCached = $this->safeCacheGet($statsCacheKey);
+            if (is_array($statsCached)) {
+                $this->cachedEstadisticas = $statsCached;
+            }
         }
 
         if ($this->cachedEstadisticas === null) {
@@ -1796,7 +1820,7 @@ class ClasesNoRealizadasTable extends Component
             $clasesAgrupadas = $clasesParaStats->groupBy(function ($item) {
                 $fecha = ($item['fecha'] instanceof \Carbon\Carbon)
                     ? $item['fecha']->format('Y-m-d')
-                    : \Carbon\Carbon::parse($item['fecha'])->format('Y-m-d');
+                    : substr((string) $item['fecha'], 0, 10);
                 return $fecha . '_' . ($item['espacio'] ?? '') . '_' . ($item['run_profesor'] ?? '') . '_' . ($item['id_asignatura'] ?? '');
             });
 
@@ -1830,6 +1854,7 @@ class ClasesNoRealizadasTable extends Component
                 'justificados' => $clasesParaStats->whereIn('estado', ['Justificada', 'Feriado/Justificado'])->count(), // para la tarjeta KPI individual
                 'realizadas' => $totalRealizadas,
             ];
+            $this->safeCachePut($statsCacheKey, $this->cachedEstadisticas, 600);
         }
 
         $estadisticas = $this->cachedEstadisticas;

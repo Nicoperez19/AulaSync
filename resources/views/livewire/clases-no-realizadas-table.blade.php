@@ -232,16 +232,45 @@
                 </div>
             @endif
 
-            {{-- Barra de Acciones Masivas --}}
-            @if($this->puedeGestionarClases && ($cantidadSeleccionada > 0 || $selectAllFiltered))
-                <div class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200 relative z-30">
+            {{-- Barra de Acciones Masivas + Tabla con selección instantánea en cliente --}}
+            <div x-data="{
+                get pageKeys() {
+                    return Array.from(this.$el.querySelectorAll('input[data-clase-checkbox]')).map(el => el.value);
+                },
+                get totalSelected() {
+                    if ($wire.selectAllFiltered) {
+                        return Math.max(0, {{ (int) $totalFiltradasSeleccionables }} - ($wire.excludedClases ? $wire.excludedClases.length : 0));
+                    }
+                    return $wire.selectedClases ? $wire.selectedClases.length : 0;
+                },
+                get allPageChecked() {
+                    const keys = this.pageKeys;
+                    const sel = $wire.selectedClases || [];
+                    return keys.length > 0 && keys.every(k => sel.includes(k));
+                },
+                togglePage(checked) {
+                    if ($wire.selectAllFiltered) {
+                        $wire.set('selectAllPage', checked);
+                        return;
+                    }
+                    const keys = this.pageKeys;
+                    const current = Array.isArray($wire.selectedClases) ? [...$wire.selectedClases] : [];
+                    $wire.selectedClases = checked
+                        ? Array.from(new Set([...current, ...keys]))
+                        : current.filter(k => !keys.includes(k));
+                }
+            }">
+            @if($this->puedeGestionarClases)
+                <div x-show="totalSelected > 0 || $wire.selectAllFiltered"
+                     x-cloak
+                     class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200 relative z-30">
                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700 border border-slate-300/60">
                             <i class="fas fa-check-double text-lg"></i>
                         </div>
                         <div>
                             <p class="font-semibold text-sm text-slate-900 flex flex-wrap items-center gap-2">
-                                <span>{{ $cantidadSeleccionada }} {{ $cantidadSeleccionada === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
+                                <span><span x-text="totalSelected"></span> <span x-text="totalSelected === 1 ? 'clase seleccionada' : 'clases seleccionadas'"></span></span>
                                 @if($selectAllFiltered)
                                     <span class="text-[11px] px-2 py-0.5 bg-slate-200 text-slate-700 rounded-md font-medium">Filtro completo</span>
                                     @if($totalFiltradasSeleccionables > count($currentPageSelectableKeys ?? []))
@@ -250,8 +279,10 @@
                                             Solo esta página ({{ count($currentPageSelectableKeys ?? []) }})
                                         </button>
                                     @endif
-                                @elseif($totalFiltradasSeleccionables > $cantidadSeleccionada)
-                                    <button type="button" wire:click="seleccionarTodoElFiltro"
+                                @else
+                                    <button type="button"
+                                            x-show="{{ (int) $totalFiltradasSeleccionables }} > totalSelected"
+                                            wire:click="seleccionarTodoElFiltro"
                                             class="text-[11px] text-[#950101] hover:underline font-medium cursor-pointer">
                                         Seleccionar todo el filtro ({{ $totalFiltradasSeleccionables }})
                                     </button>
@@ -264,7 +295,8 @@
                     </div>
 
                     <div class="flex flex-wrap items-center gap-2">
-                        <button type="button" wire:click="limpiarSeleccion" 
+                        <button type="button"
+                                x-on:click="if ($wire.selectAllFiltered) { $wire.limpiarSeleccion(); } else { $wire.selectedClases = []; }"
                                 class="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus:ring-gray-300 rounded-md font-medium text-sm gap-2 inline-flex items-center justify-center shadow-sm px-4 py-2 cursor-pointer transition-all duration-150">
                             <i class="fas fa-times"></i>
                             <span>Cancelar</span>
@@ -289,11 +321,11 @@
                                  x-transition
                                  class="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-xl bg-white ring-1 ring-black/10 z-40 overflow-hidden divide-y divide-gray-100">
                                 <div class="px-3.5 py-2 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-                                    Aplicar estado a {{ $cantidadSeleccionada }} {{ $cantidadSeleccionada === 1 ? 'clase' : 'clases' }}
+                                    Aplicar estado a <span x-text="totalSelected"></span> <span x-text="totalSelected === 1 ? 'clase' : 'clases'"></span>
                                 </div>
                                 <div class="py-1">
                                     <button type="button"
-                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'justificado' })"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: totalSelected, tipo: 'justificado' })"
                                             class="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50/70 flex items-start gap-3 transition-colors cursor-pointer">
                                         <i class="fas fa-shield-alt text-amber-600 mt-0.5 w-4 text-center"></i>
                                         <div>
@@ -302,7 +334,7 @@
                                         </div>
                                     </button>
                                     <button type="button"
-                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'realizada' })"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: totalSelected, tipo: 'realizada' })"
                                             class="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50/70 flex items-start gap-3 transition-colors cursor-pointer">
                                         <i class="fas fa-check-circle text-emerald-600 mt-0.5 w-4 text-center"></i>
                                         <div>
@@ -311,7 +343,7 @@
                                         </div>
                                     </button>
                                     <button type="button"
-                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'no_realizada' })"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: totalSelected, tipo: 'no_realizada' })"
                                             class="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50/70 flex items-start gap-3 transition-colors cursor-pointer">
                                         <i class="fas fa-times-circle text-red-600 mt-0.5 w-4 text-center"></i>
                                         <div>
@@ -320,7 +352,7 @@
                                         </div>
                                     </button>
                                     <button type="button"
-                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'pendiente' })"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: totalSelected, tipo: 'pendiente' })"
                                             class="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50/70 flex items-start gap-3 transition-colors cursor-pointer">
                                         <i class="fas fa-clock text-orange-600 mt-0.5 w-4 text-center"></i>
                                         <div>
@@ -329,7 +361,7 @@
                                         </div>
                                     </button>
                                     <button type="button"
-                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'recuperada' })"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: totalSelected, tipo: 'recuperada' })"
                                             class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50/70 flex items-start gap-3 transition-colors cursor-pointer">
                                         <i class="fas fa-calendar-check text-blue-600 mt-0.5 w-4 text-center"></i>
                                         <div>
@@ -352,7 +384,8 @@
                                 @if($this->puedeGestionarClases)
                                 <th class="px-3 py-3 text-center w-10">
                                     <input type="checkbox" 
-                                           wire:model.live="selectAllPage" 
+                                           :checked="allPageChecked"
+                                           x-on:change="togglePage($event.target.checked)"
                                            class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer"
                                            title="Seleccionar todas las clases"
                                            @if(empty($currentPageSelectableKeys)) disabled @endif>
@@ -393,8 +426,10 @@
                                     @if($this->puedeGestionarClases)
                                     <td class="px-3 py-4 text-center w-10">
                                         <input type="checkbox" 
+                                               data-clase-checkbox
                                                wire:key="clase-check-{{ $clase['unique_key'] }}"
-                                               wire:model.live="selectedClases" 
+                                               wire:model="selectedClases" 
+                                               x-on:change="if ($wire.selectAllFiltered) $wire.$commit()"
                                                value="{{ $clase['unique_key'] }}" 
                                                class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
                                     </td>
@@ -533,6 +568,7 @@
                         {{ $clasesNoRealizadas->links() }}
                     </div>
                 @endif
+            </div>
             </div>
 
             <!-- Modal Unificado de Acción Masiva (Diseño Institucional, Alpine + wire:ignore) -->
