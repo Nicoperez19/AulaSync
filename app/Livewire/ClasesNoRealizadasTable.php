@@ -1386,12 +1386,6 @@ class ClasesNoRealizadasTable extends Component
             // Convertir cantidadModulos a entero y validar
             $cantidadModulos = max(1, min(15, (int)$cantidadModulos));
             
-            // Validar que la nueva fecha no sea anterior a hoy
-            if (Carbon::parse($nuevaFecha)->lt(Carbon::today())) {
-                $this->dispatch('show-error', ['message' => 'La nueva fecha no puede ser anterior a hoy']);
-                return;
-            }
-            
             // Obtener el día de la nueva fecha
             $fechaParsed = Carbon::parse($nuevaFecha);
             $nombreDia = strtolower($fechaParsed->format('l'));

@@ -928,7 +928,7 @@ function initClasesNoRealizadasScripts() {
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Nueva Fecha <span class="text-red-500">*</span></label>
-                            <input type="date" id="swal-nueva-fecha" class="w-full p-2 border border-gray-300 rounded-md" min="${new Date().toISOString().split('T')[0]}">
+                            <input type="date" id="swal-nueva-fecha" class="w-full p-2 border border-gray-300 rounded-md">
                         </div>
                         
                         <div class="mb-4">
@@ -1169,15 +1169,6 @@ function initClasesNoRealizadasScripts() {
                 
                 if (!cantidadModulos || parseInt(cantidadModulos) < 1 || parseInt(cantidadModulos) > 15) {
                     Swal.showValidationMessage('Por favor ingresa una cantidad válida de módulos (1-15)');
-                    return false;
-                }
-                
-                const fechaSeleccionada = new Date(nuevaFecha);
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-                
-                if (fechaSeleccionada < hoy) {
-                    Swal.showValidationMessage('La fecha no puede ser anterior a hoy');
                     return false;
                 }
                 
