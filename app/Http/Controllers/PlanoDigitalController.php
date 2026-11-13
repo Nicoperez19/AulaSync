@@ -361,9 +361,14 @@ class PlanoDigitalController extends Controller
 
             // Obtener clases no realizadas pre-cargadas en memoria
             $clasesNoRealizadasHoy = $clasesNoRealizadasMap->get($idEspacio, collect());
+            $reservasFinalizadasEspacio = $reservasFinalizadasAnticipadamente->where('id_espacio', $idEspacio);
             $claseSinAsistentesActiva = false;
             foreach ($clasesNoRealizadasHoy as $clase) {
-                if ($clase->modulo && $clase->modulo->hora_termino > $horaActualStr) {
+                if (
+                    $clase->modulo
+                    && $clase->modulo->hora_termino > $horaActualStr
+                    && !$this->claseNoRealizadaFueFinalizada($clase, $reservasFinalizadasEspacio)
+                ) {
                     $claseSinAsistentesActiva = true;
                     break;
                 }
@@ -877,10 +882,15 @@ class PlanoDigitalController extends Controller
                 $tieneReservaProxima = $reservasProximas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
 
                 $clasesNoRealizadasHoy = $clasesNoRealizadasGlobal->get($espacio->id_espacio, collect());
+                $reservasFinalizadasEspacio = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio);
 
                 $tieneClaseSinAsistentes = false;
                 foreach ($clasesNoRealizadasHoy as $clase) {
-                    if ($clase->modulo && $clase->modulo->hora_termino > $horaActualStr) {
+                    if (
+                        $clase->modulo
+                        && $clase->modulo->hora_termino > $horaActualStr
+                        && !$this->claseNoRealizadaFueFinalizada($clase, $reservasFinalizadasEspacio)
+                    ) {
                         $tieneClaseSinAsistentes = true;
                         break;
                     }
@@ -3711,5 +3721,43 @@ class PlanoDigitalController extends Controller
     private function normalizeEspacioId(?string $idEspacio): ?string
     {
         return !empty($idEspacio) ? \App\Helpers\EspacioAliasHelper::normalizar($idEspacio) : $idEspacio;
+    }
+
+    /**
+     * Determina si un registro de ClaseNoRealizada corresponde a una clase cuya reserva ya fue finalizada.
+     */
+    private function claseNoRealizadaFueFinalizada(ClaseNoRealizada $clase, $reservasFinalizadas): bool
+    {
+        if ($reservasFinalizadas->isEmpty()) {
+            return false;
+        }
+
+        $numModClase = ModulosHelper::getNumeroModulo($clase->id_modulo ?? null);
+
+        foreach ($reservasFinalizadas as $r) {
+            $mismaAsignatura = $r->id_asignatura && !empty($clase->id_asignatura) && $r->id_asignatura == $clase->id_asignatura;
+            $mismoProfesor = $clase->run_profesor && $r->run_profesor && $this->normalizeRun($clase->run_profesor) === $this->normalizeRun($r->run_profesor);
+
+            if (!$mismaAsignatura && !$mismoProfesor) {
+                continue;
+            }
+
+            if ($numModClase !== null && $r->modulo_inicio !== null && $r->modulo_fin !== null) {
+                if ($numModClase >= (int) $r->modulo_inicio && $numModClase <= (int) $r->modulo_fin) {
+                    return true;
+                }
+                continue;
+            }
+
+            if ((bool) $r->clase_finalizada_anticipadamente) {
+                return true;
+            }
+
+            if ($clase->modulo && $r->hora_salida && $r->hora_salida > $clase->modulo->hora_inicio) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -1,4 +1,4 @@
-<div wire:poll.60s>
+<div wire:poll.visible.300s>
 
     @if($periodoNoIniciado)
         <!-- Mensaje cuando el periodo no ha iniciado -->
@@ -233,23 +233,32 @@
             @endif
 
             {{-- Barra de Acciones Masivas --}}
-            @if($this->puedeGestionarClases && (count($selectedClases) > 0 || $selectAllFiltered))
-                <div class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200">
+            @if($this->puedeGestionarClases && ($cantidadSeleccionada > 0 || $selectAllFiltered))
+                <div class="mb-4 bg-slate-50 text-slate-800 px-5 py-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-3 border border-slate-200 transition-all duration-200 relative z-30">
                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-slate-200/70 rounded-lg text-slate-700 border border-slate-300/60">
                             <i class="fas fa-check-double text-lg"></i>
                         </div>
                         <div>
-                            <p class="font-semibold text-sm text-slate-900 flex items-center gap-2">
+                            <p class="font-semibold text-sm text-slate-900 flex flex-wrap items-center gap-2">
+                                <span>{{ $cantidadSeleccionada }} {{ $cantidadSeleccionada === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
                                 @if($selectAllFiltered)
-                                    <span>{{ $totalNoRealizadasFiltradas }} clases seleccionadas</span>
                                     <span class="text-[11px] px-2 py-0.5 bg-slate-200 text-slate-700 rounded-md font-medium">Filtro completo</span>
-                                @else
-                                    <span>{{ count($selectedClases) }} {{ count($selectedClases) === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
+                                    @if($totalFiltradasSeleccionables > count($currentPageSelectableKeys ?? []))
+                                        <button type="button" wire:click="seleccionarSoloPaginaActual"
+                                                class="text-[11px] text-[#950101] hover:underline font-medium cursor-pointer">
+                                            Solo esta página ({{ count($currentPageSelectableKeys ?? []) }})
+                                        </button>
+                                    @endif
+                                @elseif($totalFiltradasSeleccionables > $cantidadSeleccionada)
+                                    <button type="button" wire:click="seleccionarTodoElFiltro"
+                                            class="text-[11px] text-[#950101] hover:underline font-medium cursor-pointer">
+                                        Seleccionar todo el filtro ({{ $totalFiltradasSeleccionables }})
+                                    </button>
                                 @endif
                             </p>
                             <p class="text-xs text-slate-500">
-                                Acciones masivas para registrar o justificar las clases no registradas seleccionadas.
+                                Elige el nuevo estado para aplicar a todas las clases seleccionadas.
                             </p>
                         </div>
                     </div>
@@ -260,11 +269,77 @@
                             <i class="fas fa-times"></i>
                             <span>Cancelar</span>
                         </button>
-                        <button type="button" x-on:click="$dispatch('abrir-modal-masivo', { cantidad: {{ $selectAllFiltered ? $totalNoRealizadasFiltradas : count($selectedClases) }} })" 
-                                class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2 cursor-pointer">
-                            <i class="fas fa-shield-alt text-sm"></i>
-                            <span>Justificar Seleccionadas</span>
-                        </button>
+
+                        <!-- Botón seleccionable para cambiar estado masivo -->
+                        <div class="relative inline-block text-left"
+                             x-data="{ openEstadoMenu: false }"
+                             x-on:click.outside="openEstadoMenu = false"
+                             x-on:keydown.escape.window="openEstadoMenu = false">
+                            <button type="button"
+                                    x-on:click="openEstadoMenu = !openEstadoMenu"
+                                    class="inline-flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2 cursor-pointer">
+                                <i class="fas fa-exchange-alt text-sm"></i>
+                                <span>Cambiar estado a...</span>
+                                <i class="fas fa-chevron-down text-xs opacity-80 transition-transform duration-150"
+                                   :class="openEstadoMenu ? 'rotate-180' : ''"></i>
+                            </button>
+
+                            <div x-show="openEstadoMenu"
+                                 x-cloak
+                                 x-transition
+                                 class="origin-top-right absolute right-0 mt-2 w-72 rounded-xl shadow-xl bg-white ring-1 ring-black/10 z-40 overflow-hidden divide-y divide-gray-100">
+                                <div class="px-3.5 py-2 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                                    Aplicar estado a {{ $cantidadSeleccionada }} {{ $cantidadSeleccionada === 1 ? 'clase' : 'clases' }}
+                                </div>
+                                <div class="py-1">
+                                    <button type="button"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'justificado' })"
+                                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50/70 flex items-start gap-3 transition-colors cursor-pointer">
+                                        <i class="fas fa-shield-alt text-amber-600 mt-0.5 w-4 text-center"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Justificada</div>
+                                            <div class="text-xs text-gray-500">Justificar ausencia (sin recuperación)</div>
+                                        </div>
+                                    </button>
+                                    <button type="button"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'realizada' })"
+                                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50/70 flex items-start gap-3 transition-colors cursor-pointer">
+                                        <i class="fas fa-check-circle text-emerald-600 mt-0.5 w-4 text-center"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Realizada / Registrada</div>
+                                            <div class="text-xs text-gray-500">Regularizar como clase dictada</div>
+                                        </div>
+                                    </button>
+                                    <button type="button"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'no_realizada' })"
+                                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50/70 flex items-start gap-3 transition-colors cursor-pointer">
+                                        <i class="fas fa-times-circle text-red-600 mt-0.5 w-4 text-center"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">No Registrada</div>
+                                            <div class="text-xs text-gray-500">Marcar o revertir a no registrada</div>
+                                        </div>
+                                    </button>
+                                    <button type="button"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'pendiente' })"
+                                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-orange-50/70 flex items-start gap-3 transition-colors cursor-pointer">
+                                        <i class="fas fa-clock text-orange-600 mt-0.5 w-4 text-center"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Pendiente de Recuperación</div>
+                                            <div class="text-xs text-gray-500">Marcar como pendiente de recuperar</div>
+                                        </div>
+                                    </button>
+                                    <button type="button"
+                                            x-on:click="openEstadoMenu = false; $dispatch('abrir-modal-masivo', { cantidad: {{ $cantidadSeleccionada }}, tipo: 'recuperada' })"
+                                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50/70 flex items-start gap-3 transition-colors cursor-pointer">
+                                        <i class="fas fa-calendar-check text-blue-600 mt-0.5 w-4 text-center"></i>
+                                        <div>
+                                            <div class="font-semibold text-gray-900">Recuperada</div>
+                                            <div class="text-xs text-gray-500">Confirmar recuperación de clase</div>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endif
@@ -279,8 +354,8 @@
                                     <input type="checkbox" 
                                            wire:model.live="selectAllPage" 
                                            class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer"
-                                           title="Seleccionar todas las clases no registradas"
-                                           @if(empty($currentPageNoRealizadasKeys)) disabled @endif>
+                                           title="Seleccionar todas las clases"
+                                           @if(empty($currentPageSelectableKeys)) disabled @endif>
                                 </th>
                                 @endif
                                 <th class="px-3 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider cursor-pointer w-24" 
@@ -314,17 +389,14 @@
                                     $moduloInicio = preg_replace('/^[A-Z]{2}\./', '', $modulos[0]);
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
-                                <tr class="table-row hover:bg-gray-50">
+                                <tr wire:key="clase-row-{{ $clase['unique_key'] }}" class="table-row hover:bg-gray-50">
                                     @if($this->puedeGestionarClases)
                                     <td class="px-3 py-4 text-center w-10">
-                                        @if($clase['estado'] === 'No Registrada')
-                                            <input type="checkbox" 
-                                                   wire:model.live="selectedClases" 
-                                                   value="{{ $clase['unique_key'] }}" 
-                                                   class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
-                                        @else
-                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden seleccionar clases no registradas">
-                                        @endif
+                                        <input type="checkbox" 
+                                               wire:key="clase-check-{{ $clase['unique_key'] }}"
+                                               wire:model.live="selectedClases" 
+                                               value="{{ $clase['unique_key'] }}" 
+                                               class="rounded border-gray-300 text-[#D12420] shadow-sm focus:ring-[#950101] cursor-pointer">
                                     </td>
                                     @endif
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
@@ -468,57 +540,163 @@
                  x-data="{
                     open: false,
                     cantidad: 0,
-                    tipo: 'justificar',
-                    motivoJ: 'Supervisión de Prácticas / Salida a Terreno',
-                    motivoR: 'Docente dictó la clase en aula (asistencia presencial)',
-                    otroJ: '',
-                    otroR: '',
+                    tipo: 'justificado',
+                    estadoOrden: ['justificado', 'realizada', 'no_realizada', 'pendiente', 'recuperada'],
+                    motivoSeleccionado: 'Supervisión de Prácticas / Salida a Terreno',
+                    otroMotivo: '',
                     obs: '',
                     sobrescribir: false,
-                    abrir(cant) {
-                        this.cantidad = cant;
-                        this.tipo = 'justificar';
-                        this.otroJ = ''; this.otroR = '';
-                        this.obs = ''; this.sobrescribir = false;
+                    estados: {
+                        justificado: {
+                            label: 'Justificada',
+                            titulo: 'Justificar Ausencia',
+                            btnTexto: 'Justificar',
+                            loading: 'Aplicando justificación masiva...',
+                            desc: 'Pasa a estado Justificada. No exige recuperación horaria.',
+                            badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
+                            activeCard: 'border-slate-800 bg-slate-50/70',
+                            dotActive: 'border-slate-800 bg-slate-800',
+                            btnClass: 'bg-slate-800 hover:bg-slate-900',
+                            iconClass: 'fas fa-shield-alt text-amber-600',
+                            defaultMotivo: 'Supervisión de Prácticas / Salida a Terreno',
+                            motivos: [
+                                'Supervisión de Prácticas / Salida a Terreno',
+                                'Licencia Médica Docente',
+                                'Comisión de Servicio / Capacitación Institucional',
+                                'Suspensión de Actividades Institucionales / Feriado',
+                                'Problema Técnico o de Infraestructura en Aula',
+                                'Clase Realizada en Modalidad Online / Alternativa'
+                            ]
+                        },
+                        realizada: {
+                            label: 'Realizada / Registrada',
+                            titulo: 'Regularizar / Realizada',
+                            btnTexto: 'Registrar',
+                            loading: 'Aplicando registro masivo...',
+                            desc: 'Pasa a estado Realizada. El docente sí dictó la clase.',
+                            badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                            activeCard: 'border-emerald-600 bg-emerald-50/60',
+                            dotActive: 'border-emerald-600 bg-emerald-600',
+                            btnClass: 'bg-emerald-600 hover:bg-emerald-700',
+                            iconClass: 'fas fa-check-circle text-emerald-600',
+                            defaultMotivo: 'Docente dictó la clase en aula (asistencia presencial)',
+                            motivos: [
+                                'Docente dictó la clase en aula (asistencia presencial)',
+                                'Firma en libro de asistencia / Registro manual validado',
+                                'Falla técnica en escaneo de código QR en sala',
+                                'Validación directa de Jefatura de Carrera / Dirección',
+                                'Recuperación de clase efectuada'
+                            ]
+                        },
+                        no_realizada: {
+                            label: 'No Registrada',
+                            titulo: 'Marcar No Registrada',
+                            btnTexto: 'Marcar No Registrada',
+                            loading: 'Marcando clases como no registradas...',
+                            desc: 'Pasa a estado No Registrada para seguimiento o recuperación.',
+                            badgeClass: 'bg-red-100 text-red-800 border-red-200',
+                            activeCard: 'border-red-600 bg-red-50/60',
+                            dotActive: 'border-red-600 bg-red-600',
+                            btnClass: 'bg-[#D12420] hover:bg-[#b51d1a]',
+                            iconClass: 'fas fa-times-circle text-red-600',
+                            defaultMotivo: 'Cambio manual masivo a No Registrada',
+                            motivos: [
+                                'Cambio manual masivo a No Registrada',
+                                'Reversión de registro o justificación errónea',
+                                'Inasistencia docente confirmada sin registro previo',
+                                'Error administrativo en asignación de asistencia'
+                            ]
+                        },
+                        pendiente: {
+                            label: 'Pendiente de Recuperación',
+                            titulo: 'Pendiente de Recuperación',
+                            btnTexto: 'Marcar Pendiente',
+                            loading: 'Marcando clases como pendientes...',
+                            desc: 'Pasa a estado Pendiente de Recuperación.',
+                            badgeClass: 'bg-orange-100 text-orange-800 border-orange-200',
+                            activeCard: 'border-orange-500 bg-orange-50/60',
+                            dotActive: 'border-orange-500 bg-orange-500',
+                            btnClass: 'bg-amber-600 hover:bg-amber-700',
+                            iconClass: 'fas fa-clock text-orange-600',
+                            defaultMotivo: 'Pendiente de recuperación por ausencia justificada/aviso',
+                            motivos: [
+                                'Pendiente de recuperación por ausencia justificada/aviso',
+                                'Clase suspendida sujeta a recalendarización',
+                                'Acuerdo docente-jefatura para recuperar módulo'
+                            ]
+                        },
+                        recuperada: {
+                            label: 'Recuperada',
+                            titulo: 'Marcar como Recuperada',
+                            btnTexto: 'Marcar Recuperada',
+                            loading: 'Confirmando recuperación masiva...',
+                            desc: 'Pasa a estado Recuperada y sincroniza recuperaciones.',
+                            badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+                            activeCard: 'border-blue-600 bg-blue-50/60',
+                            dotActive: 'border-blue-600 bg-blue-600',
+                            btnClass: 'bg-blue-600 hover:bg-blue-700',
+                            iconClass: 'fas fa-calendar-check text-blue-600',
+                            defaultMotivo: 'Clase recuperada confirmada por Jefatura / Dirección',
+                            motivos: [
+                                'Clase recuperada confirmada por Jefatura / Dirección',
+                                'Recuperación realizada en horario alternativo validado',
+                                'Asistencia de recuperación verificada manualmente'
+                            ]
+                        }
+                    },
+                    normalizarTipo(raw) {
+                        if (raw === 'justificar') return 'justificado';
+                        if (raw === 'registrar' || raw === 'registrada') return 'realizada';
+                        return this.estados[raw] ? raw : 'justificado';
+                    },
+                    cambiarTipo(nuevoTipo) {
+                        const t = this.normalizarTipo(nuevoTipo);
+                        this.tipo = t;
+                        this.otroMotivo = '';
+                        this.$nextTick(() => {
+                            this.motivoSeleccionado = this.estados[t].defaultMotivo;
+                        });
+                    },
+                    abrir(cant, tipoInicial) {
+                        this.cantidad = Number(cant) || 0;
+                        this.obs = '';
+                        this.sobrescribir = false;
+                        this.cambiarTipo(tipoInicial || 'justificado');
                         this.open = true;
                     },
                     confirmar() {
-                        let motivo = this.tipo === 'justificar'
-                            ? (this.motivoJ === '__OTRO__' ? this.otroJ.trim() : this.motivoJ)
-                            : (this.motivoR === '__OTRO__' ? this.otroR.trim() : this.motivoR);
+                        const motivo = this.motivoSeleccionado === '__OTRO__' ? this.otroMotivo.trim() : this.motivoSeleccionado;
                         if (!motivo) {
                             Swal.fire({ title: 'Atención', text: 'Por favor especifica un motivo para la acción masiva.', icon: 'warning', confirmButtonColor: '#D12420' });
                             return;
                         }
+                        const cfg = this.estados[this.tipo];
                         this.open = false;
                         Swal.fire({
-                            title: this.tipo === 'justificar' ? 'Aplicando justificación masiva...' : 'Aplicando registro masivo...',
-                            text: `Procesando ${this.cantidad} clases, por favor espera...`,
+                            title: cfg.loading,
+                            text: `Procesando ${this.cantidad} clases hacia ${cfg.label}, por favor espera...`,
                             allowOutsideClick: false,
                             didOpen: () => Swal.showLoading()
                         });
-                        if (this.tipo === 'justificar') {
-                            $wire.ejecutarJustificacionMasiva(motivo, this.obs.trim(), this.sobrescribir);
-                        } else {
-                            $wire.ejecutarRegistroMasivo(motivo, this.obs.trim(), this.sobrescribir);
-                        }
+                        $wire.ejecutarCambioEstadoMasivo(this.tipo, motivo, this.obs.trim(), this.sobrescribir);
                     }
                  }"
-                 x-on:abrir-modal-masivo.window="abrir($event.detail.cantidad)"
+                 x-on:abrir-modal-masivo.window="abrir($event.detail.cantidad, $event.detail.tipo)"
+                 x-on:show-bulk-action-modal.window="abrir(($event.detail[0] || $event.detail).cantidad, ($event.detail[0] || $event.detail).tipo)"
                  x-on:keydown.escape.window="open = false">
                 <div x-show="open" x-cloak x-transition.opacity
                      class="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
                      x-on:click.self="open = false">
-                    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
+                    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden flex flex-col max-h-[90vh]">
                         <!-- Cabecera Institucional -->
                         <div class="p-4 bg-[#D12420] text-white flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
                                 <div class="p-1.5 bg-white/20 rounded-lg">
-                                    <i class="fas fa-shield-alt text-lg"></i>
+                                    <i class="fas fa-exchange-alt text-lg"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-base font-bold leading-tight">Gestión Masiva de Clases</h3>
-                                    <p class="text-xs text-white/80">Regularización o justificación masiva de asistencia docente</p>
+                                    <h3 class="text-base font-bold leading-tight">Cambio Masivo de Estado</h3>
+                                    <p class="text-xs text-white/80">Aplica el estado seleccionado a múltiples clases en una sola operación</p>
                                 </div>
                             </div>
                             <button type="button" x-on:click="open = false" class="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer">
@@ -528,84 +706,61 @@
 
                         <!-- Cuerpo -->
                         <div class="p-6 overflow-y-auto space-y-5 text-gray-800 text-sm">
-                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                            <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
                                 <div class="flex items-center gap-3">
                                     <div class="w-9 h-9 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center">
                                         <i class="fas fa-layer-group"></i>
                                     </div>
                                     <div>
-                                        <p class="text-xs text-gray-500 font-medium">Clases seleccionadas para aplicar cambio</p>
-                                        <p class="text-base font-extrabold text-gray-900"><span x-text="cantidad"></span> clases no registradas</p>
+                                        <p class="text-xs text-gray-500 font-medium">Clases seleccionadas para actualizar</p>
+                                        <p class="text-base font-extrabold text-gray-900">
+                                            <span x-text="cantidad"></span>
+                                            <span x-text="cantidad === 1 ? 'clase seleccionada' : 'clases seleccionadas'"></span>
+                                        </p>
                                     </div>
                                 </div>
-                                <span class="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 font-semibold rounded-full border border-amber-200">Acción Masiva</span>
+                                <span :class="estados[tipo].badgeClass"
+                                      class="text-xs px-2.5 py-1 font-semibold rounded-full border shrink-0"
+                                      x-text="estados[tipo].label"></span>
                             </div>
 
-                            <!-- Opciones -->
+                            <!-- Selector de Estado Destino -->
                             <div>
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Selecciona la acción a realizar <span class="text-red-500">*</span></label>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    <div x-on:click="tipo = 'justificar'"
-                                         :class="tipo === 'justificar' ? 'border-slate-800 bg-slate-50/70' : 'border-gray-200 bg-white hover:border-slate-400'"
-                                         class="relative flex flex-col p-3.5 border-2 rounded-xl cursor-pointer transition-all">
-                                        <div class="flex items-center justify-between mb-1.5">
-                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                                                <i class="fas fa-shield-alt text-amber-600"></i> Justificar Ausencia
-                                            </span>
-                                            <span :class="tipo === 'justificar' ? 'border-slate-800 bg-slate-800' : 'border-gray-300 bg-white'"
-                                                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center">
-                                                <span x-show="tipo === 'justificar'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                                            </span>
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Nuevo estado destino <span class="text-red-500">*</span></label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    <template x-for="key in estadoOrden" :key="key">
+                                        <div x-on:click="cambiarTipo(key)"
+                                             :class="tipo === key ? estados[key].activeCard : 'border-gray-200 bg-white hover:border-gray-300'"
+                                             class="relative flex flex-col p-3 border-2 rounded-xl cursor-pointer transition-all">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                                                    <i :class="estados[key].iconClass"></i>
+                                                    <span x-text="estados[key].titulo"></span>
+                                                </span>
+                                                <span :class="tipo === key ? estados[key].dotActive : 'border-gray-300 bg-white'"
+                                                      class="w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0">
+                                                    <span x-show="tipo === key" class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                                                </span>
+                                            </div>
+                                            <p class="text-[11px] text-gray-500 leading-snug" x-text="estados[key].desc"></p>
                                         </div>
-                                        <p class="text-xs text-gray-500 leading-snug">Pasa a estado <strong>Justificada</strong>. No exige recuperación horaria de clase.</p>
-                                    </div>
-
-                                    <div x-on:click="tipo = 'registrar'"
-                                         :class="tipo === 'registrar' ? 'border-indigo-600 bg-indigo-50/50' : 'border-gray-200 bg-white hover:border-indigo-300'"
-                                         class="relative flex flex-col p-3.5 border-2 rounded-xl cursor-pointer transition-all">
-                                        <div class="flex items-center justify-between mb-1.5">
-                                            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-900">
-                                                <i class="fas fa-check-circle text-indigo-600"></i> Regularizar / Realizada
-                                            </span>
-                                            <span :class="tipo === 'registrar' ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 bg-white'"
-                                                  class="w-4 h-4 rounded-full border-2 flex items-center justify-center">
-                                                <span x-show="tipo === 'registrar'" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                                            </span>
-                                        </div>
-                                        <p class="text-xs text-gray-500 leading-snug">Pasa a estado <strong>Registrada</strong>. El docente sí dictó la clase (ej: firma manual).</p>
-                                    </div>
+                                    </template>
                                 </div>
                             </div>
 
-                            <!-- Motivo Justificar -->
-                            <div x-show="tipo === 'justificar'" class="space-y-2">
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Motivo de la Justificación <span class="text-red-500">*</span></label>
-                                <select x-model="motivoJ" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 bg-white">
-                                    <option value="Supervisión de Prácticas / Salida a Terreno">Supervisión de Prácticas / Salida a Terreno</option>
-                                    <option value="Licencia Médica Docente">Licencia Médica Docente</option>
-                                    <option value="Comisión de Servicio / Capacitación Institucional">Comisión de Servicio / Capacitación Institucional</option>
-                                    <option value="Suspensión de Actividades Institucionales / Feriado">Suspensión de Actividades Institucionales / Feriado</option>
-                                    <option value="Problema Técnico o de Infraestructura en Aula">Problema Técnico o de Infraestructura en Aula</option>
-                                    <option value="Clase Realizada en Modalidad Online / Alternativa">Clase Realizada en Modalidad Online / Alternativa</option>
+                            <!-- Motivo Dinámico -->
+                            <div class="space-y-2">
+                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                    Motivo del cambio (<span x-text="estados[tipo].label"></span>) <span class="text-red-500">*</span>
+                                </label>
+                                <select x-model="motivoSeleccionado" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 bg-white">
+                                    <template x-for="m in (estados[tipo]?.motivos || [])" :key="m">
+                                        <option :value="m" x-text="m"></option>
+                                    </template>
                                     <option value="__OTRO__">Otro motivo (especificar abajo)...</option>
                                 </select>
-                                <input type="text" x-show="motivoJ === '__OTRO__'" x-model="otroJ" placeholder="Describe el motivo de la justificación..."
+                                <input type="text" x-show="motivoSeleccionado === '__OTRO__'" x-model="otroMotivo" placeholder="Describe el motivo del cambio..."
                                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-slate-800 focus:border-slate-800 mt-2">
-                            </div>
-
-                            <!-- Motivo Registrar -->
-                            <div x-show="tipo === 'registrar'" class="space-y-2">
-                                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">Motivo de la Regularización <span class="text-red-500">*</span></label>
-                                <select x-model="motivoR" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 bg-white">
-                                    <option value="Docente dictó la clase en aula (asistencia presencial)">Docente dictó la clase en aula (asistencia presencial)</option>
-                                    <option value="Firma en libro de asistencia / Registro manual validado">Firma en libro de asistencia / Registro manual validado</option>
-                                    <option value="Falla técnica en escaneo de código QR en sala">Falla técnica en escaneo de código QR en sala</option>
-                                    <option value="Validación directa de Jefatura de Carrera / Dirección">Validación directa de Jefatura de Carrera / Dirección</option>
-                                    <option value="Recuperación de clase efectuada">Recuperación de clase efectuada</option>
-                                    <option value="__OTRO__">Otro motivo (especificar abajo)...</option>
-                                </select>
-                                <input type="text" x-show="motivoR === '__OTRO__'" x-model="otroR" placeholder="Describe el motivo de la regularización..."
-                                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 mt-2">
                             </div>
 
                             <!-- Observaciones -->
@@ -634,10 +789,10 @@
                                 <span>Cancelar</span>
                             </button>
                             <button type="button" x-on:click="confirmar()"
-                                    :class="tipo === 'justificar' ? 'bg-slate-800 hover:bg-slate-900' : 'bg-indigo-600 hover:bg-indigo-700'"
+                                    :class="estados[tipo].btnClass"
                                     class="inline-flex items-center justify-center px-4 py-2 text-white text-sm font-semibold rounded-md shadow-sm transition-all duration-150 gap-2 cursor-pointer">
                                 <i class="fas fa-check"></i>
-                                <span x-text="(tipo === 'justificar' ? 'Justificar ' : 'Registrar ') + cantidad + (cantidad === 1 ? ' Clase' : ' Clases')"></span>
+                                <span x-text="estados[tipo].btnTexto + ' (' + cantidad + (cantidad === 1 ? ' Clase)' : ' Clases)')"></span>
                             </button>
                         </div>
                     </div>
@@ -665,7 +820,7 @@ function initClasesNoRealizadasScripts() {
         const clase = data[0];
         
         Swal.fire({
-            title: '<strong>Editar Clase No Registrada</strong>',
+            title: '<strong>Editar Estado de Clase</strong>',
             html: `
                 <div class="text-left space-y-4">
                     <div class="bg-gray-50 p-3 rounded-lg mb-4">
@@ -683,11 +838,13 @@ function initClasesNoRealizadasScripts() {
                             <option value="realizada" ${clase.estado === 'realizada' || clase.estado === 'registrada' ? 'selected' : ''}>Registrada (Docente realizó la clase)</option>
                             <option value="pendiente" ${clase.estado === 'pendiente' ? 'selected' : ''}>Pendiente de recuperación</option>
                             <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado</option>
+                            <option value="recuperada" ${clase.estado === 'recuperada' ? 'selected' : ''}>Recuperada</option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
                             <strong>Registrada:</strong> Docente dictó la clase (asistencia regularizada)<br>
                             <strong>Pendiente:</strong> Clase reagendada esperando recuperación<br>
-                            <strong>Justificado:</strong> Clase justificada
+                            <strong>Justificado:</strong> Clase justificada<br>
+                            <strong>Recuperada:</strong> Recuperación confirmada
                         </p>
                     </div>
                     

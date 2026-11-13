@@ -642,6 +642,7 @@ class TodasClasesService
                             $numModulo
                         );
 
+                        $estadoOverrideManual = false;
                         if ($matchReserva) {
                             $reserva = $matchReserva['reserva'];
                             $reservasUsadasIds[$reserva->id_reserva] = true;
@@ -672,8 +673,15 @@ class TodasClasesService
                             );
                             if ($infoCnrMatch) {
                                 if ($infoCnrMatch['tipo'] === 'cnr') {
-                                    $claseId = $infoCnrMatch['registro']->id;
+                                    $cnrReg = $infoCnrMatch['registro'];
+                                    $claseId = $cnrReg->id;
                                     $clasesNoRealizadasUsadasIds[$claseId] = true;
+                                    if ($this->esOverrideManualCnr($cnrReg)) {
+                                        $estadoStr = $this->transformEstado($cnrReg->estado);
+                                        $motivo = $cnrReg->motivo ?: $motivo;
+                                        $observaciones = $cnrReg->observaciones ?: $observaciones;
+                                        $estadoOverrideManual = true;
+                                    }
                                 } else {
                                     $recuperacionesUsadasIds[$infoCnrMatch['registro']->id_recuperacion] = true;
                                     if (!empty($infoCnrMatch['registro']->id_clase_no_realizada)) {
@@ -712,6 +720,7 @@ class TodasClasesService
                                     }
                                     $motivo = $claseNoRealizada->motivo;
                                     $observaciones = $claseNoRealizada->observaciones;
+                                    $estadoOverrideManual = $this->esOverrideManualCnr($claseNoRealizada);
                                 } elseif ($infoCnrMatch['tipo'] === 'rec_original') {
                                     $rc = $infoCnrMatch['registro'];
                                     $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
@@ -749,7 +758,7 @@ class TodasClasesService
                         }
 
                         // Respaldo por lista de asistencia del Portal Docente o Espacio Externo (Gimnasio UdeC / Pista Atlética)
-                        if ($estadoStr === 'Planificada' || $estadoStr === 'No Registrada') {
+                        if (!$estadoOverrideManual && ($estadoStr === 'Planificada' || $estadoStr === 'No Registrada')) {
                             $sesionAsist = ($planificacion->id_asignatura && isset($this->sesionesAsistenciaCache["{$fechaStr}_asig_{$planificacion->id_asignatura}"]))
                                 ? $this->sesionesAsistenciaCache["{$fechaStr}_asig_{$planificacion->id_asignatura}"]
                                 : ($this->sesionesAsistenciaCache["{$fechaStr}_run_{$runProfesor}"] ?? null);
@@ -1093,6 +1102,7 @@ class TodasClasesService
                             $numModulo
                         );
 
+                        $estadoOverrideManual = false;
                         if ($matchReserva) {
                             $reserva = $matchReserva['reserva'];
                             $reservasUsadasIds[$reserva->id_reserva] = true;
@@ -1123,8 +1133,15 @@ class TodasClasesService
                             );
                             if ($infoCnrMatch) {
                                 if ($infoCnrMatch['tipo'] === 'cnr') {
-                                    $claseId = $infoCnrMatch['registro']->id;
+                                    $cnrReg = $infoCnrMatch['registro'];
+                                    $claseId = $cnrReg->id;
                                     $clasesNoRealizadasUsadasIds[$claseId] = true;
+                                    if ($this->esOverrideManualCnr($cnrReg)) {
+                                        $estadoStr = $this->transformEstado($cnrReg->estado);
+                                        $motivo = $cnrReg->motivo ?: $motivo;
+                                        $observaciones = $cnrReg->observaciones ?: $observaciones;
+                                        $estadoOverrideManual = true;
+                                    }
                                 } else {
                                     $recuperacionesUsadasIds[$infoCnrMatch['registro']->id_recuperacion] = true;
                                     if (!empty($infoCnrMatch['registro']->id_clase_no_realizada)) {
@@ -1163,6 +1180,7 @@ class TodasClasesService
                                     }
                                     $motivo = $claseNoRealizada->motivo;
                                     $observaciones = $claseNoRealizada->observaciones;
+                                    $estadoOverrideManual = $this->esOverrideManualCnr($claseNoRealizada);
                                 } elseif ($infoCnrMatch['tipo'] === 'rec_original') {
                                     $rc = $infoCnrMatch['registro'];
                                     $recuperacionesUsadasIds[$rc->id_recuperacion] = true;
@@ -1200,7 +1218,7 @@ class TodasClasesService
                         }
 
                         // Respaldo por lista de asistencia del Portal Docente o Espacio Externo
-                        if ($estadoStr === 'Planificada' || $estadoStr === 'No Registrada') {
+                        if (!$estadoOverrideManual && ($estadoStr === 'Planificada' || $estadoStr === 'No Registrada')) {
                             $sesionAsist = $this->sesionesAsistenciaCache["{$fechaStr}_colab_{$colab->id}"]
                                 ?? ($idAsignatura ? ($this->sesionesAsistenciaCache["{$fechaStr}_asig_{$idAsignatura}"] ?? null) : null)
                                 ?? ($this->sesionesAsistenciaCache["{$fechaStr}_run_{$runProfesor}"] ?? null);
@@ -2296,6 +2314,25 @@ class TodasClasesService
             }
         }
 
+        return false;
+    }
+
+    private function esOverrideManualCnr($cnrReg): bool
+    {
+        if (!$cnrReg) {
+            return false;
+        }
+        if (in_array($cnrReg->estado, ['justificado', 'pendiente', 'recuperada'], true)) {
+            return true;
+        }
+        if ($cnrReg->estado === 'no_realizada') {
+            $motivo = (string) ($cnrReg->motivo ?? '');
+            $obs = (string) ($cnrReg->observaciones ?? '');
+            return str_contains($obs, 'Cambio Masivo')
+                || str_contains($motivo, 'manual')
+                || str_contains($motivo, 'Reversión')
+                || str_contains($motivo, 'erróneo');
+        }
         return false;
     }
 

@@ -936,6 +936,61 @@
             return fallbackSwal;
         }
 
+        // =========================================================================
+        // CONTACTO PARA RESERVAS ESPONTÁNEAS EN PLANO DIGITAL
+        // -------------------------------------------------------------------------
+        // Cambia el valor entre comillas si cambia el cargo o nombre de la persona
+        // encargada de autorizar y gestionar las reservas espontáneas.
+        // =========================================================================
+        const CONTACTO_RESERVAS_ESPONTANEAS = 'Asistente administrativa';
+
+        function mostrarMensajeReservaEspontaneaDeshabilitada({
+            titulo = 'Reserva espontánea no disponible',
+            detalleSuperiorHtml = '',
+            motivoTexto = 'No es posible realizar reservas espontáneas desde el Plano Digital.',
+            icono = 'warning'
+        } = {}) {
+            ensureSwalAvailable();
+            detenerWatchdog();
+
+            if (typeof cerrarModalEsperaLlaves === 'function') {
+                cerrarModalEsperaLlaves(false);
+            }
+
+            if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+                Swal.hideLoading();
+                Swal.close();
+            }
+
+            const htmlContenido = `
+                <div class="text-left">
+                    ${detalleSuperiorHtml}
+                    <p class="mb-3 text-gray-700">${motivoTexto}</p>
+                    <p class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded text-sm text-gray-800">
+                        Para solicitar una reserva espontánea, por favor comuníquese con:
+                        <strong class="block mt-1 text-base text-gray-900">${CONTACTO_RESERVAS_ESPONTANEAS}</strong>
+                    </p>
+                </div>
+            `;
+
+            const finalizarFlujo = () => {
+                limpiarEstadoLectura();
+                ordenEscaneo = 'usuario';
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            };
+
+            return mostrarAlertaFlujo({
+                title: titulo,
+                text: `${motivoTexto} Para solicitarla, comuníquese con: ${CONTACTO_RESERVAS_ESPONTANEAS}.`,
+                html: htmlContenido,
+                icon: icono,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#D12420'
+            }, finalizarFlujo);
+        }
+
         let qrDiagCount = 0;
         function getQrApiHeaders(extra = {}) {
             const headers = { ...extra };
@@ -2128,17 +2183,10 @@
                     cerrarModalEsperaLlaves(false);
                     
                     if (result.tipo_usuario === 'solicitante_nuevo') {
-                        // Flujo de registro de nuevo solicitante
-                        runSolicitantePendiente = run;
-                        const runElem = document.getElementById('run-solicitante-no-registrado');
-                        if (runElem) runElem.textContent = run;
-                        
                         window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
-                        
-                        setTimeout(() => {
-                            if (qrInputManager) qrInputManager.desactivarTodosLosInputs();
-                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'registro-solicitante' }));
-                        }, 300);
+                        await mostrarMensajeReservaEspontaneaDeshabilitada({
+                            motivoTexto: 'No es posible registrar usuarios ni realizar reservas espontáneas desde el Plano Digital.'
+                        });
                     } else {
                         limpiarEstadoLectura(result.mensaje || 'Usuario no autorizado');
                     }
@@ -2254,16 +2302,18 @@
                         });
                     }
                 } else {
-                    // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
-                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
-                    detenerWatchdog();
-                    return; // No continuar, esperar selección de módulos
+                    // CASO 2: Profesor SIN clase programada ni recuperativa en este espacio
+                    await mostrarMensajeReservaEspontaneaDeshabilitada({
+                        motivoTexto: 'No tienes una clase programada en este espacio. No es posible realizar reservas espontáneas desde el Plano Digital.'
+                    });
+                    return;
                 }
             } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
-                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
-                detenerWatchdog();
-                return; // No continuar, esperar selección de módulos
+                // CASO 3: Solicitante registrado sin reserva programada previa
+                await mostrarMensajeReservaEspontaneaDeshabilitada({
+                    motivoTexto: 'No cuentas con una reserva programada para este espacio. No es posible realizar reservas espontáneas desde el Plano Digital.'
+                });
+                return;
             } else {
                 finalizarFlujoVisualPlano(espacio, null);
                 mostrarAlertaFlujo({
@@ -2692,51 +2742,25 @@
             }
 
             if (resultadoVerificacion.tipo === 'clase_programada_otro_docente') {
-                // Cerrar el modal de espera de llaves inmediatamente
-                cerrarModalEsperaLlaves(false);
-                Swal.close();
-
                 const clase = resultadoVerificacion.clase || {};
                 const docenteNombre = clase.docente || 'Docente programado';
                 const asignaturaNombre = clase.asignatura || 'Clase regular';
                 const horarioStr = (clase.hora_inicio && clase.hora_termino) ? `${clase.hora_inicio} - ${clase.hora_termino}` : 'Horario programado';
 
-                Swal.fire({
-                    title: 'Clase Programada',
-                    html: `
-                        <div class="text-left">
-                            <p class="mb-4 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario.</p>
-                            <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
-                                <p><strong>Docente:</strong> ${docenteNombre}</p>
-                                <p><strong>Asignatura:</strong> ${asignaturaNombre}</p>
-                                <p><strong>Horario:</strong> ${horarioStr}</p>
-                            </div>
-                            <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
-                        </div>
-                    `,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, Reservar Espacio',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#D12420',
-                    cancelButtonColor: '#8D8D8D',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        // Proceder con la reserva
-                        await continuarReserva(usuarioEscaneado, espacio);
-                    } else {
-                        // Cancelado - resetear
-                        limpiarEstadoLectura();
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                        ordenEscaneo = 'usuario';
-                    }
-                });
+                const detalleClaseHtml = `
+                    <p class="mb-3 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario y el docente aún no ha asistido.</p>
+                    <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                        <p><strong>Docente:</strong> ${docenteNombre}</p>
+                        <p><strong>Asignatura:</strong> ${asignaturaNombre}</p>
+                        <p><strong>Horario:</strong> ${horarioStr}</p>
+                    </div>
+                `;
 
-                detenerWatchdog();
+                await mostrarMensajeReservaEspontaneaDeshabilitada({
+                    titulo: 'Clase Programada en este Horario',
+                    detalleSuperiorHtml: detalleClaseHtml,
+                    motivoTexto: 'No es posible realizar reservas espontáneas para ocupar este espacio desde el Plano Digital.'
+                });
                 return;
             }
 
@@ -5683,6 +5707,9 @@
         }
 
         async function mostrarModalSeleccionarModulos(idEspacio, run) {
+            // Bloqueo de seguridad: las reservas espontáneas están deshabilitadas en el Plano Digital.
+            return await mostrarMensajeReservaEspontaneaDeshabilitada();
+
             Swal.close();
             const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
 
