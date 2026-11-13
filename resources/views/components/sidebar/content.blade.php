@@ -73,7 +73,7 @@
             </x-slot>
         </x-sidebar.link>
 
-        @if(auth()->user()?->is_superuser || auth()->user()?->hasRole(['Super Admin', 'Administrador']))
+        @if($esSuperAdmin)
             <x-sidebar.link title="Carga de Estudiantes" href="{{ route('estudiantes.carga-masiva.index') }}" :isActive="request()->routeIs('estudiantes.carga-masiva.*')">
                 <x-slot name="icon">
                     <i class="flex-shrink-0 w-6 h-6 text-center text-lg fa-solid fa-users-rectangle" aria-hidden="true"></i>

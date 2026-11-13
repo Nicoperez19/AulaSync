@@ -1778,6 +1778,8 @@ class PlanoDigitalController extends Controller
                 ->latest('updated_at')
                 ->first();
 
+            $autoFinalizadaEnEsteEscaneo = false;
+
             // Si el usuario tiene una reserva activa en este espacio, verificar si corresponde a un bloque/módulo anterior
             // que ya finalizó y el docente tiene una nueva clase programada inmediatamente (ej. bloque consecutivo / nueva sección)
             if ($reservaActiva) {
@@ -1864,6 +1866,7 @@ class PlanoDigitalController extends Controller
                     $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Auto-finalizada al iniciar siguiente clase/sección programada');
                     $reservaActiva->save();
                     $reservaActiva = null;
+                    $autoFinalizadaEnEsteEscaneo = true;
 
                     if ($espacio->estado !== 'Disponible') {
                         $espacio->estado = 'Disponible';
@@ -1978,6 +1981,9 @@ class PlanoDigitalController extends Controller
                     ->first();
             }
 
+            // Evaluar confirmación idempotente de devolución recién después de verificar si el docente
+            // tiene una nueva clase/ramo iniciando ahora en este mismo espacio.
+            $debeConfirmarDevolucionReciente = false;
             if ($reservaFinalizadaHoyUsuario) {
                 $segundosDesdeCierre = $reservaFinalizadaHoyUsuario->updated_at
                     ? $reservaFinalizadaHoyUsuario->updated_at->diffInSeconds(now())
@@ -1985,26 +1991,8 @@ class PlanoDigitalController extends Controller
                 $espacioAtascadoOcupado = $espacio->estado !== 'Disponible'
                     && !Reserva::whereIn('id_espacio', $espaciosEquiv)->where('estado', 'activa')->exists();
 
-                // Solo tratar como confirmación idempotente de devolución si se cerró recién (<= 3 min)
-                // o si la sala quedó pegada en Ocupado sin otra reserva activa.
-                // Si cerró hace más tiempo y el espacio está Disponible, permitir continuar hacia un nuevo bloque/reserva.
-                if ($segundosDesdeCierre <= 180 || $espacioAtascadoOcupado) {
-                    if ($espacio->estado !== 'Disponible') {
-                        $espacio->estado = 'Disponible';
-                        $espacio->save();
-                    }
-
-                    return response()->json([
-                        'tipo' => 'devolucion',
-                        'id_espacio' => $espacio->id_espacio,
-                        'mensaje' => 'Devolución de llave confirmada exitosamente. El espacio se encuentra disponible.',
-                        'espacio_disponible' => true,
-                        'reserva' => [
-                            'id_reserva' => $reservaFinalizadaHoyUsuario->id_reserva,
-                            'hora_salida' => $reservaFinalizadaHoyUsuario->hora_salida ?? now()->format('H:i:s'),
-                            'espacio' => $espacio->nombre_espacio
-                        ]
-                    ]);
+                if ($autoFinalizadaEnEsteEscaneo || $segundosDesdeCierre <= 180 || $espacioAtascadoOcupado) {
+                    $debeConfirmarDevolucionReciente = true;
                 }
             }
 
@@ -2261,6 +2249,28 @@ class PlanoDigitalController extends Controller
                         }
                     }
                 }
+            }
+
+            // Si se cerró una reserva recién (o se auto-finalizó en este escaneo) y NO hay un nuevo ramo/bloque pendiente por iniciar,
+            // confirmar la devolución de forma idempotente; si sí hay un nuevo ramo por iniciar (y no fue auto-finalizada en este mismo escaneo),
+            // permitir continuar para registrar la nueva clase.
+            if ($debeConfirmarDevolucionReciente && ($autoFinalizadaEnEsteEscaneo || !$tieneClaseAhora || $reservaFinalizadaHoy !== null)) {
+                if ($espacio->estado !== 'Disponible') {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                }
+
+                return response()->json([
+                    'tipo' => 'devolucion',
+                    'id_espacio' => $espacio->id_espacio,
+                    'mensaje' => 'Devolución de llave confirmada exitosamente. El espacio se encuentra disponible.',
+                    'espacio_disponible' => true,
+                    'reserva' => [
+                        'id_reserva' => $reservaFinalizadaHoyUsuario->id_reserva,
+                        'hora_salida' => $reservaFinalizadaHoyUsuario->hora_salida ?? now()->format('H:i:s'),
+                        'espacio' => $espacio->nombre_espacio
+                    ]
+                ]);
             }
 
             // Si el docente tiene clase oficial en este bloque pero ya la finalizó hoy, no permitir reabrirla automáticamente
