@@ -1,4 +1,4 @@
-<!-- Fila de 2 Columnas con la misma distribución de espacio (50% / 50%) -->
+﻿<!-- Fila de 2 Columnas con la misma distribución de espacio (50% / 50%) -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
     <!-- COLUMNA IZQUIERDA: Estado General de Clases con su Período y Filtros -->
     <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-5 flex flex-col justify-between">
@@ -232,47 +232,8 @@
 </div>
 
 <script>
-    if (typeof window.irAControlDocente !== 'function') {
-        window.irAControlDocente = function(estado) {
-            const inicio = document.getElementById('status-fecha-inicio')?.value || '';
-            const fin = document.getElementById('status-fecha-fin')?.value || '';
-            const baseUrl = "{{ route('clases-no-realizadas.index') }}";
-            const params = new URLSearchParams();
-            if (estado) params.set('estado', estado);
-            if (inicio) params.set('fecha_inicio', inicio);
-            if (fin) params.set('fecha_fin', fin);
-            const query = params.toString();
-            window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
-        };
-    }
-
-    if (typeof window.irAControlDocentePorEscuela !== 'function') {
-        window.irAControlDocentePorEscuela = function(escuela, estado = '') {
-            const inicio = document.getElementById('status-fecha-inicio')?.value || '';
-            const fin = document.getElementById('status-fecha-fin')?.value || '';
-            const baseUrl = "{{ route('clases-no-realizadas.index') }}";
-            const params = new URLSearchParams();
-            if (escuela) params.set('escuela', escuela);
-            if (estado) params.set('estado', estado);
-            if (inicio) params.set('fecha_inicio', inicio);
-            if (fin) params.set('fecha_fin', fin);
-            const query = params.toString();
-            window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
-        };
-    }
-
-    if (typeof window.irAControlDocenteConBusqueda !== 'function') {
-        window.irAControlDocenteConBusqueda = function(search, estado = '') {
-            const inicio = document.getElementById('status-fecha-inicio')?.value || '';
-            const fin = document.getElementById('status-fecha-fin')?.value || '';
-            const baseUrl = "{{ route('clases-no-realizadas.index') }}";
-            const params = new URLSearchParams();
-            if (search) params.set('search', search);
-            if (estado) params.set('estado', estado);
-            if (inicio) params.set('fecha_inicio', inicio);
-            if (fin) params.set('fecha_fin', fin);
-            const query = params.toString();
-            window.location.href = query ? `${baseUrl}?${query}` : baseUrl;
-        };
-    }
+window.StatusClasesChartConfig = {
+    clasesNoRealizadasUrl: "{{ route('clases-no-realizadas.index') }}"
+};
 </script>
+@vite(['resources/js/views/partials/dashboard/status_clases_chart.js'])

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 class="text-xl font-semibold leading-tight">
@@ -48,7 +48,7 @@
                     @endforeach
 
                     <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                        {{ $sede->universidad->nombre_universidad }}
+                        {{ $sede->universidad?->nombre_universidad }}
                     </p>
 
                     <a href="{{ route('plano.show', $primerMapa->id_mapa) }}"
@@ -63,29 +63,10 @@
         @endif
     </div>
 
-    <script>
-        function mostrarSweetAlertNoMapas() {
-            Swal.fire({
-                title: 'No hay mapas disponibles',
-                html: `
-                    <div class="text-center">
-                        <p class="mb-4">No se han encontrado mapas digitales en el sistema.</p>
-                        <p class="text-sm text-gray-600">Por favor póngase en contacto con el administrador del sistema.</p>
-                    </div>
-                `,
-                icon: 'warning',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#D12420'
-            });
-        }
-
-        // Mostrar SweetAlert automáticamente si no hay mapas
-        @if(!$tieneMapas)
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                mostrarSweetAlertNoMapas();
-            }, 500);
-        });
-        @endif
-    </script>
+<script>
+window.PlanoDigitalIndexConfig = {
+    tieneMapas: @json((bool) $tieneMapas)
+};
+</script>
+@vite(['resources/js/views/plano-digital/index.js'])
 </x-app-layout>

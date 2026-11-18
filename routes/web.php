@@ -12,10 +12,8 @@ use App\Http\Controllers\DiaFeriadoController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\HorariosController;
-use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OcupacionHistoricoController;
 use App\Http\Controllers\AuditoriaClaseController;
 use App\Http\Controllers\PermissionController;
@@ -25,7 +23,6 @@ use App\Http\Controllers\ProfesorColaboradorController;
 use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QuickActionsController;
-use App\Http\Controllers\RecuperacionClaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\RoleController;
@@ -37,7 +34,6 @@ use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VisitanteController;
 use Illuminate\Support\Facades\Route;
-use Spatie\Permission\Middleware\RoleMiddleware;
 
 /*
  * |--------------------------------------------------------------------------
@@ -186,13 +182,6 @@ Route::middleware(['auth', 'permission:horarios profesores'])->group(function ()
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
-    Route::get('/horarios/{run}/export-pdf', [HorariosController::class, 'exportHorarioProfesorPDF'])->name('horarios.export-pdf');
-
-    // Rutas con tiempo de ejecución extendido para el módulo de visualización (dentro del auth)
-    Route::middleware(['extend.execution:180'])->group(function () {
-        // Estas rutas permanecen autenticadas para funcionalidad completa
-        // La ruta pública se define más abajo
-    });
 
     // Autocomplete de usuarios (email)
     Route::get('/api/usuarios/autocomplete', [UserController::class, 'autocomplete'])->name('usuarios.autocomplete');
@@ -344,7 +333,6 @@ Route::group(['middleware' => ['permission:mantenedor de profesores']], function
 Route::group(['middleware' => ['permission:mantenedor de visitantes']], function () {
     Route::get('/visitantes', [VisitanteController::class, 'index'])->name('visitantes.index');
     Route::post('/visitantes', [VisitanteController::class, 'store'])->name('visitantes.add');
-    Route::get('/visitantes/{id}/edit', [VisitanteController::class, 'edit'])->name('visitantes.edit');
     Route::put('/visitantes/{id}', [VisitanteController::class, 'update'])->name('visitantes.update');
     Route::delete('/visitantes/{id}', [VisitanteController::class, 'destroy'])->name('visitantes.delete');
 });
@@ -362,9 +350,6 @@ Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], funct
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/mapas/{id}/edit', [MapasController::class, 'edit'])->name('mapas.edit');
     Route::put('/mapas/{id}', [MapasController::class, 'update'])->name('mapas.update');
-    Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
-    Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
-    Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
     Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
     Route::get('/espacios-por-facultad/{facultadId}', [MapasController::class, 'getEspaciosPorFacultad']);
     Route::get('/mapa/{mapa}/bloques', [MapasController::class, 'getBloques'])->name('mapa.bloques');
@@ -450,7 +435,6 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'role_or_permission:Ad
 Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('tipo-espacio', [ReportController::class, 'tipoEspacio'])->name('reportes.tipo-espacio');
     Route::get('tipo-espacio/datos-historicos', [ReportController::class, 'getHistoricoTipoEspacio'])->name('reportes.tipo-espacio.historico');
-    Route::get('tipo-espacio/debug-planificacion', [ReportController::class, 'debugPlanificacion'])->name('reportes.tipo-espacio.debug');
     Route::get('tipo-espacio/export/{format}', [ReportController::class, 'exportTipoEspacio'])->name('reportes.tipo-espacio.export');
     Route::get('espacios', [ReportController::class, 'espacios'])->name('reportes.espacios');
     Route::get('accesos', [ReportController::class, 'accesos'])->name('reportes.accesos');
@@ -466,7 +450,6 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
 
     // Reporte de Uso del Auditorio
     Route::get('uso-auditorio', [ReportController::class, 'usoAuditorio'])->name('reportes.uso-auditorio');
-    Route::get('uso-auditorio/datos-historicos', [ReportController::class, 'getHistoricoAuditorio'])->name('reportes.uso-auditorio.historico');
     Route::get('uso-auditorio/export/{format}', [ReportController::class, 'exportUsoAuditorio'])->name('reportes.uso-auditorio.export');
 
     // Histórico de Ocupación Semanal
@@ -521,25 +504,18 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     // API para crear reserva
     Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
 
-    // API para obtener reservas
-    Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
-
     // API para cambiar estado de espacio
-    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('quick-actions.api.cambiar-estado-espacio');
+    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
 
     // API para cambiar estado de reserva
-    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
+    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 
     // API para cancelar/eliminar definitivamente una reserva
-    Route::delete('/api/reserva/{id}', [QuickActionsController::class, 'eliminarReserva'])->name('quick-actions.api.eliminar-reserva');
+    Route::delete('/api/reserva/{id}', [QuickActionsController::class, 'eliminarReserva'])->name('api.eliminar-reserva');
 
     // Ruta para editar reserva
     Route::get('/editar-reserva/{id}', [QuickActionsController::class, 'editarReserva'])->name('editar-reserva');
     Route::put('/api/reserva/{id}', [QuickActionsController::class, 'actualizarReserva'])->name('api.actualizar-reserva');
-
-    // Debug para verificar estructura de personas
-    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
-    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 });
 
 // Ruta para obtener el token CSRF

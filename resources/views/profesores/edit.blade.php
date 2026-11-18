@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -263,28 +263,5 @@
         @endif
     @endif
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('edit-professor-form');
-            
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                Swal.fire({
-                    title: '¿Seguro de guardar los cambios?',
-                    text: "Estás a punto de actualizar la información del profesor.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#10B981',
-                    cancelButtonColor: '#8D8D8D',
-                    confirmButtonText: 'Sí, guardar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
-        });
-    </script>
-</x-app-layout> 
+@vite(['resources/js/views/profesores/edit.js'])
+</x-app-layout>

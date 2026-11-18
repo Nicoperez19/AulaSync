@@ -428,28 +428,6 @@ class MapasController extends Controller
         }
     }
 
-    public function getBloquesPorMapa($mapaId)
-    {
-        try {
-
-
-            $bloques = Bloque::with('espacio')
-                ->where('id_mapa', $mapaId)
-                ->get();
-
-
-
-            return response()->json($bloques);
-        } catch (\Exception $e) {
-            Log::error('Error al obtener bloques:', [
-                'mapa_id' => $mapaId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json(['error' => 'Error al obtener los bloques: ' . $e->getMessage()], 500);
-        }
-    }
-
     public function getBloques($mapaId)
     {
         try {
@@ -466,27 +444,6 @@ class MapasController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json(['error' => 'Error al obtener los bloques: ' . $e->getMessage()], 500);
-        }
-    }
-
-    public function updateEstadoBloque(Request $request, $bloqueId)
-    {
-        try {
-            $request->validate([
-                'estado' => 'required|boolean'
-            ]);
-
-            $bloque = Bloque::findOrFail($bloqueId);
-            $bloque->estado = $request->estado;
-            $bloque->save();
-
-            return response()->json(['success' => true, 'bloque' => $bloque]);
-        } catch (\Exception $e) {
-            Log::error('Error al actualizar estado del bloque:', [
-                'bloque_id' => $bloqueId,
-                'error' => $e->getMessage()
-            ]);
-            return response()->json(['error' => 'Error al actualizar el estado del bloque'], 500);
         }
     }
 }

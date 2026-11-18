@@ -142,7 +142,7 @@
 
     <!-- Mantenedores - Solo Administrador (ordenados alfabéticamente) -->
     @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados', 'mantenedor de configuracion', 'mantenedor de escuelas', 'mantenedor de jefes de carrera', 'mantenedor de asistentes academicos'])
-        <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
+        <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()?->uri() ?? '', 'users')">
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
@@ -255,7 +255,7 @@
     @endcanany
 
     @role('Auxiliar')
-    <x-sidebar.dropdown title="Visualizador" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
+    <x-sidebar.dropdown title="Visualizador" :active="Str::startsWith(request()->route()?->uri() ?? '', 'universidades')">
         <x-slot name="icon">
             <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>

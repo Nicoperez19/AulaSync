@@ -23,23 +23,11 @@
                     <x-form.label for="clave" value="Clave" />
                     <x-form.input id="clave" name="clave" type="text" class="w-full bg-gray-100" value="{{ $configuracion->clave }}" readonly />
                     @if(str_starts_with($configuracion->clave, 'logo_institucional_'))
-                        @php
-                            $idSede = str_replace('logo_institucional_', '', $configuracion->clave);
-                            $sede = \App\Models\Sede::find($idSede);
-                        @endphp
-                        <p class="text-sm text-gray-600">Logo institucional de la sede: <strong>{{ $sede ? $sede->nombre_sede : $idSede }}</strong></p>
+                        <p class="text-sm text-gray-600">Logo institucional de la sede: <strong>{{ $sedeNombre }}</strong></p>
                     @elseif(str_starts_with($configuracion->clave, 'correo_administrativo_'))
-                        @php
-                            $idFacultad = str_replace('correo_administrativo_', '', $configuracion->clave);
-                            $facultad = \App\Models\Facultad::find($idFacultad);
-                        @endphp
-                        <p class="text-sm text-gray-600">Correo administrativo de la escuela: <strong>{{ $facultad ? $facultad->nombre_facultad : $idFacultad }}</strong></p>
+                        <p class="text-sm text-gray-600">Correo administrativo de la escuela: <strong>{{ $facultadNombre }}</strong></p>
                     @elseif(str_starts_with($configuracion->clave, 'nombre_remitente_'))
-                        @php
-                            $idFacultad = str_replace('nombre_remitente_', '', $configuracion->clave);
-                            $facultad = \App\Models\Facultad::find($idFacultad);
-                        @endphp
-                        <p class="text-sm text-gray-600">Nombre del remitente para la escuela: <strong>{{ $facultad ? $facultad->nombre_facultad : $idFacultad }}</strong></p>
+                        <p class="text-sm text-gray-600">Nombre del remitente para la escuela: <strong>{{ $facultadNombre }}</strong></p>
                     @endif
                 </div>
 
@@ -61,10 +49,6 @@
                         @enderror
                     </div>
                 @elseif(str_starts_with($configuracion->clave, 'correo_administrativo_'))
-                    @php
-                        $idFacultad = str_replace('correo_administrativo_', '', $configuracion->clave);
-                        $nombreRemitenteConfig = \App\Models\Configuracion::where('clave', "nombre_remitente_{$idFacultad}")->first();
-                    @endphp
                     <div class="space-y-2">
                         <x-form.label for="valor" value="Correo Electrónico *" />
                         <x-form.input id="valor" name="valor" type="email" class="w-full @error('valor') border-red-500 @enderror" value="{{ old('valor', $configuracion->valor) }}" required />
@@ -77,7 +61,7 @@
                     <div class="space-y-2">
                         <x-form.label for="nombre_remitente" value="Nombre del Remitente" />
                         <x-form.input id="nombre_remitente" name="nombre_remitente" type="text" class="w-full @error('nombre_remitente') border-red-500 @enderror" 
-                            value="{{ old('nombre_remitente', $nombreRemitenteConfig ? $nombreRemitenteConfig->valor : '') }}" />
+                            value="{{ old('nombre_remitente', $nombreRemitenteValor) }}" />
                         <p class="text-xs text-gray-500">Nombre que aparecerá como remitente en los correos</p>
                         @error('nombre_remitente')
                             <p class="text-sm text-red-600">{{ $message }}</p>

@@ -1,4 +1,4 @@
-<div>
+﻿<div>
     <!-- Card Filtros -->
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -290,25 +290,10 @@
         </div>
     @endif
 
-    <script>
-        // Escuchar eventos de Livewire
-        document.addEventListener('livewire:init', () => {
-            Livewire.on('modalClosed', () => {
-                // El modal se cerró, limpiar cualquier estado adicional si es necesario
-                console.log('Modal cerrado');
-            });
-            
-            // Cerrar modales con la tecla Escape
-            document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') {
-                    if (@json($mostrarModal)) {
-                        @this.call('cerrarModal');
-                    }
-                    if (@json($mostrarModalEliminar)) {
-                        @this.call('cerrarEliminarModal');
-                    }
-                }
-            });
-        });
-    </script>
+<script>
+window.MapasTableConfig = {
+    componentId: @json($this->getId())
+};
+</script>
+@vite(['resources/js/views/livewire/mapas-table.js'])
 </div>

@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -89,22 +89,5 @@
         </x-modal>
     </div>
 
-    <script>
-        function confirmDelete(id) {
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: "Esta acción no se puede deshacer",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#D12420',
-                cancelButtonColor: '#8D8D8D',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
-        }
-    </script>
+    
 </x-app-layout>

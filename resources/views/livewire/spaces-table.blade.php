@@ -1,4 +1,4 @@
-<div>
+﻿<div>
     <!-- Card Filtros -->
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -146,7 +146,7 @@
                                     <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST" class="inline-block" id="delete-form-{{ $espacio->id_espacio }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="button" onclick="confirmDelete('delete-form-{{ $espacio->id_espacio }}')"
+                                        <button type="button" onclick="confirmDeleteByFormId('delete-form-{{ $espacio->id_espacio }}')"
                                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
                                                 title="Eliminar espacio">
                                             <i class="fa-solid fa-trash text-xs"></i>
@@ -178,24 +178,3 @@
     </div>
 </div>
 
-<script>
-    function confirmDelete(formId) {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Esta acción no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#D12420',
-            cancelButtonColor: '#8D8D8D',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.getElementById(formId);
-                if (form) {
-                    form.submit();
-                }
-            }
-        });
-    }
-</script>

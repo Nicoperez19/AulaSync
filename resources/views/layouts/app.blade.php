@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
@@ -9,14 +9,6 @@
     <title>{{ config('app.name', 'SIA (Sistema de Información de Aulas)') }}</title>
 
     <!-- Supresión de logs en consola del navegador -->
-    <script>
-        (function() {
-            var noop = function() {};
-            window.console.log = noop;
-            window.console.debug = noop;
-            window.console.info = noop;
-        })();
-    </script>
 
     <!-- Livewire & Fuentes -->
     @livewireStyles

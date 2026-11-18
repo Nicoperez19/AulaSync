@@ -1301,12 +1301,4 @@ class ProfesorController extends Controller
             $tenant->makeCurrent();
         }
     }
-
-    /**
-     * Normalizar el ID del espacio usando el helper centralizado
-     */
-    private function normalizeEspacioId(?string $idEspacio): ?string
-    {
-        return !empty($idEspacio) ? \App\Helpers\EspacioAliasHelper::normalizar($idEspacio) : $idEspacio;
-    }
 }

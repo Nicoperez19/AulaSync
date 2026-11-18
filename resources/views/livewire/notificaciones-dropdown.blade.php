@@ -1,4 +1,4 @@
-<div class="relative" x-data="{ open: @entangle('mostrarDropdown') }">
+﻿<div class="relative" x-data="{ open: $wire.entangle('mostrarDropdown') }">
     <!-- Notification Bell Button -->
     <button 
         @click="open = !open"
@@ -131,8 +131,8 @@
 </div>
 
 <script>
-    // Actualizar notificaciones cada 2 minutos
-    setInterval(() => {
-        @this.call('cargarNotificaciones');
-    }, 120000);
+window.NotificacionesDropdownConfig = {
+    componentId: @json($this->getId())
+};
 </script>
+@vite(['resources/js/views/livewire/notificaciones-dropdown.js'])

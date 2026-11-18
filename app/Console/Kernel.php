@@ -43,6 +43,12 @@ class Kernel extends ConsoleKernel
             \App\Models\PeriodoAcademico::sincronizarEstadosSegunFechas();
         })->dailyAt('00:01')->name('sincronizar-periodo-academico');
 
+        // Desactivar profesores colaboradores cuya fecha_termino expiró
+        $schedule->command('profesores-colaboradores:desactivar-vencidos')
+                ->dailyAt('00:05')
+                ->withoutOverlapping()
+                ->runInBackground();
+
         // Verificar inconsistencias del sistema cada 30 minutos
         $schedule->command('sistema:verificar-estado')
                 ->everyThirtyMinutes()

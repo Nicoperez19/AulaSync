@@ -1,7 +1,12 @@
+﻿@php
+    $todosLosEspacios = $this->getTodosLosEspacios();
+    $totalEspacios = count($todosLosEspacios);
+    $totalPaginas = (int) ceil($totalEspacios / 13);
+@endphp
 <div class="p-6" x-data="{
         pagina: 0,
         paginaAnterior: -1,
-        totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13),
+        totalPaginas: {{ $totalPaginas }},
         transicionando: false
     }"
     x-init="
@@ -91,8 +96,7 @@
     @elseif (count($pisos) > 0)
 
         <div class="relative w-full bg-gray-100 rounded-lg shadow-sm border border-gray-300 overflow-hidden">
-            @if (count($this->getTodosLosEspacios()) > 0)
-                @php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); @endphp
+            @if ($totalEspacios > 0)
                 <table class="w-full table-fixed">
                     <colgroup>
                         <col style="width: 14%">
@@ -172,7 +176,7 @@
                                     <col style="width: 10%">
                                 </colgroup>
                                 <tbody class="divide-y divide-gray-200">
-                                @foreach (array_slice($this->getTodosLosEspacios(), $i * 13, 13) as $index => $espacio)
+                                @foreach (array_slice($todosLosEspacios, $i * 13, 13) as $index => $espacio)
                                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 h-10 border-b border-gray-200 transition-all duration-1000 ease-in-out">
                                         <!-- Columna 1: Modulo -->
                                             <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
@@ -503,42 +507,13 @@
 
     </div>
 
-    <script>
-        // Actualizar datos cada 15 segundos para mantenerlo sincronizado en tiempo real
-        setInterval(() => {
-            @this.actualizarAutomaticamente();
-        }, 15000); // 15 segundos
-
-        // [NUEVO] Escuchar cambios en localStorage para sincronizar entre pestañas
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'reserva_cambiada' || e.key === 'espacio_cambiado') {
-                console.log('🔄 Cambio detectado en localStorage, actualizando tablero...');
-                @this.actualizarDatos();
-            }
-        });
-
-        // Refresh completo de página cada hora para limpiar caché
-        setTimeout(function() {
-            location.reload();
-        }, 3600000); // 1 hora = 3600000 milisegundos
-
-        // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
-        document.addEventListener('livewire:load', function() {
-            Livewire.on('datosActualizados', function() {
-                window.dispatchEvent(new CustomEvent('actualizar-feriado', {
-                    detail: {
-                        esFeriado: {{ $esFeriado ? 'true' : 'false' }},
-                        nombreFeriado: '{{ $nombreFeriado }}'
-                    }
-                }));
-                
-                window.dispatchEvent(new CustomEvent('actualizar-periodo', {
-                    detail: {
-                        periodoNoIniciado: {{ $periodoNoIniciado ? 'true' : 'false' }},
-                        nombrePeriodo: '{{ $nombrePeriodo }}'
-                    }
-                }));
-            });
-        });
-    </script>
-</div>
+<script>
+window.ModulosActualesConfig = {
+    componentId: @json($this->getId()),
+    esFeriado: @json((bool) $esFeriado),
+    nombreFeriado: @json($nombreFeriado),
+    periodoNoIniciado: @json((bool) $periodoNoIniciado),
+    nombrePeriodo: @json($nombrePeriodo)
+};
+</script>
+@vite(['resources/js/views/livewire/modulos-actuales-table.js'])

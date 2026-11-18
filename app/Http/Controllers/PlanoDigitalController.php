@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionDevolucion;
-use App\Mail\ConfirmacionReserva;
 use App\Models\Asistencia;
 use App\Models\Espacio;
 use App\Models\Mapa;
@@ -21,9 +20,7 @@ use App\Models\Tenant;
 use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 use App\Traits\RunNormalizer;
@@ -316,7 +313,7 @@ class PlanoDigitalController extends Controller
 
         // [OPTIMIZACIÓN DE RENDIMIENTO] Pre-cargar todas las reservas y clases en UNA sola consulta
         // eliminando el problema N+1 que ralentizaba la actualización del plano digital
-        $reservasActivasMap = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
+        $reservasActivasMap = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante', 'user'])
             ->whereIn('id_espacio', $espacioIds)
             ->where('fecha_reserva', $fechaActual)
             ->whereIn('estado', ['activa', 'programada'])
@@ -333,10 +330,14 @@ class PlanoDigitalController extends Controller
         return $mapa->bloques->map(function ($bloque) use (
             $planificacionesActivas, $planificacionesProximas, $reservasProximas,
             $reservasFinalizadasAnticipadamente, $reservasActivasMap, $clasesNoRealizadasMap,
-            $mapa, $horaActualStr, $fechaActual, $moduloActual
+            $mapa, $horaActualStr, $moduloActual
         ) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
+
+            if (!$espacio) {
+                return null;
+            }
 
             // Obtener reservas pre-cargadas en memoria sin consultar la BD
             $reservasDelEspacio = $reservasActivasMap->get($idEspacio, collect());
@@ -441,15 +442,15 @@ class PlanoDigitalController extends Controller
                     }
                 }
 
-                // Verificar que la planificación próxima realmente esté en rango (validación EXTRA agresiva)
+                // Verificar que la planificación próxima realmente esté en rango (<= 10 min)
                 if ($planificacionProxima && isset($planificacionProxima->modulo->hora_inicio)) {
-                    // Calcular diferencia de minutos
                     $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActualStr);
                     $horaProximaCarbon = Carbon::createFromFormat('H:i:s', $planificacionProxima->modulo->hora_inicio);
-                    $diferencia = $horaProximaCarbon->diffInMinutes($horaActualCarbon, false);
+                    $diferencia = $horaActualCarbon->diffInMinutes($horaProximaCarbon, false);
 
-                    // Si la diferencia es > 10 min, NO es próxima, es futura
-
+                    if ($diferencia > 10) {
+                        $planificacionProxima = null;
+                    }
                 }
 
                 if ($planificacionActiva) {
@@ -476,17 +477,17 @@ class PlanoDigitalController extends Controller
                 'estado' => $estadoFinal,
                 'tipo' => $espacio->tipo_espacio,
                 'capacidad' => $espacio->capacidad_maxima,
-                'piso' => $mapa->piso->numero_piso,
+                'piso' => $mapa->piso?->numero_piso,
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
-                        $bloque->espacio,
+                        $espacio,
                         $planificacionActiva ?? null,
                         $reservaActiva ?? $reservaProgramada,  // Pasar la reserva (activa o programada)
                         $planificacionProxima ?? null
                     ),
                     [
                         'estado' => $espacio->estado,
-                        'facultad' => $mapa->piso->facultad->nombre_facultad,
+                        'facultad' => $mapa->piso?->facultad?->nombre_facultad,
                         'clase_sin_asistentes' => $claseSinAsistentesActiva,
                         'clases_no_realizadas' => $clasesNoRealizadasHoy,
                         'es_programada' => ($estadoFinal === 'Programado'),
@@ -494,7 +495,7 @@ class PlanoDigitalController extends Controller
                     ]
                 )
             ];
-        })->toArray();
+        })->filter()->values()->toArray();
     }
 
     private function obtenerModuloActual(array $estadoActual): ?Modulo
@@ -735,8 +736,9 @@ class PlanoDigitalController extends Controller
     public function getModuloActual(Request $request, $id)
     {
         try {
+            $this->establecerContextoTenant();
             $horaActual = $request->input('hora');
-            $diaActual = $request->input('dia');
+            $diaActual = ModulosHelper::normalizarDia((string) $request->input('dia'));
 
             $modulo = Modulo::where('dia', $diaActual)
                 ->where('hora_inicio', '<=', $horaActual)
@@ -759,6 +761,7 @@ class PlanoDigitalController extends Controller
 
     public function getPlanoData($id)
     {
+        $this->establecerContextoTenant();
         $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
         $estadoActual = $this->obtenerEstadoActual(Carbon::now());
         $bloques = $this->prepararBloques($mapa, $estadoActual);
@@ -769,9 +772,9 @@ class PlanoDigitalController extends Controller
                 'nombre' => $mapa->nombre_mapa,
                 'ruta_mapa' => asset('storage/' . $mapa->ruta_mapa),
                 'piso' => [
-                    'numero' => $mapa->piso->numero_piso,
-                    'facultad' => $mapa->piso->facultad->nombre_facultad,
-                    'sede' => $mapa->piso->facultad->sede->nombre_sede
+                    'numero' => $mapa->piso?->numero_piso,
+                    'facultad' => $mapa->piso?->facultad?->nombre_facultad,
+                    'sede' => $mapa->piso?->facultad?->sede?->nombre_sede
                 ]
             ],
             'bloques' => $bloques
@@ -790,6 +793,7 @@ class PlanoDigitalController extends Controller
         $resultado = \Illuminate\Support\Facades\Cache::remember($cacheKey, 20, function () {
             $horaActual = Carbon::now();
             $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+            $diasConsulta = array_unique([$diaActual, ModulosHelper::normalizarDia($diaActual)]);
             $horaActualStr = $horaActual->format('H:i:s');
             $fechaActual = $horaActual->toDateString();
 
@@ -804,8 +808,8 @@ class PlanoDigitalController extends Controller
                 ->whereHas('horario', function ($query) use ($periodo) {
                     $query->where('periodo', $periodo);
                 })
-                ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimite) {
-                    $query->where('dia', $diaActual)
+                ->whereHas('modulo', function ($query) use ($diasConsulta, $horaActualStr, $horaLimite) {
+                    $query->whereIn('dia', $diasConsulta)
                         ->where(function($q) use ($horaActualStr, $horaLimite) {
                             $q->where(function($q2) use ($horaActualStr) {
                                 $q2->where('hora_inicio', '<=', $horaActualStr)
@@ -820,8 +824,8 @@ class PlanoDigitalController extends Controller
                 ->get();
 
             $colaboradoresActivosYProximos = PlanificacionProfesorColaborador::with(['modulo', 'espacio', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
-                ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimite) {
-                    $query->where('dia', $diaActual)
+                ->whereHas('modulo', function ($query) use ($diasConsulta, $horaActualStr, $horaLimite) {
+                    $query->whereIn('dia', $diasConsulta)
                         ->where(function($q) use ($horaActualStr, $horaLimite) {
                             $q->where(function($q2) use ($horaActualStr) {
                                 $q2->where('hora_inicio', '<=', $horaActualStr)
@@ -977,8 +981,6 @@ class PlanoDigitalController extends Controller
                     }
                 } elseif ($tieneClaseSinAsistentes) {
                     $estado = 'Clase no registrada';
-                } elseif ($estadoTabla === 'Ocupado' && $tieneReservaActiva) {
-                    $estado = 'Ocupado';
                 } else {
                     $resProg = $reservasProgramadas->where('id_espacio', $espacio->id_espacio)->first();
                     $progEnFranja = false;
@@ -1206,6 +1208,7 @@ class PlanoDigitalController extends Controller
                 // Obtener hora actual y día
                 $horaActual = now()->format('H:i:s');
                 $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+                $diasConsulta = array_unique([$diaActual, ModulosHelper::normalizarDia($diaActual)]);
 
                 // Buscar planificaciones del profesor en este espacio para hoy en el período actual
                 $periodoActual = SemesterHelper::getCurrentPeriod();
@@ -1217,8 +1220,8 @@ class PlanoDigitalController extends Controller
                     ->whereHas('asignatura', function ($query) use ($reservaActiva) {
                         $query->where('run_profesor', $reservaActiva->run_profesor);
                     })
-                    ->whereHas('modulo', function ($query) use ($diaActual) {
-                        $query->where('dia', $diaActual);
+                    ->whereHas('modulo', function ($query) use ($diasConsulta) {
+                        $query->whereIn('dia', $diasConsulta);
                     })
                     ->orderBy('id_modulo')
                     ->get();
@@ -1318,13 +1321,6 @@ class PlanoDigitalController extends Controller
             // Cambiar el estado del espacio a disponible
             $espacio->estado = 'Disponible';
             $espacio->save();
-
-            // Registrar la devolución en un log
-            $mensajeLog = $tipoDesocupacion === 'forzosa'
-                ? "Espacio {$idEspacio} FORZOSAMENTE devuelto por administrador {$runAdministrador} - Usuario ocupante: {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}"
-                : "Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}";
-
-
 
             $mensajeRespuesta = $tipoDesocupacion === 'forzosa'
                 ? 'Espacio desocupado forzosamente por el administrador'
@@ -1540,6 +1536,7 @@ class PlanoDigitalController extends Controller
                 // Primero verificar si tiene planificación o reserva programada
                 $horaActual = now();
                 $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+                $diasConsulta = array_unique([$diaActual, ModulosHelper::normalizarDia($diaActual)]);
                 $horaActualStr = $horaActual->format('H:i:s');
 
                 $periodoActual = SemesterHelper::getCurrentPeriod();
@@ -1550,9 +1547,9 @@ class PlanoDigitalController extends Controller
                     ->whereHas('asignatura', function ($q) use ($runNuevo) {
                         $q->where('run_profesor', $runNuevo);
                     })
-                    ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaActual) {
+                    ->whereHas('modulo', function ($q) use ($diasConsulta, $horaActualStr, $horaActual) {
                         $q
-                            ->where('dia', $diaActual)
+                            ->whereIn('dia', $diasConsulta)
                             ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(15)->toTimeString())
                             ->where('hora_termino', '>=', $horaActualStr);
                     })
@@ -1711,7 +1708,9 @@ class PlanoDigitalController extends Controller
                     $espacio->save();
                 }
 
-
+                $this->limpiarCacheEstadosEspacios();
+                \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}");
+                \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}_time");
 
                 return response()->json([
                     'success' => true,
@@ -3048,17 +3047,6 @@ class PlanoDigitalController extends Controller
     }
 
     /**
-     * Crear reserva (método principal) - OBSOLETO, usar ProfesorController/SolicitanteController
-     */
-    public function crearReserva(Request $request)
-    {
-        return response()->json([
-            'success' => false,
-            'mensaje' => 'Este endpoint está en desuso y ha sido unificado en los controladores específicos.'
-        ], 410);
-    }
-
-    /**
      * Verificar clases programadas
      */
     public function verificarClasesProgramadas($run, $horaActual, $diaActual)
@@ -3301,267 +3289,6 @@ class PlanoDigitalController extends Controller
     }
 
     /**
-     * Busca un usuario (profesor o estudiante) por su código QR
-     */
-    public function buscarUsuarioPorQR($qr)
-    {
-        try {
-            // Primero buscar en profesores
-            $profesor = Profesor::where('run_profesor', $qr)->first();
-
-            if ($profesor) {
-                return response()->json([
-                    'success' => true,
-                    'tipo' => 'profesor',
-                    'nombre' => $profesor->name ?? $profesor->nombre_profesor,
-                    'run' => $profesor->run_profesor,
-                    'email' => $profesor->email ?? $profesor->email_profesor ?? null
-                ]);
-            }
-
-            // Si no es profesor, buscar en usuarios (estudiantes, etc.)
-            $usuario = \App\Models\User::where('run', $qr)->first();
-
-            if ($usuario) {
-                return response()->json([
-                    'success' => true,
-                    'tipo' => 'usuario',
-                    'nombre' => $usuario->name,
-                    'run' => $usuario->run,
-                    'email' => $usuario->email
-                ]);
-            }
-
-            // No encontrado
-            return response()->json([
-                'success' => false,
-                'message' => 'Usuario no encontrado'
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al buscar usuario'
-            ], 500);
-        }
-    }
-
-    /**
-     * Registra la asistencia de múltiples asistentes en una sala de estudio
-     */
-    public function registrarAsistenciaSalaEstudio(Request $request)
-    {
-        try {
-            // Asegurar contexto tenant para consultas/escrituras
-            $this->establecerContextoTenant();
-
-            $validated = $request->validate([
-                'espacio_id' => 'required|string|exists:tenant.espacios,id_espacio',
-                'asistentes' => 'required|array|min:1',
-                'asistentes.*.run' => 'required|string',
-                'asistentes.*.nombre' => 'required|string'
-            ]);
-
-            $espacioId = $validated['espacio_id'];
-            $asistentes = collect($validated['asistentes'])
-                ->map(function ($asistente) {
-                    return [
-                        'run' => preg_replace('/[^0-9kK]/', '', (string) $asistente['run']),
-                        'nombre' => trim((string) $asistente['nombre']),
-                    ];
-                })
-                ->filter(fn($a) => $a['run'] !== '' && $a['nombre'] !== '')
-                ->unique('run')
-                ->values();
-
-            if ($asistentes->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Debe registrar al menos un asistente válido'
-                ], 422);
-            }
-
-            // Verificar que el espacio sea una sala de estudio
-            $espacio = Espacio::where('id_espacio', $espacioId)->first();
-
-            if (!$espacio) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Espacio no encontrado'
-                ], 404);
-            }
-
-            if (strtolower($espacio->tipo_espacio) !== 'sala de estudio') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El espacio no es una sala de estudio'
-                ], 400);
-            }
-
-            // Verificar capacidad
-            if ($espacio->capacidad_maxima && $asistentes->count() > (int) $espacio->capacidad_maxima) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La cantidad de asistentes excede la capacidad máxima de la sala'
-                ], 400);
-            }
-
-            $ahora = Carbon::now();
-            $fechaActual = $ahora->toDateString();
-            $horaActual = $ahora->format('H:i:s');
-
-            $reserva = DB::transaction(function () use ($espacio, $espacioId, $asistentes, $fechaActual, $horaActual, $ahora) {
-                // Evitar múltiples reservas activas simultáneas en la misma sala de estudio
-                $reservaActiva = Reserva::where('id_espacio', $espacioId)
-                    ->whereDate('fecha_reserva', $fechaActual)
-                    ->where('estado', 'activa')
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($reservaActiva) {
-                    // Si vuelve a escanear el responsable, se interpreta como devolución/cierre de sala
-                    $runEscaneados = $asistentes->pluck('run')->values();
-                    if ($runEscaneados->contains((string) $reservaActiva->run_solicitante)) {
-                        $horaSalida = $ahora->format('H:i:s');
-
-                        $reservaActiva->estado = 'finalizada';
-                        $reservaActiva->hora_salida = $horaSalida;
-                        $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Sala de estudio finalizada por responsable');
-                        $reservaActiva->save();
-
-                        // Finalizar asistencias en curso de esa reserva
-                        Asistencia::where('id_reserva', $reservaActiva->id_reserva)
-                            ->where('estado', Asistencia::ESTADO_PRESENTE)
-                            ->update([
-                                'estado' => Asistencia::ESTADO_FINALIZADO,
-                                'hora_salida' => $horaSalida,
-                                'updated_at' => now(),
-                            ]);
-
-                        // Liberar espacio
-                        $espacio->estado = 'Disponible';
-                        if (!is_null($espacio->capacidad_maxima)) {
-                            $espacio->puestos_disponibles = (int) $espacio->capacidad_maxima;
-                        }
-                        $espacio->save();
-
-                        return [
-                            'accion' => 'devolucion',
-                            'reserva' => $reservaActiva,
-                            'run_responsable' => (string) $reservaActiva->run_solicitante,
-                        ];
-                    }
-
-                    throw new \RuntimeException('Ya existe una reserva activa en esta sala de estudio. Solo el responsable puede finalizarla escaneando nuevamente su carnet.');
-                }
-
-                // El primer carnet escaneado es el responsable de la reserva
-                $responsable = $asistentes->first();
-
-                $solicitanteResponsable = Solicitante::firstOrCreate(
-                    ['run_solicitante' => $responsable['run']],
-                    [
-                        'nombre' => $responsable['nombre'],
-                        'correo' => $responsable['run'] . '@temp.com',
-                        'telefono' => '000000000',
-                        'tipo_solicitante' => 'estudiante',
-                        'activo' => true,
-                        'fecha_registro' => now(),
-                    ]
-                );
-
-                // Crear reserva grupal (formato real de la tabla reservas)
-                $reservaNueva = new Reserva();
-                $reservaNueva->id_reserva = Reserva::generarIdUnico();
-                $reservaNueva->id_espacio = $espacioId;
-                $reservaNueva->run_solicitante = $solicitanteResponsable->run_solicitante;
-                $reservaNueva->fecha_reserva = $fechaActual;
-                $reservaNueva->hora = $horaActual;
-                $reservaNueva->hora_salida = $ahora->copy()->addHours(2)->format('H:i:s');
-                $reservaNueva->estado = 'activa';
-                $reservaNueva->tipo_reserva = 'espontanea';
-                $reservaNueva->observaciones = sprintf(
-                    'Sala de Estudio | Responsable: %s (%s) | Asistentes: %d',
-                    $responsable['nombre'],
-                    $responsable['run'],
-                    $asistentes->count()
-                );
-                $reservaNueva->save();
-                $this->enviarCorreoReserva($reservaNueva);
-
-                // Registrar asistencia de todos los escaneados (incluye responsable)
-                foreach ($asistentes as $asistente) {
-                    // Mantener solicitantes mínimos para trazabilidad de RUN/nombre
-                    Solicitante::firstOrCreate(
-                        ['run_solicitante' => $asistente['run']],
-                        [
-                            'nombre' => $asistente['nombre'],
-                            'correo' => $asistente['run'] . '@temp.com',
-                            'telefono' => '000000000',
-                            'tipo_solicitante' => 'estudiante',
-                            'activo' => true,
-                            'fecha_registro' => now(),
-                        ]
-                    );
-
-                    Asistencia::create([
-                        'id_reserva' => $reservaNueva->id_reserva,
-                        'id_espacio' => $espacioId,
-                        'rut_asistente' => $asistente['run'],
-                        'nombre_asistente' => $asistente['nombre'],
-                        'hora_llegada' => $horaActual,
-                        'tipo_entrada' => Asistencia::TIPO_ESPONTANEA,
-                        'estado' => Asistencia::ESTADO_PRESENTE,
-                        'observaciones' => $asistente['run'] === $responsable['run']
-                            ? 'Responsable de reserva de sala de estudio'
-                            : 'Asistente de sala de estudio',
-                    ]);
-                }
-
-                // Actualizar estado/cupos del espacio
-                $espacio->estado = 'Ocupado';
-                if (!is_null($espacio->capacidad_maxima)) {
-                    $espacio->puestos_disponibles = max(0, (int) $espacio->capacidad_maxima - $asistentes->count());
-                }
-                $espacio->save();
-
-                return [
-                    'accion' => 'registro',
-                    'reserva' => $reservaNueva,
-                    'run_responsable' => $responsable['run'] ?? null,
-                ];
-            });
-
-            $accion = $reserva['accion'] ?? 'registro';
-            $reservaResultado = $reserva['reserva'];
-            $runResponsable = $reserva['run_responsable'] ?? ($asistentes->first()['run'] ?? null);
-
-
-
-            return response()->json([
-                'success' => true,
-                'accion' => $accion,
-                'message' => $accion === 'devolucion'
-                    ? 'Sala de estudio devuelta exitosamente por el responsable'
-                    : 'Asistencia registrada exitosamente',
-                'reserva_id' => $reservaResultado->id_reserva,
-                'cantidad_asistentes' => $asistentes->count(),
-                'run_responsable' => $runResponsable
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al registrar asistencia: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
      * Obtener la información actual del espacio (ocupante) para desocupación
      * Este endpoint es llamado ANTES de desocupar, para obtener el RUN desde el servidor
      * Esto asegura que funcione correctamente en múltiples máquinas
@@ -3589,7 +3316,8 @@ class PlanoDigitalController extends Controller
             $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($idEspacio);
 
             // Obtener la reserva activa actual en este espacio
-            $reservaActiva = Reserva::whereIn('id_espacio', $espaciosEquiv)
+            $reservaActiva = Reserva::with(['profesor', 'solicitante', 'user'])
+                ->whereIn('id_espacio', $espaciosEquiv)
                 ->where('estado', 'activa')
                 ->where('fecha_reserva', Carbon::today())
                 ->first();
@@ -3604,13 +3332,17 @@ class PlanoDigitalController extends Controller
 
             // Retornar el RUN del ocupante actual (convertir a string para validación)
             $runOcupante = (string) ($reservaActiva->run_profesor ?? $reservaActiva->run_solicitante);
+            $nombreOcupante = $reservaActiva->profesor?->name
+                ?? $reservaActiva->solicitante?->nombre
+                ?? $reservaActiva->user?->name
+                ?? 'No especificado';
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'id_espacio' => $idEspacio,
                     'run_usuario' => $runOcupante,
-                    'nombre_ocupante' => $reservaActiva->nombre_usuario ?? 'No especificado',
+                    'nombre_ocupante' => $nombreOcupante,
                     'tipo_reserva' => $reservaActiva->tipo_reserva ?? 'normal'
                 ]
             ]);
@@ -3681,10 +3413,11 @@ class PlanoDigitalController extends Controller
             }
         }
 
-        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT-)
+        // 2. Detectar sede desde prefijo de id_espacio (CCP-, TH-, LA-, CH-, CT- y códigos compactos THL01/THAUD/THC1)
         $idEspacio = request('id_espacio') ?? request('espacio');
-        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)(?:[-_]|\d)/i', $idEspacio, $mPref)) {
-            $tenant = Tenant::where('sede_id', strtoupper($mPref[1]))->first();
+        if ($idEspacio && preg_match('/^(CCP|TH|LA|CH|CT)(?:[-_]|\d)|^(TH)(?:L\d+|AUD|C\d+)/i', $idEspacio, $mPref)) {
+            $prefijo = !empty($mPref[1]) ? $mPref[1] : $mPref[2];
+            $tenant = Tenant::where('sede_id', strtoupper($prefijo))->first();
             if ($tenant) {
                 $tenant->makeCurrent();
                 return;

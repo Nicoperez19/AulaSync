@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
@@ -8,14 +8,6 @@
 
     <title>{{ config('app.name', 'SIA (Sistema de Información de Aulas)') }}</title>
     <!-- Supresión de logs en consola del navegador -->
-    <script>
-        (function() {
-            var noop = function() {};
-            window.console.log = noop;
-            window.console.debug = noop;
-            window.console.info = noop;
-        })();
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
@@ -28,7 +20,6 @@
         rel="stylesheet">
     @livewireStyles
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://cdn.jsdelivr.net/npm/livewire-v2.11.0/livewire.js"></script>
 
 </head>
 

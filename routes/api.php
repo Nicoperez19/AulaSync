@@ -4,13 +4,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiReservaController;
 use App\Http\Controllers\Api\ProgramacionSemanalController;
-use App\Http\Controllers\ProfesorColaboradorController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\PlanoDigitalController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Docente\AsistenciaController;
 use App\Http\Controllers\SolicitanteController;
 use App\Http\Controllers\ProfesorController;
@@ -40,14 +38,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 Route::post('/docente/asistencia/registrar-qr', [AsistenciaController::class, 'registrarPorQr']);
-
-/*
-|--------------------------------------------------------------------------
-| Profesores Colaboradores y Clases Temporales
-|--------------------------------------------------------------------------
-*/
-Route::get('/clases-temporales/horarios-ocupados', [ProfesorColaboradorController::class, 'getHorariosOcupados']);
-Route::post('/clases-temporales/salas-disponibles', [ProfesorColaboradorController::class, 'getSalasDisponibles']);
 
 /*
 |--------------------------------------------------------------------------
@@ -119,9 +109,6 @@ Route::get('/espacio/{id}', function ($id) {
         ], 500);
     }
 });
-
-// Endpoint para consultar módulos disponibles para reserva en un espacio
-Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles']);
 
 // Endpoint para obtener asignaturas de un profesor en el día actual
 Route::get('/profesor/{run}/asignaturas-hoy', [EspacioController::class, 'getAsignaturasProfesorHoy']);

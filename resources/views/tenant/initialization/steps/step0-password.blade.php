@@ -1,4 +1,4 @@
-{{-- Step 0: Password Gate --}}
+﻿{{-- Step 0: Password Gate --}}
 <div class="p-8">
     <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
@@ -87,19 +87,4 @@
     </form>
 </div>
 
-<script>
-function togglePasswordVisibility() {
-    const passwordInput = document.getElementById('init_password');
-    const toggleIcon = document.getElementById('toggleIcon');
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleIcon.classList.remove('fa-eye');
-        toggleIcon.classList.add('fa-eye-slash');
-    } else {
-        passwordInput.type = 'password';
-        toggleIcon.classList.remove('fa-eye-slash');
-        toggleIcon.classList.add('fa-eye');
-    }
-}
-</script>
+@vite(['resources/js/views/tenant/initialization/steps/step0-password.js'])

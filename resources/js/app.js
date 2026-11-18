@@ -1,8 +1,13 @@
+﻿import './shared/crud-helpers'
+import './views/components/sweet-alert'
 import collapse from '@alpinejs/collapse'
 import focus from '@alpinejs/focus'
 import mask from '@alpinejs/mask'
 import PerfectScrollbar from 'perfect-scrollbar'
 import 'perfect-scrollbar/css/perfect-scrollbar.css'
+import Swal from 'sweetalert2'
+
+window.Swal = Swal
 
 document.addEventListener('alpine:init', () => {
     const Alpine = window.Alpine

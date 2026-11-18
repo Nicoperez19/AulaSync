@@ -1,4 +1,4 @@
-<div>
+﻿<div>
     <!-- Card Filtros -->
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -97,7 +97,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="button"
-                                                onclick="deleteEscuela('{{ $escuela->id_area_academica }}')"
+                                                onclick="confirmDeleteRecord('{{ $escuela->id_area_academica }}')"
                                                 class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-[#D12420] bg-red-50 hover:bg-[#D12420] hover:text-white rounded-lg border border-[#EDB9B9] transition-colors shadow-xs"
                                                 title="Eliminar escuela">
                                             <i class="fa-solid fa-trash text-xs"></i>
@@ -129,21 +129,3 @@
     </div>
 </div>
 
-<script>
-    function deleteEscuela(id) {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "Esta acción no se puede deshacer",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#D12420',
-            cancelButtonColor: '#8D8D8D',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + id).submit();
-            }
-        });
-    }
-</script>

@@ -1,4 +1,4 @@
-<x-guest-layout>
+﻿<x-guest-layout>
     <x-auth-card>
         <!-- Session Status -->
         <x-auth-session-status class="m-4" :status="session('status')" />
@@ -102,22 +102,5 @@
         </form>
     </x-auth-card>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const intendedUrl = localStorage.getItem('intended_url');
-            
-            if (intendedUrl) {
-                localStorage.removeItem('intended_url');
-                
-                const form = document.querySelector('form[action="{{ route("login") }}"]');
-                if (form) {
-                    const hiddenInput = document.createElement('input');
-                    hiddenInput.type = 'hidden';
-                    hiddenInput.name = 'intended_url';
-                    hiddenInput.value = intendedUrl;
-                    form.appendChild(hiddenInput);
-                }
-            }
-        });
-    </script>
+@vite(['resources/js/views/auth/login.js'])
 </x-guest-layout>

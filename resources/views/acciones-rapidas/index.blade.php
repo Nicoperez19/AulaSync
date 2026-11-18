@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -181,27 +181,10 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Cargar estadísticas
-    cargarEstadisticasRapidas();
-    
-    // Actualizar cada 30 segundos
-    setInterval(cargarEstadisticasRapidas, 30000);
-});
-
-function cargarEstadisticasRapidas() {
-    fetch('{{ route("quick-actions.dashboard-data") }}')
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('reservas-hoy').textContent = data.reservas_hoy || '0';
-            document.getElementById('espacios-libres').textContent = data.espacios_libres || '0';
-            document.getElementById('espacios-ocupados').textContent = data.espacios_ocupados || '0';
-            document.getElementById('espacios-mantencion').textContent = data.espacios_mantencion || '0';
-        })
-        .catch(error => {
-            console.error('Error al cargar estadísticas:', error);
-        });
-}
+window.AccionesRapidasIndexConfig = {
+    dashboardDataUrl: "{{ route('quick-actions.dashboard-data') }}"
+};
 </script>
+@vite(['resources/js/views/acciones-rapidas/index.js'])
 @endpush
 </x-app-layout>

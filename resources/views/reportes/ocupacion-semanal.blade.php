@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -259,14 +259,6 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('modal-generar-snapshot');
-                if (modal && !modal.classList.contains('hidden')) {
-                    modal.classList.add('hidden');
-                }
-            }
-        });
-    </script>
+@vite(['resources/js/views/reportes/ocupacion-semanal.js'])
+@endpush
 </x-app-layout>

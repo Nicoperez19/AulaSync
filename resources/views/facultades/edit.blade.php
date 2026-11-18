@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -22,7 +22,7 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <form id="edit-faculty-form" action="{{ route('faculties.update', $facultad->id_facultad) }}" method="POST">
+        <form data-confirm-save id="edit-faculty-form" action="{{ route('faculties.update', $facultad->id_facultad) }}" method="POST">
             @csrf
             @method('PUT')
 
@@ -100,31 +100,5 @@
         </form>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('edit-faculty-form');
-
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-
-                    Swal.fire({
-                        title: '¿Guardar cambios?',
-                        text: 'Estás a punto de guardar los cambios realizados.',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, guardar',
-                        cancelButtonText: 'Cancelar',
-                        confirmButtonColor: '#10B981',
-                        cancelButtonColor: '#8D8D8D',
-                        reverseButtons: true
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            form.submit();
-                        }
-                    });
-                });
-            }
-        });
-    </script>
+    
 </x-app-layout>

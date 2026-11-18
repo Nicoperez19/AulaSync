@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
@@ -394,23 +394,11 @@
         </div>
     </div>
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const periodosLimites = @json($periodosLimites ?? []);
-            const periodoSelect = document.getElementById('periodo_filtro');
-            const fechaInicio = document.getElementById('fecha_inicio');
-            const fechaFin = document.getElementById('fecha_fin');
-
-            if (periodoSelect && fechaInicio && fechaFin) {
-                periodoSelect.addEventListener('change', function () {
-                    const val = this.value;
-                    if (val && periodosLimites[val]) {
-                        fechaInicio.value = periodosLimites[val].inicio;
-                        fechaFin.value = periodosLimites[val].fin;
-                    }
-                });
-            }
-        });
-    </script>
-    @endpush
+<script>
+window.ReportesAccesosConfig = {
+    periodosLimites: @json($periodosLimites ?? [])
+};
+</script>
+@vite(['resources/js/views/reportes/accesos.js'])
+@endpush
 </x-app-layout>

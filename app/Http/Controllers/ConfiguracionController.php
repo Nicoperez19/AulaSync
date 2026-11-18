@@ -454,7 +454,23 @@ class ConfiguracionController extends Controller
     {
         try {
             $configuracion = Configuracion::findOrFail($id);
-            return view('configuracion.edit', compact('configuracion'));
+            $sedeNombre = null;
+            $facultadNombre = null;
+            $nombreRemitenteValor = '';
+
+            if (str_starts_with($configuracion->clave, 'logo_institucional_')) {
+                $idSede = str_replace('logo_institucional_', '', $configuracion->clave);
+                $sedeNombre = Sede::find($idSede)?->nombre_sede ?? $idSede;
+            } elseif (str_starts_with($configuracion->clave, 'correo_administrativo_')) {
+                $idFacultad = str_replace('correo_administrativo_', '', $configuracion->clave);
+                $facultadNombre = \App\Models\Facultad::find($idFacultad)?->nombre_facultad ?? $idFacultad;
+                $nombreRemitenteValor = Configuracion::where('clave', "nombre_remitente_{$idFacultad}")->value('valor') ?? '';
+            } elseif (str_starts_with($configuracion->clave, 'nombre_remitente_')) {
+                $idFacultad = str_replace('nombre_remitente_', '', $configuracion->clave);
+                $facultadNombre = \App\Models\Facultad::find($idFacultad)?->nombre_facultad ?? $idFacultad;
+            }
+
+            return view('configuracion.edit', compact('configuracion', 'sedeNombre', 'facultadNombre', 'nombreRemitenteValor'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('configuracion.index')->withErrors(['error' => 'Configuración no encontrada.']);
         } catch (\Exception $e) {
