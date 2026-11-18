@@ -2149,15 +2149,23 @@ class TodasClasesService
         $mejores = [];
 
         foreach ($candidatas as $r) {
+            if ($idAsignatura && !empty($r->id_asignatura) && (string) $r->id_asignatura !== (string) $idAsignatura) {
+                continue;
+            }
+
             $horaAcceso = Carbon::parse($r->hora);
             $horaSalidaTemp = $r->hora_salida ? Carbon::parse($r->hora_salida) : null;
+
+            $ingresoDirecto = ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo);
+
+            if ($r->estado === 'finalizada' && $horaSalidaTemp && $horaSalidaTemp->lte($horaInicioModulo) && !$ingresoDirecto) {
+                continue;
+            }
 
             // Si tiene modulo_inicio y modulo_fin definidos y no solapan en absoluto con este módulo ni con la hora, descartar
             $cubrePorModulo = !empty($r->modulo_inicio) && !empty($r->modulo_fin)
                 && (int) $r->modulo_inicio <= $numModulo
                 && (int) $r->modulo_fin >= $numModulo;
-
-            $ingresoDirecto = ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo);
 
             // Ingreso previo: entró antes del margen, pero su salida real o estimada cubre el módulo actual
             $finEfectivo = $horaSalidaTemp;

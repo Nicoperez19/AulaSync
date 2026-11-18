@@ -190,17 +190,23 @@ class DetectarClasesNoRealizadas extends Command
                 // Variable $yaRegistrada global eliminada para permitir evaluación por módulo.
                 // Anteriormente, si un módulo estaba registrado, omitía todo el bloque.
 
-                // Obtener hora de inicio del primer módulo de esta clase
+                // Obtener hora de inicio del primer módulo y término del último módulo de esta clase
                 $primerModuloNum = $this->obtenerNumeroModulo($primerModulo->id_modulo);
+                $ultimoModulo = $modulosClase->sortBy(fn ($m) => $this->obtenerNumeroModulo($m->id_modulo))->last();
+                $ultimoModuloNum = $this->obtenerNumeroModulo($ultimoModulo->id_modulo);
                 $horaInicioClase = $this->horariosModulos[$diaKey][$primerModuloNum]['inicio'] ?? null;
+                $horaFinClase = $this->horariosModulos[$diaKey][$ultimoModuloNum]['fin'] ?? null;
 
-                if (!$horaInicioClase) {
+                if (!$horaInicioClase || !$horaFinClase) {
                     continue;
                 }
 
                 $margenMinutos = \App\Helpers\ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                $horaInicioCarbon = Carbon::parse($fechaActual . ' ' . $horaInicioClase);
+                $horaFinCarbon = Carbon::parse($fechaActual . ' ' . $horaFinClase);
+                $margenInicioCarbon = $horaInicioCarbon->copy()->subMinutes($margenMinutos);
                 // Calcular hora límite (inicio + margen de ingreso)
-                $horaLimite = Carbon::parse($fechaActual . ' ' . $horaInicioClase)
+                $horaLimite = $horaInicioCarbon->copy()
                     ->addMinutes($margenMinutos)
                     ->format('H:i:s');
 
@@ -212,11 +218,9 @@ class DetectarClasesNoRealizadas extends Command
                 }
                 $runLimpio = preg_replace('/[^0-9]/', '', $runLimpio);
 
-                // Verificar si el profesor tiene reserva activa en el espacio esperado (o sus equivalentes)
-                // Priorizar reservas activas sobre finalizadas (por si hubo doble escaneo)
-                // y dentro del mismo estado, la más reciente.
+                // Verificar si el profesor tiene reserva en la ventana horaria de ESTA clase (y no de otra clase del mismo día)
                 $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? null);
-                $reserva = Reserva::where('fecha_reserva', $fechaActual)
+                $candidatas = Reserva::where('fecha_reserva', $fechaActual)
                     ->whereIn('id_espacio', $espaciosEquiv)
                     ->where(function($q) use ($runProfesor, $runLimpio) {
                         $q->where('run_profesor', $runProfesor)
@@ -230,7 +234,35 @@ class DetectarClasesNoRealizadas extends Command
                     ->whereNotNull('hora')
                     ->orderByRaw("CASE WHEN estado = 'activa' THEN 0 ELSE 1 END")
                     ->orderByDesc('id_reserva')
-                    ->first();
+                    ->get();
+
+                $reserva = $candidatas->first(function ($r) use ($primerModulo, $primerModuloNum, $ultimoModuloNum, $horaInicioCarbon, $horaFinCarbon, $margenInicioCarbon, $fechaActual) {
+                    if ($primerModulo->id_asignatura && !empty($r->id_asignatura) && (string) $r->id_asignatura !== (string) $primerModulo->id_asignatura) {
+                        return false;
+                    }
+
+                    $horaAcceso = Carbon::parse($fechaActual . ' ' . $r->hora);
+                    $horaSalidaTemp = $r->hora_salida ? Carbon::parse($fechaActual . ' ' . $r->hora_salida) : null;
+
+                    $ingresoDirecto = ($horaAcceso->gte($margenInicioCarbon) && $horaAcceso->lte($horaFinCarbon));
+
+                    if ($r->estado === 'finalizada' && $horaSalidaTemp && $horaSalidaTemp->lte($horaInicioCarbon) && !$ingresoDirecto) {
+                        return false;
+                    }
+
+                    $cubrePorModulo = !empty($r->modulo_inicio) && !empty($r->modulo_fin)
+                        && (int) $r->modulo_inicio <= $ultimoModuloNum
+                        && (int) $r->modulo_fin >= $primerModuloNum;
+
+                    $finEfectivo = $horaSalidaTemp;
+                    if (!$finEfectivo || $finEfectivo->lte($horaAcceso)) {
+                        $cantModulos = max(1, (int) ($r->modulos ?? 1));
+                        $finEfectivo = $horaAcceso->copy()->addMinutes(max(110, $cantModulos * 55));
+                    }
+                    $ingresoPrevio = $horaAcceso->lt($margenInicioCarbon) && $finEfectivo->gte($horaInicioCarbon);
+
+                    return $ingresoDirecto || $ingresoPrevio || $cubrePorModulo;
+                });
 
                 if ($reserva) {
                     // El profesor SÍ hizo la reserva/registro
