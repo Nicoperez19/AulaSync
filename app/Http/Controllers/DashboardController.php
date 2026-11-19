@@ -76,7 +76,7 @@ class DashboardController extends Controller
         $cacheKey = "dash_horarios_actual_{$tenantId}_{$idModulo}";
 
         return \Illuminate\Support\Facades\Cache::remember($cacheKey, 15, function () use (
-            $diaActual, $horaAhora, $moduloActualNum, $moduloActualHorario, $periodo, $fechaHoy, $idModulo
+            $diaActual, $diaNormalizado, $horariosModulos, $prefijo, $horaAhora, $moduloActualNum, $moduloActualHorario, $periodo, $fechaHoy, $idModulo
         ) {
 
         $asignaciones = Planificacion_Asignatura::with(['espacio.piso', 'asignatura', 'horario.profesor'])
