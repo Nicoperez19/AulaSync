@@ -1,4 +1,11 @@
 ﻿
+        const _planoRootCfgRaw = document.getElementById('plano-digital-root')?.dataset?.config;
+        const _planoRootCfg = _planoRootCfgRaw ? JSON.parse(_planoRootCfgRaw) : {};
+        window.tenantPrefix = _planoRootCfg.tenantPrefix ?? '';
+        window.sidebarModuloActualData = _planoRootCfg.sidebarModuloActualData ?? [];
+        window.horariosModulos = _planoRootCfg.horariosModulos ?? [];
+        window.PlanoDigitalShowConfig = _planoRootCfg.showConfig ?? {};
+
         function ensureSwalAvailable() {
             if (typeof window.Swal !== 'undefined') {
                 return window.Swal;

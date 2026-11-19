@@ -112,7 +112,7 @@
             background: transparent !important;
         }
     </style>
-    <div class="flex h-screen overflow-hidden">
+    <div id="plano-digital-root" data-config="{{ json_encode($planoConfig ?? []) }}" class="flex h-screen overflow-hidden">
         <aside
             class="fixed top-0 left-0 z-40 flex flex-col w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs overflow-hidden">
 
@@ -837,25 +837,6 @@
         </div>
     </x-modal>
 
-    @php
-        $__tenantObj = tenant();
-        $__prefRaw = strtoupper(trim($__tenantObj?->sede_id ?: tenant_prefijo() ?: ''));
-        if (!$__prefRaw && ($__dom = strtoupper(trim(tenant_domain() ?: '')))) {
-            $__prefRaw = explode('.', $__dom)[0] ?? $__dom;
-        }
-        $mapaIdValue = $mapa->id_mapa ?? 1;
-    @endphp
-    <script>
-        window.tenantPrefix = @json($__prefRaw);
-        window.sidebarModuloActualData = @json($clasesModuloActual ?? []);
-        window.horariosModulos = @json($horariosModulos ?? []);
-        window.PlanoDigitalShowConfig = {
-            mapaId: @json($mapaIdValue),
-            bloques: @json($bloques ?? []),
-            adminRun: @json(auth()->user()->run ?? 'admin'),
-            rutaMapaUrl: @json($mapa->ruta_mapa ? asset('storage/' . $mapa->ruta_mapa) : '')
-        };
-    </script>
     @vite(['resources/js/views/plano-digital/show.js'])
 
     <!-- Modales del Panel de Administración -->
@@ -865,9 +846,6 @@
     <x-modal-editar-espacios />
 
     <!-- JavaScript del Panel de Administración -->
-    <script>
-        window.horariosModulos = @json($horariosModulos ?? []);
-    </script>
     <script src="{{ asset('js/admin-panel.js') }}"></script>
 
 </x-show-layout>

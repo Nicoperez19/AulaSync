@@ -115,14 +115,34 @@ class PlanoDigitalController extends Controller
             $codigoDia = $this->obtenerCodigoDia($diaActualNormalizado);
 
             $clasesModuloActual = $this->obtenerClasesModuloActual($moduloActualNumero, $codigoDia);
+            $horariosModulos = ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
+
+            $tenantObj = tenant();
+            $tenantPrefix = strtoupper(trim($tenantObj?->sede_id ?: tenant_prefijo() ?: ''));
+            if (!$tenantPrefix && ($dom = strtoupper(trim(tenant_domain() ?: '')))) {
+                $tenantPrefix = explode('.', $dom)[0] ?? $dom;
+            }
+
+            $planoConfig = [
+                'tenantPrefix' => $tenantPrefix,
+                'sidebarModuloActualData' => $clasesModuloActual,
+                'horariosModulos' => $horariosModulos,
+                'showConfig' => [
+                    'mapaId' => $mapa->id_mapa ?? 1,
+                    'bloques' => $bloques,
+                    'adminRun' => auth()->user()->run ?? 'admin',
+                    'rutaMapaUrl' => $mapa->ruta_mapa ? asset('storage/' . $mapa->ruta_mapa) : '',
+                ],
+            ];
 
             return view('plano-digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
                 'pisos' => $pisosFormateados,
-                'horariosModulos' => ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [],
+                'horariosModulos' => $horariosModulos,
                 'clasesModuloActual' => $clasesModuloActual,
                 'moduloActualNumero' => $moduloActualNumero,
+                'planoConfig' => $planoConfig,
             ]);
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
