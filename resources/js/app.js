@@ -1,3 +1,4 @@
+import './shared/page-config'
 import './shared/crud-helpers'
 import './views/components/sweet-alert'
 import collapse from '@alpinejs/collapse'

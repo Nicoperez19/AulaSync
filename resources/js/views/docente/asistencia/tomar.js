@@ -1,3 +1,4 @@
+import '../../../shared/page-config';
         function cambiarFechaSesion(nuevaFecha) {
             if (!nuevaFecha) return;
             const hidden = document.getElementById('fecha_asistencia_hidden');

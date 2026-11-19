@@ -1,4 +1,4 @@
-﻿import { defineConfig } from 'vite';
+import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve } from 'path';
@@ -55,6 +55,18 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/views/acciones-rapidas/crear-reserva.css',
+                'resources/css/views/acciones-rapidas/editar-reserva.css',
+                'resources/css/views/clases-temporales/create.css',
+                'resources/css/views/data/index.css',
+                'resources/css/views/docente/sede-no-inicializada.css',
+                'resources/css/views/livewire/partials/plantillas-correos-tab.css',
+                'resources/css/views/manual/index.css',
+                'resources/css/views/mapas/create.css',
+                'resources/css/views/mapas/edit.css',
+                'resources/css/views/plano-digital/show.css',
+                'resources/css/views/tenant/initialization/success.css',
+                'resources/css/views/tenant/initialization/wizard.css',
                 'resources/js/app.js',
                 'resources/js/dashboard.js',
                 'resources/js/tablero.js',

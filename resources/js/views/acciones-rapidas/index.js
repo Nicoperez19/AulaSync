@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 document.addEventListener('DOMContentLoaded', function() {
     // Cargar estadísticas
     cargarEstadisticasRapidas();

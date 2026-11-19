@@ -1,3 +1,4 @@
+import '../../../../shared/page-config';
 function handleBulkFileSelect(input) {
     const file = input.files[0];
     if (file) {

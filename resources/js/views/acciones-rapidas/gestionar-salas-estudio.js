@@ -1,3 +1,4 @@
+import '../../shared/page-config';
     let reservasGlobales = [];
     let salasEstudioGlobales = [];
 

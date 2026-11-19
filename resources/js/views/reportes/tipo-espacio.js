@@ -1,3 +1,4 @@
+import '../../shared/page-config';
          // Filtrar mensajes de error de extensiones de Chrome
          const originalConsoleError = console.error;
          console.error = function(...args) {

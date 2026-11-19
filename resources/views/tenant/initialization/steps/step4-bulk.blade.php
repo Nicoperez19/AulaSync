@@ -128,11 +128,5 @@
     </div>
 </div>
 
-<script>
-window.Step4BulkConfig = {
-    processBulkUrl: "{{ route('tenant.initialization.process-bulk') }}",
-    completeBulkUrl: "{{ route('tenant.initialization.complete-bulk') }}",
-    csrfToken: "{{ csrf_token() }}"
-};
-</script>
+<div data-page-config="Step4BulkConfig" data-config="{{ json_encode(['processBulkUrl' => route('tenant.initialization.process-bulk'), 'completeBulkUrl' => route('tenant.initialization.complete-bulk'), 'csrfToken' => csrf_token()]) }}" class="hidden"></div>
 @vite(['resources/js/views/tenant/initialization/steps/step4-bulk.js'])

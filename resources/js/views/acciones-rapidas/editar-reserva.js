@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 const RESERVA_ID = (window.EditarReservaConfig?.reservaId ?? '');
 
 // ── Autocomplete reasignar docente ───────────────────────────────────────────

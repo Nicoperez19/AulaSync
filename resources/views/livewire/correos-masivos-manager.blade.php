@@ -181,11 +181,7 @@
     </div>
 
     <div wire:ignore>
-        <script>
-        window.CorreosMasivosConfig = {
-            componentId: @json($this->getId())
-        };
-        </script>
+        <div data-page-config="CorreosMasivosConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
         @vite(['resources/js/views/livewire/correos-masivos-manager.js'])
     </div>
 </div>

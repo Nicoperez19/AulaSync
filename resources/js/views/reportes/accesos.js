@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         document.addEventListener('DOMContentLoaded', function () {
             const periodosLimites = (window.ReportesAccesosConfig?.periodosLimites ?? {});
             const periodoSelect = document.getElementById('periodo_filtro');

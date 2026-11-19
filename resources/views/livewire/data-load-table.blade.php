@@ -142,11 +142,7 @@
     </div>
 
     <div wire:ignore>
-        <script>
-        window.DataLoadTableConfig = {
-            componentId: @json($this->getId())
-        };
-        </script>
+        <div data-page-config="DataLoadTableConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
         @vite(['resources/js/views/livewire/data-load-table.js'])
     </div>
 </div>

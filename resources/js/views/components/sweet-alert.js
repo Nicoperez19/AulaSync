@@ -1,3 +1,4 @@
+import '../../shared/page-config';
     (function() {
         if (typeof Swal !== 'undefined') {
             const originalFire = Swal.fire;

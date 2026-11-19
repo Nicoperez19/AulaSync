@@ -317,11 +317,7 @@
          class="hidden">
     </div>
 
-    <script>
-        window.DashboardLayoutConfig = {
-            clasesNoRealizadasUrl: "{{ route('clases-no-realizadas.index') }}"
-        };
-    </script>
+    <div data-page-config="DashboardLayoutConfig" data-config="{{ json_encode(['clasesNoRealizadasUrl' => route('clases-no-realizadas.index')]) }}" class="hidden"></div>
     @vite(['resources/js/views/layouts/dashboard.js'])
 
     <!-- Cargar script externo del dashboard -->

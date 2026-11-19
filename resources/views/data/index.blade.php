@@ -1,9 +1,5 @@
 <x-app-layout>
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
+    @vite(['resources/css/views/data/index.css'])
     <x-slot name="header">
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">

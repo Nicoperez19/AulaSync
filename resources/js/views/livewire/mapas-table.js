@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         // Escuchar eventos de Livewire
         document.addEventListener('livewire:init', () => {
             Livewire.on('modalClosed', () => {

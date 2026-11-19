@@ -231,9 +231,5 @@
     </div>
 </div>
 
-<script>
-window.StatusClasesChartConfig = {
-    clasesNoRealizadasUrl: "{{ route('clases-no-realizadas.index') }}"
-};
-</script>
+<div data-page-config="StatusClasesChartConfig" data-config="{{ json_encode(['clasesNoRealizadasUrl' => route('clases-no-realizadas.index')]) }}" class="hidden"></div>
 @vite(['resources/js/views/partials/dashboard/status_clases_chart.js'])

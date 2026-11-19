@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         window.irAControlDocente = function(estado) {
             const inicio = document.getElementById('status-fecha-inicio')?.value || '';
             const fin = document.getElementById('status-fecha-fin')?.value || '';

@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         // ===== NAVEGACIÓN DE CAPÍTULOS =====
         function showChapter(slug) {
             // Ocultar todas las secciones

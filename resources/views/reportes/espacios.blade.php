@@ -369,23 +369,21 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-window.ReportesEspaciosConfig = {
-    labels: @json($labels_grafico),
-    data: @json($data_grafico),
-    dataReservas: @json($data_reservas_grafico),
-    resumen: @json($resumen),
-    diaSeleccionado: @json($diaActual),
-    filtros: {
-        busqueda: @json($busqueda),
-        tipoEspacio: @json($tipoEspacioFiltro),
-        piso: @json($pisoFiltro),
-        estado: @json($estadoFiltro),
-        fechaInicio: @json($fechaInicio),
-        fechaFin: @json($fechaFin)
-    }
-};
-</script>
+<div data-page-config="ReportesEspaciosConfig" data-config="{{ json_encode([
+    'labels' => $labels_grafico,
+    'data' => $data_grafico,
+    'dataReservas' => $data_reservas_grafico,
+    'resumen' => $resumen,
+    'diaSeleccionado' => $diaActual,
+    'filtros' => [
+        'busqueda' => $busqueda,
+        'tipoEspacio' => $tipoEspacioFiltro,
+        'piso' => $pisoFiltro,
+        'estado' => $estadoFiltro,
+        'fechaInicio' => $fechaInicio,
+        'fechaFin' => $fechaFin,
+    ],
+]) }}" class="hidden"></div>
 @vite(['resources/js/views/reportes/espacios.js'])
 @endpush
 </x-app-layout>

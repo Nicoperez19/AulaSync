@@ -183,9 +183,5 @@
     </div>
 </div>
 
-<script>
-window.ListaEstudiantesConfig = {
-    estudiantes: @json($estudiantesData)
-};
-</script>
+<div data-page-config="ListaEstudiantesConfig" data-config="{{ json_encode(['estudiantes' => $estudiantesData]) }}" class="hidden"></div>
 @vite(['resources/js/views/components/asistencia/lista-estudiantes.js'])

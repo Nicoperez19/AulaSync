@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 // Variables específicas para gestión de reservas
 let reservasOriginales = [];
 let reservasFiltradas = [];

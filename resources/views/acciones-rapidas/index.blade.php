@@ -180,11 +180,7 @@
 </div>
 
 @push('scripts')
-<script>
-window.AccionesRapidasIndexConfig = {
-    dashboardDataUrl: "{{ route('quick-actions.dashboard-data') }}"
-};
-</script>
+<div data-page-config="AccionesRapidasIndexConfig" data-config="{{ json_encode(['dashboardDataUrl' => route('quick-actions.dashboard-data')]) }}" class="hidden"></div>
 @vite(['resources/js/views/acciones-rapidas/index.js'])
 @endpush
 </x-app-layout>

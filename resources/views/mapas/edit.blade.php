@@ -46,9 +46,6 @@
                 </div>
             </div>
         </div>
-        <script>
-            window.mapaPisoId = "{{ $mapa->piso_id ?? '' }}";
-        </script>
         <!-- Selectores de sede, facultad y piso -->
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
             <div>
@@ -140,60 +137,7 @@
         </form>
     </div>
 
-    <script>
-        window.MapasEditConfig = {
-            rutaMapaUrl: @json($mapa->ruta_mapa ? asset('storage/' . $mapa->ruta_mapa) : null)
-        };
-    </script>
+    <div data-page-config="MapasEditConfig" data-config="{{ json_encode(['rutaMapaUrl' => $mapa->ruta_mapa ? asset('storage/' . $mapa->ruta_mapa) : null, 'pisoId' => $mapa->piso_id ?? '']) }}" class="hidden"></div>
     @vite(['resources/js/views/mapas/edit.js'])
-
-    <style>
-        #indicatorsCanvas {
-            z-index: 10;
-            cursor: default;
-        }
-
-        #mapCanvas {
-            z-index: 1;
-        }
-
-        #espaciosList {
-            scrollbar-width: thin;
-            scrollbar-color: #c1c1c1 #f1f1f1;
-        }
-
-        #espaciosList::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #espaciosList::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        #espaciosList::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-        #espaciosList::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-
-        .dark #espaciosList {
-            scrollbar-color: #6b7280 #374151;
-        }
-
-        .dark #espaciosList::-webkit-scrollbar-track {
-            background: #374151;
-        }
-
-        .dark #espaciosList::-webkit-scrollbar-thumb {
-            background: #6b7280;
-        }
-
-        .dark #espaciosList::-webkit-scrollbar-thumb:hover {
-            background: #9ca3af;
-        }
-    </style>
+    @vite(['resources/css/views/mapas/edit.css'])
 </x-app-layout>

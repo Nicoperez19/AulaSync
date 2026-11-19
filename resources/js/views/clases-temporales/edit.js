@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         const profesorColaborador = (window.ClasesTemporalesEditConfig?.profesorColaborador ?? {});
         const espacios = (window.ClasesTemporalesEditConfig?.espacios ?? []);
         const modulos = (window.ClasesTemporalesEditConfig?.modulos ?? []);

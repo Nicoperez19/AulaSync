@@ -63,10 +63,6 @@
         @endif
     </div>
 
-<script>
-window.PlanoDigitalIndexConfig = {
-    tieneMapas: @json((bool) $tieneMapas)
-};
-</script>
+<div data-page-config="PlanoDigitalIndexConfig" data-config="{{ json_encode(['tieneMapas' => (bool) $tieneMapas]) }}" class="hidden"></div>
 @vite(['resources/js/views/plano-digital/index.js'])
 </x-app-layout>

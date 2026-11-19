@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 document.addEventListener('DOMContentLoaded', function() {
 
     // Confirmación para eliminar tipo de correo

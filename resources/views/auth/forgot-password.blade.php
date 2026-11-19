@@ -45,11 +45,6 @@
                 </form>
     </x-auth-card>
 
-    <script>
-        window.ForgotPasswordConfig = {
-            hasStatus: @json((bool) session('status')),
-            loginUrl: "{{ route('login') }}"
-        };
-    </script>
+    <div data-page-config="ForgotPasswordConfig" data-config="{{ json_encode(['hasStatus' => (bool) session('status'), 'loginUrl' => route('login')]) }}" class="hidden"></div>
     @vite(['resources/js/views/auth/forgot-password.js'])
 </x-guest-layout>

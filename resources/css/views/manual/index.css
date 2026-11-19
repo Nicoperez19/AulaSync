@@ -1,0 +1,28 @@
+/* Estilos para el contenido markdown renderizado */
+        .manual-content h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #7f1d1d; border-bottom: 2px solid #D2091E; padding-bottom: 0.5rem; }
+        .manual-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.75rem; color: #991b1b; }
+        .manual-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #b91c1c; }
+        .manual-content h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #dc2626; }
+        .manual-content p { margin-top: 0.5rem; margin-bottom: 1rem; line-height: 1.75; color: #374151; }
+        .manual-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .manual-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .manual-content li { margin-bottom: 0.25rem; line-height: 1.75; color: #374151; }
+        .manual-content strong { font-weight: 700; color: #111827; }
+        .manual-content em { font-style: italic; }
+        .manual-content code { background-color: #fef2f2; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: monospace; color: #b91c1c; }
+        .manual-content pre { background-color: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
+        .manual-content pre code { background-color: transparent; color: inherit; padding: 0; }
+        .manual-content blockquote { border-left: 4px solid #ef4444; padding-left: 1rem; margin: 1rem 0; color: #6b7280; font-style: italic; }
+        .manual-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
+        .manual-content a { color: #D2091E; text-decoration: underline; }
+        .manual-content img { max-width: 100%; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1rem 0; border: 1px solid #fee2e2; }
+        .manual-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .manual-content th, .manual-content td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; }
+        .manual-content th { background-color: #fef2f2; font-weight: 600; color: #991b1b; }
+
+        .chapter-section { display: none; }
+        .chapter-section.active { display: block; }
+
+        .toc-item { transition: all 0.15s ease; }
+        .toc-item.active { background-color: #fee2e2; border-left: 3px solid #D2091E; }
+        .toc-item:not(.active):hover { background-color: #fef2f2; }

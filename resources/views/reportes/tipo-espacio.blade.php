@@ -470,16 +470,6 @@
 
          <!-- Chart.js scripts con datos reales -->
      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-window.ReportesTipoEspacioConfig = {
-    labelsGrafico: @json($labels_grafico),
-    dataGrafico: @json($data_grafico),
-    resumen: @json($resumen),
-    estadisticasTurnos: @json($estadisticasTurnos ?? []),
-    historicoUrl: "{{ route('reportes.tipo-espacio.historico') }}",
-    exportExcelUrl: "{{ route('reportes.tipo-espacio.export', 'excel') }}",
-    exportPdfUrl: "{{ route('reportes.tipo-espacio.export', 'pdf') }}"
-};
-</script>
+<div data-page-config="ReportesTipoEspacioConfig" data-config="{{ json_encode(['labelsGrafico' => $labels_grafico, 'dataGrafico' => $data_grafico, 'resumen' => $resumen, 'estadisticasTurnos' => $estadisticasTurnos ?? [], 'historicoUrl' => route('reportes.tipo-espacio.historico'), 'exportExcelUrl' => route('reportes.tipo-espacio.export', 'excel'), 'exportPdfUrl' => route('reportes.tipo-espacio.export', 'pdf')]) }}" class="hidden"></div>
 @vite(['resources/js/views/reportes/tipo-espacio.js'])
 @endpush

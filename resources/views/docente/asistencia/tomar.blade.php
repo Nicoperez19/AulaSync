@@ -136,14 +136,7 @@
     </div>
 
     @push('scripts')
-<script>
-window.DocenteTomarConfig = {
-    baseUrl: "{{ route('docente.asistencia.show', $id) }}",
-    idAsignatura: "{{ $id }}",
-    tenantId: @json(session('tenant_id') ?? tenant_id()),
-    urlEstadoEnVivo: @json(route('docente.asistencia.en-vivo', $id)) + '?fecha=' + encodeURIComponent(@json($fechaConsulta->format('Y-m-d')))
-};
-</script>
+<div data-page-config="DocenteTomarConfig" data-config="{{ json_encode(['baseUrl' => route('docente.asistencia.show', $id), 'idAsignatura' => $id, 'tenantId' => session('tenant_id') ?? tenant_id(), 'urlEstadoEnVivo' => route('docente.asistencia.en-vivo', $id) . '?fecha=' . urlencode($fechaConsulta->format('Y-m-d'))]) }}" class="hidden"></div>
 @vite(['resources/js/views/docente/asistencia/tomar.js'])
 @endpush
 </x-app-layout>

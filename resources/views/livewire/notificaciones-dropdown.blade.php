@@ -130,11 +130,7 @@
     </div>
 
     <div wire:ignore>
-        <script>
-        window.NotificacionesDropdownConfig = {
-            componentId: @json($this->getId())
-        };
-        </script>
+        <div data-page-config="NotificacionesDropdownConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
         @vite(['resources/js/views/livewire/notificaciones-dropdown.js'])
     </div>
 </div>

@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         // Año académico actual desde el backend
         const currentYear = (window.HorariosProfesoresConfig?.currentYear ?? new Date().getFullYear());
 

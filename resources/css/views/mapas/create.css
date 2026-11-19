@@ -1,0 +1,47 @@
+#indicatorsCanvas {
+            z-index: 10;
+            cursor: default;
+        }
+
+        #mapCanvas {
+            z-index: 1;
+        }
+
+        #espaciosList {
+            scrollbar-width: thin;
+            scrollbar-color: #c1c1c1 #f1f1f1;
+        }
+
+        #espaciosList::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #espaciosList::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        #espaciosList::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #espaciosList::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .dark #espaciosList {
+            scrollbar-color: #6b7280 #374151;
+        }
+
+        .dark #espaciosList::-webkit-scrollbar-track {
+            background: #374151;
+        }
+
+        .dark #espaciosList::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+
+        .dark #espaciosList::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }

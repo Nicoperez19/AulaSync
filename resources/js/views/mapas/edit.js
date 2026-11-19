@@ -1,3 +1,5 @@
+import '../../shared/page-config';
+window.mapaPisoId = window.MapasEditConfig?.pisoId ?? '';
          document.addEventListener("DOMContentLoaded", function() {
             const selectPisoBtn = document.getElementById('selectPisoBtn');
             const pisoSelect = document.getElementById('piso');

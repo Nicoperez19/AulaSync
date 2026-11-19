@@ -433,10 +433,6 @@
 <template id="tpl-icono-cancelar-mobile"><x-icons.delete class="w-4 h-4 inline-block" aria-hidden="true" /></template>
 
 @push('scripts')
-<script>
-window.GestionarReservasConfig = {
-    modulosBase: @json(\App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [])
-};
-</script>
+<div data-page-config="GestionarReservasConfig" data-config="{{ json_encode(['modulosBase' => \App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? []]) }}" class="hidden"></div>
 @vite(['resources/js/views/acciones-rapidas/gestionar-reservas.js'])
 @endpush

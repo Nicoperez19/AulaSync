@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         const _cfgEspacios = window.ReportesEspaciosConfig ?? {};
         // Datos desde el backend
         const datosGrafico = {

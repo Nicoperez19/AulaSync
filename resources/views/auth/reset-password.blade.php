@@ -67,10 +67,6 @@
         </form>
     </x-auth-card>
 
-<script>
-window.ResetPasswordConfig = {
-    loginUrl: "{{ route('login') }}"
-};
-</script>
+<div data-page-config="ResetPasswordConfig" data-config="{{ json_encode(['loginUrl' => route('login')]) }}" class="hidden"></div>
 @vite(['resources/js/views/auth/reset-password.js'])
 </x-guest-layout>

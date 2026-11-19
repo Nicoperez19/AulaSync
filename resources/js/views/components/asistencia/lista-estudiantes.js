@@ -1,3 +1,4 @@
+import '../../../shared/page-config';
 function asistenciaListHandler() {
     return {
         filtro: '',

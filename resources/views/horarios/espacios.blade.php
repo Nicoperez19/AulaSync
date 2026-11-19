@@ -241,12 +241,6 @@
         </div>
     </div>
 
-    <script>
-        window.HorariosEspaciosConfig = {
-            currentYear: "{{ $anioFiltro ?? \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}",
-            horariosPorEspacio: @json($horariosPorEspacio),
-            modulos: @json(\App\Helpers\ModulosHelper::getModulosSimples())
-        };
-    </script>
+    <div data-page-config="HorariosEspaciosConfig" data-config="{{ json_encode(['currentYear' => $anioFiltro ?? \App\Helpers\SemesterHelper::getCurrentAcademicYear(), 'horariosPorEspacio' => $horariosPorEspacio, 'modulos' => \App\Helpers\ModulosHelper::getModulosSimples()]) }}" class="hidden"></div>
     @vite(['resources/js/views/horarios/espacios.js'])
 </x-app-layout>

@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 
         const _planoRootCfgRaw = document.getElementById('plano-digital-root')?.dataset?.config;
         const _planoRootCfg = _planoRootCfgRaw ? JSON.parse(_planoRootCfgRaw) : {};

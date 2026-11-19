@@ -431,14 +431,6 @@
         </div>
     </div>
 
-    <script>
-        window.ClasesTemporalesEditConfig = {
-            profesorColaborador: @json($profesorColaborador),
-            espacios: @json($espacios),
-            modulos: @json($modulos),
-            asignaturas: @json($asignaturas),
-            salasDisponiblesUrl: "{{ route('clases-temporales.getSalasDisponibles') }}"
-        };
-    </script>
+    <div data-page-config="ClasesTemporalesEditConfig" data-config="{{ json_encode(['profesorColaborador' => $profesorColaborador, 'espacios' => $espacios, 'modulos' => $modulos, 'asignaturas' => $asignaturas, 'salasDisponiblesUrl' => route('clases-temporales.getSalasDisponibles')]) }}" class="hidden"></div>
     @vite(['resources/js/views/clases-temporales/edit.js'])
 </x-app-layout>

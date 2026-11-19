@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         const currentYear = (window.HorariosEspaciosConfig?.currentYear ?? new Date().getFullYear());
         let horariosPorEspacio = (window.HorariosEspaciosConfig?.horariosPorEspacio ?? {});
         let espacioActualId = null;

@@ -187,12 +187,7 @@
         </div>
     </div>
 
-    <script>
-        window.ReservasIndexConfig = {
-            horariosComplete: @json(\App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? []),
-            autocompleteUrl: "{{ url('/api/usuarios/autocomplete') }}"
-        };
-    </script>
+    <div data-page-config="ReservasIndexConfig" data-config="{{ json_encode(['horariosComplete' => \App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [], 'autocompleteUrl' => url('/api/usuarios/autocomplete')]) }}" class="hidden"></div>
     @vite(['resources/js/views/reservas/index.js'])
 
 </x-app-layout>

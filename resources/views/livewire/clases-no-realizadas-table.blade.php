@@ -842,10 +842,6 @@
 </div>
 
 @push('scripts')
-<script>
-window.ClasesNoRealizadasConfig = {
-    componentId: @json($this->getId())
-};
-</script>
+<div data-page-config="ClasesNoRealizadasConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
 @vite(['resources/js/views/livewire/clases-no-realizadas-table.js'])
 @endpush

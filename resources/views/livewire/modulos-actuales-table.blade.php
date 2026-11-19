@@ -506,15 +506,7 @@
     <!-- Leyenda de colores -->
 
     <div wire:ignore>
-        <script>
-        window.ModulosActualesConfig = {
-            componentId: @json($this->getId()),
-            esFeriado: @json((bool) $esFeriado),
-            nombreFeriado: @json($nombreFeriado),
-            periodoNoIniciado: @json((bool) $periodoNoIniciado),
-            nombrePeriodo: @json($nombrePeriodo)
-        };
-        </script>
+        <div data-page-config="ModulosActualesConfig" data-config="{{ json_encode(['componentId' => $this->getId(), 'esFeriado' => (bool) $esFeriado, 'nombreFeriado' => $nombreFeriado, 'periodoNoIniciado' => (bool) $periodoNoIniciado, 'nombrePeriodo' => $nombrePeriodo]) }}" class="hidden"></div>
         @vite(['resources/js/views/livewire/modulos-actuales-table.js'])
     </div>
 </div>

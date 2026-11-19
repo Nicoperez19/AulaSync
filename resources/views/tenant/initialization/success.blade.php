@@ -17,27 +17,7 @@
 
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <style>
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: #f00;
-            animation: confetti-fall 3s ease-in-out infinite;
-        }
-        @keyframes confetti-fall {
-            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-        .pulse-ring {
-            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-        }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
-        }
-    </style>
+    @vite(['resources/css/views/tenant/initialization/success.css'])
 </head>
 <body class="font-sans antialiased bg-gradient-to-br from-green-50 to-emerald-100 min-h-screen">
     <div class="min-h-screen flex flex-col items-center justify-center px-4">

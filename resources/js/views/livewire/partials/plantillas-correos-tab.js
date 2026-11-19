@@ -1,3 +1,4 @@
+import '../../../shared/page-config';
 (function() {
     // Variable global para el editor Quill
     let quillEditor = null;

@@ -276,30 +276,7 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
-
-<style>
-    /* Estilos para el editor Quill */
-    #quill-editor .ql-container {
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 14px;
-        height: calc(100% - 42px);
-    }
-    
-    #quill-editor .ql-toolbar {
-        background-color: #f9fafb;
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
-    }
-    
-    #quill-editor .ql-editor {
-        min-height: 350px;
-    }
-    
-    #quill-editor .ql-editor.ql-blank::before {
-        font-style: normal;
-        color: #9ca3af;
-    }
-</style>
+    @vite(['resources/css/views/livewire/partials/plantillas-correos-tab.css'])
 
                 <!-- Activo -->
                 <div>
@@ -330,9 +307,5 @@
     </div>
 @endif
 
-<script>
-window.PlantillasCorreosTabConfig = {
-    componentId: @json($this->getId())
-};
-</script>
+<div data-page-config="PlantillasCorreosTabConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
 @vite(['resources/js/views/livewire/partials/plantillas-correos-tab.js'])

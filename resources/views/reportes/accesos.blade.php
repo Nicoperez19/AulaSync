@@ -394,11 +394,7 @@
         </div>
     </div>
     @push('scripts')
-<script>
-window.ReportesAccesosConfig = {
-    periodosLimites: @json($periodosLimites ?? [])
-};
-</script>
+<div data-page-config="ReportesAccesosConfig" data-config="{{ json_encode(['periodosLimites' => $periodosLimites ?? []]) }}" class="hidden"></div>
 @vite(['resources/js/views/reportes/accesos.js'])
 @endpush
 </x-app-layout>

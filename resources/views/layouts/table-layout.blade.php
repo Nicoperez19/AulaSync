@@ -22,14 +22,6 @@
 
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-    <!-- Estilos adicionales -->
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-        
-    </style>
 </head>
 
 <!-- VISTA PARA TABLA DE ESPACIOS -->

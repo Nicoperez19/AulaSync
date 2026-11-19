@@ -181,11 +181,6 @@
     </div>
 
     {{-- Scripts --}}
-    <script>
-        window.HorariosProfesoresConfig = {
-            currentYear: "{{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}",
-            currentSemester: "{{ \App\Helpers\SemesterHelper::getCurrentSemester() }}"
-        };
-    </script>
+    <div data-page-config="HorariosProfesoresConfig" data-config="{{ json_encode(['currentYear' => \App\Helpers\SemesterHelper::getCurrentAcademicYear(), 'currentSemester' => \App\Helpers\SemesterHelper::getCurrentSemester()]) }}" class="hidden"></div>
     @vite(['resources/js/views/horarios/profesores.js'])
 </x-app-layout>

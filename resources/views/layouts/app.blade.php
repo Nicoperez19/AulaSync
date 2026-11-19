@@ -23,12 +23,6 @@
     <!-- Estilos y JS compilados por Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
-
     @stack('styles')
 </head>
 

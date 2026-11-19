@@ -107,9 +107,5 @@
     </div>
 </nav>
 
-<script>
-window.NavbarConfig = {
-    horariosModulos: @json(\App\Helpers\ModulosHelper::getHorariosModulos())
-};
-</script>
+<div data-page-config="NavbarConfig" data-config="{{ json_encode(['horariosModulos' => \App\Helpers\ModulosHelper::getHorariosModulos()]) }}" class="hidden"></div>
 @vite(['resources/js/views/components/navbar.js'])

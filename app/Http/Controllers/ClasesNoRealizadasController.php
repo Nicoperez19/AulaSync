@@ -32,7 +32,7 @@ class ClasesNoRealizadasController extends Controller
                 ->avg('minutos_atraso') ?? 0;
         }
         
-        return view('admin.clases-no-realizadas', compact(
+        return view('control-docente.control-clases', compact(
             'totalAtrasos',
             'promedioMinutosAtraso',
             'periodo',

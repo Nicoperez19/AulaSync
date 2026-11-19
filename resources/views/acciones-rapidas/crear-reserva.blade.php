@@ -25,26 +25,7 @@
     </x-slot>
 
     @push('styles')
-    <style>
-        #autocomplete-results {
-            z-index: 1000;
-            top: 100%;
-            left: 0;
-            right: 0;
-            transition: opacity 0.2s ease-in-out;
-        }
-        #autocomplete-results .hover\:bg-gray-100:hover {
-            background-color: #f3f4f6;
-        }
-        #autocomplete-results.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #autocomplete-results:not(.hidden) {
-            opacity: 1;
-            pointer-events: auto;
-        }
-    </style>
+    @vite(['resources/css/views/acciones-rapidas/crear-reserva.css'])
     @endpush
 
     @push('scripts')
@@ -359,12 +340,7 @@
     </div>
 
     @push('scripts')
-        <script>
-            window.CrearReservaConfig = {
-                gestionarReservasUrl: "{{ route('quick-actions.gestionar-reservas') }}",
-                modulosLunes: @json(\App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [])
-            };
-        </script>
+        <div data-page-config="CrearReservaConfig" data-config="{{ json_encode(['gestionarReservasUrl' => route('quick-actions.gestionar-reservas'), 'modulosLunes' => \App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? []]) }}" class="hidden"></div>
         @vite(['resources/js/views/acciones-rapidas/crear-reserva.js'])
     @endpush
 </x-app-layout>

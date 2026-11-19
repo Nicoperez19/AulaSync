@@ -231,11 +231,7 @@
         </form>
     </div>
 
-<script>
-window.ConfiguracionIndexConfig = {
-    defaultLogoUrl: "{{ asset('images/logo_instituto_tecnologico-01.png') }}"
-};
-</script>
+<div data-page-config="ConfiguracionIndexConfig" data-config="{{ json_encode(['defaultLogoUrl' => asset('images/logo_instituto_tecnologico-01.png')]) }}" class="hidden"></div>
 @vite(['resources/js/views/configuracion/index.js'])
 @endpush
 </x-app-layout>

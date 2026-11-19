@@ -1,3 +1,4 @@
+import '../../shared/page-config';
     // Horarios de módulos copiados de show.blade.php
     const horariosModulos = (window.NavbarConfig?.horariosModulos ?? {});
 

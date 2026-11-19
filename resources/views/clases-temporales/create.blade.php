@@ -423,36 +423,11 @@
     </div>
 
     @push('styles')
-    <style>
-        .modulo-cell.selected {
-            background-color: #cd1627 !important;
-            color: white;
-            font-weight: bold;
-        }
-        .modulo-cell:hover:not(.selected) {
-            background-color: #fee2e2;
-        }
-        .step-indicator {
-            transition: all 0.3s ease;
-        }
-        .step-line {
-            transition: all 0.3s ease;
-        }
-        .suggestion-item {
-            transition: background-color 0.2s;
-        }
-        #suggestions-list:not(.hidden) {
-            display: block;
-        }
-    </style>
+    @vite(['resources/css/views/clases-temporales/create.css'])
     @endpush
 
     @push('scripts')
-<script>
-window.ClasesTemporalesCreateConfig = {
-    profesores: @json($profesores)
-};
-</script>
+<div data-page-config="ClasesTemporalesCreateConfig" data-config="{{ json_encode(['profesores' => $profesores]) }}" class="hidden"></div>
 @vite(['resources/js/views/clases-temporales/create.js'])
 @endpush
 </x-app-layout>

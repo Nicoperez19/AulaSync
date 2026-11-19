@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         // Notificar otras pestañas cuando se crea una nueva reserva desde este modal
         document.addEventListener('DOMContentLoaded', function () {
             const btn = document.getElementById('btn-submit-reserva');

@@ -290,10 +290,6 @@
         </div>
     @endif
 
-<script>
-window.MapasTableConfig = {
-    componentId: @json($this->getId())
-};
-</script>
+<div data-page-config="MapasTableConfig" data-config="{{ json_encode(['componentId' => $this->getId()]) }}" class="hidden"></div>
 @vite(['resources/js/views/livewire/mapas-table.js'])
 </div>

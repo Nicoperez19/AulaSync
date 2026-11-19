@@ -1,3 +1,4 @@
+import '../../shared/page-config';
 function initClasesNoRealizadasScripts() {
     // Listener para abrir modal automáticamente desde URL
     Livewire.on('auto-open-reagendar', (data) => {

@@ -1,3 +1,4 @@
+import '../../shared/page-config';
     document.addEventListener('DOMContentLoaded', function() {
         const profesores = window.ClasesTemporalesCreateConfig?.profesores ?? [];
         let currentStep = 1;

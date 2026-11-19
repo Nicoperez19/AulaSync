@@ -25,26 +25,7 @@
     </x-slot>
 
     @push('styles')
-    <style>
-        #autocomplete-results {
-            z-index: 1000;
-            top: 100%;
-            left: 0;
-            right: 0;
-            transition: opacity 0.2s ease-in-out;
-        }
-        #autocomplete-results .hover\:bg-gray-100:hover {
-            background-color: #f3f4f6;
-        }
-        #autocomplete-results.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-        #autocomplete-results:not(.hidden) {
-            opacity: 1;
-            pointer-events: auto;
-        }
-    </style>
+    @vite(['resources/css/views/acciones-rapidas/editar-reserva.css'])
     @endpush
 
     @push('scripts')
@@ -197,12 +178,7 @@
 </div>
 
 @push('scripts')
-<script>
-window.EditarReservaConfig = {
-    reservaId: @json($reserva->id_reserva),
-    gestionarReservasUrl: "{{ route('quick-actions.gestionar-reservas') }}"
-};
-</script>
+<div data-page-config="EditarReservaConfig" data-config="{{ json_encode(['reservaId' => $reserva->id_reserva, 'gestionarReservasUrl' => route('quick-actions.gestionar-reservas')]) }}" class="hidden"></div>
 @vite(['resources/js/views/acciones-rapidas/editar-reserva.js'])
 @endpush
 </x-app-layout>

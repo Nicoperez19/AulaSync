@@ -383,15 +383,6 @@
     </div>
 </div>
 
-<script>
-window.SalasEstudioConfig = {
-    apiEspaciosUrl: "{{ route('quick-actions.api.espacios') }}",
-    apiReservasUrl: "{{ route('quick-actions.api.reservas-salas-estudio') }}",
-    apiProcesarEscaneoUrl: "{{ route('quick-actions.api.sala-estudio.procesar-escaneo') }}",
-    apiReservaEstadoBaseUrl: "{{ url('/quick-actions/api/reserva') }}",
-    apiVerificarNotifUrl: "{{ route('quick-actions.api.sala-estudio.verificar-notificaciones') }}",
-    csrfToken: "{{ csrf_token() }}"
-};
-</script>
+<div data-page-config="SalasEstudioConfig" data-config="{{ json_encode(['apiEspaciosUrl' => route('quick-actions.api.espacios'), 'apiReservasUrl' => route('quick-actions.api.reservas-salas-estudio'), 'apiProcesarEscaneoUrl' => route('quick-actions.api.sala-estudio.procesar-escaneo'), 'apiReservaEstadoBaseUrl' => url('/quick-actions/api/reserva'), 'apiVerificarNotifUrl' => route('quick-actions.api.sala-estudio.verificar-notificaciones'), 'csrfToken' => csrf_token()]) }}" class="hidden"></div>
 @vite(['resources/js/views/acciones-rapidas/gestionar-salas-estudio.js'])
 @endpush

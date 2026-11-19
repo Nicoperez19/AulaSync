@@ -1,3 +1,4 @@
+import '../../shared/page-config';
         // Actualizar datos cada 15 segundos para mantenerlo sincronizado en tiempo real
         setInterval(() => {
             window.Livewire.find(window.ModulosActualesConfig?.componentId)?.call('actualizarAutomaticamente');
