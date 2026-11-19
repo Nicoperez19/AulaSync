@@ -1,4 +1,4 @@
-﻿<div>
+<div>
     <!-- Header con botón para crear nueva plantilla -->
     <div class="mb-6 flex justify-between items-center">
         <div>

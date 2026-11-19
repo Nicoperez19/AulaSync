@@ -1,4 +1,4 @@
-﻿        const currentYear = (window.HorariosEspaciosConfig?.currentYear ?? new Date().getFullYear());
+        const currentYear = (window.HorariosEspaciosConfig?.currentYear ?? new Date().getFullYear());
         let horariosPorEspacio = (window.HorariosEspaciosConfig?.horariosPorEspacio ?? {});
         let espacioActualId = null;
 

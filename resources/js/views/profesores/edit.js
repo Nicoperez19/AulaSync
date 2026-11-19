@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('edit-professor-form');
             
             form.addEventListener('submit', function(e) {

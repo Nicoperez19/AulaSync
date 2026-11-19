@@ -1,4 +1,4 @@
-﻿import './shared/crud-helpers'
+import './shared/crud-helpers'
 import './views/components/sweet-alert'
 import collapse from '@alpinejs/collapse'
 import focus from '@alpinejs/focus'

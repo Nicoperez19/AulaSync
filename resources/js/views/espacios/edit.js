@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('edit-space-form');
 
             if (form) {

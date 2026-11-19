@@ -1,4 +1,4 @@
-﻿    if (typeof window.irAControlDocente !== 'function') {
+    if (typeof window.irAControlDocente !== 'function') {
         window.irAControlDocente = function(estado) {
             const inicio = document.getElementById('status-fecha-inicio')?.value || '';
             const fin = document.getElementById('status-fecha-fin')?.value || '';

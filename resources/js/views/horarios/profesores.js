@@ -1,4 +1,4 @@
-﻿        // Año académico actual desde el backend
+        // Año académico actual desde el backend
         const currentYear = (window.HorariosProfesoresConfig?.currentYear ?? new Date().getFullYear());
 
         // Buscador por nombre o RUN con debounce rápido y spinner

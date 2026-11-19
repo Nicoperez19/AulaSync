@@ -1,4 +1,4 @@
-﻿    let reservasGlobales = [];
+    let reservasGlobales = [];
     let salasEstudioGlobales = [];
 
     // MOTOR DE ESCANEO PLANO DIGITAL

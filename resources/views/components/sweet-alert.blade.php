@@ -1,4 +1,4 @@
-﻿@props(['type' => 'success', 'title' => '', 'message' => ''])
+@props(['type' => 'success', 'title' => '', 'message' => ''])
 
 <!-- SweetAlert2 Local (sin dependencia externa CDN para intranets aisladas) -->
 <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>

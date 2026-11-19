@@ -1,4 +1,4 @@
-﻿        function createConfetti() {
+        function createConfetti() {
             const colors = ['#f00', '#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
             for (let i = 0; i < 50; i++) {
                 setTimeout(() => {

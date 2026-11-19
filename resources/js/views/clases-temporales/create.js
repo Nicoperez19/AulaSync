@@ -1,4 +1,4 @@
-﻿    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
         const profesores = window.ClasesTemporalesCreateConfig?.profesores ?? [];
         let currentStep = 1;
         const totalSteps = 4;

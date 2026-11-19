@@ -1,4 +1,4 @@
-﻿// Variables específicas para gestión de espacios
+// Variables específicas para gestión de espacios
 let espaciosOriginales = [];
 
 // Cargar espacios al inicializar

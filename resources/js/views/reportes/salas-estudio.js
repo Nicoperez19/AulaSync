@@ -1,4 +1,4 @@
-﻿        let vetoActual = {};
+        let vetoActual = {};
         let grupoActual = {};
         let vetoEditando = null;
 

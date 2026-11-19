@@ -1,4 +1,4 @@
-﻿<x-guest-layout>
+<x-guest-layout>
     <x-auth-card>
         <div class="text-center mb-6">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">

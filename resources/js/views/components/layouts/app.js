@@ -1,4 +1,4 @@
-﻿        // Función para mostrar SweetAlert cuando no hay mapas
+        // Función para mostrar SweetAlert cuando no hay mapas
         function mostrarSweetAlertNoMapas(event) {
             event.preventDefault();
             Swal.fire({

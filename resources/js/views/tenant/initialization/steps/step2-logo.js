@@ -1,4 +1,4 @@
-﻿    document.getElementById('logo').addEventListener('change', function(e) {
+    document.getElementById('logo').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.startsWith('image/')) {

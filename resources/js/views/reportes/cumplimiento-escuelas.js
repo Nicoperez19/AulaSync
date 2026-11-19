@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function () {
             const canvas = document.getElementById('chart-reporte-escuelas');
             if (!canvas || !window.Chart) return;
 

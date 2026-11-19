@@ -1,4 +1,4 @@
-﻿function handleBulkFileSelect(input) {
+function handleBulkFileSelect(input) {
     const file = input.files[0];
     if (file) {
         const allowedTypes = [

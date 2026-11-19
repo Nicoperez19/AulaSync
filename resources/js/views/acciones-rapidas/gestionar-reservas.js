@@ -1,4 +1,4 @@
-﻿// Variables específicas para gestión de reservas
+// Variables específicas para gestión de reservas
 let reservasOriginales = [];
 let reservasFiltradas = [];
 let paginaActual = 1;

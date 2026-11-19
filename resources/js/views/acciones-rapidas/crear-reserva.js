@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             window.cargarEspaciosDisponibles = async function() {
                 try {

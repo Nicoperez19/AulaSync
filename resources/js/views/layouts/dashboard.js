@@ -1,4 +1,4 @@
-﻿        window.irAControlDocente = function(estado) {
+        window.irAControlDocente = function(estado) {
             const inicio = document.getElementById('status-fecha-inicio')?.value || '';
             const fin = document.getElementById('status-fecha-fin')?.value || '';
             const baseUrl = (window.DashboardLayoutConfig?.clasesNoRealizadasUrl ?? '/clases-no-realizadas');

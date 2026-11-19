@@ -1,4 +1,4 @@
-﻿        function handleLogoSelect(input) {
+        function handleLogoSelect(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 if (!file.type.startsWith('image/')) {

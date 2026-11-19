@@ -1,4 +1,4 @@
-﻿    class PermissionsTableManager {
+    class PermissionsTableManager {
         constructor() {
             this.init();
         }

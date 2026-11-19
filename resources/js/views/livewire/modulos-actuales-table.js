@@ -1,4 +1,4 @@
-﻿        // Actualizar datos cada 15 segundos para mantenerlo sincronizado en tiempo real
+        // Actualizar datos cada 15 segundos para mantenerlo sincronizado en tiempo real
         setInterval(() => {
             window.Livewire.find(window.ModulosActualesConfig?.componentId)?.call('actualizarAutomaticamente');
         }, 15000); // 15 segundos

@@ -1,4 +1,4 @@
-﻿const RESERVA_ID = (window.EditarReservaConfig?.reservaId ?? '');
+const RESERVA_ID = (window.EditarReservaConfig?.reservaId ?? '');
 
 // ── Autocomplete reasignar docente ───────────────────────────────────────────
 (function () {

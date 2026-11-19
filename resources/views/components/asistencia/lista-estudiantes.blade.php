@@ -1,4 +1,4 @@
-﻿@props([
+@props([
     'estudiantesData' => collect(),
     'bloqueado' => false,
     'mensajeBloqueo' => null

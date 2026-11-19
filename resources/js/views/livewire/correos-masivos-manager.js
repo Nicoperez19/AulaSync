@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
 
     // Confirmación para eliminar tipo de correo
     Livewire.on('confirm-delete-tipo', (data) => {

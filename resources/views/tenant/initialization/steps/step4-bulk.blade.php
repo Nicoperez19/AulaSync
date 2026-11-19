@@ -1,4 +1,4 @@
-﻿{{-- Step 4: Bulk Data Loading --}}
+{{-- Step 4: Bulk Data Loading --}}
 <div class="p-8">
     <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-100 mb-4">

@@ -1,4 +1,4 @@
-﻿        // Escuchar eventos de Livewire
+        // Escuchar eventos de Livewire
         document.addEventListener('livewire:init', () => {
             Livewire.on('modalClosed', () => {
                 // El modal se cerró, limpiar cualquier estado adicional si es necesario

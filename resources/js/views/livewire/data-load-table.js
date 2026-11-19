@@ -1,4 +1,4 @@
-﻿    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
         Livewire.on('show-success', (data) => {
             const message = data[0]?.message || 'Operación completada exitosamente.';
             Swal.fire({

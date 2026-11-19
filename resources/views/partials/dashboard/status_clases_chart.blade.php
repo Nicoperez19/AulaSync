@@ -1,4 +1,4 @@
-﻿<!-- Fila de 2 Columnas con la misma distribución de espacio (50% / 50%) -->
+<!-- Fila de 2 Columnas con la misma distribución de espacio (50% / 50%) -->
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
     <!-- COLUMNA IZQUIERDA: Estado General de Clases con su Período y Filtros -->
     <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-5 flex flex-col justify-between">

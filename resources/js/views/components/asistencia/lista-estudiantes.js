@@ -1,4 +1,4 @@
-﻿function asistenciaListHandler() {
+function asistenciaListHandler() {
     return {
         filtro: '',
         mostrarModalNuevo: false,

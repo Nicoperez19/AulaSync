@@ -1,4 +1,4 @@
-﻿    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.btn-delete-reserva').forEach(btn => {
             btn.addEventListener('click', function (e) {
                 e.preventDefault();

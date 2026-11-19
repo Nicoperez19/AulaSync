@@ -1,4 +1,4 @@
-﻿@php
+@php
     $todosLosEspacios = $this->getTodosLosEspacios();
     $totalEspacios = count($todosLosEspacios);
     $totalPaginas = (int) ceil($totalEspacios / 13);

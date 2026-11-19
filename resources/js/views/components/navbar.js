@@ -1,4 +1,4 @@
-﻿    // Horarios de módulos copiados de show.blade.php
+    // Horarios de módulos copiados de show.blade.php
     const horariosModulos = (window.NavbarConfig?.horariosModulos ?? {});
 
     // Variables para el sistema de notificaciones

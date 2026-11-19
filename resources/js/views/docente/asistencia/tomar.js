@@ -1,4 +1,4 @@
-﻿        function cambiarFechaSesion(nuevaFecha) {
+        function cambiarFechaSesion(nuevaFecha) {
             if (!nuevaFecha) return;
             const hidden = document.getElementById('fecha_asistencia_hidden');
             if (hidden) {

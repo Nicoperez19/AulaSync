@@ -1,4 +1,4 @@
-﻿function togglePasswordVisibility() {
+function togglePasswordVisibility() {
     const passwordInput = document.getElementById('init_password');
     const toggleIcon = document.getElementById('toggleIcon');
     

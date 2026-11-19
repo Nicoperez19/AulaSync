@@ -1,4 +1,4 @@
-﻿         document.addEventListener("DOMContentLoaded", function() {
+         document.addEventListener("DOMContentLoaded", function() {
             const selectPisoBtn = document.getElementById('selectPisoBtn');
             const pisoSelect = document.getElementById('piso');
             selectPisoBtn.style.display = 'none';

@@ -1,4 +1,4 @@
-﻿@props(['name', 'show' => false, 'maxWidth' => '2xl', 'title' => null])
+@props(['name', 'show' => false, 'maxWidth' => '2xl', 'title' => null])
 
 @php
     $maxWidthClass =

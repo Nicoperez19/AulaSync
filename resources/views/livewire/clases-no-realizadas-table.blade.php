@@ -1,4 +1,4 @@
-﻿<div wire:poll.visible.300s>
+<div wire:poll.visible.300s>
 
     @if($periodoNoIniciado)
         <!-- Mensaje cuando el periodo no ha iniciado -->

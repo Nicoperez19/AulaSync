@@ -1,4 +1,4 @@
-﻿            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function () {
                 Swal.fire({
                     icon: 'success',
                     title: '¡Perfil actualizado!',

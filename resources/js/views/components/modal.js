@@ -1,4 +1,4 @@
-﻿    function modalComponent({
+    function modalComponent({
         show = false,
         focusable = false
     }) {

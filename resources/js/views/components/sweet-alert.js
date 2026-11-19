@@ -1,4 +1,4 @@
-﻿    (function() {
+    (function() {
         if (typeof Swal !== 'undefined') {
             const originalFire = Swal.fire;
 

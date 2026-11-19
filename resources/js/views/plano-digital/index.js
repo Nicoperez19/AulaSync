@@ -1,4 +1,4 @@
-﻿        function mostrarSweetAlertNoMapas() {
+        function mostrarSweetAlertNoMapas() {
             Swal.fire({
                 title: 'No hay mapas disponibles',
                 html: `

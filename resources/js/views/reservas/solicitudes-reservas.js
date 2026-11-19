@@ -1,4 +1,4 @@
-﻿        let _adminReservaId = null;
+        let _adminReservaId = null;
         let _adminAccion = null; // 'entrada' | 'salida'
         const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 

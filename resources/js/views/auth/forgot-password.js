@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('forgotPasswordForm');
             
             // Función para refrescar el token CSRF

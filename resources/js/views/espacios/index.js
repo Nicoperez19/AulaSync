@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function () {
             // No cargar pisos automáticamente, se cargarán cuando se seleccione facultad
         });
 

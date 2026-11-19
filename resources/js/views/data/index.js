@@ -1,4 +1,4 @@
-﻿        function handleFileSelect(input) {
+        function handleFileSelect(input) {
             const loadButton = document.getElementById('load-button');
             const selectedFileName = document.getElementById('selected-file-name');
             const file = input.files[0];

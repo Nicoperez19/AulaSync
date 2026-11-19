@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     <style>
         [x-cloak] {
             display: none !important;

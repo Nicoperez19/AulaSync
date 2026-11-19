@@ -1,4 +1,4 @@
-﻿(function() {
+(function() {
     // Variable global para el editor Quill
     let quillEditor = null;
     let initAttempts = 0;

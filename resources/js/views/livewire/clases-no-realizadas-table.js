@@ -1,4 +1,4 @@
-﻿function initClasesNoRealizadasScripts() {
+function initClasesNoRealizadasScripts() {
     // Listener para abrir modal automáticamente desde URL
     Livewire.on('auto-open-reagendar', (data) => {
         const id = data[0]?.id || data.id;

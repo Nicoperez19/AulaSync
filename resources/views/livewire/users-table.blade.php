@@ -1,4 +1,4 @@
-﻿<div>
+<div>
     <!-- Card Filtros -->
     <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-4 mb-6 dark:bg-gray-800 dark:border-gray-700">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

@@ -1,4 +1,4 @@
-﻿         // Filtrar mensajes de error de extensiones de Chrome
+         // Filtrar mensajes de error de extensiones de Chrome
          const originalConsoleError = console.error;
          console.error = function(...args) {
              const message = args.join(' ');

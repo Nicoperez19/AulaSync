@@ -1,4 +1,4 @@
-﻿        const _cfgEspacios = window.ReportesEspaciosConfig ?? {};
+        const _cfgEspacios = window.ReportesEspaciosConfig ?? {};
         // Datos desde el backend
         const datosGrafico = {
             labels: _cfgEspacios.labels ?? [],

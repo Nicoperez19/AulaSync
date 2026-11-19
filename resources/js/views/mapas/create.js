@@ -1,4 +1,4 @@
-﻿        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function() {
             // Variables globales
             const state = {
                 selectedSpace: null,

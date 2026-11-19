@@ -1,4 +1,4 @@
-﻿        // ===== NAVEGACIÓN DE CAPÍTULOS =====
+        // ===== NAVEGACIÓN DE CAPÍTULOS =====
         function showChapter(slug) {
             // Ocultar todas las secciones
             document.querySelectorAll('.chapter-section').forEach(el => el.classList.remove('active'));

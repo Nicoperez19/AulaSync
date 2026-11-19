@@ -1,4 +1,4 @@
-﻿<x-app-layout>
+<x-app-layout>
     @push('styles')
     <style>
         /* Estilos para el contenido markdown renderizado */

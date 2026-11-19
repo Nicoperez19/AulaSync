@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('resetPasswordForm');
             
             form.addEventListener('submit', function(e) {

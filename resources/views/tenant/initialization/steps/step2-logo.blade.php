@@ -1,4 +1,4 @@
-﻿{{-- Step 2: Upload Sede Logo --}}
+{{-- Step 2: Upload Sede Logo --}}
 <div class="p-8">
     <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">

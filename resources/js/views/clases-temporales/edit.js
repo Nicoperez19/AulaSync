@@ -1,4 +1,4 @@
-﻿        const profesorColaborador = (window.ClasesTemporalesEditConfig?.profesorColaborador ?? {});
+        const profesorColaborador = (window.ClasesTemporalesEditConfig?.profesorColaborador ?? {});
         const espacios = (window.ClasesTemporalesEditConfig?.espacios ?? []);
         const modulos = (window.ClasesTemporalesEditConfig?.modulos ?? []);
         const asignaturas = (window.ClasesTemporalesEditConfig?.asignaturas ?? []);

@@ -1,4 +1,4 @@
-﻿        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const intendedUrl = localStorage.getItem('intended_url');
             
             if (intendedUrl) {

@@ -1,4 +1,4 @@
-﻿<x-show-layout>
+<x-show-layout>
     <style>
         @keyframes parpadeo {
             0% {
