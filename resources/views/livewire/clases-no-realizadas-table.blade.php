@@ -234,7 +234,7 @@
 
             {{-- Barra de Acciones Masivas + Tabla con selección instantánea en cliente --}}
             <div x-data="{
-                selected: $wire.entangle('selectedClases'),
+                selected: @entangle('selectedClases'),
                 get pageKeys() {
                     const tabla = this.$refs.tablaClases;
                     if (!tabla) return [];

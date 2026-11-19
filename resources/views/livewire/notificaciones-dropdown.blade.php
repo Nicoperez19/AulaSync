@@ -1,4 +1,4 @@
-﻿<div class="relative" x-data="{ open: $wire.entangle('mostrarDropdown') }">
+﻿<div class="relative" x-data="{ open: @entangle('mostrarDropdown') }">
     <!-- Notification Bell Button -->
     <button 
         @click="open = !open"
