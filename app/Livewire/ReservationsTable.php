@@ -585,12 +585,22 @@ class ReservationsTable extends Component
             $this->tipoSolicitante
         );
 
+        $conteosPorTipo = (clone $baseQuerySinEspacio)
+            ->join('espacios as esp_kpi', 'reservas.id_espacio', '=', 'esp_kpi.id_espacio')
+            ->selectRaw("
+                SUM(CASE WHEN esp_kpi.tipo_espacio = 'Sala de Clases' THEN 1 ELSE 0 END) AS salas_clases,
+                SUM(CASE WHEN esp_kpi.tipo_espacio = 'Auditorio' THEN 1 ELSE 0 END) AS auditorio,
+                SUM(CASE WHEN esp_kpi.tipo_espacio LIKE 'Laboratorio%' THEN 1 ELSE 0 END) AS laboratorios,
+                SUM(CASE WHEN esp_kpi.tipo_espacio = 'Sala de Estudio' THEN 1 ELSE 0 END) AS salas_estudio
+            ")
+            ->first();
+
         $kpis = array_merge($metricas, [
             'total' => $todasFiltradas->count(),
-            'salas_clases' => (clone $baseQuerySinEspacio)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Sala de Clases'))->count(),
-            'auditorio' => (clone $baseQuerySinEspacio)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Auditorio'))->count(),
-            'laboratorios' => (clone $baseQuerySinEspacio)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'like', 'Laboratorio%'))->count(),
-            'salas_estudio' => (clone $baseQuerySinEspacio)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Sala de Estudio'))->count(),
+            'salas_clases' => (int) ($conteosPorTipo->salas_clases ?? 0),
+            'auditorio' => (int) ($conteosPorTipo->auditorio ?? 0),
+            'laboratorios' => (int) ($conteosPorTipo->laboratorios ?? 0),
+            'salas_estudio' => (int) ($conteosPorTipo->salas_estudio ?? 0),
         ]);
 
         $reservas = $reservasQuery

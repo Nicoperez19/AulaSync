@@ -15,14 +15,25 @@ class NotificacionesDropdown extends Component
 
     public $mostrarDropdown = false;
 
-    protected $listeners = ['notificacionCreada' => 'cargarNotificaciones'];
+    protected $listeners = ['notificacionCreada' => 'refrescarNotificaciones'];
 
     public function mount()
     {
         $this->cargarNotificaciones();
     }
 
-    public function cargarNotificaciones()
+    public function refrescarNotificaciones()
+    {
+        $this->cargarNotificaciones(true);
+    }
+
+    protected function getCacheKey(string $run): string
+    {
+        $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+        return "notificaciones_dropdown_{$tenantId}_{$run}";
+    }
+
+    public function cargarNotificaciones(bool $forceRefresh = false)
     {
         if (! Auth::check()) {
             return;
@@ -35,61 +46,72 @@ class NotificacionesDropdown extends Component
             return;
         }
 
-        $notificaciones = Notificacion::where('run_usuario', $usuario->run)
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get()
-            ->map(function ($notificacion) {
-                // Regenerar URL dinámicamente según el tipo de notificación
-                if ($notificacion->tipo === 'periodos_academicos_pendientes') {
-                    $notificacion->url = route('dias-feriados.index');
-                } elseif (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
-                    $notificacion->url = route('quick-actions.gestionar-salas-estudio');
-                } else {
-                    $notificacion->url = route('recuperacion-clases.index');
-                }
-                
-                // Reconstruir mensaje con ID de espacio si está disponible
-                if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
-                    $datos = $notificacion->datos_adicionales;
-                    $notificacion->mensaje = sprintf(
-                        'El profesor no realizó la clase en %s el %s',
-                        $datos['id_espacio'] ?? 'Desconocido',
-                        $datos['fecha_clase'] ?? 'fecha desconocida'
-                    );
-                } elseif ($notificacion->tipo === 'clase_reagendada' && isset($notificacion->datos_adicionales['id_espacio_reagendado'])) {
-                    $datos = $notificacion->datos_adicionales;
-                    $notificacion->mensaje = sprintf(
-                        'Clase reagendada para el %s en %s',
-                        $datos['fecha_reagendada'] ?? 'fecha pendiente',
-                        $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
-                    );
-                }
-
-                
-                return $notificacion;
-            });
-
-        $recordatorioPeriodosPendientes = app(AcademicPeriodReminderService::class)->shouldNotify();
-
-        if ($recordatorioPeriodosPendientes) {
-            $recordatorio = new Notificacion();
-            $recordatorio->forceFill([
-                'id' => 'academic-period-reminder',
-                'tipo' => 'periodos_academicos_pendientes',
-                'titulo' => 'Períodos académicos pendientes',
-                'mensaje' => 'Los períodos académicos no están configurados. Configúrelos para un mejor seguimiento de horarios.',
-                'url' => route('dias-feriados.index'),
-                'leida' => false,
-                'created_at' => now(),
-            ]);
-
-            $notificaciones->prepend($recordatorio);
+        $cacheKey = $this->getCacheKey($usuario->run);
+        if ($forceRefresh) {
+            \Illuminate\Support\Facades\Cache::forget($cacheKey);
         }
 
-        $this->notificaciones = $notificaciones->take(10);
-        $this->contadorNoLeidas = Notificacion::contadorNoLeidas($usuario->run)
-            + (int) $recordatorioPeriodosPendientes;
+        $cached = \Illuminate\Support\Facades\Cache::remember($cacheKey, 30, function () use ($usuario) {
+            $notificaciones = Notificacion::where('run_usuario', $usuario->run)
+                ->orderBy('created_at', 'desc')
+                ->take(10)
+                ->get()
+                ->map(function ($notificacion) {
+                    // Regenerar URL dinámicamente según el tipo de notificación
+                    if ($notificacion->tipo === 'periodos_academicos_pendientes') {
+                        $notificacion->url = route('dias-feriados.index');
+                    } elseif (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
+                        $notificacion->url = route('quick-actions.gestionar-salas-estudio');
+                    } else {
+                        $notificacion->url = route('recuperacion-clases.index');
+                    }
+
+                    // Reconstruir mensaje con ID de espacio si está disponible
+                    if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
+                        $datos = $notificacion->datos_adicionales;
+                        $notificacion->mensaje = sprintf(
+                            'El profesor no realizó la clase en %s el %s',
+                            $datos['id_espacio'] ?? 'Desconocido',
+                            $datos['fecha_clase'] ?? 'fecha desconocida'
+                        );
+                    } elseif ($notificacion->tipo === 'clase_reagendada' && isset($notificacion->datos_adicionales['id_espacio_reagendado'])) {
+                        $datos = $notificacion->datos_adicionales;
+                        $notificacion->mensaje = sprintf(
+                            'Clase reagendada para el %s en %s',
+                            $datos['fecha_reagendada'] ?? 'fecha pendiente',
+                            $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
+                        );
+                    }
+
+                    return $notificacion;
+                });
+
+            $recordatorioPeriodosPendientes = app(AcademicPeriodReminderService::class)->shouldNotify();
+
+            if ($recordatorioPeriodosPendientes) {
+                $recordatorio = new Notificacion();
+                $recordatorio->forceFill([
+                    'id' => 'academic-period-reminder',
+                    'tipo' => 'periodos_academicos_pendientes',
+                    'titulo' => 'Períodos académicos pendientes',
+                    'mensaje' => 'Los períodos académicos no están configurados. Configúrelos para un mejor seguimiento de horarios.',
+                    'url' => route('dias-feriados.index'),
+                    'leida' => false,
+                    'created_at' => now(),
+                ]);
+
+                $notificaciones->prepend($recordatorio);
+            }
+
+            return [
+                'notificaciones' => $notificaciones->take(10),
+                'contadorNoLeidas' => Notificacion::contadorNoLeidas($usuario->run)
+                    + (int) $recordatorioPeriodosPendientes,
+            ];
+        });
+
+        $this->notificaciones = $cached['notificaciones'];
+        $this->contadorNoLeidas = $cached['contadorNoLeidas'];
     }
 
     public function marcarComoLeida($notificacionId)
@@ -98,7 +120,7 @@ class NotificacionesDropdown extends Component
 
         if ($notificacion && $notificacion->run_usuario === Auth::user()->run) {
             $notificacion->marcarComoLeida();
-            $this->cargarNotificaciones();
+            $this->cargarNotificaciones(true);
         }
     }
 
@@ -106,7 +128,7 @@ class NotificacionesDropdown extends Component
     {
         if (Auth::check()) {
             Notificacion::marcarTodasComoLeidas(Auth::user()->run);
-            $this->cargarNotificaciones();
+            $this->cargarNotificaciones(true);
         }
     }
 

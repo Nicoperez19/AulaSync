@@ -119,7 +119,7 @@ class TenantScope implements Scope
         if (method_exists($model, 'espacio') && !$hasColumn('id_espacio')) {
             if ($tenant->prefijo_espacios) {
                 $builder->whereHas('espacio', function ($query) use ($tenant) {
-                    $query->whereRaw('LOWER(espacios.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+                    $query->where('espacios.id_espacio', 'LIKE', $tenant->prefijo_espacios . '%');
                 });
             }
             return;
@@ -160,7 +160,7 @@ class TenantScope implements Scope
         // 10. Filtrar por relación con reserva origen (ej. vetos)
         if (method_exists($model, 'reservaOrigen') && $tenant->prefijo_espacios) {
             $builder->whereHas('reservaOrigen', function ($query) use ($tenant) {
-                $query->whereRaw('LOWER(reservas.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+                $query->where('reservas.id_espacio', 'LIKE', $tenant->prefijo_espacios . '%');
             });
             return;
         }

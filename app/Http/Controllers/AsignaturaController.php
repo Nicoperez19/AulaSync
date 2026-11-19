@@ -20,11 +20,17 @@ class AsignaturaController extends Controller
      */
     public function index()
     {
-        $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10);
-        $profesores = Profesor::all();       
-        $carreras = Carrera::all();
+        $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
 
-        return view('asignaturas.index', compact('asignaturas', 'profesores', 'carreras'));
+        $profesores = \Illuminate\Support\Facades\Cache::remember("asignaturas_profesores_{$tenantId}", 300, function () {
+            return Profesor::select('run_profesor', 'name')->orderBy('name')->get();
+        });
+
+        $carreras = \Illuminate\Support\Facades\Cache::remember("asignaturas_carreras_{$tenantId}", 300, function () {
+            return Carrera::select('id_carrera', 'nombre')->orderBy('nombre')->get();
+        });
+
+        return view('asignaturas.index', compact('profesores', 'carreras'));
     }
     /**
      * Show the form for creating a new resource.
