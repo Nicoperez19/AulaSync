@@ -205,7 +205,6 @@
 </div>
 
 @push('scripts')
-<script src="{{ asset('js/admin-panel.js') }}"></script>
 <div data-page-config="GestionarEspaciosConfig" data-config="{{ json_encode(['apiEspaciosUrl' => route('quick-actions.api.espacios'), 'apiEspacioEstadoBaseUrl' => url('quick-actions/api/espacio'), 'apiLiberacionMasivaUrl' => route('quick-actions.api.espacios.liberacion-masiva')]) }}" class="hidden"></div>
 @vite(['resources/js/views/acciones-rapidas/gestionar-espacios.js'])
 @endpush

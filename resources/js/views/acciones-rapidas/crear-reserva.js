@@ -1140,3 +1140,5 @@ import '../../shared/page-config';
 
                 console.log('🔍 Autocompletado y verificación de conflictos configurados');
             });
+
+Object.assign(window, { procesarCrearReserva, toggleAsignaturaField, actualizarModulosDisponibles, toggleModalidadReserva, cargarModulosParaSeleccion, actualizarPrevisualizacionRecurrente, actualizarModulosFinales, verificarConflictosReserva, activarForzar });

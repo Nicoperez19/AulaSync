@@ -103,3 +103,5 @@ async function procesarEditarReserva(event) {
 }
 
 if (typeof limpiarNuevoDocente === 'function') window.limpiarNuevoDocente = limpiarNuevoDocente;
+
+if (typeof procesarEditarReserva === 'function') window.procesarEditarReserva = procesarEditarReserva;

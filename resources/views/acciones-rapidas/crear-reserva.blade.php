@@ -29,7 +29,6 @@
     @endpush
 
     @push('scripts')
-    <script src="{{ asset('js/admin-panel.js') }}"></script>
     @endpush
 
     <div class="space-y-6">

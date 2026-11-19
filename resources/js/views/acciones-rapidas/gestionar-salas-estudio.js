@@ -815,4 +815,6 @@ Object.assign(window, {
     procesarReservaManualDirecta,
     devolverSalaDirecta,
     cambiarEstadoReserva,
+    procesarEscaneoCodSala,
+    guardarYContinuar,
 });
