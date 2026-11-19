@@ -29,8 +29,8 @@ class NotificacionesDropdown extends Component
 
         $usuario = Auth::user();
 
-        // Solo cargar notificaciones para supervisores y administradores
-        if (! $usuario->hasAnyRole(['Supervisor', 'Administrador'])) {
+        // Solo cargar notificaciones para quien corresponda (ver User::puedeVerNotificaciones)
+        if (! $usuario->puedeVerNotificaciones()) {
             return;
         }
 

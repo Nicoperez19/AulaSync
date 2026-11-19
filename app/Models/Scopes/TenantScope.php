@@ -20,20 +20,29 @@ class TenantScope implements Scope
     protected function hasColumnCached(Model $model, string $table, string $column): bool
     {
         $connectionName = $model->getConnectionName() ?: config('database.default');
-        $cacheKey = "tenant_scope_cols_{$connectionName}_{$table}";
+        // La clave incluye la BD y el host reales: con una conexión 'tenant' compartida por todas las sedes,
+        // una clave solo por nombre de conexión mezclaba columnas (y errores) entre sedes.
+        $database = config("database.connections.{$connectionName}.database");
+        $host = config("database.connections.{$connectionName}.host");
+        $cacheKey = "tenant_scope_cols_{$connectionName}_{$host}_{$database}_{$table}";
 
         if (!isset(static::$columnCache[$cacheKey])) {
-            static::$columnCache[$cacheKey] = \Illuminate\Support\Facades\Cache::remember(
-                $cacheKey,
-                86400, // 24 horas
-                function () use ($model, $table) {
-                    try {
-                        return $model->getConnection()->getSchemaBuilder()->getColumnListing($table);
-                    } catch (\Throwable $e) {
-                        return [];
-                    }
+            $columnas = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+            if (!is_array($columnas) || $columnas === []) {
+                try {
+                    $columnas = $model->getConnection()->getSchemaBuilder()->getColumnListing($table);
+                } catch (\Throwable $e) {
+                    $columnas = [];
                 }
-            );
+
+                // Nunca se cachea un listado vacío (tabla aún inexistente): dejaría al scope sin filtro de sede.
+                if ($columnas !== []) {
+                    \Illuminate\Support\Facades\Cache::put($cacheKey, $columnas, 86400);
+                }
+            }
+
+            static::$columnCache[$cacheKey] = $columnas;
         }
 
         return in_array($column, static::$columnCache[$cacheKey]);

@@ -13,11 +13,13 @@
             </div>
 
             <div class="flex items-center gap-2.5">
+                @can('manejo de incidencias')
                 <a href="{{ route('quick-actions.incidencias.index') }}"
                    class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Incidencias</span>
                 </a>
+                @endcan
                 <a href="{{ route('quick-actions.index') }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-semibold rounded-xl shadow-xs transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-300">
                     <svg class="w-4 h-4 shrink-0 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

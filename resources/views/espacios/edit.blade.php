@@ -152,7 +152,11 @@
                         </select>
                         <p class="mt-1 text-xs text-gray-500">
                             Para poner el espacio en Mantenimiento, regístralo desde
-                            <a href="{{ route('quick-actions.incidencias.index') }}" class="underline">Incidencias</a>
+                            @can('manejo de incidencias')
+                                <a href="{{ route('quick-actions.incidencias.index') }}" class="underline">Incidencias</a>
+                            @else
+                                Acciones Rápidas &gt; Gestionar Espacios
+                            @endcan
                             indicando la falla.
                         </p>
                     </div>

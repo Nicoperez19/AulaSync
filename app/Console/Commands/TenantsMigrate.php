@@ -56,6 +56,9 @@ class TenantsMigrate extends Command
             try {
                 // Set tenant connection
                 Config::set('database.connections.tenant.database', $tenant->database);
+                if ($tenant->database_host) {
+                    Config::set('database.connections.tenant.host', $tenant->database_host);
+                }
                 DB::purge('tenant');
 
                 $this->info("Database: {$tenant->database}");

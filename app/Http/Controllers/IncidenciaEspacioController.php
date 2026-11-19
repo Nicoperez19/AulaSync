@@ -21,7 +21,12 @@ class IncidenciaEspacioController extends Controller
 {
     public function __construct(protected IncidenciaEspacioService $incidencias)
     {
-        $this->middleware('can:acciones rapidas');
+        // Tablero, exportaciones, detalle y cambios de estado: solo quien tenga "manejo de incidencias".
+        $this->middleware('can:manejo de incidencias')->except('store');
+
+        // Reportar una falla lo puede hacer también quien opera Acciones Rápidas (así lo hace
+        // QuickActionsController al pasar un espacio a Mantenimiento); no necesita ver el tablero.
+        $this->middleware('role_or_permission:Administrador|Supervisor|manejo de incidencias|acciones rapidas')->only('store');
     }
 
     /**

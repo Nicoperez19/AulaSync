@@ -46,9 +46,9 @@
         @endcan
 
         <!-- Notificaciones - Para supervisores y administradores -->
-        @hasanyrole('Supervisor|Administrador')
+        @if (auth()->user()->puedeVerNotificaciones())
             @livewire('notificaciones-dropdown')
-        @endhasanyrole
+        @endif
 
    
 

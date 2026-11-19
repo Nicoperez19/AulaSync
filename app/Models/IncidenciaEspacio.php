@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class IncidenciaEspacio extends Model
 {
@@ -71,6 +73,75 @@ class IncidenciaEspacio extends Model
         'reportado_en' => 'datetime',
         'resuelto_en'  => 'datetime',
     ];
+
+    /** BD de sede en las que ya se verificó que las tablas existen (evita consultar el esquema en cada llamada). */
+    protected static array $tablasVerificadas = [];
+
+    /**
+     * Garantiza que las tablas de incidencias existan en la BD de la sede activa.
+     *
+     * Las migraciones de tenant solo se aplican a las sedes en las que alguien ejecutó `tenants:migrate`;
+     * si una sede quedó atrás, el tablero y el reporte fallaban solo en esa sede. Esto crea las tablas
+     * la primera vez que se usan (idempotente) y es equivalente a la migración 2026_10_28_000001.
+     */
+    public static function asegurarTablas(): void
+    {
+        $conexion = config('database.connections.tenant');
+        $clave = ($conexion['host'] ?? '') . '|' . ($conexion['database'] ?? '');
+
+        if (empty($conexion['database'])) {
+            return; // Sin sede activa no hay BD de tenant donde crear nada.
+        }
+
+        if (isset(static::$tablasVerificadas[$clave])) {
+            return;
+        }
+
+        $schema = Schema::connection('tenant');
+
+        if (! $schema->hasTable('incidencias_espacios')) {
+            $schema->create('incidencias_espacios', function (Blueprint $table) {
+                $table->id();
+                $table->string('id_espacio')->index();
+                $table->string('categoria', 40)->index();
+                $table->string('severidad', 10)->default('media')->index();
+                $table->text('descripcion');
+                $table->boolean('bloquea_uso')->default(false)->index();
+                $table->string('estado_espacio_previo', 20)->nullable();
+                $table->string('estado', 15)->default('abierta')->index();
+                $table->string('reportado_por_run', 20)->nullable()->index();
+                $table->string('reportado_por_nombre')->nullable();
+                $table->timestamp('reportado_en')->useCurrent()->index();
+                $table->string('asignado_a')->nullable();
+                $table->text('resolucion')->nullable();
+                $table->string('resuelto_por_run', 20)->nullable();
+                $table->string('resuelto_por_nombre')->nullable();
+                $table->timestamp('resuelto_en')->nullable();
+                $table->timestamps();
+
+                $table->index(['id_espacio', 'estado']);
+                $table->index(['estado', 'bloquea_uso']);
+            });
+        }
+
+        if (! $schema->hasTable('incidencias_espacios_eventos')) {
+            $schema->create('incidencias_espacios_eventos', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('incidencia_id')->index();
+                $table->string('tipo', 30);
+                $table->string('estado_anterior', 15)->nullable();
+                $table->string('estado_nuevo', 15)->nullable();
+                $table->text('detalle')->nullable();
+                $table->string('usuario_run', 20)->nullable();
+                $table->string('usuario_nombre')->nullable();
+                $table->timestamps();
+
+                $table->foreign('incidencia_id')->references('id')->on('incidencias_espacios')->onDelete('cascade');
+            });
+        }
+
+        static::$tablasVerificadas[$clave] = true;
+    }
 
     // Relaciones
 

@@ -156,7 +156,8 @@
             </div>
         </div>
 
-        <!-- Fallas e Incidencias -->
+        <!-- Fallas e Incidencias (solo con permiso "manejo de incidencias") -->
+        @can('manejo de incidencias')
         <div class="rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1" style="background:linear-gradient(135deg,#f43f5e,#e11d48)">
             <div class="p-6 text-white">
                 <div class="flex items-center justify-center mb-4">
@@ -175,6 +176,8 @@
                 </a>
             </div>
         </div>
+
+        @endcan
 
         <!-- Gestionar Reservas de Salas de Estudio -->
         <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">

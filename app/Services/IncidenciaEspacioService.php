@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Espacio;
 use App\Models\IncidenciaEspacio;
 use App\Models\IncidenciaEspacioEvento;
+use App\Models\Notificacion;
+use App\Support\IncidenciasSchema;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -35,6 +37,8 @@ class IncidenciaEspacioService
      */
     public function reportar(string $idEspacio, array $datos, ?Authenticatable $usuario = null): array
     {
+        $this->asegurarTablas();
+
         $espacio = Espacio::where('id_espacio', $idEspacio)->first();
 
         if (! $espacio) {
@@ -91,6 +95,9 @@ class IncidenciaEspacioService
             return $this->respuesta(false, 500, 'No se pudo registrar la incidencia: ' . $e->getMessage());
         }
 
+        // Centro de notificaciones: avisa a quienes tienen el permiso "manejo de incidencias".
+        Notificacion::crearNotificacionIncidenciaReportada($incidencia);
+
         $mensaje = $bloquea
             ? "Incidencia registrada. El espacio {$idEspacio} quedó en Mantenimiento."
             : "Incidencia registrada. El espacio {$idEspacio} sigue operativo.";
@@ -104,6 +111,8 @@ class IncidenciaEspacioService
      */
     public function cambiarEstado(int $idIncidencia, string $nuevoEstado, ?string $nota = null, ?Authenticatable $usuario = null): array
     {
+        $this->asegurarTablas();
+
         $incidencia = IncidenciaEspacio::find($idIncidencia);
 
         if (! $incidencia) {
@@ -196,6 +205,9 @@ class IncidenciaEspacioService
 
         $incidencia->refresh();
 
+        // Centro de notificaciones: avisa a quien reportó la falla.
+        Notificacion::crearNotificacionIncidenciaActualizada($incidencia, $this->actor($usuario)['run']);
+
         return $this->respuesta(true, 200, 'Incidencia actualizada.' . $mensajeExtra, ['incidencia' => $this->resumen($incidencia)]);
     }
 
@@ -204,6 +216,8 @@ class IncidenciaEspacioService
      */
     public function comentar(int $idIncidencia, string $texto, ?Authenticatable $usuario = null): array
     {
+        $this->asegurarTablas();
+
         $incidencia = IncidenciaEspacio::find($idIncidencia);
 
         if (! $incidencia) {
@@ -221,6 +235,8 @@ class IncidenciaEspacioService
      */
     public function cerrarBloqueantesAlLiberar(string $idEspacio, ?string $nota = null, ?Authenticatable $usuario = null): int
     {
+        $this->asegurarTablas();
+
         $actor = $this->actor($usuario);
         $nota = $nota !== null && trim($nota) !== '' ? trim($nota) : 'Espacio liberado manualmente (sin detalle de resolución).';
 
@@ -239,6 +255,9 @@ class IncidenciaEspacioService
 
             $this->registrarEvento($incidencia, 'estado_cambiado', $anterior, 'resuelta', $nota, $actor);
             $this->registrarEvento($incidencia, 'espacio_liberado', null, null, 'Espacio liberado manualmente', $actor);
+
+            // Centro de notificaciones: avisa a quien reportó la falla (si no fue quien liberó la sala).
+            Notificacion::crearNotificacionIncidenciaActualizada($incidencia->fresh(), $actor['run']);
         }
 
         return $incidencias->count();
@@ -249,6 +268,8 @@ class IncidenciaEspacioService
      */
     public function tieneBloqueanteAbierta(string $idEspacio): bool
     {
+        $this->asegurarTablas();
+
         return IncidenciaEspacio::where('id_espacio', $idEspacio)->abiertas()->bloqueantes()->exists();
     }
 
@@ -259,6 +280,8 @@ class IncidenciaEspacioService
      */
     public function consultaFiltrada(array $filtros = []): Builder
     {
+        $this->asegurarTablas();
+
         $query = IncidenciaEspacio::with('espacio:id_espacio,nombre_espacio,tipo_espacio,estado')
             ->orderByRaw("FIELD(estado, 'abierta', 'en_proceso', 'resuelta', 'descartada')")
             ->orderByRaw("FIELD(severidad, 'critica', 'alta', 'media', 'baja')")
@@ -309,6 +332,8 @@ class IncidenciaEspacioService
      */
     public function estadisticas(): array
     {
+        $this->asegurarTablas();
+
         $abiertas = IncidenciaEspacio::abiertas()->count();
         $criticas = IncidenciaEspacio::abiertas()->whereIn('severidad', ['alta', 'critica'])->count();
         $salasBloqueadas = IncidenciaEspacio::abiertas()->bloqueantes()->distinct('id_espacio')->count('id_espacio');
@@ -321,6 +346,12 @@ class IncidenciaEspacioService
             ->orderByDesc('total')
             ->limit(5)
             ->pluck('total', 'categoria')
+            ->all();
+
+        $porEstado = IncidenciaEspacio::where('reportado_en', '>=', $desde)
+            ->select('estado', DB::raw('COUNT(*) as total'))
+            ->groupBy('estado')
+            ->pluck('total', 'estado')
             ->all();
 
         $espaciosReincidentes = IncidenciaEspacio::where('reportado_en', '>=', $desde)
@@ -343,6 +374,7 @@ class IncidenciaEspacioService
             'graves_abiertas'       => $criticas,
             'salas_bloqueadas'      => $salasBloqueadas,
             'por_categoria_90d'     => $porCategoria,
+            'por_estado_90d'        => $porEstado,
             'reincidentes_90d'      => $espaciosReincidentes,
             'tiempo_medio_horas'    => $tiempoMedioHoras !== null ? round($tiempoMedioHoras / 60, 1) : null,
         ];
@@ -353,6 +385,8 @@ class IncidenciaEspacioService
      */
     public function detalle(int $idIncidencia): ?array
     {
+        $this->asegurarTablas();
+
         $incidencia = IncidenciaEspacio::with(['eventos', 'espacio:id_espacio,nombre_espacio,estado'])->find($idIncidencia);
 
         if (! $incidencia) {
@@ -369,6 +403,22 @@ class IncidenciaEspacioService
                 'fecha'           => $e->created_at?->format('d-m-Y H:i'),
             ])->values()->all(),
         ];
+    }
+
+
+    /**
+     * Garantiza que las tablas de incidencias (y notificaciones) existan en la BD de la sede activa.
+     * Así el módulo funciona en todas las sedes aunque `tenants:migrate` no se haya corrido en alguna.
+     */
+    public function asegurarTablas(): void
+    {
+        try {
+            IncidenciasSchema::asegurar();
+        } catch (\Throwable $e) {
+            Log::error('No se pudo asegurar el esquema de incidencias: ' . $e->getMessage(), [
+                'bd' => config('database.connections.tenant.database'),
+            ]);
+        }
     }
 
     // ---------------------------------------------------------------------------------------

@@ -41,6 +41,8 @@ class Notificacion extends Model
         'sala_estudio_advertencia' => ['label' => 'Sala de estudio por vencer', 'icon' => 'fa-hourglass-half', 'color' => 'amber'],
         'sala_estudio_vencida' => ['label' => 'Sala de estudio vencida', 'icon' => 'fa-clock', 'color' => 'orange'],
         'soporte_respuesta' => ['label' => 'Soporte', 'icon' => 'fa-headset', 'color' => 'blue'],
+        'incidencia_reportada' => ['label' => 'Incidencias de espacios', 'icon' => 'fa-screwdriver-wrench', 'color' => 'orange'],
+        'incidencia_actualizada' => ['label' => 'Seguimiento de incidencias', 'icon' => 'fa-clipboard-check', 'color' => 'emerald'],
     ];
 
     /**
@@ -68,6 +70,13 @@ class Notificacion extends Model
 
         if ($this->tipo === 'soporte_respuesta' && ! empty($datos['id_ticket'])) {
             return route('soporte.show', $datos['id_ticket']);
+        }
+
+        if (in_array($this->tipo, ['incidencia_reportada', 'incidencia_actualizada'], true)) {
+            // El tablero exige el permiso "manejo de incidencias"; quien no lo tiene va a Acciones Rápidas.
+            return auth()->user()?->can('manejo de incidencias')
+                ? route('quick-actions.incidencias.index')
+                : route('quick-actions.index');
         }
 
         return route('recuperacion-clases.index');
@@ -159,6 +168,131 @@ class Notificacion extends Model
             'leida' => false,
             'fecha_lectura' => null,
         ]);
+    }
+
+    /**
+     * Incidencia de espacio reportada: avisa a todas las personas con el permiso "manejo de incidencias".
+     *
+     * Antes se excluía a quien reportó; si esa persona era la única con el permiso (p. ej. el
+     * administrador de una sede) nadie recibía el aviso. Ahora también recibe la suya, con
+     * un texto en primera persona, como confirmación de que el reporte quedó registrado.
+     */
+    public static function crearNotificacionIncidenciaReportada($incidencia): void
+    {
+        try {
+            // Si el permiso aún no existe (migración central pendiente) User::permission() lanzaría
+            // PermissionDoesNotExist y la notificación se perdería en silencio.
+            \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'manejo de incidencias', 'guard_name' => 'web']);
+
+            $usuarios = User::permission('manejo de incidencias')->get();
+
+            if ($usuarios->isEmpty()) {
+                \Log::warning('Incidencia reportada sin destinatarios: nadie tiene el permiso "manejo de incidencias".', [
+                    'incidencia' => $incidencia->id,
+                    'espacio' => $incidencia->id_espacio,
+                ]);
+
+                return;
+            }
+
+            $fueraDeServicio = $incidencia->bloquea_uso ? ' La sala quedó fuera de servicio (Mantenimiento).' : '';
+
+            $titulo = ($incidencia->bloquea_uso ? 'Sala fuera de servicio: ' : 'Nueva incidencia: ') . $incidencia->id_espacio;
+            $mensaje = sprintf(
+                '%s reportó una falla en %s: %s (severidad %s).%s',
+                $incidencia->reportado_por_nombre ?? 'Un usuario',
+                $incidencia->id_espacio,
+                $incidencia->categoria_label,
+                mb_strtolower($incidencia->severidad_label),
+                $fueraDeServicio
+            );
+
+            $mensajePropio = sprintf(
+                'Tu reporte de %s en %s quedó registrado (severidad %s).%s',
+                mb_strtolower($incidencia->categoria_label),
+                $incidencia->id_espacio,
+                mb_strtolower($incidencia->severidad_label),
+                $fueraDeServicio
+            );
+
+            foreach ($usuarios as $usuario) {
+                $esAutor = $incidencia->reportado_por_run && (string) $usuario->run === (string) $incidencia->reportado_por_run;
+
+                static::create([
+                    'run_usuario' => $usuario->run,
+                    'tipo' => 'incidencia_reportada',
+                    'titulo' => $titulo,
+                    'mensaje' => $esAutor ? $mensajePropio : $mensaje,
+                    'url' => route('quick-actions.incidencias.index'),
+                    'datos_adicionales' => [
+                        'id_incidencia' => $incidencia->id,
+                        'id_espacio' => $incidencia->id_espacio,
+                        'categoria' => $incidencia->categoria,
+                        'severidad' => $incidencia->severidad,
+                        'bloquea_uso' => (bool) $incidencia->bloquea_uso,
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            try {
+                \Log::error('Error al crear notificación de incidencia reportada: ' . $e->getMessage());
+            } catch (\Throwable $logEx) {
+                // No bloquear el flujo por errores de log
+            }
+        }
+    }
+
+    /**
+     * Cambio de estado de una incidencia (en proceso / resuelta / descartada / reabierta):
+     * avisa a quien la reportó, salvo que haya sido esa misma persona quien hizo el cambio.
+     */
+    public static function crearNotificacionIncidenciaActualizada($incidencia, ?string $runAutorCambio = null): void
+    {
+        try {
+            $run = $incidencia->reportado_por_run;
+
+            if (! $run || (string) $run === (string) $runAutorCambio) {
+                return;
+            }
+
+            $frases = [
+                'en_proceso' => 'ya está siendo atendida',
+                'resuelta' => 'fue resuelta',
+                'descartada' => 'fue descartada',
+                'abierta' => 'fue reabierta',
+            ];
+
+            $titulo = 'Incidencia ' . mb_strtolower($incidencia->estado_label) . ': ' . $incidencia->id_espacio;
+            $mensaje = sprintf(
+                'Tu reporte de %s en %s %s.',
+                mb_strtolower($incidencia->categoria_label),
+                $incidencia->id_espacio,
+                $frases[$incidencia->estado] ?? 'cambió de estado'
+            );
+
+            if (in_array($incidencia->estado, ['resuelta', 'descartada'], true) && $incidencia->resolucion) {
+                $mensaje .= ' Detalle: ' . \Illuminate\Support\Str::limit($incidencia->resolucion, 160);
+            }
+
+            static::create([
+                'run_usuario' => $run,
+                'tipo' => 'incidencia_actualizada',
+                'titulo' => $titulo,
+                'mensaje' => $mensaje,
+                'url' => route('quick-actions.index'),
+                'datos_adicionales' => [
+                    'id_incidencia' => $incidencia->id,
+                    'id_espacio' => $incidencia->id_espacio,
+                    'estado' => $incidencia->estado,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            try {
+                \Log::error('Error al crear notificación de incidencia actualizada: ' . $e->getMessage());
+            } catch (\Throwable $logEx) {
+                // No bloquear el flujo por errores de log
+            }
+        }
     }
 
     /**

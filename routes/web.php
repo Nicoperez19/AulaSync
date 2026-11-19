@@ -119,7 +119,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Centro de Notificaciones (disponible en todas las sedes: usa la sede activa en sesión)
-Route::middleware(['auth', 'tenant.init', 'role:Administrador|Supervisor'])->group(function () {
+Route::middleware(['auth', 'tenant.init', 'role_or_permission:Administrador|Supervisor|manejo de incidencias|acciones rapidas'])->group(function () {
     Route::view('/notificaciones', 'notificaciones.index')->name('notificaciones.index');
 });
 

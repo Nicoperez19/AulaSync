@@ -96,6 +96,17 @@ class User extends Authenticatable
         return $this->hasOne(Profesor::class, 'run_profesor', 'run');
     }
 
+    /**
+     * ¿Debe mostrarse la campana / centro de notificaciones a este usuario?
+     * Supervisores y administradores (como antes) y también quienes gestionan incidencias
+     * o reportan fallas desde Acciones Rápidas (reciben avisos de incidencias).
+     */
+    public function puedeVerNotificaciones(): bool
+    {
+        return $this->hasAnyRole(['Supervisor', 'Administrador'])
+            || $this->canAny(['manejo de incidencias', 'acciones rapidas']);
+    }
+
     public function notificaciones()
     {
         return $this->hasMany(Notificacion::class, 'run_usuario', 'run');
