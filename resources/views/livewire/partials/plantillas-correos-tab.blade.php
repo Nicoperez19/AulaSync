@@ -330,7 +330,6 @@
     </div>
 @endif
 
-@script
 <script>
 window.PlantillasCorreosTabConfig = {
     componentId: @json($this->getId())

@@ -128,11 +128,13 @@
             </div>
         @endif
     </div>
-</div>
 
-<script>
-window.NotificacionesDropdownConfig = {
-    componentId: @json($this->getId())
-};
-</script>
-@vite(['resources/js/views/livewire/notificaciones-dropdown.js'])
+    <div wire:ignore>
+        <script>
+        window.NotificacionesDropdownConfig = {
+            componentId: @json($this->getId())
+        };
+        </script>
+        @vite(['resources/js/views/livewire/notificaciones-dropdown.js'])
+    </div>
+</div>

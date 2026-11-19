@@ -416,6 +416,8 @@
             {{ $reservas->links('vendor.pagination.tailwind') }}
         </div>
     </div>
-</div>
 
-@vite(['resources/js/views/livewire/reservations-table.js'])
+    <div wire:ignore>
+        @vite(['resources/js/views/livewire/reservations-table.js'])
+    </div>
+</div>

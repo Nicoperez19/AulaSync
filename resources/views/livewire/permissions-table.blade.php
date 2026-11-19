@@ -150,6 +150,8 @@
             </form>
         </x-modal>
     @endforeach
-</div>
 
-@vite(['resources/js/views/livewire/permissions-table.js'])
+    <div wire:ignore>
+        @vite(['resources/js/views/livewire/permissions-table.js'])
+    </div>
+</div>

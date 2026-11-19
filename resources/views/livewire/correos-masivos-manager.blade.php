@@ -180,11 +180,12 @@
         </div>
     </div>
 
+    <div wire:ignore>
+        <script>
+        window.CorreosMasivosConfig = {
+            componentId: @json($this->getId())
+        };
+        </script>
+        @vite(['resources/js/views/livewire/correos-masivos-manager.js'])
+    </div>
 </div>
-
-<script>
-window.CorreosMasivosConfig = {
-    componentId: @json($this->getId())
-};
-</script>
-@vite(['resources/js/views/livewire/correos-masivos-manager.js'])

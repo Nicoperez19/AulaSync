@@ -140,11 +140,13 @@
             </div>
         @endif
     </div>
-</div>
 
-<script>
-window.DataLoadTableConfig = {
-    componentId: @json($this->getId())
-};
-</script>
-@vite(['resources/js/views/livewire/data-load-table.js'])
+    <div wire:ignore>
+        <script>
+        window.DataLoadTableConfig = {
+            componentId: @json($this->getId())
+        };
+        </script>
+        @vite(['resources/js/views/livewire/data-load-table.js'])
+    </div>
+</div>
