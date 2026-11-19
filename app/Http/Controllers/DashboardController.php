@@ -72,6 +72,13 @@ class DashboardController extends Controller
         $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
         $idModulo = $prefijo.'.'.$moduloActualNum;
 
+        $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+        $cacheKey = "dash_horarios_actual_{$tenantId}_{$idModulo}";
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 15, function () use (
+            $diaActual, $horaAhora, $moduloActualNum, $moduloActualHorario, $periodo, $fechaHoy, $idModulo
+        ) {
+
         $asignaciones = Planificacion_Asignatura::with(['espacio.piso', 'asignatura', 'horario.profesor'])
             ->where('id_modulo', $idModulo)
             ->whereHas('horario', function ($q) use ($periodo) {
@@ -519,12 +526,13 @@ class DashboardController extends Controller
             return strnatcasecmp($a->espacio->id_espacio ?? '', $b->espacio->id_espacio ?? '');
         })->values();
 
-        return view('partials.dashboard.horarios_modulo_actual', [
-            'diaActual' => $diaActual,
-            'moduloActualNum' => $moduloActualNum,
-            'moduloActualHorario' => $moduloActualHorario,
-            'asignaciones' => $asignacionesOrdenadas,
-        ])->render();
+            return view('partials.dashboard.horarios_modulo_actual', [
+                'diaActual' => $diaActual,
+                'moduloActualNum' => $moduloActualNum,
+                'moduloActualHorario' => $moduloActualHorario,
+                'asignaciones' => $asignacionesOrdenadas,
+            ])->render();
+        });
     }
 
     public function ocupacionDatosAjax(Request $request, OcupacionSemanalService $service)
@@ -537,15 +545,19 @@ class DashboardController extends Controller
             $tipoFilter = strtolower($request->query('tipo', 'todos'));
             $fechaParam = $request->query('fecha');
             $lunesDate = $fechaParam ? Carbon::parse($fechaParam)->startOfWeek() : now()->startOfWeek();
+            $tenantId = \App\Models\Tenant::current()?->id ?? 'default';
+            $cacheKey = "dash_ocupacion_{$tenantId}_{$tipoFilter}_{$lunesDate->format('Y-m-d')}";
 
-            $datos = $service->calcularOcupacion($lunesDate, $tipoFilter, true);
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($service, $lunesDate, $tipoFilter) {
+                $datos = $service->calcularOcupacion($lunesDate, $tipoFilter, true);
 
-            return view('partials.dashboard.ocupacion_grid', [
-                'ocupacion' => $datos['ocupacion'],
-                'tipoFilter' => $tipoFilter,
-                'resumen' => $datos['resumen'],
-                'totalEspacios' => $datos['total_espacios'],
-            ])->render();
+                return view('partials.dashboard.ocupacion_grid', [
+                    'ocupacion' => $datos['ocupacion'],
+                    'tipoFilter' => $tipoFilter,
+                    'resumen' => $datos['resumen'],
+                    'totalEspacios' => $datos['total_espacios'],
+                ])->render();
+            });
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Error en ocupacionDatosAjax: ' . $e->getMessage(), [
                 'file' => $e->getFile(),

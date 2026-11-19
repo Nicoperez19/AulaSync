@@ -335,7 +335,7 @@
                             <td class="min-w-[200px] px-3 py-3 text-center align-middle whitespace-nowrap">
                                 <div class="flex items-center justify-center gap-1.5 flex-wrap">
                                     @can('mantenedor de reservas')
-                                        <a href="{{ route('reservas.edit', $reserva->id_reserva) }}"
+                                        <a href="{{ route('editar-reserva', $reserva->id_reserva) }}"
                                            class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 hover:text-[#950101] rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors shadow-xs"
                                            title="Editar reserva">
                                             <i class="fa-solid fa-pen-to-square text-xs"></i>

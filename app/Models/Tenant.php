@@ -55,20 +55,27 @@ class Tenant extends Model
         
         // Cambiar a la base de datos del tenant si está configurada
         if ($this->database) {
-            $config = [
-                'database.connections.tenant.database' => $this->database,
-            ];
-            
-            // Si el tenant tiene un host específico, usarlo
-            if ($this->database_host) {
-                $config['database.connections.tenant.host'] = $this->database_host;
+            $currentDb = config('database.connections.tenant.database');
+            $currentHost = config('database.connections.tenant.host');
+            $needsSwitch = ($currentDb !== $this->database)
+                || ($this->database_host && $currentHost !== $this->database_host);
+
+            if ($needsSwitch) {
+                $config = [
+                    'database.connections.tenant.database' => $this->database,
+                ];
+
+                // Si el tenant tiene un host específico, usarlo
+                if ($this->database_host) {
+                    $config['database.connections.tenant.host'] = $this->database_host;
+                }
+
+                config($config);
+
+                // CRÍTICO: Forzar que se olvide de la conexión anterior solo cuando cambia la BD/host
+                app('db')->purge('tenant');
+                app('db')->disconnect('tenant');
             }
-            
-            config($config);
-            
-            // CRÍTICO: Forzar que se olvide de la conexión anterior para que se reconecte
-            app('db')->purge('tenant');
-            app('db')->disconnect('tenant');
         }
         
         return $this;

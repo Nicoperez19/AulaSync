@@ -161,6 +161,9 @@ class PlanoDigitalController extends Controller
         try {
             $this->establecerContextoTenant();
             $mapa = $this->obtenerMapa($id);
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
             $clasesModuloActual = $this->obtenerClasesModuloActual();
@@ -189,49 +192,52 @@ class PlanoDigitalController extends Controller
             }
 
             $idModuloActual = $codigoDia . '.' . $moduloActualNumero;
+            $tenantId = Tenant::current()?->id ?? 'default';
 
-            $planificaciones = Planificacion_Asignatura::with(['horario.profesor', 'espacio', 'modulo', 'asignatura'])
-                ->where('id_modulo', $idModuloActual)
-                ->whereHas('horario', function ($query) {
-                    $query->where('periodo', SemesterHelper::getCurrentPeriod());
-                })
-                ->get()
-                ->toBase()
-                ->map(function ($planificacion) {
-                    $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
-                    $nombreDocente = $planificacion->horario?->profesor?->name ?? 'Docente no asignado';
-                    return [
-                        'codigo' => strtoupper($codigo),
-                        'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
-                        'asignatura' => trim($planificacion->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
-                        'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
-                        'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
-                    ];
-                });
+            return \Illuminate\Support\Facades\Cache::remember("clases_modulo_actual_{$tenantId}_{$idModuloActual}", 30, function () use ($idModuloActual) {
+                $planificaciones = Planificacion_Asignatura::with(['horario.profesor', 'espacio', 'modulo', 'asignatura'])
+                    ->where('id_modulo', $idModuloActual)
+                    ->whereHas('horario', function ($query) {
+                        $query->where('periodo', SemesterHelper::getCurrentPeriod());
+                    })
+                    ->get()
+                    ->toBase()
+                    ->map(function ($planificacion) {
+                        $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
+                        $nombreDocente = $planificacion->horario?->profesor?->name ?? 'Docente no asignado';
+                        return [
+                            'codigo' => strtoupper($codigo),
+                            'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
+                            'asignatura' => trim($planificacion->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
+                            'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
+                            'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
+                        ];
+                    });
 
-            $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'espacio', 'modulo'])
-                ->where('id_modulo', $idModuloActual)
-                ->whereHas('profesorColaborador', function ($query) {
-                    $query->activosYVigentes();
-                })
-                ->get()
-                ->toBase()
-                ->map(function ($planificacion) {
-                    $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
-                    $nombreDocente = $planificacion->profesorColaborador?->profesor?->name ?? 'Docente no asignado';
-                    return [
-                        'codigo' => strtoupper($codigo),
-                        'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
-                        'asignatura' => trim($planificacion->profesorColaborador?->nombre_asignatura ?? $planificacion->profesorColaborador?->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
-                        'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
-                        'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
-                    ];
-                });
+                $profesoresColaboradores = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'espacio', 'modulo'])
+                    ->where('id_modulo', $idModuloActual)
+                    ->whereHas('profesorColaborador', function ($query) {
+                        $query->activosYVigentes();
+                    })
+                    ->get()
+                    ->toBase()
+                    ->map(function ($planificacion) {
+                        $codigo = $planificacion->modulo?->id_modulo ? explode('.', $planificacion->modulo->id_modulo)[1] ?? '—' : '—';
+                        $nombreDocente = $planificacion->profesorColaborador?->profesor?->name ?? 'Docente no asignado';
+                        return [
+                            'codigo' => strtoupper($codigo),
+                            'docente' => trim(mb_convert_case($nombreDocente, MB_CASE_TITLE, 'UTF-8')),
+                            'asignatura' => trim($planificacion->profesorColaborador?->nombre_asignatura ?? $planificacion->profesorColaborador?->asignatura?->nombre_asignatura ?? 'Sin asignatura'),
+                            'id_espacio' => trim($planificacion->espacio?->id_espacio ?? $planificacion->id_espacio ?? '—'),
+                            'sala' => trim($planificacion->espacio?->nombre_espacio ?? $planificacion->espacio?->codigo_espacio ?? 'Sala no asignada'),
+                        ];
+                    });
 
-            return $planificaciones->concat($profesoresColaboradores)
-                ->sortBy(fn ($clase) => [$clase['id_espacio'] ?? 'zz', $clase['docente'] ?? 'zz'])
-                ->values()
-                ->all();
+                return $planificaciones->concat($profesoresColaboradores)
+                    ->sortBy(fn ($clase) => [$clase['id_espacio'] ?? 'zz', $clase['docente'] ?? 'zz'])
+                    ->values()
+                    ->all();
+            });
         } catch (\Throwable $e) {
             \Log::error('Error en obtenerClasesModuloActual: ' . $e->getMessage());
             return [];
@@ -298,7 +304,7 @@ class PlanoDigitalController extends Controller
     private function prepararBloques(Mapa $mapa, array $estadoActual): array
     {
         $moduloActual = $this->obtenerModuloActual($estadoActual);
-        $planificacionesActivas = $this->obtenerPlanificacionesActivas($mapa, $moduloActual);
+        $planificacionesActivas = $this->obtenerPlanificacionesActivas($mapa, $moduloActual, $estadoActual['hora']);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
 
         // USAR EL MISMO $estadoActual para consistencia
@@ -347,10 +353,13 @@ class PlanoDigitalController extends Controller
             ->get()
             ->groupBy('id_espacio');
 
-        return $mapa->bloques->map(function ($bloque) use (
+        $idsToOcupado = [];
+        $idsToDisponible = [];
+
+        $bloques = $mapa->bloques->map(function ($bloque) use (
             $planificacionesActivas, $planificacionesProximas, $reservasProximas,
             $reservasFinalizadasAnticipadamente, $reservasActivasMap, $clasesNoRealizadasMap,
-            $mapa, $horaActualStr, $moduloActual
+            $mapa, $horaActualStr, $moduloActual, &$idsToOcupado, &$idsToDisponible
         ) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
@@ -403,10 +412,10 @@ class PlanoDigitalController extends Controller
                 // 1. Hay reserva activa = Ocupado
                 $estadoFinal = 'Ocupado';
 
-                // Corregir BD si está inconsistente
+                // Corregir BD si está inconsistente (en lote al finalizar)
                 if ($espacio->estado !== 'Ocupado') {
                     $espacio->estado = 'Ocupado';
-                    $espacio->save();
+                    $idsToOcupado[] = $idEspacio;
                 }
             } elseif ($reservaProgramada) {
                 // 1.5. Hay reserva PROGRAMADA y el módulo actual está en su rango
@@ -415,10 +424,10 @@ class PlanoDigitalController extends Controller
                 // 2. Hubo una clase sin asistentes y el módulo aún no termina
                 $estadoFinal = 'ClaseSinAsistentes';
 
-                // Corregir BD si está inconsistente
+                // Corregir BD si está inconsistente (en lote al finalizar)
                 if ($espacio->estado !== 'Disponible') {
                     $espacio->estado = 'Disponible';
-                    $espacio->save();
+                    $idsToDisponible[] = $idEspacio;
                 }
             } else {
                 // 3. Verificar planificaciones (actuales y próximas)
@@ -483,9 +492,11 @@ class PlanoDigitalController extends Controller
                     // 4. No hay actividad = Disponible
                     $estadoFinal = 'Disponible';
 
-                    // Corregir BD si está marcado como Ocupado sin actividad
+                    // Corregir BD solo si realmente está inconsistente (en lote al finalizar)
+                    if ($espacio->estado !== 'Disponible') {
                         $espacio->estado = 'Disponible';
-                        $espacio->save();
+                        $idsToDisponible[] = $idEspacio;
+                    }
                 }
             }
 
@@ -516,6 +527,15 @@ class PlanoDigitalController extends Controller
                 )
             ];
         })->filter()->values()->toArray();
+
+        if (!empty($idsToOcupado)) {
+            Espacio::whereIn('id_espacio', array_unique($idsToOcupado))->update(['estado' => 'Ocupado']);
+        }
+        if (!empty($idsToDisponible)) {
+            Espacio::whereIn('id_espacio', array_unique($idsToDisponible))->update(['estado' => 'Disponible']);
+        }
+
+        return $bloques;
     }
 
     private function obtenerModuloActual(array $estadoActual): ?Modulo
@@ -531,43 +551,41 @@ class PlanoDigitalController extends Controller
         return null;
     }
 
-    private function obtenerPlanificacionesActivas(Mapa $mapa, ?Modulo $moduloActual)
+    private function obtenerPlanificacionesActivas(Mapa $mapa, ?Modulo $moduloActual, ?string $horaActual = null)
     {
         if (!$moduloActual) {
             return collect([]);
         }
 
+        $espacioIds = $mapa->bloques->pluck('id_espacio')->filter()->unique()->values();
+        if ($espacioIds->isEmpty()) {
+            return collect([]);
+        }
+
         $periodo = SemesterHelper::getCurrentPeriod();
+        $horaActual = $horaActual ?? Carbon::now()->format('H:i:s');
 
-        // Obtener la hora actual
-        $horaActual = Carbon::now()->format('H:i:s');
-
-        // Obtener planificaciones de asignaturas regulares
-        $planificacionesRegulares = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
-
+        // Obtener planificaciones de asignaturas regulares (con eager loading completo para evitar N+1 en prepararDetallesBloque)
+        $planificacionesRegulares = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'asignatura.carrera', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
+            ->whereIn('id_espacio', $espacioIds)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
             ->whereHas('modulo', function ($query) use ($horaActual) {
                 $query->where('hora_termino', '>=', $horaActual);  // Solo módulos que no han terminado
             })
-            ->whereHas('espacio', function ($query) use ($mapa) {
-                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
-            })
             ->get();
 
         // Obtener planificaciones de profesores colaboradores (solo vigentes en el semestre activo)
-        $planificacionesTemporales = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
+        $planificacionesTemporales = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura.carrera', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
+            ->whereIn('id_espacio', $espacioIds)
             ->whereHas('profesorColaborador', function ($query) {
                 $query->activosYVigentes();
             })
             ->whereHas('modulo', function ($query) use ($horaActual) {
                 $query->where('hora_termino', '>=', $horaActual);  // Solo módulos que no han terminado
-            })
-            ->whereHas('espacio', function ($query) use ($mapa) {
-                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
             })
             ->get();
 
@@ -576,6 +594,11 @@ class PlanoDigitalController extends Controller
 
     private function obtenerPlanificacionesProximas(Mapa $mapa, array $estadoActual)
     {
+        $espacioIds = $mapa->bloques->pluck('id_espacio')->filter()->unique()->values();
+        if ($espacioIds->isEmpty()) {
+            return collect([]);
+        }
+
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
         $diaLimpio = ModulosHelper::normalizarDia($diaActual);
@@ -597,9 +620,9 @@ class PlanoDigitalController extends Controller
             $horaFinBusqueda = $horaActual->copy()->addMinutes(15)->format('H:i:s');
         }
 
-        // Obtener planificaciones regulares próximas
-        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
-
+        // Obtener planificaciones regulares próximas (con eager loading completo)
+        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'asignatura.carrera', 'modulo', 'espacio'])
+            ->whereIn('id_espacio', $espacioIds)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -617,13 +640,11 @@ class PlanoDigitalController extends Controller
                         ->where('hora_inicio', '<=', $horaFinBusqueda);
                 }
             })
-            ->whereHas('espacio', function ($query) use ($mapa) {
-                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
-            })
             ->get();
 
         // Obtener planificaciones de profesores colaboradores próximas (solo vigentes en el semestre activo)
-        $planificacionesTemporalesProximas = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
+        $planificacionesTemporalesProximas = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura.carrera', 'modulo', 'espacio'])
+            ->whereIn('id_espacio', $espacioIds)
             ->whereHas('profesorColaborador', function ($query) {
                 $query->activosYVigentes();
             })
@@ -640,9 +661,6 @@ class PlanoDigitalController extends Controller
                         ->where('hora_inicio', '>=', $horaInicioBusqueda)
                         ->where('hora_inicio', '<=', $horaFinBusqueda);
                 }
-            })
-            ->whereHas('espacio', function ($query) use ($mapa) {
-                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
             })
             ->get();
 
@@ -805,6 +823,10 @@ class PlanoDigitalController extends Controller
     {
         // Establecer contexto del tenant desde el request
         $this->establecerContextoTenant();
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
 
         $tenantId = Tenant::current()?->id ?? 'default';
         $cacheKey = "estados_espacios_{$tenantId}";

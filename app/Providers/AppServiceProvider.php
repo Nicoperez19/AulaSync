@@ -54,8 +54,13 @@ class AppServiceProvider extends ServiceProvider
                     $content = $event->response->getContent();
                     $manifest = public_path('build/manifest.json');
 
-                    if (file_exists($manifest)) {
-                        $manifestData = json_decode(file_get_contents($manifest), true);
+                    static $cachedManifestData = null;
+                    if ($cachedManifestData === null && file_exists($manifest)) {
+                        $cachedManifestData = json_decode(file_get_contents($manifest), true) ?: [];
+                    }
+
+                    if ($cachedManifestData !== null) {
+                        $manifestData = $cachedManifestData;
 
                         // Replace @vite/client
                         $content = str_replace('http://[::1]:5173/@vite/client', '', $content);
@@ -95,41 +100,38 @@ class AppServiceProvider extends ServiceProvider
         // Registrar el Observer para LicenciaProfesor
         LicenciaProfesor::observe(LicenciaProfesorObserver::class);
 
-        // Registrar el ViewComposer para el sidebar
+        // Registrar el ViewComposer para el sidebar (cacheado por tenant para evitar queries en cada vista)
         View::composer('components.sidebar.content', function ($view) {
-            // Try to get the current tenant first
             $tenant = Tenant::current();
+            $tenantCacheKey = $tenant ? "tenant_{$tenant->id}" : 'default';
 
-            if ($tenant && $tenant->sede) {
-                $sede = $tenant->sede->load(['facultades.pisos.mapas']);
-            } else {
-                // Fallback to Talcahuano if no tenant
-                $sede = Sede::where('nombre_sede', 'like', '%Talcahuano%')
-                    ->with(['facultades.pisos.mapas'])
-                    ->first();
-            }
+            $sidebarData = \Illuminate\Support\Facades\Cache::remember("sidebar_meta_{$tenantCacheKey}", 300, function () use ($tenant) {
+                if ($tenant && $tenant->sede) {
+                    $sede = $tenant->sede->load(['facultades.pisos.mapas']);
+                } else {
+                    $sede = Sede::where('nombre_sede', 'like', '%Talcahuano%')
+                        ->with(['facultades.pisos.mapas'])
+                        ->first();
+                }
 
-            if ($sede) {
-                $primerMapa = $sede->facultades->flatMap(function($facultad) {
-                    return $facultad->pisos->flatMap(function($piso) {
-                        return $piso->mapas;
-                    });
-                })->first();
+                $primerMapa = null;
+                if ($sede) {
+                    $primerMapa = $sede->facultades->flatMap(function ($facultad) {
+                        return $facultad->pisos->flatMap(function ($piso) {
+                            return $piso->mapas;
+                        });
+                    })->first();
+                }
 
-                $view->with('primerMapa', $primerMapa);
-            } else {
-                $view->with('primerMapa', null);
-            }
+                return [
+                    'sede' => $sede,
+                    'primerMapa' => $primerMapa,
+                    'tieneProfesores' => Profesor::exists(),
+                    'tieneEspacios' => Espacio::exists(),
+                ];
+            });
 
-            // Verificar si hay profesores
-            $tieneProfesores = Profesor::count() > 0;
-
-            // Verificar si hay espacios
-            $tieneEspacios = Espacio::count() > 0;
-
-            $view->with('sede', $sede);
-            $view->with('tieneProfesores', $tieneProfesores);
-            $view->with('tieneEspacios', $tieneEspacios);
+            $view->with($sidebarData);
         });
 
         // Registrar el ViewComposer para el logo institucional

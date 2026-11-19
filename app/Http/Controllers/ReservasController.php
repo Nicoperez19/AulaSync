@@ -152,8 +152,7 @@ class ReservasController extends Controller
 
     public function edit($id_reserva)
     {
-        $reserva = Reserva::findOrFail($id_reserva);
-        return view('reservas.edit', compact('reserva'));
+        return redirect()->route('editar-reserva', ['id' => $id_reserva]);
     }
 
     public function update(Request $request, $id_reserva)

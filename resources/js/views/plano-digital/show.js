@@ -4167,6 +4167,10 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
         }
 
         async function actualizarColoresEspacios(forzarActualizacion = false) {
+            if (state.isFetchingBloques && !forzarActualizacion) {
+                return;
+            }
+
             // Verificar si ha habido cambios locales recientes (salvo si se fuerza)
             const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
             if (!forzarActualizacion && tiempoTranscurrido < 10000) { // 10 segundos
@@ -4178,6 +4182,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
                 return;
             }
 
+            state.isFetchingBloques = true;
             try {
                 const response = await fetch(`/plano/${mapaId}/bloques?t=${Date.now()}`); // Cache busting
                 if (!response.ok) {
@@ -4224,6 +4229,8 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
                 }
             } catch (error) {
                 // Error silencioso para no saturar la consola
+            } finally {
+                state.isFetchingBloques = false;
             }
         }
 
@@ -4438,7 +4445,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
             actualizarModalReloj();
 
             setInterval(actualizarModuloYColores, 5000);
-            actualizarModuloYColores();
+            actualizarModuloYColores(true);
 
             if (localStorage.getItem('dashboard_reloj_minimizado') === '1') {
                 toggleModalReloj(true);
@@ -5102,7 +5109,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
             }
         }
 
-        function actualizarModuloYColores() {
+        function actualizarModuloYColores(skipFetch = false) {
             const ahora = new Date();
             const horaActual = ahora.toLocaleTimeString('es-CL', {
                 hour: '2-digit',
@@ -5117,10 +5124,10 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
             const moduloActualElement = document.getElementById('modulo-actual') || document.getElementById('modal-modulo-actual');
             const moduloHorarioElement = document.getElementById('horario-actual');
 
-            // Detectar cambio de módulo para sincronizar espacios inmediatamente
+            // Detectar cambio de módulo para sincronizar espacios inmediatamente (omitir en carga inicial ya hidratada por el servidor)
             if (moduloActual !== ultimoModuloDetectado) {
                 ultimoModuloDetectado = moduloActual;
-                if (typeof actualizarColoresEspacios === 'function') {
+                if (!skipFetch && typeof actualizarColoresEspacios === 'function') {
                     actualizarColoresEspacios(true);
                 }
             }

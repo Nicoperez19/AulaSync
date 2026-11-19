@@ -60,7 +60,11 @@ class TenantMiddleware
         // Opción A: Obtener de sesión (Prioridad alta)
         if (session()->has('tenant_id')) {
             $tenantId = session('tenant_id');
-            $tenant = Tenant::find($tenantId);
+            $tenant = \Illuminate\Support\Facades\Cache::remember(
+                "tenant_by_id_{$tenantId}",
+                300,
+                fn () => Tenant::find($tenantId)
+            );
             if ($tenant && $tenant->is_active) {
                 $tenant->makeCurrent();
                 $tenantSet = true;
@@ -75,7 +79,11 @@ class TenantMiddleware
             $subdomain = $this->getSubdomain($host);
 
             if ($subdomain && $subdomain !== 'www') {
-                $tenant = Tenant::where('domain', $subdomain)->where('is_active', true)->first();
+                $tenant = \Illuminate\Support\Facades\Cache::remember(
+                    "tenant_by_domain_{$subdomain}",
+                    300,
+                    fn () => Tenant::where('domain', $subdomain)->where('is_active', true)->first()
+                );
                 if ($tenant) {
                     $tenant->makeCurrent();
                     session(['tenant_id' => $tenant->id]);

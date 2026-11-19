@@ -79,8 +79,9 @@ class TenantScope implements Scope
         // 2. Si el modelo se filtra por prefijo de espacio (ej. TH-...)
         // NOTA: solo aplica si la tabla realmente corresponde a espacios físicos,
         // no a tablas que casualmente tienen una columna id_espacio como FK.
+        // Se usa LIKE directo sin LOWER() para aprovechar índices B-Tree en MySQL (collation CI).
         if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
-            $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
+            $builder->where($table . '.id_espacio', 'LIKE', $tenant->prefijo_espacios . '%');
             return;
         }
 
