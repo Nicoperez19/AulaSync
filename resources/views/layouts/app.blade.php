@@ -18,7 +18,7 @@
 
     <!-- Librerías Externas & Chart.js -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 
     <!-- Estilos y JS compilados por Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
